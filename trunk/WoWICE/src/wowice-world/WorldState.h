@@ -27,7 +27,7 @@ public:
 
 	void SetState(uint32 index, uint32 value);
 
-	ARCEMU_INLINE void EraseState(uint32 index) { m_states.erase(index); }
+	WoWICE_INLINE void EraseState(uint32 index) { m_states.erase(index); }
 };
 
 #endif

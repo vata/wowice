@@ -50,7 +50,7 @@ enum MsTimeVariables
 #ifdef WIN32
 #define WoWICE_INLINE __forceinline
 #else
-#define ARCEMU_INLINE inline
+#define WoWICE_INLINE inline
 #endif
 
 #ifdef HAVE_CONFIG_H
@@ -376,9 +376,9 @@ WoWICE_INLINE static void swap32(uint32* p) { *p = ((*p >> 24 & 0xff)) | ((*p >>
 WoWICE_INLINE static void swap64(uint64* p) { *p = ((*p >> 56)) | ((*p >> 40) & 0x000000000000ff00ULL) | ((*p >> 24) & 0x0000000000ff0000ULL) | ((*p >> 8 ) & 0x00000000ff000000ULL) |
 								((*p << 8 ) & 0x000000ff00000000ULL) | ((*p << 24) & 0x0000ff0000000000ULL) | ((*p << 40) & 0x00ff000000000000ULL) | ((*p << 56)); }*/
 
-ARCEMU_INLINE static void swap16(uint16* p) { *p = bswap_16((uint16_t)*p); }
-ARCEMU_INLINE static void swap32(uint32* p) { *p = bswap_32((uint32_t)*p); }
-ARCEMU_INLINE static void swap64(uint64* p) { *p = bswap_64((uint64_t)*p);; }
+WoWICE_INLINE static void swap16(uint16* p) { *p = bswap_16((uint16_t)*p); }
+WoWICE_INLINE static void swap32(uint32* p) { *p = bswap_32((uint32_t)*p); }
+WoWICE_INLINE static void swap64(uint64* p) { *p = bswap_64((uint64_t)*p);; }
 
 WoWICE_INLINE static float swapfloat(float p)
 {

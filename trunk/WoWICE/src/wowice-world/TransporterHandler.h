@@ -27,15 +27,15 @@ public:
 		uint32 delay;
 	};
 
-	ARCEMU_INLINE void SetLength(const unsigned int sz)
+	WoWICE_INLINE void SetLength(const unsigned int sz)
 	{
 		i_nodes.resize( sz );
 	}
 
-	ARCEMU_INLINE size_t Size(void) const { return i_nodes.size(); }
-	ARCEMU_INLINE void Resize(unsigned int sz) { i_nodes.resize(sz); }
-	ARCEMU_INLINE void Clear(void) { i_nodes.clear(); }
-	ARCEMU_INLINE PathNode* GetNodes(void) { return static_cast<PathNode *>(&i_nodes[0]); }
+	WoWICE_INLINE size_t Size(void) const { return i_nodes.size(); }
+	WoWICE_INLINE void Resize(unsigned int sz) { i_nodes.resize(sz); }
+	WoWICE_INLINE void Clear(void) { i_nodes.clear(); }
+	WoWICE_INLINE PathNode* GetNodes(void) { return static_cast<PathNode *>(&i_nodes[0]); }
 	float GetTotalLength(void)
 	{
 		float len = 0, xd, yd, zd;
@@ -109,10 +109,10 @@ public:
 	void TransportGossip(uint32 route);
 	bool GenerateWaypoints();
 
-	ARCEMU_INLINE void AddPlayer(Player *pPlayer) { mPassengers[pPlayer->GetLowGUID()] = pPlayer; }
-	ARCEMU_INLINE void RemovePlayer(Player *pPlayer) {mPassengers.erase(pPlayer->GetLowGUID()); }
-	ARCEMU_INLINE bool HasPlayer(Player* pPlayer) { return mPassengers.find(pPlayer->GetLowGUID()) != mPassengers.end(); }
-	ARCEMU_INLINE void SetPeriod(uint32 val) { m_period = val; }
+	WoWICE_INLINE void AddPlayer(Player *pPlayer) { mPassengers[pPlayer->GetLowGUID()] = pPlayer; }
+	WoWICE_INLINE void RemovePlayer(Player *pPlayer) {mPassengers.erase(pPlayer->GetLowGUID()); }
+	WoWICE_INLINE bool HasPlayer(Player* pPlayer) { return mPassengers.find(pPlayer->GetLowGUID()) != mPassengers.end(); }
+	WoWICE_INLINE void SetPeriod(uint32 val) { m_period = val; }
 
 	uint32 m_pathTime;
 	uint32 m_timer;

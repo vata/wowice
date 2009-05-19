@@ -255,18 +255,18 @@ private:
 	uint32 AlliancePlayers;
 
 public:
-	ARCEMU_INLINE uint32 getHordePlayerCount() { return HordePlayers; }
-	ARCEMU_INLINE uint32 getAlliancePlayerCount() { return AlliancePlayers; }
-	ARCEMU_INLINE uint32 getPlayerCount() { return (HordePlayers + AlliancePlayers); }
-	ARCEMU_INLINE void resetPlayerCount() { HordePlayers = AlliancePlayers = 0; }
-	ARCEMU_INLINE void incrementPlayerCount(uint32 faction)
+	WoWICE_INLINE uint32 getHordePlayerCount() { return HordePlayers; }
+	WoWICE_INLINE uint32 getAlliancePlayerCount() { return AlliancePlayers; }
+	WoWICE_INLINE uint32 getPlayerCount() { return (HordePlayers + AlliancePlayers); }
+	WoWICE_INLINE void resetPlayerCount() { HordePlayers = AlliancePlayers = 0; }
+	WoWICE_INLINE void incrementPlayerCount(uint32 faction)
 	{
 		if( faction == 1 )
 			HordePlayers++;
 		else
 			AlliancePlayers++;
 	}
-	ARCEMU_INLINE void decrementPlayerCount(uint32 faction)
+	WoWICE_INLINE void decrementPlayerCount(uint32 faction)
 	{
 		if( faction == 1 )
 			HordePlayers--;
@@ -293,29 +293,29 @@ public:
 	void RemoveGlobalSession(WorldSession *session);
 	void DeleteSession(WorldSession *session);
 
-	ARCEMU_INLINE size_t GetSessionCount() const { return m_sessions.size(); }
+	WoWICE_INLINE size_t GetSessionCount() const { return m_sessions.size(); }
 	uint32 GetNonGmSessionCount();
-	ARCEMU_INLINE size_t GetQueueCount() { return mQueuedSessions.size(); }
+	WoWICE_INLINE size_t GetQueueCount() { return mQueuedSessions.size(); }
 	void GetStats(uint32 * GMCount, float * AverageLatency);
 
-	ARCEMU_INLINE uint32 GetPlayerLimit() const { return m_playerLimit; }
+	WoWICE_INLINE uint32 GetPlayerLimit() const { return m_playerLimit; }
 	void SetPlayerLimit(uint32 limit) { m_playerLimit = limit; }
 
-	ARCEMU_INLINE bool getAllowMovement() const { return m_allowMovement; }
+	WoWICE_INLINE bool getAllowMovement() const { return m_allowMovement; }
 	void SetAllowMovement(bool allow) { m_allowMovement = allow; }
-	ARCEMU_INLINE bool getGMTicketStatus() { return m_gmTicketSystem; };
+	WoWICE_INLINE bool getGMTicketStatus() { return m_gmTicketSystem; };
 	bool toggleGMTicketStatus()
 	{
 		m_gmTicketSystem = !m_gmTicketSystem;
 		return m_gmTicketSystem;
 	};
 
-	ARCEMU_INLINE std::string getGmClientChannel() { return GmClientChannel; }
+	WoWICE_INLINE std::string getGmClientChannel() { return GmClientChannel; }
 
 	void SetMotd(const char *motd) { m_motd = motd; }
-	ARCEMU_INLINE const char* GetMotd() const { return m_motd.c_str(); }
+	WoWICE_INLINE const char* GetMotd() const { return m_motd.c_str(); }
 
-	ARCEMU_INLINE time_t GetGameTime() const { return m_gameTime; }
+	WoWICE_INLINE time_t GetGameTime() const { return m_gameTime; }
 
 	bool SetInitialWorldSettings();
 
@@ -330,12 +330,12 @@ public:
 	void SendBCMessageByID(uint32 id);
 	void SendLocalizedWorldText(bool wide,const char * format, ...);
 
-	ARCEMU_INLINE void SetStartTime(uint32 val) { m_StartTime = val; }
-	ARCEMU_INLINE uint32 GetUptime(void) { return (uint32)UNIXTIME - m_StartTime; }
-	ARCEMU_INLINE uint32 GetStartTime(void) { return m_StartTime; }
+	WoWICE_INLINE void SetStartTime(uint32 val) { m_StartTime = val; }
+	WoWICE_INLINE uint32 GetUptime(void) { return (uint32)UNIXTIME - m_StartTime; }
+	WoWICE_INLINE uint32 GetStartTime(void) { return m_StartTime; }
 	std::string GetUptimeString();
 	// cebernic: textfilter,no fast,but works:D ...
-	ARCEMU_INLINE std::string SessionLocalizedTextFilter(WorldSession* _session,const char*text)
+	WoWICE_INLINE std::string SessionLocalizedTextFilter(WorldSession* _session,const char*text)
 	{
 			std::string opstr=string(text);
 			std::string::iterator t= opstr.begin();
@@ -375,22 +375,22 @@ public:
    
 	void UpdateSessions(uint32 diff);
 
-	ARCEMU_INLINE void setRate(int index,float value)
+	WoWICE_INLINE void setRate(int index,float value)
 	{
 		regen_values[index]=value;
 	}
 
-	ARCEMU_INLINE float getRate(int index)
+	WoWICE_INLINE float getRate(int index)
 	{
 		return regen_values[index];
 	}
 	
-	ARCEMU_INLINE uint32 getIntRate(int index)
+	WoWICE_INLINE uint32 getIntRate(int index)
 	{
 		return int_rates[index];
 	}
 
-	ARCEMU_INLINE void setIntRate(int index, uint32 value)
+	WoWICE_INLINE void setIntRate(int index, uint32 value)
 	{
 		int_rates[index] = value;
 	}
@@ -405,7 +405,7 @@ public:
 	typedef std::map< uint32, uint32> SpellPricesMap;
 	SpellPricesMap mPrices;
 
-	ARCEMU_INLINE uint32 GetTimeOut(){return TimeOut;}
+	WoWICE_INLINE uint32 GetTimeOut(){return TimeOut;}
 
 	struct NameGenData
 	{

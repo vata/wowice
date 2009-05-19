@@ -1156,7 +1156,7 @@ bool ChatHandler::HandleLookupAchievementCmd(const char* args, WorldSession* m_s
 		RedSystemMessage(m_session, "Your search string must be at least 4 characters long.");
 		return true;
 	}
-	arcemu_TOLOWER(x);
+	wowice_TOLOWER(x);
 	GreenSystemMessage(m_session, "Starting search of achievement `%s`...", x.c_str());
 	uint32 t = getMSTime();
 	uint32 i, j, numFound=0;
@@ -1180,19 +1180,19 @@ bool ChatHandler::HandleLookupAchievementCmd(const char* args, WorldSession* m_s
 				if(lookupname)
 				{
 					y = string(achievement->name);
-					arcemu_TOLOWER(y);
+					wowice_TOLOWER(y);
 					foundmatch = FindXinYString(x,y);
 				}
 				if(!foundmatch && lookupdesc)
 				{
 					y = string(achievement->description);
-					arcemu_TOLOWER(y);
+					wowice_TOLOWER(y);
 					foundmatch = FindXinYString(x,y);
 				}
 				if(!foundmatch && lookupreward)
 				{
 					y = string(achievement->rewardName);
-					arcemu_TOLOWER(y);
+					wowice_TOLOWER(y);
 					foundmatch = FindXinYString(x,y);
 				}
 				if(!foundmatch)
@@ -1252,7 +1252,7 @@ bool ChatHandler::HandleLookupAchievementCmd(const char* args, WorldSession* m_s
 				if(foundList.find(criteria->ID) != foundList.end()) // already listed this achievement (some achievements have multiple entries in dbc)
 					continue;
 				y = string(criteria->name);
-				arcemu_TOLOWER(y);
+				wowice_TOLOWER(y);
 				if(!FindXinYString(x,y))
 					continue;
 				foundList.insert(criteria->ID);

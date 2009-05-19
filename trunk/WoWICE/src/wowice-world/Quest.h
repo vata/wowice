@@ -119,8 +119,8 @@ enum QUEST_SHARE
 	QUEST_SHARE_MSG_FINISH_QUEST	= 8,
 };
 
-#define arcemu_QUEST_REPEATABLE 1
-#define arcemu_QUEST_REPEATABLE_DAILY 2
+#define wowice_QUEST_REPEATABLE 1
+#define wowice_QUEST_REPEATABLE_DAILY 2
 
 class QuestScript;
 #pragma pack(push,1)
@@ -245,7 +245,7 @@ public:
 	QuestLogEntry();
 	~QuestLogEntry();
 
-	ARCEMU_INLINE Quest* GetQuest() { return m_quest; };
+	WoWICE_INLINE Quest* GetQuest() { return m_quest; };
 	void Init(Quest* quest, Player* plr, uint32 slot);
 
 	bool CanBeFinished();
@@ -259,8 +259,8 @@ public:
 	void IncrementMobCount(uint32 i);
 
 	bool IsUnitAffected(Unit* target);
-	ARCEMU_INLINE bool IsCastQuest() { return iscastquest;}
-	ARCEMU_INLINE bool IsEmoteQuest() { return isemotequest; }
+	WoWICE_INLINE bool IsCastQuest() { return iscastquest;}
+	WoWICE_INLINE bool IsEmoteQuest() { return isemotequest; }
 	void AddAffectedUnit(Unit* target);
 	void ClearAffectedUnits();
 
@@ -269,10 +269,10 @@ public:
 
 	void SendQuestComplete();
 	void SendUpdateAddKill(uint32 i);
-	ARCEMU_INLINE uint32 GetMobCount(uint32 i) { return m_mobcount[i]; }
-	ARCEMU_INLINE uint32 GetExploredAreas(uint32 i) { return m_explored_areas[i]; }
+	WoWICE_INLINE uint32 GetMobCount(uint32 i) { return m_mobcount[i]; }
+	WoWICE_INLINE uint32 GetExploredAreas(uint32 i) { return m_explored_areas[i]; }
 
-	ARCEMU_INLINE uint32 GetBaseField(uint32 slot)
+	WoWICE_INLINE uint32 GetBaseField(uint32 slot)
 	{
 		return PLAYER_QUEST_LOG_1_1 + (slot * 4);
 	}

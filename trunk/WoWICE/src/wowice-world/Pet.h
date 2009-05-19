@@ -120,7 +120,7 @@ public:
 	virtual void Update(uint32 time);
 	void OnPushToWorld();
 
-	ARCEMU_INLINE uint32 GetXP(void) { return m_PetXP; }
+	WoWICE_INLINE uint32 GetXP(void) { return m_PetXP; }
 
 	void InitializeSpells();
 	void ReInitializeSpells();
@@ -130,17 +130,17 @@ public:
 	void SendCastFailed( uint32 spellid, uint8 fail );
 	void SendActionFeedback( PetActionFeedback value  );
 
-	ARCEMU_INLINE void SetPetAction(uint32 act) { m_Action = act; }
-	ARCEMU_INLINE uint32 GetPetAction(void) { return m_Action; }
+	WoWICE_INLINE void SetPetAction(uint32 act) { m_Action = act; }
+	WoWICE_INLINE uint32 GetPetAction(void) { return m_Action; }
 
-	ARCEMU_INLINE void SetPetState(uint32 state) { m_State = state; }
-	ARCEMU_INLINE uint32 GetPetState(void) { return m_State; }
+	WoWICE_INLINE void SetPetState(uint32 state) { m_State = state; }
+	WoWICE_INLINE uint32 GetPetState(void) { return m_State; }
 
-	ARCEMU_INLINE void SetPetDiet(uint32 diet) { m_Diet = diet; }
-	ARCEMU_INLINE void SetPetDiet() { m_Diet = myFamily->petdietflags; }
-	ARCEMU_INLINE uint32 GetPetDiet(void) { return m_Diet; }
+	WoWICE_INLINE void SetPetDiet(uint32 diet) { m_Diet = diet; }
+	WoWICE_INLINE void SetPetDiet() { m_Diet = myFamily->petdietflags; }
+	WoWICE_INLINE uint32 GetPetDiet(void) { return m_Diet; }
 
-	ARCEMU_INLINE AI_Spell* GetAISpellForSpellId(uint32 spellid)
+	WoWICE_INLINE AI_Spell* GetAISpellForSpellId(uint32 spellid)
 	{
 		std::map<uint32, AI_Spell*>::iterator itr = m_AISpellStore.find(spellid);
 		if(itr != m_AISpellStore.end())
@@ -155,8 +155,8 @@ public:
 
 	void DelayedRemove(bool bTime, bool bDeath);
 
-	ARCEMU_INLINE Player* GetPetOwner() { return m_Owner; }
-	ARCEMU_INLINE void ClearPetOwner() { m_Owner = NULL; }
+	WoWICE_INLINE Player* GetPetOwner() { return m_Owner; }
+	WoWICE_INLINE void ClearPetOwner() { m_Owner = NULL; }
 	bool CanGainXP();
 	void GiveXP( uint32 xp );
 	uint32 GetNextLevelXP(uint32 currentlevel);
@@ -184,17 +184,17 @@ public:
 			return mSpells.find( sp ) != mSpells.end();
 		return false;
 	}
-	ARCEMU_INLINE void RemoveSpell( uint32 SpellID )
+	WoWICE_INLINE void RemoveSpell( uint32 SpellID )
 	{
 		SpellEntry * sp = dbcSpell.LookupEntry( SpellID );
 		if( sp ) RemoveSpell( sp );
 	}
-	ARCEMU_INLINE void SetSpellState( uint32 SpellID, uint16 State )
+	WoWICE_INLINE void SetSpellState( uint32 SpellID, uint16 State )
 	{
 		SpellEntry * sp = dbcSpell.LookupEntry( SpellID );
 		if( sp ) SetSpellState(sp, State);
 	}
-	ARCEMU_INLINE uint16 GetSpellState( uint32 SpellID )
+	WoWICE_INLINE uint16 GetSpellState( uint32 SpellID )
 	{
 		if( SpellID == 0 )
 			return DEFAULT_SPELL_STATE;
@@ -206,20 +206,20 @@ public:
 	}
 
 	AI_Spell * CreateAISpell(SpellEntry * info);
-	ARCEMU_INLINE PetSpellMap* GetSpells() { return &mSpells; }
-	ARCEMU_INLINE bool IsSummon() { return Summon; }
+	WoWICE_INLINE PetSpellMap* GetSpells() { return &mSpells; }
+	WoWICE_INLINE bool IsSummon() { return Summon; }
 
 	void __fastcall SetAutoCastSpell(AI_Spell * sp);
 	void Rename(string NewName);
-	ARCEMU_INLINE string& GetName() { return m_name; }
+	WoWICE_INLINE string& GetName() { return m_name; }
 	uint32 CanLearnSpell( SpellEntry* sp );
 	void SkillUp();
 
 	// talents
-	ARCEMU_INLINE uint8 GetTPsForLevel( uint32 level ) { return ( level >= 20 ) ? uint8( level - 16 ) >> 2 : 0; }	// pet gain first talent point at lvl 20, then every 4 lvls another point
-	ARCEMU_INLINE void SetTPs( uint8 TP ) { SetByte( UNIT_FIELD_BYTES_1, 1, TP ); }			// sets talent points
-	ARCEMU_INLINE uint8 GetTPs() { return GetByte( UNIT_FIELD_BYTES_1, 1 ); }				// returns available talent points
-	ARCEMU_INLINE uint8 GetSpentTPs() { return GetTPsForLevel( getLevel() ) - GetTPs(); }	// returns amount of spent talent points
+	WoWICE_INLINE uint8 GetTPsForLevel( uint32 level ) { return ( level >= 20 ) ? uint8( level - 16 ) >> 2 : 0; }	// pet gain first talent point at lvl 20, then every 4 lvls another point
+	WoWICE_INLINE void SetTPs( uint8 TP ) { SetByte( UNIT_FIELD_BYTES_1, 1, TP ); }			// sets talent points
+	WoWICE_INLINE uint8 GetTPs() { return GetByte( UNIT_FIELD_BYTES_1, 1 ); }				// returns available talent points
+	WoWICE_INLINE uint8 GetSpentTPs() { return GetTPsForLevel( getLevel() ) - GetTPs(); }	// returns amount of spent talent points
 
 	void HandleAutoCastEvent( AutoCastEvents Type );
 	AI_Spell * HandleAutoCastEvent();

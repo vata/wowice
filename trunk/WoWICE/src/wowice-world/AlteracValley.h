@@ -207,7 +207,7 @@ protected:
 	uint32 m_reinforcements[2];
 	bool m_nearingVictory[2];
 	AVNode *m_nodes[AV_NUM_CONTROL_POINTS];
-	ARCEMU_INLINE map<Creature*, set<uint32> > Get_m_resurrectMap() { return CBattleground::m_resurrectMap; }
+	WoWICE_INLINE map<Creature*, set<uint32> > Get_m_resurrectMap() { return CBattleground::m_resurrectMap; }
 public:
 	AlteracValley(MapMgr * mgr, uint32 id, uint32 lgroup, uint32 t);
 	~AlteracValley();

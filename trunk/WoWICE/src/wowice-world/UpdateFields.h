@@ -16,8 +16,8 @@
 /** 3.0.2 UpdateFields as of whenever i extracted them.
  */
 
-#ifndef __arcemu_UPDATEFIELDS_H
-#define __arcemu_UPDATEFIELDS_H
+#ifndef __wowice_UPDATEFIELDS_H
+#define __wowice_UPDATEFIELDS_H
 
 //OBJECT:
 #define OBJECT_FIELD_GUID                                      0x000	//Size:2  Type:GUID  Flags:1

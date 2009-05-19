@@ -73,8 +73,8 @@ public:
 	}
 
 	void Finish();
-	ARCEMU_INLINE uint8 Rated() { return rated_match; }
-	ARCEMU_INLINE uint32 GetArenaTeamType() { return m_arenateamtype; }
-	ARCEMU_INLINE ArenaTeam ** GetTeams() { return m_teams; }
+	WoWICE_INLINE uint8 Rated() { return rated_match; }
+	WoWICE_INLINE uint32 GetArenaTeamType() { return m_arenateamtype; }
+	WoWICE_INLINE ArenaTeam ** GetTeams() { return m_teams; }
 	uint32 CalcDeltaRating(uint32 oldRating, uint32 opponentRating, bool outcome);
 };
