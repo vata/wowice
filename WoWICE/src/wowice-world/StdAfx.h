@@ -37,35 +37,35 @@
 #include <string>
 //#include <fstream>
 
-#include "../arcemu-shared/Common.h"
-#include "../arcemu-shared/MersenneTwister.h"
-#include "../arcemu-shared/WorldPacket.h"
-#include "../arcemu-shared/Log.h"
-#include "../arcemu-shared/NGLog.h"
-#include "../arcemu-shared/ByteBuffer.h"
-#include "../arcemu-shared/StackBuffer.h"
-#include "../arcemu-shared/Config/ConfigEnv.h"
-#include "../arcemu-shared/crc32.h"
-#include "../arcemu-shared/LocationVector.h"
+#include "../wowice-shared/Common.h"
+#include "../wowice-shared/MersenneTwister.h"
+#include "../wowice-shared/WorldPacket.h"
+#include "../wowice-shared/Log.h"
+#include "../wowice-shared/NGLog.h"
+#include "../wowice-shared/ByteBuffer.h"
+#include "../wowice-shared/StackBuffer.h"
+#include "../wowice-shared/Config/ConfigEnv.h"
+#include "../wowice-shared/crc32.h"
+#include "../wowice-shared/LocationVector.h"
 
 #include <zlib.h>
 
-#include "../arcemu-shared/Database/DatabaseEnv.h"
-#include "../arcemu-shared/Database/DBCStores.h"
-#include "../arcemu-shared/Database/dbcfile.h"
+#include "../wowice-shared/Database/DatabaseEnv.h"
+#include "../wowice-shared/Database/DBCStores.h"
+#include "../wowice-shared/Database/dbcfile.h"
 
 #include <Network/Network.h>
 
-#include "../arcemu-shared/Auth/MD5.h"
-#include "../arcemu-shared/Auth/BigNumber.h"
-#include "../arcemu-shared/Auth/Sha1.h"
-#include "../arcemu-shared/Auth/WowCrypt.h"
-#include "../arcemu-shared/CrashHandler.h"
-#include "../arcemu-shared/FastQueue.h"
-#include "../arcemu-shared/CircularQueue.h"
-#include "../arcemu-shared/Threading/RWLock.h"
-#include "../arcemu-shared/Threading/Condition.h"
-#include "../arcemu-shared/arcemu_getopt.h"
+#include "../wowice-shared/Auth/MD5.h"
+#include "../wowice-shared/Auth/BigNumber.h"
+#include "../wowice-shared/Auth/Sha1.h"
+#include "../wowice-shared/Auth/WowCrypt.h"
+#include "../wowice-shared/CrashHandler.h"
+#include "../wowice-shared/FastQueue.h"
+#include "../wowice-shared/CircularQueue.h"
+#include "../wowice-shared/Threading/RWLock.h"
+#include "../wowice-shared/Threading/Condition.h"
+#include "../wowice-shared/wowice_getopt.h"
 
 #ifdef WIN32
 #include "printStackTrace.h"
@@ -79,7 +79,7 @@
 
 #include "Packets.h"
 
-#include "../arcemu-shared/CallBack.h"
+#include "../wowice-shared/CallBack.h"
 #include "WordFilter.h"
 #include "EventMgr.h"
 #include "EventableObject.h"
@@ -160,7 +160,7 @@
 #include "MainServerDefines.h"
 #include "WorldRunnable.h"
 
-#include "../arcemu-shared/Storage.h"
+#include "../wowice-shared/Storage.h"
 #include "ObjectStorage.h"
 #include "DatabaseCleaner.h"
 #include "DayWatcherThread.h"
