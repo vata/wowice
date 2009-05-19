@@ -21,7 +21,7 @@
 		<Configuration
 			Name="Debug|Win32"
 			OutputDirectory=".\..\..\bin\Debug"
-			IntermediateDirectory=".\arcemu-world___Win32_Debug"
+			IntermediateDirectory=".\wowice-world___Win32_Debug"
 			ConfigurationType="1"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
@@ -47,7 +47,7 @@
 				AdditionalOptions="/Zm256 /bigobj"
 				Optimization="0"
 				InlineFunctionExpansion="0"
-				AdditionalIncludeDirectories="&quot;..\..\src\arcemu-shared&quot;;&quot;..\..\src\arcemu-world\Collision\vmap&quot;;&quot;..\..\src\arcemu-world\Collision\g3dlite&quot;;&quot;..\..\extras\arcemu-windows-libraries\VC\include&quot;"
+				AdditionalIncludeDirectories="&quot;..\..\src\wowice-shared&quot;;&quot;..\..\src\wowice-world\Collision\vmap&quot;;&quot;..\..\src\wowice-world\Collision\g3dlite&quot;;&quot;..\..\extras\wowice-windows-libraries\VC\include&quot;"
 				PreprocessorDefinitions="WIN32;_DEBUG;_LIB;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_WARNINGS;_CRT_SECURE_NO_DEPRECATE"
 				MinimalRebuild="false"
 				ExceptionHandling="2"
@@ -85,12 +85,12 @@
 				Name="VCLinkerTool"
 				AdditionalDependencies="msvcrtd.lib ws2_32.lib libmysql_debug_win32.lib libeay32_win32.lib dbghelp.lib zlib_debug_win32.lib pcre_debug_win32.lib"
 				LinkIncremental="1"
-				AdditionalLibraryDirectories="..\..\extras\collision\collision_dll\Debug;&quot;..\..\extras\arcemu-windows-libraries\VC\lib&quot;"
+				AdditionalLibraryDirectories="..\..\extras\collision\collision_dll\Debug;&quot;..\..\extras\wowice-windows-libraries\VC\lib&quot;"
 				IgnoreAllDefaultLibraries="false"
 				IgnoreDefaultLibraryNames="msvcrt.lib"
 				GenerateDebugInformation="true"
 				GenerateMapFile="true"
-				MapFileName="$(TargetDir)arcemu-world.map"
+				MapFileName="$(TargetDir)wowice-world.map"
 				MapExports="true"
 				RandomizedBaseAddress="1"
 				DataExecutionPrevention="0"
@@ -121,7 +121,7 @@
 		<Configuration
 			Name="Release|Win32"
 			OutputDirectory=".\..\..\bin\Release"
-			IntermediateDirectory=".\arcemu-world___Win32_Release"
+			IntermediateDirectory=".\wowice-world___Win32_Release"
 			ConfigurationType="1"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
@@ -152,7 +152,7 @@
 				FavorSizeOrSpeed="1"
 				OmitFramePointers="true"
 				WholeProgramOptimization="true"
-				AdditionalIncludeDirectories="&quot;..\..\src\boost&quot;;&quot;..\..\src\arcemu-shared&quot;;&quot;..\..\src\arcemu-world\Collision\vmap&quot;;&quot;..\..\src\arcemu-world\Collision\g3dlite&quot;;&quot;..\..\extras\arcemu-windows-libraries\VC\include&quot;"
+				AdditionalIncludeDirectories="&quot;..\..\src\boost&quot;;&quot;..\..\src\wowice-shared&quot;;&quot;..\..\src\wowice-world\Collision\vmap&quot;;&quot;..\..\src\wowice-world\Collision\g3dlite&quot;;&quot;..\..\extras\wowice-windows-libraries\VC\include&quot;"
 				PreprocessorDefinitions="_HAS_ITERATOR_DEBUGGING=0;WIN32;NDEBUG;_LIB;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_WARNINGS"
 				StringPooling="true"
 				MinimalRebuild="false"
@@ -187,7 +187,7 @@
 				Name="VCLinkerTool"
 				AdditionalDependencies="ws2_32.lib msvcrt.lib libmysql_release_win32.lib libeay32_win32.lib dbghelp.lib zlib_release_win32.lib pcre_release_win32.lib"
 				LinkIncremental="0"
-				AdditionalLibraryDirectories="..\..\extras\collision\collision_dll\Release;&quot;..\..\extras\arcemu-windows-libraries\VC\lib&quot;"
+				AdditionalLibraryDirectories="..\..\extras\collision\collision_dll\Release;&quot;..\..\extras\wowice-windows-libraries\VC\lib&quot;"
 				IgnoreDefaultLibraryNames="msvcrtd.lib"
 				GenerateDebugInformation="true"
 				GenerateMapFile="false"
@@ -223,7 +223,7 @@
 		<Configuration
 			Name="Debug|x64"
 			OutputDirectory=".\..\..\bin\Debug_x64"
-			IntermediateDirectory=".\arcemu-world___Win32_Debug_x64"
+			IntermediateDirectory=".\wowice-world___Win32_Debug_x64"
 			ConfigurationType="1"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
@@ -250,7 +250,7 @@
 				AdditionalOptions="/Zm256 /bigobj"
 				Optimization="0"
 				InlineFunctionExpansion="2"
-				AdditionalIncludeDirectories="&quot;..\..\src\boost&quot;;&quot;..\..\src\arcemu-shared&quot;;&quot;..\..\extras\arcemu-windows-libraries\VC\include&quot;"
+				AdditionalIncludeDirectories="&quot;..\..\src\boost&quot;;&quot;..\..\src\wowice-shared&quot;;&quot;..\..\extras\wowice-windows-libraries\VC\include&quot;"
 				PreprocessorDefinitions="WIN32,_DEBUG,_LIB;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_WARNINGS;X64"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -285,7 +285,7 @@
 				Name="VCLinkerTool"
 				AdditionalDependencies="ws2_32.lib libmysql_debug_x64.lib libeay32_win64.lib dbghelp.lib zlib_debug_x64.lib pcre_debug_x64.lib"
 				LinkIncremental="2"
-				AdditionalLibraryDirectories="..\..\extras\collision\collision_dll\x64\Debug;..\..\extras\arcemu-windows-libraries\VC\lib"
+				AdditionalLibraryDirectories="..\..\extras\collision\collision_dll\x64\Debug;..\..\extras\wowice-windows-libraries\VC\lib"
 				GenerateDebugInformation="true"
 				RandomizedBaseAddress="1"
 				DataExecutionPrevention="0"
@@ -317,7 +317,7 @@
 		<Configuration
 			Name="Release|x64"
 			OutputDirectory=".\..\..\bin\Release_x64"
-			IntermediateDirectory=".\arcemu-world___Win32_Release_x64"
+			IntermediateDirectory=".\wowice-world___Win32_Release_x64"
 			ConfigurationType="1"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
@@ -346,7 +346,7 @@
 				InlineFunctionExpansion="2"
 				FavorSizeOrSpeed="0"
 				WholeProgramOptimization="false"
-				AdditionalIncludeDirectories="&quot;..\..\src\arcemu-shared&quot;;&quot;..\..\src\arcemu-world\Collision\vmap&quot;;&quot;..\..\src\arcemu-world\Collision\g3dlite&quot;;&quot;..\..\extras\arcemu-windows-libraries\VC\include&quot;"
+				AdditionalIncludeDirectories="&quot;..\..\src\wowice-shared&quot;;&quot;..\..\src\wowice-world\Collision\vmap&quot;;&quot;..\..\src\wowice-world\Collision\g3dlite&quot;;&quot;..\..\extras\wowice-windows-libraries\VC\include&quot;"
 				PreprocessorDefinitions="_HAS_ITERATOR_DEBUGGING=0;WIN32;NDEBUG;_LIB;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_WARNINGS;_CRT_SECURE_NO_DEPRECATE;X64"
 				StringPooling="true"
 				MinimalRebuild="false"
@@ -380,7 +380,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="ws2_32.lib libmysql_release_x64.lib libeay32_win64.lib dbghelp.lib zlib_release_x64.lib pcre_release_x64.lib"
-				AdditionalLibraryDirectories="..\..\extras\collision\collision_dll\x64\Release;..\..\extras\arcemu-windows-libraries\VC\lib"
+				AdditionalLibraryDirectories="..\..\extras\collision\collision_dll\x64\Release;..\..\extras\wowice-windows-libraries\VC\lib"
 				GenerateDebugInformation="true"
 				RandomizedBaseAddress="1"
 				DataExecutionPrevention="0"
@@ -417,35 +417,35 @@
 			Name="Chat, Channel, WayPoints"
 			>
 			<File
-				RelativePath="..\..\src\arcemu-world\Channel.cpp"
+				RelativePath="..\..\src\wowice-world\Channel.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-world\Channel.h"
+				RelativePath="..\..\src\wowice-world\Channel.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-world\ChannelMgr.h"
+				RelativePath="..\..\src\wowice-world\ChannelMgr.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-world\Chat.cpp"
+				RelativePath="..\..\src\wowice-world\Chat.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-world\Chat.h"
+				RelativePath="..\..\src\wowice-world\Chat.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-world\WayPoints.cpp"
+				RelativePath="..\..\src\wowice-world\WayPoints.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-world\WordFilter.cpp"
+				RelativePath="..\..\src\wowice-world\WordFilter.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-world\WordFilter.h"
+				RelativePath="..\..\src\wowice-world\WordFilter.h"
 				>
 			</File>
 		</Filter>
@@ -453,11 +453,11 @@
 			Name="CreatureAI"
 			>
 			<File
-				RelativePath="..\..\src\arcemu-world\AIInterface.cpp"
+				RelativePath="..\..\src\wowice-world\AIInterface.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-world\AIInterface.h"
+				RelativePath="..\..\src\wowice-world\AIInterface.h"
 				>
 			</File>
 		</Filter>
@@ -465,19 +465,19 @@
 			Name="Database, Storage"
 			>
 			<File
-				RelativePath="..\..\src\arcemu-world\DatabaseCleaner.cpp"
+				RelativePath="..\..\src\wowice-world\DatabaseCleaner.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-world\DatabaseCleaner.h"
+				RelativePath="..\..\src\wowice-world\DatabaseCleaner.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-world\ObjectStorage.cpp"
+				RelativePath="..\..\src\wowice-world\ObjectStorage.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-world\ObjectStorage.h"
+				RelativePath="..\..\src\wowice-world\ObjectStorage.h"
 				>
 			</File>
 		</Filter>
@@ -485,88 +485,88 @@
 			Name="EventableObject"
 			>
 			<File
-				RelativePath="..\..\src\arcemu-world\EventableObject.cpp"
+				RelativePath="..\..\src\wowice-world\EventableObject.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-world\EventableObject.h"
+				RelativePath="..\..\src\wowice-world\EventableObject.h"
 				>
 			</File>
 			<Filter
 				Name="Object"
 				>
 				<File
-					RelativePath="..\..\src\arcemu-world\Object.cpp"
+					RelativePath="..\..\src\wowice-world\Object.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\src\arcemu-world\Object.h"
+					RelativePath="..\..\src\wowice-world\Object.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\src\arcemu-world\UpdateFields.h"
+					RelativePath="..\..\src\wowice-world\UpdateFields.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\src\arcemu-world\UpdateMask.h"
+					RelativePath="..\..\src\wowice-world\UpdateMask.h"
 					>
 				</File>
 				<Filter
 					Name="Unit"
 					>
 					<File
-						RelativePath="..\..\src\arcemu-world\Stats.cpp"
+						RelativePath="..\..\src\wowice-world\Stats.cpp"
 						>
 					</File>
 					<File
-						RelativePath="..\..\src\arcemu-world\Stats.h"
+						RelativePath="..\..\src\wowice-world\Stats.h"
 						>
 					</File>
 					<File
-						RelativePath="..\..\src\arcemu-world\Unit.cpp"
+						RelativePath="..\..\src\wowice-world\Unit.cpp"
 						>
 					</File>
 					<File
-						RelativePath="..\..\src\arcemu-world\Unit.h"
+						RelativePath="..\..\src\wowice-world\Unit.h"
 						>
 					</File>
 					<Filter
 						Name="Player"
 						>
 						<File
-							RelativePath="..\..\src\arcemu-world\Group.cpp"
+							RelativePath="..\..\src\wowice-world\Group.cpp"
 							>
 						</File>
 						<File
-							RelativePath="..\..\src\arcemu-world\Group.h"
+							RelativePath="..\..\src\wowice-world\Group.h"
 							>
 						</File>
 						<File
-							RelativePath="..\..\src\arcemu-world\Guild.cpp"
+							RelativePath="..\..\src\wowice-world\Guild.cpp"
 							>
 						</File>
 						<File
-							RelativePath="..\..\src\arcemu-world\Guild.h"
+							RelativePath="..\..\src\wowice-world\Guild.h"
 							>
 						</File>
 						<File
-							RelativePath="..\..\src\arcemu-world\Player.cpp"
+							RelativePath="..\..\src\wowice-world\Player.cpp"
 							>
 						</File>
 						<File
-							RelativePath="..\..\src\arcemu-world\Player.h"
+							RelativePath="..\..\src\wowice-world\Player.h"
 							>
 						</File>
 						<File
-							RelativePath="..\..\src\arcemu-world\PlayerPacketWrapper.cpp"
+							RelativePath="..\..\src\wowice-world\PlayerPacketWrapper.cpp"
 							>
 						</File>
 						<File
-							RelativePath="..\..\src\arcemu-world\SpeedDetector.cpp"
+							RelativePath="..\..\src\wowice-world\SpeedDetector.cpp"
 							>
 						</File>
 						<File
-							RelativePath="..\..\src\arcemu-world\SpeedDetector.h"
+							RelativePath="..\..\src\wowice-world\SpeedDetector.h"
 							>
 						</File>
 					</Filter>
@@ -574,27 +574,27 @@
 						Name="Creature"
 						>
 						<File
-							RelativePath="..\..\src\arcemu-world\Creature.cpp"
+							RelativePath="..\..\src\wowice-world\Creature.cpp"
 							>
 						</File>
 						<File
-							RelativePath="..\..\src\arcemu-world\Creature.h"
+							RelativePath="..\..\src\wowice-world\Creature.h"
 							>
 						</File>
 						<File
-							RelativePath="..\..\src\arcemu-world\Pet.cpp"
+							RelativePath="..\..\src\wowice-world\Pet.cpp"
 							>
 						</File>
 						<File
-							RelativePath="..\..\src\arcemu-world\Pet.h"
+							RelativePath="..\..\src\wowice-world\Pet.h"
 							>
 						</File>
 						<File
-							RelativePath="..\..\src\arcemu-world\Vehicle.cpp"
+							RelativePath="..\..\src\wowice-world\Vehicle.cpp"
 							>
 						</File>
 						<File
-							RelativePath="..\..\src\arcemu-world\Vehicle.h"
+							RelativePath="..\..\src\wowice-world\Vehicle.h"
 							>
 						</File>
 					</Filter>
@@ -603,11 +603,11 @@
 					Name="Corpse"
 					>
 					<File
-						RelativePath="..\..\src\arcemu-world\Corpse.cpp"
+						RelativePath="..\..\src\wowice-world\Corpse.cpp"
 						>
 					</File>
 					<File
-						RelativePath="..\..\src\arcemu-world\Corpse.h"
+						RelativePath="..\..\src\wowice-world\Corpse.h"
 						>
 					</File>
 				</Filter>
@@ -615,11 +615,11 @@
 					Name="DynamicObject"
 					>
 					<File
-						RelativePath="..\..\src\arcemu-world\DynamicObject.cpp"
+						RelativePath="..\..\src\wowice-world\DynamicObject.cpp"
 						>
 					</File>
 					<File
-						RelativePath="..\..\src\arcemu-world\DynamicObject.h"
+						RelativePath="..\..\src\wowice-world\DynamicObject.h"
 						>
 					</File>
 				</Filter>
@@ -627,19 +627,19 @@
 					Name="GameObject, Transporter"
 					>
 					<File
-						RelativePath="..\..\src\arcemu-world\GameObject.cpp"
+						RelativePath="..\..\src\wowice-world\GameObject.cpp"
 						>
 					</File>
 					<File
-						RelativePath="..\..\src\arcemu-world\GameObject.h"
+						RelativePath="..\..\src\wowice-world\GameObject.h"
 						>
 					</File>
 					<File
-						RelativePath="..\..\src\arcemu-world\TransporterHandler.cpp"
+						RelativePath="..\..\src\wowice-world\TransporterHandler.cpp"
 						>
 					</File>
 					<File
-						RelativePath="..\..\src\arcemu-world\TransporterHandler.h"
+						RelativePath="..\..\src\wowice-world\TransporterHandler.h"
 						>
 					</File>
 				</Filter>
@@ -647,31 +647,31 @@
 					Name="Item"
 					>
 					<File
-						RelativePath="..\..\src\arcemu-world\Container.cpp"
+						RelativePath="..\..\src\wowice-world\Container.cpp"
 						>
 					</File>
 					<File
-						RelativePath="..\..\src\arcemu-world\Container.h"
+						RelativePath="..\..\src\wowice-world\Container.h"
 						>
 					</File>
 					<File
-						RelativePath="..\..\src\arcemu-world\Item.cpp"
+						RelativePath="..\..\src\wowice-world\Item.cpp"
 						>
 					</File>
 					<File
-						RelativePath="..\..\src\arcemu-world\Item.h"
+						RelativePath="..\..\src\wowice-world\Item.h"
 						>
 					</File>
 					<File
-						RelativePath="..\..\src\arcemu-world\ItemInterface.cpp"
+						RelativePath="..\..\src\wowice-world\ItemInterface.cpp"
 						>
 					</File>
 					<File
-						RelativePath="..\..\src\arcemu-world\ItemInterface.h"
+						RelativePath="..\..\src\wowice-world\ItemInterface.h"
 						>
 					</File>
 					<File
-						RelativePath="..\..\src\arcemu-world\ItemPrototype.h"
+						RelativePath="..\..\src\wowice-world\ItemPrototype.h"
 						>
 					</File>
 				</Filter>
@@ -679,11 +679,11 @@
 					Name="ObjectContainer"
 					>
 					<File
-						RelativePath="..\..\src\arcemu-world\ObjectContainer.cpp"
+						RelativePath="..\..\src\wowice-world\ObjectContainer.cpp"
 						>
 					</File>
 					<File
-						RelativePath="..\..\src\arcemu-world\ObjectContainer.h"
+						RelativePath="..\..\src\wowice-world\ObjectContainer.h"
 						>
 					</File>
 				</Filter>
@@ -692,11 +692,11 @@
 				Name="Aura"
 				>
 				<File
-					RelativePath="..\..\src\arcemu-world\SpellAuras.cpp"
+					RelativePath="..\..\src\wowice-world\SpellAuras.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\src\arcemu-world\SpellAuras.h"
+					RelativePath="..\..\src\wowice-world\SpellAuras.h"
 					>
 				</File>
 			</Filter>
@@ -704,70 +704,70 @@
 				Name="CBattlegrounds, CBattlegroundManager"
 				>
 				<File
-					RelativePath="..\..\src\arcemu-world\AlteracValley.cpp"
+					RelativePath="..\..\src\wowice-world\AlteracValley.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\src\arcemu-world\AlteracValley.h"
+					RelativePath="..\..\src\wowice-world\AlteracValley.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\src\arcemu-world\ArathiBasin.cpp"
+					RelativePath="..\..\src\wowice-world\ArathiBasin.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\src\arcemu-world\ArathiBasin.h"
+					RelativePath="..\..\src\wowice-world\ArathiBasin.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\src\arcemu-world\BattlegroundMgr.cpp"
+					RelativePath="..\..\src\wowice-world\BattlegroundMgr.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\src\arcemu-world\BattlegroundMgr.h"
+					RelativePath="..\..\src\wowice-world\BattlegroundMgr.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\src\arcemu-world\EyeOfTheStorm.cpp"
+					RelativePath="..\..\src\wowice-world\EyeOfTheStorm.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\src\arcemu-world\EyeOfTheStorm.h"
+					RelativePath="..\..\src\wowice-world\EyeOfTheStorm.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\src\arcemu-world\StrandOfTheAncient.cpp"
+					RelativePath="..\..\src\wowice-world\StrandOfTheAncient.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\src\arcemu-world\StrandOfTheAncient.h"
+					RelativePath="..\..\src\wowice-world\StrandOfTheAncient.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\src\arcemu-world\WarsongGulch.cpp"
+					RelativePath="..\..\src\wowice-world\WarsongGulch.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\src\arcemu-world\WarsongGulch.h"
+					RelativePath="..\..\src\wowice-world\WarsongGulch.h"
 					>
 				</File>
 				<Filter
 					Name="Arena"
 					>
 					<File
-						RelativePath="..\..\src\arcemu-world\Arenas.cpp"
+						RelativePath="..\..\src\wowice-world\Arenas.cpp"
 						>
 					</File>
 					<File
-						RelativePath="..\..\src\arcemu-world\Arenas.h"
+						RelativePath="..\..\src\wowice-world\Arenas.h"
 						>
 					</File>
 					<File
-						RelativePath="..\..\src\arcemu-world\ArenaTeam.cpp"
+						RelativePath="..\..\src\wowice-world\ArenaTeam.cpp"
 						>
 					</File>
 					<File
-						RelativePath="..\..\src\arcemu-world\ArenaTeam.h"
+						RelativePath="..\..\src\wowice-world\ArenaTeam.h"
 						>
 					</File>
 				</Filter>
@@ -776,11 +776,11 @@
 				Name="LfgMgr"
 				>
 				<File
-					RelativePath="..\..\src\arcemu-world\LfgMgr.cpp"
+					RelativePath="..\..\src\wowice-world\LfgMgr.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\src\arcemu-world\LfgMgr.h"
+					RelativePath="..\..\src\wowice-world\LfgMgr.h"
 					>
 				</File>
 			</Filter>
@@ -788,11 +788,11 @@
 				Name="LootRoll"
 				>
 				<File
-					RelativePath="..\..\src\arcemu-world\LootMgr.cpp"
+					RelativePath="..\..\src\wowice-world\LootMgr.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\src\arcemu-world\LootMgr.h"
+					RelativePath="..\..\src\wowice-world\LootMgr.h"
 					>
 				</File>
 			</Filter>
@@ -800,11 +800,11 @@
 				Name="MailSystem"
 				>
 				<File
-					RelativePath="..\..\src\arcemu-world\MailSystem.cpp"
+					RelativePath="..\..\src\wowice-world\MailSystem.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\src\arcemu-world\MailSystem.h"
+					RelativePath="..\..\src\wowice-world\MailSystem.h"
 					>
 				</File>
 			</Filter>
@@ -812,47 +812,47 @@
 				Name="MapMgr"
 				>
 				<File
-					RelativePath="..\..\src\arcemu-world\CellHandler.h"
+					RelativePath="..\..\src\wowice-world\CellHandler.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\src\arcemu-world\CollideInterface.cpp"
+					RelativePath="..\..\src\wowice-world\CollideInterface.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\src\arcemu-world\CollideInterface.h"
+					RelativePath="..\..\src\wowice-world\CollideInterface.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\src\arcemu-world\Map.cpp"
+					RelativePath="..\..\src\wowice-world\Map.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\src\arcemu-world\Map.h"
+					RelativePath="..\..\src\wowice-world\Map.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\src\arcemu-world\MapCell.cpp"
+					RelativePath="..\..\src\wowice-world\MapCell.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\src\arcemu-world\MapCell.h"
+					RelativePath="..\..\src\wowice-world\MapCell.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\src\arcemu-world\MapMgr.cpp"
+					RelativePath="..\..\src\wowice-world\MapMgr.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\src\arcemu-world\MapMgr.h"
+					RelativePath="..\..\src\wowice-world\MapMgr.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\src\arcemu-world\MapScriptInterface.cpp"
+					RelativePath="..\..\src\wowice-world\MapScriptInterface.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\src\arcemu-world\MapScriptInterface.h"
+					RelativePath="..\..\src\wowice-world\MapScriptInterface.h"
 					>
 				</File>
 			</Filter>
@@ -860,11 +860,11 @@
 				Name="ObjectMgr"
 				>
 				<File
-					RelativePath="..\..\src\arcemu-world\ObjectMgr.cpp"
+					RelativePath="..\..\src\wowice-world\ObjectMgr.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\src\arcemu-world\ObjectMgr.h"
+					RelativePath="..\..\src\wowice-world\ObjectMgr.h"
 					>
 				</File>
 			</Filter>
@@ -872,11 +872,11 @@
 				Name="QuestLogEntry"
 				>
 				<File
-					RelativePath="..\..\src\arcemu-world\Quest.cpp"
+					RelativePath="..\..\src\wowice-world\Quest.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\src\arcemu-world\Quest.h"
+					RelativePath="..\..\src\wowice-world\Quest.h"
 					>
 				</File>
 			</Filter>
@@ -884,11 +884,11 @@
 				Name="WeatherInfo"
 				>
 				<File
-					RelativePath="..\..\src\arcemu-world\WeatherMgr.cpp"
+					RelativePath="..\..\src\wowice-world\WeatherMgr.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\src\arcemu-world\WeatherMgr.h"
+					RelativePath="..\..\src\wowice-world\WeatherMgr.h"
 					>
 				</File>
 			</Filter>
@@ -896,19 +896,19 @@
 				Name="World"
 				>
 				<File
-					RelativePath="..\..\src\arcemu-world\World.cpp"
+					RelativePath="..\..\src\wowice-world\World.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\src\arcemu-world\World.h"
+					RelativePath="..\..\src\wowice-world\World.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\src\arcemu-world\WorldState.cpp"
+					RelativePath="..\..\src\wowice-world\WorldState.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\src\arcemu-world\WorldState.h"
+					RelativePath="..\..\src\wowice-world\WorldState.h"
 					>
 				</File>
 			</Filter>
@@ -917,7 +917,7 @@
 			Name="Launcher"
 			>
 			<File
-				RelativePath="..\..\src\arcemu-shared\CoreMemoryAllocator_Core.cpp"
+				RelativePath="..\..\src\wowice-shared\CoreMemoryAllocator_Core.cpp"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -953,42 +953,42 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-world\Main.cpp"
+				RelativePath="..\..\src\wowice-world\Main.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-world\Master.cpp"
+				RelativePath="..\..\src\wowice-world\Master.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-world\Master.h"
+				RelativePath="..\..\src\wowice-world\Master.h"
 				>
 			</File>
 			<Filter
 				Name="Console"
 				>
 				<File
-					RelativePath="..\..\src\arcemu-world\BaseConsole.h"
+					RelativePath="..\..\src\wowice-world\BaseConsole.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\src\arcemu-world\CConsole.cpp"
+					RelativePath="..\..\src\wowice-world\CConsole.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\src\arcemu-world\CConsole.h"
+					RelativePath="..\..\src\wowice-world\CConsole.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\src\arcemu-world\ConsoleCommands.cpp"
+					RelativePath="..\..\src\wowice-world\ConsoleCommands.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\src\arcemu-world\ConsoleCommands.h"
+					RelativePath="..\..\src\wowice-world\ConsoleCommands.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\src\arcemu-world\ConsoleListener.cpp"
+					RelativePath="..\..\src\wowice-world\ConsoleListener.cpp"
 					>
 				</File>
 			</Filter>
@@ -997,102 +997,102 @@
 			Name="Manager Classes"
 			>
 			<File
-				RelativePath="..\..\src\arcemu-world\AchievementMgr.cpp"
+				RelativePath="..\..\src\wowice-world\AchievementMgr.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-world\AchievementMgr.h"
+				RelativePath="..\..\src\wowice-world\AchievementMgr.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-world\AddonMgr.cpp"
+				RelativePath="..\..\src\wowice-world\AddonMgr.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-world\AddonMgr.h"
+				RelativePath="..\..\src\wowice-world\AddonMgr.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-world\EventMgr.cpp"
+				RelativePath="..\..\src\wowice-world\EventMgr.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-world\EventMgr.h"
+				RelativePath="..\..\src\wowice-world\EventMgr.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-world\LocalizationMgr.cpp"
+				RelativePath="..\..\src\wowice-world\LocalizationMgr.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-world\LocalizationMgr.h"
+				RelativePath="..\..\src\wowice-world\LocalizationMgr.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-world\QuestMgr.cpp"
+				RelativePath="..\..\src\wowice-world\QuestMgr.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-world\QuestMgr.h"
+				RelativePath="..\..\src\wowice-world\QuestMgr.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-world\ScriptMgr.cpp"
+				RelativePath="..\..\src\wowice-world\ScriptMgr.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-world\ScriptMgr.h"
+				RelativePath="..\..\src\wowice-world\ScriptMgr.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-world\ScriptSetup.h"
+				RelativePath="..\..\src\wowice-world\ScriptSetup.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-world\SkillNameMgr.h"
+				RelativePath="..\..\src\wowice-world\SkillNameMgr.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-world\TaxiMgr.cpp"
+				RelativePath="..\..\src\wowice-world\TaxiMgr.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-world\TaxiMgr.h"
+				RelativePath="..\..\src\wowice-world\TaxiMgr.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-world\TerrainMgr.cpp"
+				RelativePath="..\..\src\wowice-world\TerrainMgr.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-world\TerrainMgr.h"
+				RelativePath="..\..\src\wowice-world\TerrainMgr.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-world\WorldCreator.cpp"
+				RelativePath="..\..\src\wowice-world\WorldCreator.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-world\WorldCreator.h"
+				RelativePath="..\..\src\wowice-world\WorldCreator.h"
 				>
 			</File>
 			<Filter
 				Name="AuctionHouse"
 				>
 				<File
-					RelativePath="..\..\src\arcemu-world\AuctionHouse.cpp"
+					RelativePath="..\..\src\wowice-world\AuctionHouse.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\src\arcemu-world\AuctionHouse.h"
+					RelativePath="..\..\src\wowice-world\AuctionHouse.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\src\arcemu-world\AuctionMgr.cpp"
+					RelativePath="..\..\src\wowice-world\AuctionMgr.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\src\arcemu-world\AuctionMgr.h"
+					RelativePath="..\..\src\wowice-world\AuctionMgr.h"
 					>
 				</File>
 			</Filter>
@@ -1101,54 +1101,54 @@
 			Name="Networking, Handlers"
 			>
 			<File
-				RelativePath="..\..\src\arcemu-world\NameTables.h"
+				RelativePath="..\..\src\wowice-world\NameTables.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-world\Opcodes.cpp"
+				RelativePath="..\..\src\wowice-world\Opcodes.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-world\Opcodes.h"
+				RelativePath="..\..\src\wowice-world\Opcodes.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-world\Packets.h"
+				RelativePath="..\..\src\wowice-world\Packets.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-world\VoiceChatClientSocket.cpp"
+				RelativePath="..\..\src\wowice-world\VoiceChatClientSocket.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-world\VoiceChatClientSocket.h"
+				RelativePath="..\..\src\wowice-world\VoiceChatClientSocket.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-world\WorldSocket.cpp"
+				RelativePath="..\..\src\wowice-world\WorldSocket.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-world\WorldSocket.h"
+				RelativePath="..\..\src\wowice-world\WorldSocket.h"
 				>
 			</File>
 			<Filter
 				Name="LogonComm"
 				>
 				<File
-					RelativePath="..\..\src\arcemu-world\LogonCommClient.cpp"
+					RelativePath="..\..\src\wowice-world\LogonCommClient.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\src\arcemu-world\LogonCommClient.h"
+					RelativePath="..\..\src\wowice-world\LogonCommClient.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\src\arcemu-world\LogonCommHandler.cpp"
+					RelativePath="..\..\src\wowice-world\LogonCommHandler.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\src\arcemu-world\LogonCommHandler.h"
+					RelativePath="..\..\src\wowice-world\LogonCommHandler.h"
 					>
 				</File>
 			</Filter>
@@ -1156,119 +1156,119 @@
 				Name="Handlers"
 				>
 				<File
-					RelativePath="..\..\src\arcemu-world\BattlegroundHandler.cpp"
+					RelativePath="..\..\src\wowice-world\BattlegroundHandler.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\src\arcemu-world\ChannelHandler.cpp"
+					RelativePath="..\..\src\wowice-world\ChannelHandler.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\src\arcemu-world\CharacterHandler.cpp"
+					RelativePath="..\..\src\wowice-world\CharacterHandler.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\src\arcemu-world\ChatHandler.cpp"
+					RelativePath="..\..\src\wowice-world\ChatHandler.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\src\arcemu-world\CombatHandler.cpp"
+					RelativePath="..\..\src\wowice-world\CombatHandler.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\src\arcemu-world\DuelHandler.cpp"
+					RelativePath="..\..\src\wowice-world\DuelHandler.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\src\arcemu-world\GMTicket.cpp"
+					RelativePath="..\..\src\wowice-world\GMTicket.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\src\arcemu-world\GroupHandler.cpp"
+					RelativePath="..\..\src\wowice-world\GroupHandler.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\src\arcemu-world\GuildHandler.cpp"
+					RelativePath="..\..\src\wowice-world\GuildHandler.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\src\arcemu-world\HonorHandler.cpp"
+					RelativePath="..\..\src\wowice-world\HonorHandler.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\src\arcemu-world\HonorHandler.h"
+					RelativePath="..\..\src\wowice-world\HonorHandler.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\src\arcemu-world\ItemHandler.cpp"
+					RelativePath="..\..\src\wowice-world\ItemHandler.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\src\arcemu-world\LfgHandler.cpp"
+					RelativePath="..\..\src\wowice-world\LfgHandler.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\src\arcemu-world\MiscHandler.cpp"
+					RelativePath="..\..\src\wowice-world\MiscHandler.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\src\arcemu-world\MovementHandler.cpp"
+					RelativePath="..\..\src\wowice-world\MovementHandler.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\src\arcemu-world\NPCHandler.cpp"
+					RelativePath="..\..\src\wowice-world\NPCHandler.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\src\arcemu-world\NPCHandler.h"
+					RelativePath="..\..\src\wowice-world\NPCHandler.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\src\arcemu-world\PetHandler.cpp"
+					RelativePath="..\..\src\wowice-world\PetHandler.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\src\arcemu-world\QueryHandler.cpp"
+					RelativePath="..\..\src\wowice-world\QueryHandler.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\src\arcemu-world\QuestHandler.cpp"
+					RelativePath="..\..\src\wowice-world\QuestHandler.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\src\arcemu-world\RaidHandler.cpp"
+					RelativePath="..\..\src\wowice-world\RaidHandler.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\src\arcemu-world\ReputationHandler.cpp"
+					RelativePath="..\..\src\wowice-world\ReputationHandler.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\src\arcemu-world\SkillHandler.cpp"
+					RelativePath="..\..\src\wowice-world\SkillHandler.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\src\arcemu-world\SocialHandler.cpp"
+					RelativePath="..\..\src\wowice-world\SocialHandler.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\src\arcemu-world\SpellHandler.cpp"
+					RelativePath="..\..\src\wowice-world\SpellHandler.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\src\arcemu-world\TaxiHandler.cpp"
+					RelativePath="..\..\src\wowice-world\TaxiHandler.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\src\arcemu-world\TradeHandler.cpp"
+					RelativePath="..\..\src\wowice-world\TradeHandler.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\src\arcemu-world\VoiceChatHandler.cpp"
+					RelativePath="..\..\src\wowice-world\VoiceChatHandler.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\src\arcemu-world\VoiceChatHandler.h"
+					RelativePath="..\..\src\wowice-world\VoiceChatHandler.h"
 					>
 				</File>
 			</Filter>
@@ -1276,19 +1276,19 @@
 				Name="WorldSession"
 				>
 				<File
-					RelativePath="..\..\src\arcemu-world\AreaTrigger.cpp"
+					RelativePath="..\..\src\wowice-world\AreaTrigger.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\src\arcemu-world\AreaTrigger.h"
+					RelativePath="..\..\src\wowice-world\AreaTrigger.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\src\arcemu-world\WorldSession.cpp"
+					RelativePath="..\..\src\wowice-world\WorldSession.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\src\arcemu-world\WorldSession.h"
+					RelativePath="..\..\src\wowice-world\WorldSession.h"
 					>
 				</File>
 			</Filter>
@@ -1297,27 +1297,27 @@
 			Name="Spells"
 			>
 			<File
-				RelativePath="..\..\src\arcemu-world\Spell.cpp"
+				RelativePath="..\..\src\wowice-world\Spell.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-world\Spell.h"
+				RelativePath="..\..\src\wowice-world\Spell.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-world\SpellEffects.cpp"
+				RelativePath="..\..\src\wowice-world\SpellEffects.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-world\SpellFailure.h"
+				RelativePath="..\..\src\wowice-world\SpellFailure.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-world\SpellFixes.cpp"
+				RelativePath="..\..\src\wowice-world\SpellFixes.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-world\SpellTarget.cpp"
+				RelativePath="..\..\src\wowice-world\SpellTarget.cpp"
 				>
 			</File>
 		</Filter>
@@ -1325,27 +1325,27 @@
 			Name="Threading"
 			>
 			<File
-				RelativePath="..\..\src\arcemu-world\CommonScheduleThread.cpp"
+				RelativePath="..\..\src\wowice-world\CommonScheduleThread.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-world\CommonScheduleThread.h"
+				RelativePath="..\..\src\wowice-world\CommonScheduleThread.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-world\DayWatcherThread.cpp"
+				RelativePath="..\..\src\wowice-world\DayWatcherThread.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-world\DayWatcherThread.h"
+				RelativePath="..\..\src\wowice-world\DayWatcherThread.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-world\WorldRunnable.cpp"
+				RelativePath="..\..\src\wowice-world\WorldRunnable.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-world\WorldRunnable.h"
+				RelativePath="..\..\src\wowice-world\WorldRunnable.h"
 				>
 			</File>
 		</Filter>
@@ -1353,72 +1353,72 @@
 			Name="GM Commands"
 			>
 			<File
-				RelativePath="..\..\src\arcemu-world\BattlegroundCommands.cpp"
+				RelativePath="..\..\src\wowice-world\BattlegroundCommands.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-world\debugcmds.cpp"
+				RelativePath="..\..\src\wowice-world\debugcmds.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-world\GMTicketCommands.cpp"
+				RelativePath="..\..\src\wowice-world\GMTicketCommands.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-world\InstanceCommands.cpp"
+				RelativePath="..\..\src\wowice-world\InstanceCommands.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-world\Level0.cpp"
+				RelativePath="..\..\src\wowice-world\Level0.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-world\Level1.cpp"
+				RelativePath="..\..\src\wowice-world\Level1.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-world\Level2.cpp"
+				RelativePath="..\..\src\wowice-world\Level2.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-world\Level3.cpp"
+				RelativePath="..\..\src\wowice-world\Level3.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-world\QuestCommands.cpp"
+				RelativePath="..\..\src\wowice-world\QuestCommands.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-world\RecallCommands.cpp"
+				RelativePath="..\..\src\wowice-world\RecallCommands.cpp"
 				>
 			</File>
 		</Filter>
 		<File
-			RelativePath="..\..\src\arcemu-world\BufferPools\BufferPools.cpp"
+			RelativePath="..\..\src\wowice-world\BufferPools\BufferPools.cpp"
 			>
 		</File>
 		<File
-			RelativePath="..\..\src\arcemu-world\BufferPools\BufferPools.h"
+			RelativePath="..\..\src\wowice-world\BufferPools\BufferPools.h"
 			>
 		</File>
 		<File
-			RelativePath="..\..\src\arcemu-world\Definitions.h"
+			RelativePath="..\..\src\wowice-world\Definitions.h"
 			>
 		</File>
 		<File
-			RelativePath="..\..\src\arcemu-world\faction.cpp"
+			RelativePath="..\..\src\wowice-world\faction.cpp"
 			>
 		</File>
 		<File
-			RelativePath="..\..\src\arcemu-world\faction.h"
+			RelativePath="..\..\src\wowice-world\faction.h"
 			>
 		</File>
 		<File
-			RelativePath="..\..\src\arcemu-world\resources.rc"
+			RelativePath="..\..\src\wowice-world\resources.rc"
 			>
 		</File>
 		<File
-			RelativePath="..\..\src\arcemu-world\StdAfx.cpp"
+			RelativePath="..\..\src\wowice-world\StdAfx.cpp"
 			>
 			<FileConfiguration
 				Name="Debug|Win32"
@@ -1454,7 +1454,7 @@
 			</FileConfiguration>
 		</File>
 		<File
-			RelativePath="..\..\src\arcemu-world\StdAfx.h"
+			RelativePath="..\..\src\wowice-world\StdAfx.h"
 			>
 		</File>
 	</Files>
