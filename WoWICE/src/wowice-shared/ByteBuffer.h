@@ -325,7 +325,7 @@ public:
 
 	const uint8 *contents() const { return &_storage[0]; };
 
-	ARCEMU_INLINE size_t size() const { return _storage.size(); };
+	WoWICE_INLINE size_t size() const { return _storage.size(); };
 	// one should never use resize probably
 	void resize(size_t newsize) {
 		_storage.resize(newsize);
@@ -459,7 +459,7 @@ public:
 			printf("\n");
 		}
 
-	ARCEMU_INLINE void reverse()
+	WoWICE_INLINE void reverse()
 	{
 		std::reverse(_storage.begin(), _storage.end());
 	}

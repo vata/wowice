@@ -12,17 +12,6 @@
  * You should have received a copy of the GNU General Public License along with
  * this program. If not, see <http://www.gnu.org/licenses/>.
  */
-/*
- * $Id: crc32.c,v 1.1.1.1 1996/02/18 21:38:12 ylo Exp $
- * $Log: crc32.c,v $
- * Revision 1.1.1.1  1996/02/18 21:38:12  ylo
- * 	Imported ssh-1.2.13.
- *
- * Revision 1.2  1995/07/13  01:21:34  ylo
- * 	Added cvs log.
- *
- * $Endlog$
- */
 
 /* The implementation here was originally done by Gary S. Brown.  I have
    borrowed the tables directly, and made some minor changes to the

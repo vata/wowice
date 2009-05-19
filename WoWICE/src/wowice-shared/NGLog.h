@@ -91,7 +91,7 @@ public:
 #endif
 	}
 
-	ARCEMU_INLINE void Time()
+	WoWICE_INLINE void Time()
 	{
         /*tm * t = localtime(&UNIXTIME);
 		printf("%02u:%02u ", t->tm_hour, t->tm_min);*/

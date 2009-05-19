@@ -14,11 +14,11 @@
  */
 
 #include "Common.h"
-#include "arcemu_getopt.h"
+#include "wowice_getopt.h"
 
 int arg_counter = 1;
-char arcemu_optarg[514];
-int arcemu_getopt_long_only(int ___argc, char *const *___argv, const char *__shortopts, const struct arcemu_option *__longopts, int *__longind)
+char wowice_optarg[514];
+int wowice_getopt_long_only(int ___argc, char *const *___argv, const char *__shortopts, const struct wowice_option *__longopts, int *__longind)
 {
 	// burlex todo: handle the shortops, at the moment it only works with longopts.
 
@@ -57,7 +57,7 @@ int arcemu_getopt_long_only(int ___argc, char *const *___argv, const char *__sho
 			arg_counter++;
 
 			// determine action based on type
-			if (__longopts[i].has_arg == arcemu_required_argument)
+			if (__longopts[i].has_arg == wowice_required_argument)
 			{
 				if(!par)
 					return 1;
@@ -72,7 +72,7 @@ int arcemu_getopt_long_only(int ___argc, char *const *___argv, const char *__sho
 
 			// store argument in optarg
 			if (par)
-				strncpy(arcemu_optarg, par, 514);
+				strncpy(wowice_optarg, par, 514);
 
 			if (__longopts[i].flag != 0)
 			{
