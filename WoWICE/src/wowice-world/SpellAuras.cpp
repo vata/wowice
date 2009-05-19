@@ -3643,7 +3643,272 @@ void Aura::EventPeriodicHealPct(float RegenPct)
 	if(!m_target->isAlive())
 		return;
 
-	uint32 add = float2int32(m_target->GetUInt32Value(UNIT_FIELD_MAXHEALTH) * (RegenPc                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                S_DEAD, m_caster);
+	uint32 add = float2int32(m_target->GetUInt32Value(UNIT_FIELD_MAXHEALTH) * (RegenPct / 100.0f));
+
+	uint32 newHealth = m_target->GetUInt32Value(UNIT_FIELD_HEALTH) + add;
+
+	if(newHealth <= m_target->GetUInt32Value(UNIT_FIELD_MAXHEALTH))
+		m_target->SetUInt32Value(UNIT_FIELD_HEALTH, newHealth);
+	else
+		m_target->SetUInt32Value(UNIT_FIELD_HEALTH, m_target->GetUInt32Value(UNIT_FIELD_MAXHEALTH));
+
+	SendPeriodicAuraLog(m_casterGuid, m_target, m_spellProto->Id, m_spellProto->School, add, 0, 0, FLAG_PERIODIC_HEAL);
+
+	if(GetSpellProto()->AuraInterruptFlags & AURA_INTERRUPT_ON_STAND_UP)
+	{
+		m_target->Emote(EMOTE_ONESHOT_EAT);
+	}
+
+	m_target->RemoveAurasByHeal();
+}
+
+void Aura::SpellAuraModTotalManaRegenPct(bool apply)
+{
+	if(apply)
+	{
+		SetPositive();
+		sEventMgr.AddEvent(this, &Aura::EventPeriodicManaPct,(float)mod->m_amount,
+			EVENT_AURA_PERIOCIC_MANA,	GetSpellProto()->EffectAmplitude[mod->i],0,EVENT_FLAG_DO_NOT_EXECUTE_IN_WORLD_CONTEXT);
+	}
+}
+
+void Aura::EventPeriodicManaPct(float RegenPct)
+{
+	if(!m_target->isAlive())
+		return;
+
+	uint32 add = float2int32(m_target->GetUInt32Value(UNIT_FIELD_MAXPOWER1) * (RegenPct / 100.0f));
+
+	uint32 newHealth = m_target->GetUInt32Value(UNIT_FIELD_POWER1) + add;
+
+	if(newHealth <= m_target->GetUInt32Value(UNIT_FIELD_MAXPOWER1))
+		m_target->SetUInt32Value(UNIT_FIELD_POWER1, newHealth);
+	else
+		m_target->SetUInt32Value(UNIT_FIELD_POWER1, m_target->GetUInt32Value(UNIT_FIELD_MAXPOWER1));
+
+	// CAPT
+	// TODO: sniff it or disasm wow.exe to find the mana flag
+	//SendPeriodicAuraLog(m_target, m_casterGuid, GetSpellProto()->Id, FLAG_PERIODIC_HEAL, add,true);
+	//SendPeriodicAuraLog(m_target, m_casterGuid, GetSpellProto()->Id, FLAG_PERIODIC_HEAL, add);
+
+	if(GetSpellProto()->AuraInterruptFlags & AURA_INTERRUPT_ON_STAND_UP)
+	{
+		m_target->Emote(EMOTE_ONESHOT_EAT);
+	}
+}
+
+void Aura::SpellAuraModResistance(bool apply)
+{
+	uint32 Flag = mod->m_miscValue;
+	int32 amt;
+	if(apply)
+	{
+		amt = mod->m_amount;
+		if(amt <0 )//dont' change it
+			SetNegative();
+		else
+			SetPositive();
+	}
+	else
+		amt = -mod->m_amount;
+
+	if (!IsPositive() && GetUnitCaster() != NULL && m_target->GetTypeId() == TYPEID_UNIT)
+		m_target->GetAIInterface()->AttackReaction(GetUnitCaster(), 1, GetSpellId());
+
+	if( this->GetSpellProto() && ( this->GetSpellProto()->NameHash == SPELL_HASH_FAERIE_FIRE || this->GetSpellProto()->NameHash == SPELL_HASH_FAERIE_FIRE__FERAL_ ) )
+		m_target->m_can_stealth = !apply;
+
+	if( m_target->GetTypeId() == TYPEID_PLAYER )
+	{
+		for( uint32 x = 0; x < 7; x++ )
+		{
+			if(Flag & (((uint32)1)<< x) )
+			{
+				if(mod->m_amount>0)
+						static_cast< Player* >( m_target )->FlatResistanceModifierPos[x]+=amt;
+				else
+						static_cast< Player* >( m_target )->FlatResistanceModifierNeg[x]-=amt;
+				static_cast< Player* >( m_target )->CalcResistance(x);
+			}
+		}
+	}
+	else if(m_target->GetTypeId() == TYPEID_UNIT)
+	{
+		for(uint32 x=0;x<7;x++)
+		{
+			if(Flag & (((uint32)1)<<x))
+			{
+				static_cast<Creature*>(m_target)->FlatResistanceMod[x]+=amt;
+				static_cast<Creature*>(m_target)->CalcResistance(x);
+			}
+		}
+	}
+}
+
+void Aura::SpellAuraPeriodicTriggerSpellWithValue(bool apply)
+{
+	if(m_spellProto->EffectTriggerSpell[mod->i] == 0)
+		return;
+	if(apply)
+	{
+		uint32 sp = GetSpellProto()->EffectTriggerSpell[mod->i];
+		SpellEntry *spe = dbcSpell.LookupEntry(sp);
+		if(!sp || !spe)
+		{
+			return; // invalid spell
+		}
+
+		Unit *m_caster = GetUnitCaster();
+		if(!m_caster)
+		{
+			return; // invalid caster
+		}
+
+		spe->EffectBasePoints[0] = mod->m_amount; // set the base damage value
+
+		if(m_caster->GetUInt64Value(UNIT_FIELD_CHANNEL_OBJECT))
+		{
+			sEventMgr.AddEvent(this, &Aura::EventPeriodicTriggerSpell, spe,
+			EVENT_AURA_PERIODIC_TRIGGERSPELL,GetSpellProto()->EffectAmplitude[mod->i], 0, EVENT_FLAG_DO_NOT_EXECUTE_IN_WORLD_CONTEXT);
+			periodic_target = m_caster->GetUInt64Value(UNIT_FIELD_CHANNEL_OBJECT);
+		}
+		else if(m_target)
+		{
+			sEventMgr.AddEvent(this, &Aura::EventPeriodicTriggerSpell, spe,
+				EVENT_AURA_PERIODIC_TRIGGERSPELL,GetSpellProto()->EffectAmplitude[mod->i], 0,EVENT_FLAG_DO_NOT_EXECUTE_IN_WORLD_CONTEXT);
+			periodic_target = m_target->GetGUID();
+		}
+	}
+}
+
+void Aura::SpellAuraPeriodicTriggerSpell(bool apply)
+{
+	if(m_spellProto->EffectTriggerSpell[mod->i] == 0)
+		return;
+
+	/*
+	// This should be fixed in other way...
+	if(IsPassive() &&
+		m_spellProto->dummy != 2010 &&
+		m_spellProto->dummy != 2020 &&
+		m_spellProto->dummy != 2255 &&
+		m_spellProto->Id != 8145 &&
+		m_spellProto->Id != 8167 &&
+		m_spellProto->Id != 8172)
+	{
+		Unit * target = (m_target != 0) ? m_target : GetUnitCaster();
+		if(target == 0 || !target->IsPlayer())
+			return; //what about creatures ?
+
+		SpellEntry *proto = dbcSpell.LookupEntry( m_spellProto->EffectTriggerSpell[mod->i] );
+
+		if( apply )
+			static_cast< Player* >( target )->AddOnStrikeSpell( proto, m_spellProto->EffectAmplitude[mod->i] );
+		else
+			static_cast< Player* >( target )->RemoveOnStrikeSpell( proto );
+
+		return;
+	}
+			*/
+
+	if(apply)
+	{
+		//FIXME: positive or negative?
+		uint32 sp = GetSpellProto()->EffectTriggerSpell[mod->i];
+		SpellEntry *spe = dbcSpell.LookupEntry(sp);
+		if(!sp || !spe)
+		{
+			//	sp=22845;
+			return;//null spell
+		}
+
+		Unit *m_caster = GetUnitCaster();
+		if(!m_caster)
+			return;
+
+		if ( GetSpellProto()->Id == 23493 || GetSpellProto()->Id == 24379 )
+			// Cebernic: Restoration on battleground fixes(from p2wow's merged)
+			// it wasn't prefectly,just for tempfix
+		{
+			SetPositive();
+			sEventMgr.AddEvent(this, &Aura::EventPeriodicHealPct,10.0f,
+			EVENT_AURA_PERIODIC_HEALPERC,	GetSpellProto()->EffectAmplitude[mod->i],0,EVENT_FLAG_DO_NOT_EXECUTE_IN_WORLD_CONTEXT);
+
+			sEventMgr.AddEvent(this, &Aura::EventPeriodicManaPct,10.0f,
+			EVENT_AURA_PERIOCIC_MANA,	GetSpellProto()->EffectAmplitude[mod->i],0,EVENT_FLAG_DO_NOT_EXECUTE_IN_WORLD_CONTEXT);
+			return;
+		}
+
+		if(m_caster->GetUInt64Value(UNIT_FIELD_CHANNEL_OBJECT))
+		{
+			sEventMgr.AddEvent(this, &Aura::EventPeriodicTriggerSpell, spe,
+			EVENT_AURA_PERIODIC_TRIGGERSPELL,GetSpellProto()->EffectAmplitude[mod->i], 0,EVENT_FLAG_DO_NOT_EXECUTE_IN_WORLD_CONTEXT);
+
+            periodic_target = m_caster->GetUInt64Value(UNIT_FIELD_CHANNEL_OBJECT);
+		}
+		else if(m_target)
+		{
+			sEventMgr.AddEvent(this, &Aura::EventPeriodicTriggerSpell, spe,
+				EVENT_AURA_PERIODIC_TRIGGERSPELL,GetSpellProto()->EffectAmplitude[mod->i], 0,EVENT_FLAG_DO_NOT_EXECUTE_IN_WORLD_CONTEXT);
+			periodic_target = m_target->GetGUID();
+		}
+	}
+}
+
+void Aura::EventPeriodicTriggerSpell(SpellEntry* spellInfo)
+{
+	// Trigger Spell
+	// check for spell id	
+
+
+	Unit * m_caster = GetUnitCaster();
+	// Notes: The caster seems to not exist thus it's guid doesn't exist :S - http://code.google.com/p/wowice/
+	// m_caster is set to NULL by default, so !m_caster is like saying your mom weighs more then 0 which isn't giving it a value.
+	if(m_caster == NULL || !m_caster->IsInWorld() )
+		return;
+
+	if( spellInfo->EffectImplicitTargetA[0] == 18 )			// Hellfire, if there are any others insert here
+	{
+		Spell *spell = SpellPool.PooledNew();
+		if (!spell)
+			return;
+		spell->Init(m_caster, spellInfo, true, this);
+		SpellCastTargets targets;
+		targets.m_targetMask = TARGET_FLAG_SOURCE_LOCATION;
+		targets.m_srcX = m_caster->GetPositionX();
+		targets.m_srcY = m_caster->GetPositionY();
+		targets.m_srcZ = m_caster->GetPositionZ();
+		spell->prepare(&targets);
+		return;
+	}
+
+	Object * oTarget = m_target->GetMapMgr()->_GetObject(periodic_target);
+	if(oTarget==NULL)
+		return;
+
+	if(oTarget->GetTypeId()==TYPEID_DYNAMICOBJECT)
+	{
+		Spell *spell = SpellPool.PooledNew();
+		if (!spell)
+			return;
+		spell->Init(m_caster, spellInfo, true, this);
+		SpellCastTargets targets;
+		targets.m_targetMask = TARGET_FLAG_DEST_LOCATION;
+		targets.m_destX = oTarget->GetPositionX();
+		targets.m_destY = oTarget->GetPositionY();
+		targets.m_destZ = oTarget->GetPositionZ();
+		spell->prepare(&targets);
+		return;
+	}
+
+	Unit *pTarget = ((Unit*)oTarget);
+
+	if(!oTarget->IsUnit())
+		return;
+
+	if(!pTarget || pTarget->IsDead())
+	{
+		SendInterrupted(SPELL_FAILED_TARGETS_DEAD, m_caster);
 		SendChannelUpdate(0, m_caster);
 		this->Remove();
 		return;
@@ -8134,7 +8399,276 @@ void Aura::SpellAuraModPenetration(bool apply) // armor penetration & spell pene
 		}
 		else
 		{
-			if( m_spellP                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                
+			if( m_spellProto->Id == 14171 )
+				plr->PowerCostPctMod[0] -= float( m_target->getLevel() * 2.67 );
+			else if( m_spellProto->Id == 14172 )
+				plr->PowerCostPctMod[0] -= float( m_target->getLevel() * 5.43 );
+			else if( m_spellProto->Id == 14173 )
+				plr->PowerCostPctMod[0] -= float( m_target->getLevel() * 8 );
+		}
+		return;
+	}
+	if(apply)
+	{
+		if(mod->m_amount < 0)
+			SetPositive();
+		else
+			SetNegative();
+
+		for(uint32 x=0;x<7;x++)
+		{
+			if (mod->m_miscValue & (((uint32)1)<<x))
+				m_target->PowerCostPctMod[x] -= mod->m_amount;
+		}
+
+		if(m_target->IsPlayer()){
+			if(mod->m_miscValue & 124)
+				m_target->ModSignedInt32Value(PLAYER_FIELD_MOD_TARGET_RESISTANCE, mod->m_amount);
+			if(mod->m_miscValue & 1)
+				m_target->ModSignedInt32Value(PLAYER_FIELD_MOD_TARGET_PHYSICAL_RESISTANCE, mod->m_amount);
+		}
+	}
+	else
+	{
+		for(uint32 x=0;x<7;x++)
+		{
+			if (mod->m_miscValue & (((uint32)1)<<x))
+				m_target->PowerCostPctMod[x] += mod->m_amount;
+		}
+		if(m_target->IsPlayer()){
+			if(mod->m_miscValue & 124)
+				m_target->ModSignedInt32Value(PLAYER_FIELD_MOD_TARGET_RESISTANCE, -mod->m_amount);
+			if(mod->m_miscValue & 1)
+				m_target->ModSignedInt32Value(PLAYER_FIELD_MOD_TARGET_PHYSICAL_RESISTANCE, -mod->m_amount);
+		}
+	}
+}
+
+void Aura::SpellAuraIncreaseArmorByPctInt(bool apply)
+{
+	uint32 i_Int = m_target->GetUInt32Value(UNIT_FIELD_STAT3);
+
+	int32 amt = float2int32(i_Int * ((float)mod->m_amount / 100.0f));
+	amt *= (!apply) ? -1 : 1;
+
+	for(uint32 x=0;x<7;x++)
+	{
+		if(mod->m_miscValue & (((uint32)1)<< x))
+		{
+			if(m_target->GetTypeId() == TYPEID_PLAYER)
+			{
+				static_cast< Player* >( m_target )->FlatResistanceModifierPos[x] += amt;
+				static_cast< Player* >( m_target )->CalcResistance(x);
+			}
+			else if(m_target->GetTypeId() == TYPEID_UNIT)
+			{
+				static_cast<Creature*>(m_target)->FlatResistanceMod[x] += amt;
+				static_cast<Creature*>(m_target)->CalcResistance(x);
+			}
+		}
+	}
+}
+
+void Aura::SpellAuraReduceAttackerMHitChance(bool apply)
+{
+	if (!m_target->IsPlayer())
+		return;
+	if(apply)
+		static_cast< Player* >( m_target )->m_resist_hit[ MOD_MELEE ] += mod->m_amount;
+	else
+		static_cast< Player* >( m_target )->m_resist_hit[ MOD_MELEE ] -= mod->m_amount;
+}
+
+void Aura::SpellAuraReduceAttackerRHitChance(bool apply)
+{
+	if (!m_target->IsPlayer())
+		return;
+	if(apply)
+		static_cast< Player* >( m_target )->m_resist_hit[ MOD_RANGED ] += mod->m_amount;
+	else
+		static_cast< Player* >( m_target )->m_resist_hit[ MOD_RANGED ] -= mod->m_amount;
+}
+
+void Aura::SpellAuraReduceAttackerSHitChance(bool apply)
+{
+	if (!m_target->IsPlayer())
+		return;
+	if(apply)
+		static_cast< Player* >( m_target )->m_resist_hit[ MOD_SPELL ] -= mod->m_amount;
+	else
+		static_cast< Player* >( m_target )->m_resist_hit[ MOD_SPELL ] += mod->m_amount;
+}
+
+
+
+void Aura::SpellAuraReduceEnemyMCritChance(bool apply)
+{
+	if(!m_target->IsPlayer())
+		return;
+	if(apply)
+	{
+		//value is negative percent
+		static_cast< Player* >( m_target )->res_M_crit_set(static_cast< Player* >( m_target )->res_M_crit_get()+mod->m_amount);
+	}
+	else
+	{
+		static_cast< Player* >( m_target )->res_M_crit_set(static_cast< Player* >( m_target )->res_M_crit_get()-mod->m_amount);
+	}
+}
+
+void Aura::SpellAuraReduceEnemyRCritChance(bool apply)
+{
+	if(!m_target->IsPlayer())
+		return;
+	if(apply)
+	{
+		//value is negative percent
+		static_cast< Player* >( m_target )->res_R_crit_set(static_cast< Player* >( m_target )->res_R_crit_get()+mod->m_amount);
+	}
+	else
+	{
+		static_cast< Player* >( m_target )->res_R_crit_set(static_cast< Player* >( m_target )->res_R_crit_get()-mod->m_amount);
+	}
+}
+
+void Aura::SpellAuraLimitSpeed( bool apply )
+{
+	int32 amount = ( apply ) ? mod->m_amount : -mod->m_amount;
+	m_target->m_maxSpeed += (float)amount;
+	m_target->UpdateSpeed();
+}
+void Aura::SpellAuraIncreaseTimeBetweenAttacksPCT(bool apply)
+{
+	int32 val =  (apply) ? mod->m_amount : -mod->m_amount;
+	float pct_value = -val/100.0f;
+	m_target->ModFloatValue(UNIT_MOD_CAST_SPEED,pct_value);
+}
+
+void Aura::SpellAuraMeleeHaste( bool apply )
+{
+	if( mod->m_amount < 0 )
+		SetNegative();
+	else
+		SetPositive();
+
+	if( m_target->IsPlayer() )
+	{
+		if( apply )
+			static_cast< Player* >( m_target )->ModAttackSpeed( mod->m_amount, MOD_MELEE );
+		else
+			static_cast< Player* >( m_target )->ModAttackSpeed( -mod->m_amount, MOD_MELEE );
+
+		static_cast< Player* >(m_target)->UpdateAttackSpeed();
+	}
+	else
+	{
+		if( apply )
+		{
+			mod->fixed_amount[0] = m_target->GetModPUInt32Value( UNIT_FIELD_BASEATTACKTIME, mod->m_amount );
+			mod->fixed_amount[1] = m_target->GetModPUInt32Value( UNIT_FIELD_BASEATTACKTIME_01, mod->m_amount );
+
+			if( (int32)m_target->GetUInt32Value ( UNIT_FIELD_BASEATTACKTIME ) <= mod->fixed_amount[0] )
+				mod->fixed_amount[0] = m_target->GetUInt32Value ( UNIT_FIELD_BASEATTACKTIME );
+			if( (int32)m_target->GetUInt32Value ( UNIT_FIELD_BASEATTACKTIME_01 ) <= mod->fixed_amount[1] )
+				mod->fixed_amount[1] = m_target->GetUInt32Value ( UNIT_FIELD_BASEATTACKTIME_01 );
+
+			m_target->ModUnsigned32Value( UNIT_FIELD_BASEATTACKTIME, -mod->fixed_amount[0] );
+			m_target->ModUnsigned32Value( UNIT_FIELD_BASEATTACKTIME_01, -mod->fixed_amount[1] );
+		}
+		else
+		{
+			m_target->ModUnsigned32Value( UNIT_FIELD_BASEATTACKTIME, mod->fixed_amount[0] );
+			m_target->ModUnsigned32Value( UNIT_FIELD_BASEATTACKTIME_01, mod->fixed_amount[1] );
+		}
+	}
+}
+
+/*
+void Aura::SpellAuraIncreaseSpellDamageByInt(bool apply)
+{
+	 float val;
+	 if(apply)
+	 {
+		 val = mod->m_amount/100.0f;
+		 if(mod->m_amount>0)
+			 SetPositive();
+		 else
+			 SetNegative();
+	 }
+	 else
+		val =- mod->m_amount/100.0f;
+
+	if(m_target->IsPlayer())
+	{
+		for(uint32 x=1;x<7;x++)
+		{
+			if (mod->m_miscValue & (((uint32)1)<<x) )
+			{
+				static_cast< Player* >( m_target )->SpellDmgDoneByInt[x]+=val;
+			}
+		}
+	}
+}
+
+void Aura::SpellAuraIncreaseHealingByInt(bool apply)
+{
+	 float val;
+	 if(apply)
+	 {
+		 val = mod->m_amount/100.0f;
+		 if(val>0)
+			 SetPositive();
+		 else
+			 SetNegative();
+	 }
+	 else
+		val =- mod->m_amount/100.0f;
+
+	if(m_target->IsPlayer())
+	{
+		for(uint32 x=1;x<7;x++)
+		{
+   //		 if (mod->m_miscValue & (((uint32)1)<<x) )
+			{
+				static_cast< Player* >( m_target )->SpellHealDoneByInt[x]+=val;
+			}
+		}
+	}
+}
+*/
+void Aura::SpellAuraModAttackerCritChance(bool apply)
+{
+	int32 val  = (apply) ? mod->m_amount : -mod->m_amount;
+	m_target->AttackerCritChanceMod[0] +=val;
+}
+
+void Aura::SpellAuraIncreaseAllWeaponSkill(bool apply)
+{
+	if (m_target->GetTypeId() == TYPEID_PLAYER)
+	{
+		if(apply)
+		{
+			SetPositive();
+//			static_cast< Player* >( m_target )->ModSkillBonusType(SKILL_TYPE_WEAPON, mod->m_amount);
+			//since the frikkin above line does not work we have to do it manually
+			static_cast< Player* >( m_target )->_ModifySkillBonus(SKILL_SWORDS, mod->m_amount);
+			static_cast< Player* >( m_target )->_ModifySkillBonus(SKILL_AXES, mod->m_amount);
+			static_cast< Player* >( m_target )->_ModifySkillBonus(SKILL_BOWS, mod->m_amount);
+			static_cast< Player* >( m_target )->_ModifySkillBonus(SKILL_GUNS, mod->m_amount);
+			static_cast< Player* >( m_target )->_ModifySkillBonus(SKILL_MACES, mod->m_amount);
+			static_cast< Player* >( m_target )->_ModifySkillBonus(SKILL_2H_SWORDS, mod->m_amount);
+			static_cast< Player* >( m_target )->_ModifySkillBonus(SKILL_STAVES, mod->m_amount);
+			static_cast< Player* >( m_target )->_ModifySkillBonus(SKILL_2H_MACES, mod->m_amount);
+			static_cast< Player* >( m_target )->_ModifySkillBonus(SKILL_2H_AXES, mod->m_amount);
+			static_cast< Player* >( m_target )->_ModifySkillBonus(SKILL_DAGGERS, mod->m_amount);
+			static_cast< Player* >( m_target )->_ModifySkillBonus(SKILL_CROSSBOWS, mod->m_amount);
+			static_cast< Player* >( m_target )->_ModifySkillBonus(SKILL_SPEARS, mod->m_amount);
+			static_cast< Player* >( m_target )->_ModifySkillBonus(SKILL_WANDS, mod->m_amount);
+			static_cast< Player* >( m_target )->_ModifySkillBonus(SKILL_POLEARMS, mod->m_amount);
+		}
+		else
+		{
+//			static_cast< Player* >( m_target )->ModSkillBonusType(SKILL_TYPE_WEAPON, -mod->m_amount);
 			static_cast< Player* >( m_target )->_ModifySkillBonus(SKILL_SWORDS, -mod->m_amount);
 			static_cast< Player* >( m_target )->_ModifySkillBonus(SKILL_AXES, -mod->m_amount);
 			static_cast< Player* >( m_target )->_ModifySkillBonus(SKILL_BOWS, -mod->m_amount);

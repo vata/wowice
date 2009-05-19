@@ -14,6 +14,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "wowice-shared", "VC90\wowic
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "wowice-world", "VC90\wowice-world.vcproj", "{1DC6C4DA-A028-41F3-877D-D5400C594F88}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "wowice-logonserver", "VC90\wowice-logonserver.vcproj", "{6E15F06D-5546-474D-BB42-39848DEF77E0}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -58,6 +60,12 @@ Global
 		{1DC6C4DA-A028-41F3-877D-D5400C594F88}.Release|Win32.ActiveCfg = Release|Win32
 		{1DC6C4DA-A028-41F3-877D-D5400C594F88}.Release|Win32.Build.0 = Release|Win32
 		{1DC6C4DA-A028-41F3-877D-D5400C594F88}.Release|x64.ActiveCfg = Release|Win32
+		{6E15F06D-5546-474D-BB42-39848DEF77E0}.Debug|Win32.ActiveCfg = Debug|Win32
+		{6E15F06D-5546-474D-BB42-39848DEF77E0}.Debug|Win32.Build.0 = Debug|Win32
+		{6E15F06D-5546-474D-BB42-39848DEF77E0}.Debug|x64.ActiveCfg = Debug|Win32
+		{6E15F06D-5546-474D-BB42-39848DEF77E0}.Release|Win32.ActiveCfg = Release|Win32
+		{6E15F06D-5546-474D-BB42-39848DEF77E0}.Release|Win32.Build.0 = Release|Win32
+		{6E15F06D-5546-474D-BB42-39848DEF77E0}.Release|x64.ActiveCfg = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -119,32 +119,32 @@ bool Master::Run(int argc, char ** argv)
 	int do_database_clean = 0;
 	time_t curTime;
 
-	struct arcemu_option longopts[] =
+	struct wowice_option longopts[] =
 	{
-		{ "checkconf",			arcemu_no_argument,				&do_check_conf,			1		},
-		{ "screenloglevel",		arcemu_required_argument,		&screen_log_level,		1		},
-		{ "fileloglevel",		arcemu_required_argument,		&file_log_level,		1		},
-		{ "version",			arcemu_no_argument,				&do_version,			1		},
-		{ "conf",				arcemu_required_argument,		NULL,					'c'		},
-		{ "realmconf",			arcemu_required_argument,		NULL,					'r'		},
-		{ "databasecleanup",	arcemu_no_argument,				&do_database_clean,		1		},
-		{ "cheatercheck",		arcemu_no_argument,				&do_cheater_check,		1		},
+		{ "checkconf",			wowice_no_argument,				&do_check_conf,			1		},
+		{ "screenloglevel",		wowice_required_argument,		&screen_log_level,		1		},
+		{ "fileloglevel",		wowice_required_argument,		&file_log_level,		1		},
+		{ "version",			wowice_no_argument,				&do_version,			1		},
+		{ "conf",				wowice_required_argument,		NULL,					'c'		},
+		{ "realmconf",			wowice_required_argument,		NULL,					'r'		},
+		{ "databasecleanup",	wowice_no_argument,				&do_database_clean,		1		},
+		{ "cheatercheck",		wowice_no_argument,				&do_cheater_check,		1		},
 		{ 0, 0, 0, 0 }
 	};
 
 	char c;
-	while ((c = arcemu_getopt_long_only(argc, argv, ":f:", longopts, NULL)) != -1)
+	while ((c = wowice_getopt_long_only(argc, argv, ":f:", longopts, NULL)) != -1)
 	{
 		switch (c)
 		{
 		case 'c':
-			config_file = new char[strlen(arcemu_optarg)];
-			strcpy(config_file, arcemu_optarg);
+			config_file = new char[strlen(wowice_optarg)];
+			strcpy(config_file, wowice_optarg);
 			break;
 
 		case 'r':
-			realm_config_file = new char[strlen(arcemu_optarg)];
-			strcpy(realm_config_file, arcemu_optarg);
+			realm_config_file = new char[strlen(wowice_optarg)];
+			strcpy(realm_config_file, wowice_optarg);
 			break;
 
 		case 0:
@@ -195,7 +195,7 @@ bool Master::Run(int argc, char ** argv)
 	Log.Color(TRED);
 	printf("Warning: Using repacks is potentially dangerous. You should always compile\n");
 	printf("from the source yourself at http://code.google.com/p/wowice/ .\n");
-	printf("By using this repack, you agree to not visit the arcemu website and ask\nfor support.\n");
+	printf("By using this repack, you agree to not visit the wowice website and ask\nfor support.\n");
 	printf("For all support, you should visit the repacker's website at %s\n", REPACK_WEBSITE);
 	Log.Color(TNORMAL);
 	Log.Line();

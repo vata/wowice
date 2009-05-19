@@ -99,7 +99,7 @@ public:
 	void LoadRealmConfiguration();
 	void AddServer(string Name, string Address, uint32 Port);
 
-	ARCEMU_INLINE uint32 GetRealmType() { return _realmType; }
+	WoWICE_INLINE uint32 GetRealmType() { return _realmType; }
 	void SetRealmType(uint32 type) { _realmType = type; }
 	float GetServerPopulation(){ return server_population; }
 
@@ -121,7 +121,7 @@ public:
 		//pendingLock.Release();
 		return sock;
 	}
-	ARCEMU_INLINE Mutex & GetPendingLock() { return pendingLock; }
+	WoWICE_INLINE Mutex & GetPendingLock() { return pendingLock; }
 	const string* GetForcedPermissions(string& username);
 
 	void TestConsoleLogon(string& username, string& password, uint32 requestnum);

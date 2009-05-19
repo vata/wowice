@@ -106,7 +106,7 @@ public:
 	InstanceMgr();	
 	~InstanceMgr();
 
-	ARCEMU_INLINE Map* GetMap(uint32 mapid)
+	WoWICE_INLINE Map* GetMap(uint32 mapid)
 	{
 		if(mapid>NUM_MAPS)
 			return NULL;
@@ -131,7 +131,7 @@ public:
 
 	// has an instance expired?
 	// can a player join?
-    ARCEMU_INLINE bool PlayerOwnsInstance(Instance * pInstance, Player * pPlayer)
+    WoWICE_INLINE bool PlayerOwnsInstance(Instance * pInstance, Player * pPlayer)
 	{
 		// Expired?
 		if( pInstance->m_expiration && (UNIXTIME+20) >= pInstance->m_expiration)
@@ -153,7 +153,7 @@ public:
 	}
 
 	// has an instance expired?
-	ARCEMU_INLINE bool HasInstanceExpired(Instance * pInstance)
+	WoWICE_INLINE bool HasInstanceExpired(Instance * pInstance)
 	{
 		// expired?
 		if( pInstance->m_expiration && (UNIXTIME+20) >= pInstance->m_expiration)

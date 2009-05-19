@@ -16,8 +16,8 @@
 /** 3.0.2 UpdateFields as of whenever i extracted them.
  */
 
-#ifndef __wowice_UPDATEFIELDS_H
-#define __wowice_UPDATEFIELDS_H
+#ifndef __arcemu_UPDATEFIELDS_H
+#define __arcemu_UPDATEFIELDS_H
 
 //OBJECT:
 #define OBJECT_FIELD_GUID                                      0x000	//Size:2  Type:GUID  Flags:1
@@ -1701,7 +1701,80 @@
 #define PLAYER_EXPLORED_ZONES_117                              UNIT_END + 0x56A	//Size:128  Type:Bytes  Flags:2
 #define PLAYER_EXPLORED_ZONES_118                              UNIT_END + 0x56B	//Size:128  Type:Bytes  Flags:2
 #define PLAYER_EXPLORED_ZONES_119                              UNIT_END + 0x56C	//Size:128  Type:Bytes  Flags:2
-#d                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  UNIT_END + 0x5B6	//Size:25  Type:Int32  Flags:2
+#define PLAYER_EXPLORED_ZONES_120                              UNIT_END + 0x56D	//Size:128  Type:Bytes  Flags:2
+#define PLAYER_EXPLORED_ZONES_121                              UNIT_END + 0x56E	//Size:128  Type:Bytes  Flags:2
+#define PLAYER_EXPLORED_ZONES_122                              UNIT_END + 0x56F	//Size:128  Type:Bytes  Flags:2
+#define PLAYER_EXPLORED_ZONES_123                              UNIT_END + 0x570	//Size:128  Type:Bytes  Flags:2
+#define PLAYER_EXPLORED_ZONES_124                              UNIT_END + 0x571	//Size:128  Type:Bytes  Flags:2
+#define PLAYER_EXPLORED_ZONES_125                              UNIT_END + 0x572	//Size:128  Type:Bytes  Flags:2
+#define PLAYER_EXPLORED_ZONES_126                              UNIT_END + 0x573	//Size:128  Type:Bytes  Flags:2
+#define PLAYER_EXPLORED_ZONES_127                              UNIT_END + 0x574	//Size:128  Type:Bytes  Flags:2
+#define PLAYER_REST_STATE_EXPERIENCE                           UNIT_END + 0x575	//Size:1  Type:Int32  Flags:2
+#define PLAYER_FIELD_COINAGE                                   UNIT_END + 0x576	//Size:1  Type:Int32  Flags:2
+#define PLAYER_FIELD_MOD_DAMAGE_DONE_POS                       UNIT_END + 0x577	//Size:7  Type:Int32  Flags:2
+#define PLAYER_FIELD_MOD_DAMAGE_DONE_POS_01                    UNIT_END + 0x578	//Size:7  Type:Int32  Flags:2
+#define PLAYER_FIELD_MOD_DAMAGE_DONE_POS_02                    UNIT_END + 0x579	//Size:7  Type:Int32  Flags:2
+#define PLAYER_FIELD_MOD_DAMAGE_DONE_POS_03                    UNIT_END + 0x57A	//Size:7  Type:Int32  Flags:2
+#define PLAYER_FIELD_MOD_DAMAGE_DONE_POS_04                    UNIT_END + 0x57B	//Size:7  Type:Int32  Flags:2
+#define PLAYER_FIELD_MOD_DAMAGE_DONE_POS_05                    UNIT_END + 0x57C	//Size:7  Type:Int32  Flags:2
+#define PLAYER_FIELD_MOD_DAMAGE_DONE_POS_06                    UNIT_END + 0x57D	//Size:7  Type:Int32  Flags:2
+#define PLAYER_FIELD_MOD_DAMAGE_DONE_NEG                       UNIT_END + 0x57E	//Size:7  Type:Int32  Flags:2
+#define PLAYER_FIELD_MOD_DAMAGE_DONE_NEG_01                    UNIT_END + 0x57F	//Size:7  Type:Int32  Flags:2
+#define PLAYER_FIELD_MOD_DAMAGE_DONE_NEG_02                    UNIT_END + 0x580	//Size:7  Type:Int32  Flags:2
+#define PLAYER_FIELD_MOD_DAMAGE_DONE_NEG_03                    UNIT_END + 0x581	//Size:7  Type:Int32  Flags:2
+#define PLAYER_FIELD_MOD_DAMAGE_DONE_NEG_04                    UNIT_END + 0x582	//Size:7  Type:Int32  Flags:2
+#define PLAYER_FIELD_MOD_DAMAGE_DONE_NEG_05                    UNIT_END + 0x583	//Size:7  Type:Int32  Flags:2
+#define PLAYER_FIELD_MOD_DAMAGE_DONE_NEG_06                    UNIT_END + 0x584	//Size:7  Type:Int32  Flags:2
+#define PLAYER_FIELD_MOD_DAMAGE_DONE_PCT                       UNIT_END + 0x585	//Size:7  Type:Int32  Flags:2
+#define PLAYER_FIELD_MOD_DAMAGE_DONE_PCT_01                    UNIT_END + 0x586	//Size:7  Type:Int32  Flags:2
+#define PLAYER_FIELD_MOD_DAMAGE_DONE_PCT_02                    UNIT_END + 0x587	//Size:7  Type:Int32  Flags:2
+#define PLAYER_FIELD_MOD_DAMAGE_DONE_PCT_03                    UNIT_END + 0x588	//Size:7  Type:Int32  Flags:2
+#define PLAYER_FIELD_MOD_DAMAGE_DONE_PCT_04                    UNIT_END + 0x589	//Size:7  Type:Int32  Flags:2
+#define PLAYER_FIELD_MOD_DAMAGE_DONE_PCT_05                    UNIT_END + 0x58A	//Size:7  Type:Int32  Flags:2
+#define PLAYER_FIELD_MOD_DAMAGE_DONE_PCT_06                    UNIT_END + 0x58B	//Size:7  Type:Int32  Flags:2
+#define PLAYER_FIELD_MOD_HEALING_DONE_POS                      UNIT_END + 0x58C	//Size:1  Type:Int32  Flags:2
+#define PLAYER_FIELD_MOD_TARGET_RESISTANCE                     UNIT_END + 0x58D	//Size:1  Type:Int32  Flags:2
+#define PLAYER_FIELD_MOD_TARGET_PHYSICAL_RESISTANCE            UNIT_END + 0x58E	//Size:1  Type:Int32  Flags:2
+#define PLAYER_FIELD_BYTES                                     UNIT_END + 0x58F	//Size:1  Type:Bytes  Flags:2
+#define PLAYER_AMMO_ID                                         UNIT_END + 0x590	//Size:1  Type:Int32  Flags:2
+#define PLAYER_SELF_RES_SPELL                                  UNIT_END + 0x591	//Size:1  Type:Int32  Flags:2
+#define PLAYER_FIELD_PVP_MEDALS                                UNIT_END + 0x592	//Size:1  Type:Int32  Flags:2
+#define PLAYER_FIELD_BUYBACK_PRICE_1                           UNIT_END + 0x593	//Size:12  Type:Int32  Flags:2
+#define PLAYER_FIELD_BUYBACK_PRICE_01                          UNIT_END + 0x594	//Size:12  Type:Int32  Flags:2
+#define PLAYER_FIELD_BUYBACK_PRICE_02                          UNIT_END + 0x595	//Size:12  Type:Int32  Flags:2
+#define PLAYER_FIELD_BUYBACK_PRICE_03                          UNIT_END + 0x596	//Size:12  Type:Int32  Flags:2
+#define PLAYER_FIELD_BUYBACK_PRICE_04                          UNIT_END + 0x597	//Size:12  Type:Int32  Flags:2
+#define PLAYER_FIELD_BUYBACK_PRICE_05                          UNIT_END + 0x598	//Size:12  Type:Int32  Flags:2
+#define PLAYER_FIELD_BUYBACK_PRICE_06                          UNIT_END + 0x599	//Size:12  Type:Int32  Flags:2
+#define PLAYER_FIELD_BUYBACK_PRICE_07                          UNIT_END + 0x59A	//Size:12  Type:Int32  Flags:2
+#define PLAYER_FIELD_BUYBACK_PRICE_08                          UNIT_END + 0x59B	//Size:12  Type:Int32  Flags:2
+#define PLAYER_FIELD_BUYBACK_PRICE_09                          UNIT_END + 0x59C	//Size:12  Type:Int32  Flags:2
+#define PLAYER_FIELD_BUYBACK_PRICE_10                          UNIT_END + 0x59D	//Size:12  Type:Int32  Flags:2
+#define PLAYER_FIELD_BUYBACK_PRICE_11                          UNIT_END + 0x59E	//Size:12  Type:Int32  Flags:2
+#define PLAYER_FIELD_BUYBACK_TIMESTAMP_1                       UNIT_END + 0x59F	//Size:12  Type:Int32  Flags:2
+#define PLAYER_FIELD_BUYBACK_TIMESTAMP_01                      UNIT_END + 0x5A0	//Size:12  Type:Int32  Flags:2
+#define PLAYER_FIELD_BUYBACK_TIMESTAMP_02                      UNIT_END + 0x5A1	//Size:12  Type:Int32  Flags:2
+#define PLAYER_FIELD_BUYBACK_TIMESTAMP_03                      UNIT_END + 0x5A2	//Size:12  Type:Int32  Flags:2
+#define PLAYER_FIELD_BUYBACK_TIMESTAMP_04                      UNIT_END + 0x5A3	//Size:12  Type:Int32  Flags:2
+#define PLAYER_FIELD_BUYBACK_TIMESTAMP_05                      UNIT_END + 0x5A4	//Size:12  Type:Int32  Flags:2
+#define PLAYER_FIELD_BUYBACK_TIMESTAMP_06                      UNIT_END + 0x5A5	//Size:12  Type:Int32  Flags:2
+#define PLAYER_FIELD_BUYBACK_TIMESTAMP_07                      UNIT_END + 0x5A6	//Size:12  Type:Int32  Flags:2
+#define PLAYER_FIELD_BUYBACK_TIMESTAMP_08                      UNIT_END + 0x5A7	//Size:12  Type:Int32  Flags:2
+#define PLAYER_FIELD_BUYBACK_TIMESTAMP_09                      UNIT_END + 0x5A8	//Size:12  Type:Int32  Flags:2
+#define PLAYER_FIELD_BUYBACK_TIMESTAMP_10                      UNIT_END + 0x5A9	//Size:12  Type:Int32  Flags:2
+#define PLAYER_FIELD_BUYBACK_TIMESTAMP_11                      UNIT_END + 0x5AA	//Size:12  Type:Int32  Flags:2
+#define PLAYER_FIELD_KILLS                                     UNIT_END + 0x5AB	//Size:1  Type:Chars?  Flags:2
+#define PLAYER_FIELD_TODAY_CONTRIBUTION                        UNIT_END + 0x5AC	//Size:1  Type:Int32  Flags:2
+#define PLAYER_FIELD_YESTERDAY_CONTRIBUTION                    UNIT_END + 0x5AD	//Size:1  Type:Int32  Flags:2
+#define PLAYER_FIELD_LIFETIME_HONORBALE_KILLS                  UNIT_END + 0x5AE	//Size:1  Type:Int32  Flags:2
+#define PLAYER_FIELD_BYTES2                                    UNIT_END + 0x5AF	//Size:1  Type:Bytes  Flags:2
+#define PLAYER_FIELD_WATCHED_FACTION_INDEX                     UNIT_END + 0x5B0	//Size:1  Type:Int32  Flags:2
+#define PLAYER_FIELD_COMBAT_RATING_1                           UNIT_END + 0x5B1	//Size:25  Type:Int32  Flags:2
+#define PLAYER_FIELD_COMBAT_RATING_01                          UNIT_END + 0x5B2	//Size:25  Type:Int32  Flags:2
+#define PLAYER_FIELD_COMBAT_RATING_02                          UNIT_END + 0x5B3	//Size:25  Type:Int32  Flags:2
+#define PLAYER_FIELD_COMBAT_RATING_03                          UNIT_END + 0x5B4	//Size:25  Type:Int32  Flags:2
+#define PLAYER_FIELD_COMBAT_RATING_04                          UNIT_END + 0x5B5	//Size:25  Type:Int32  Flags:2
+#define PLAYER_FIELD_COMBAT_RATING_05                          UNIT_END + 0x5B6	//Size:25  Type:Int32  Flags:2
 #define PLAYER_FIELD_COMBAT_RATING_06                          UNIT_END + 0x5B7	//Size:25  Type:Int32  Flags:2
 #define PLAYER_FIELD_COMBAT_RATING_07                          UNIT_END + 0x5B8	//Size:25  Type:Int32  Flags:2
 #define PLAYER_FIELD_COMBAT_RATING_08                          UNIT_END + 0x5B9	//Size:25  Type:Int32  Flags:2
@@ -1873,4 +1946,4 @@
 #define UNIT_FIELD_SPIRIT						  UNIT_FIELD_STAT4
 
 
-#endif	
+#endif

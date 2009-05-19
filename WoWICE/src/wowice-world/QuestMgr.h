@@ -92,12 +92,12 @@ public:
 	QuestAssociationList* GetQuestAssociationListForItemId (uint32 itemId);
 	uint32 GetGameObjectLootQuest(uint32 GO_Entry);
 	void SetGameObjectLootQuest(uint32 GO_Entry, uint32 Item_Entry);
-	ARCEMU_INLINE bool IsQuestRepeatable(Quest *qst) { return (qst->is_repeatable==1 ? true : false); }
-	ARCEMU_INLINE bool IsQuestDaily(Quest *qst) { return (qst->is_repeatable==2 ? true : false); }
+	WoWICE_INLINE bool IsQuestRepeatable(Quest *qst) { return (qst->is_repeatable==1 ? true : false); }
+	WoWICE_INLINE bool IsQuestDaily(Quest *qst) { return (qst->is_repeatable==2 ? true : false); }
 
 	bool CanStoreReward(Player *plyr, Quest *qst, uint32 reward_slot);
 
-	ARCEMU_INLINE int32 QuestHasMob(Quest* qst, uint32 mob)
+	WoWICE_INLINE int32 QuestHasMob(Quest* qst, uint32 mob)
 	{
 		for(uint32 i = 0; i < 4; ++i)
 			if(qst->required_mob[i] == mob)
@@ -105,7 +105,7 @@ public:
 		return -1;
 	}
 
-	ARCEMU_INLINE int32 GetOffsetForMob(Quest *qst, uint32 mob)
+	WoWICE_INLINE int32 GetOffsetForMob(Quest *qst, uint32 mob)
 	{
 		for(uint32 i = 0; i < 4; ++i)
 			if(qst->required_mob[i] == mob)
@@ -114,7 +114,7 @@ public:
 		return -1;
 	}
 
-	ARCEMU_INLINE int32 GetOffsetForItem(Quest *qst, uint32 itm)
+	WoWICE_INLINE int32 GetOffsetForItem(Quest *qst, uint32 itm)
 	{
 		for(uint32 i = 0; i < 4; ++i)
 			if(qst->required_item[i] == itm)
@@ -131,7 +131,7 @@ private:
 	HM_NAMESPACE::hash_map<uint32, list<QuestRelation *>* > m_itm_quests;
 
 	HM_NAMESPACE::hash_map<uint32, list<QuestAssociation *>* > m_quest_associations;
-	ARCEMU_INLINE HM_NAMESPACE::hash_map<uint32, list<QuestAssociation *>* >& GetQuestAssociationList()
+	WoWICE_INLINE HM_NAMESPACE::hash_map<uint32, list<QuestAssociation *>* >& GetQuestAssociationList()
 		{return m_quest_associations;}
 
 	HM_NAMESPACE::hash_map<uint32, uint32>		  m_ObjectLootQuestList;
@@ -147,11 +147,11 @@ private:
 	void _CleanLine(std::string *str);
 };
 
-template<> ARCEMU_INLINE HM_NAMESPACE::hash_map<uint32, list<QuestRelation *>* >& QuestMgr::_GetList<Creature>()
+template<> WoWICE_INLINE HM_NAMESPACE::hash_map<uint32, list<QuestRelation *>* >& QuestMgr::_GetList<Creature>()
 	{return m_npc_quests;}
-template<> ARCEMU_INLINE HM_NAMESPACE::hash_map<uint32, list<QuestRelation *>* >& QuestMgr::_GetList<GameObject>()
+template<> WoWICE_INLINE HM_NAMESPACE::hash_map<uint32, list<QuestRelation *>* >& QuestMgr::_GetList<GameObject>()
 	{return m_obj_quests;}
-template<> ARCEMU_INLINE HM_NAMESPACE::hash_map<uint32, list<QuestRelation *>* >& QuestMgr::_GetList<Item>()
+template<> WoWICE_INLINE HM_NAMESPACE::hash_map<uint32, list<QuestRelation *>* >& QuestMgr::_GetList<Item>()
 	{return m_itm_quests;}
 
 

@@ -1444,7 +1444,7 @@ void ObjectMgr::LoadSpellFixes()
 		if( result->GetFieldCount() != 8 )
 		{
 			Log.LargeErrorMessage(LARGERRORMESSAGE_WARNING, "Incorrect column count at spellfixes, skipping, please fix it.",
-				"arcemu has skipped loading this table in order to avoid crashing.", NULL);
+				"wowice has skipped loading this table in order to avoid crashing.", NULL);
 			return;
 		}
 		sLog.outDetail("Loading %u spell fixes from database...",result->GetRowCount());
