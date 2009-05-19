@@ -2,9 +2,9 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="9.00"
-	Name="arcemu-voicechat"
+	Name="wowice-voicechat"
 	ProjectGUID="{C36E06CE-9CBF-4B13-AA03-DA3F886F6B59}"
-	RootNamespace="arcemu-voicechat"
+	RootNamespace="wowice-voicechat"
 	Keyword="Win32Proj"
 	TargetFrameworkVersion="131072"
 	>
@@ -22,7 +22,7 @@
 		<Configuration
 			Name="Debug|Win32"
 			OutputDirectory=".\..\..\bin\Debug"
-			IntermediateDirectory="arcemu-voicechat__2008_debug"
+			IntermediateDirectory="wowice-voicechat__2008_debug"
 			ConfigurationType="1"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
 			CharacterSet="2"
@@ -46,7 +46,7 @@
 				Name="VCCLCompilerTool"
 				AdditionalOptions="/Zm250 /MP"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\..\src\arcemu-shared"
+				AdditionalIncludeDirectories="..\..\src\wowice-shared"
 				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE"
 				MinimalRebuild="false"
 				BasicRuntimeChecks="3"
@@ -68,10 +68,10 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="ws2_32.lib"
-				OutputFile="$(OutDir)/arcemu-voicechat.exe"
+				OutputFile="$(OutDir)/wowice-voicechat.exe"
 				LinkIncremental="1"
 				GenerateDebugInformation="true"
-				ProgramDatabaseFile="$(OutDir)/arcemu-voicechat.pdb"
+				ProgramDatabaseFile="$(OutDir)/wowice-voicechat.pdb"
 				SubSystem="1"
 				RandomizedBaseAddress="1"
 				FixedBaseAddress="1"
@@ -104,7 +104,7 @@
 		<Configuration
 			Name="Debug|x64"
 			OutputDirectory=".\..\..\bin\Debug_x64"
-			IntermediateDirectory="arcemu-voicechat__2008_debug_x64"
+			IntermediateDirectory="wowice-voicechat__2008_debug_x64"
 			ConfigurationType="1"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
 			CharacterSet="2"
@@ -128,7 +128,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\..\src\arcemu-shared"
+				AdditionalIncludeDirectories="..\..\src\wowice-shared"
 				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -150,10 +150,10 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="ws2_32.lib"
-				OutputFile="$(OutDir)/arcemu-voicechat.exe"
+				OutputFile="$(OutDir)/wowice-voicechat.exe"
 				LinkIncremental="2"
 				GenerateDebugInformation="true"
-				ProgramDatabaseFile="$(OutDir)/arcemu-voicechat.pdb"
+				ProgramDatabaseFile="$(OutDir)/wowice-voicechat.pdb"
 				SubSystem="1"
 				RandomizedBaseAddress="1"
 				DataExecutionPrevention="0"
@@ -185,7 +185,7 @@
 		<Configuration
 			Name="Release|Win32"
 			OutputDirectory=".\..\..\bin\Release"
-			IntermediateDirectory="arcemu-voicechat__2008_release"
+			IntermediateDirectory="wowice-voicechat__2008_release"
 			ConfigurationType="1"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
 			CharacterSet="2"
@@ -207,7 +207,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="..\..\src\arcemu-shared"
+				AdditionalIncludeDirectories="..\..\src\wowice-shared"
 				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE"
 				RuntimeLibrary="0"
 				UsePrecompiledHeader="0"
@@ -227,7 +227,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="ws2_32.lib"
-				OutputFile="$(OutDir)/arcemu-voicechat.exe"
+				OutputFile="$(OutDir)/wowice-voicechat.exe"
 				LinkIncremental="1"
 				GenerateDebugInformation="true"
 				SubSystem="1"
@@ -263,7 +263,7 @@
 		<Configuration
 			Name="Release|x64"
 			OutputDirectory=".\..\..\bin\Release_x64"
-			IntermediateDirectory="arcemu-voicechat__2008_release_x64"
+			IntermediateDirectory="wowice-voicechat__2008_release_x64"
 			ConfigurationType="1"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
 			CharacterSet="2"
@@ -286,7 +286,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="..\..\src\arcemu-shared"
+				AdditionalIncludeDirectories="..\..\src\wowice-shared"
 				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE"
 				RuntimeLibrary="0"
 				UsePrecompiledHeader="0"
@@ -306,7 +306,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="ws2_32.lib"
-				OutputFile="$(OutDir)/arcemu-voicechat.exe"
+				OutputFile="$(OutDir)/wowice-voicechat.exe"
 				LinkIncremental="1"
 				GenerateDebugInformation="true"
 				SubSystem="1"
@@ -349,39 +349,39 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath="..\..\src\arcemu-voicechat\arcemu_socket.c"
+				RelativePath="..\..\src\wowice-voicechat\wowice_socket.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-voicechat\configfile.c"
+				RelativePath="..\..\src\wowice-voicechat\configfile.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-voicechat\launcher.c"
+				RelativePath="..\..\src\wowice-voicechat\launcher.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-voicechat\log.c"
+				RelativePath="..\..\src\wowice-voicechat\log.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-voicechat\network_handlers.c"
+				RelativePath="..\..\src\wowice-voicechat\network_handlers.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-voicechat\network_unixselect.c"
+				RelativePath="..\..\src\wowice-voicechat\network_unixselect.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-voicechat\network_win32.c"
+				RelativePath="..\..\src\wowice-voicechat\network_win32.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-voicechat\voice_channel.c"
+				RelativePath="..\..\src\wowice-voicechat\voice_channel.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-voicechat\voice_socket.c"
+				RelativePath="..\..\src\wowice-voicechat\voice_socket.c"
 				>
 			</File>
 		</Filter>
@@ -391,47 +391,47 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
-				RelativePath="..\..\src\arcemu-voicechat\arcemu_opcodes.h"
+				RelativePath="..\..\src\wowice-voicechat\wowice_opcodes.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-voicechat\arcemu_packet.h"
+				RelativePath="..\..\src\wowice-voicechat\wowice_packet.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-voicechat\common.h"
+				RelativePath="..\..\src\wowice-voicechat\common.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-voicechat\configfile.h"
+				RelativePath="..\..\src\wowice-voicechat\configfile.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-voicechat\linkedlist.h"
+				RelativePath="..\..\src\wowice-voicechat\linkedlist.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-voicechat\log.h"
+				RelativePath="..\..\src\wowice-voicechat\log.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-voicechat\mutex.h"
+				RelativePath="..\..\src\wowice-voicechat\mutex.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-voicechat\network.h"
+				RelativePath="..\..\src\wowice-voicechat\network.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-voicechat\network_handlers.h"
+				RelativePath="..\..\src\wowice-voicechat\network_handlers.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-voicechat\voice_channel.h"
+				RelativePath="..\..\src\wowice-voicechat\voice_channel.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-voicechat\voice_channelmgr.h"
+				RelativePath="..\..\src\wowice-voicechat\voice_channelmgr.h"
 				>
 			</File>
 		</Filter>

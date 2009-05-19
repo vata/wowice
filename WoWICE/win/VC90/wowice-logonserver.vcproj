@@ -22,7 +22,7 @@
 		<Configuration
 			Name="Debug|Win32"
 			OutputDirectory=".\..\..\bin\Debug"
-			IntermediateDirectory=".\arcemu-logonserver___Win32_Debug"
+			IntermediateDirectory=".\wowice-logonserver___Win32_Debug"
 			ConfigurationType="1"
 			CharacterSet="2"
 			>
@@ -46,7 +46,7 @@
 				AdditionalOptions="/Zm256 /bigobj"
 				Optimization="0"
 				InlineFunctionExpansion="0"
-				AdditionalIncludeDirectories="&quot;..\..\src\arcemu-shared&quot;;&quot;..\..\extras\arcemu-windows-libraries\VC\include&quot;"
+				AdditionalIncludeDirectories="&quot;..\..\src\wowice-shared&quot;;&quot;..\..\extras\wowice-windows-libraries\VC\include&quot;"
 				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_WARNINGS;_CRT_SECURE_NO_DEPRECATE"
 				MinimalRebuild="false"
 				ExceptionHandling="2"
@@ -77,12 +77,12 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="ws2_32.lib libmysql_debug_win32.lib libeay32_win32.lib dbghelp.lib zlib_debug_win32.lib pcre_debug_win32.lib"
-				OutputFile="$(OutDir)/arcemu-logonserver.exe"
+				OutputFile="$(OutDir)/wowice-logonserver.exe"
 				LinkIncremental="1"
-				AdditionalLibraryDirectories="..\..\extras\arcemu-windows-libraries\VC\lib"
+				AdditionalLibraryDirectories="..\..\extras\wowice-windows-libraries\VC\lib"
 				IgnoreDefaultLibraryNames="msvcrt.lib"
 				GenerateDebugInformation="true"
-				ProgramDatabaseFile="$(OutDir)/arcemu-logonserver.pdb"
+				ProgramDatabaseFile="$(OutDir)/wowice-logonserver.pdb"
 				SubSystem="1"
 				RandomizedBaseAddress="1"
 				FixedBaseAddress="1"
@@ -115,7 +115,7 @@
 		<Configuration
 			Name="Release|Win32"
 			OutputDirectory=".\..\..\bin\Release"
-			IntermediateDirectory=".\arcemu-logonserver___Win32_Release"
+			IntermediateDirectory=".\wowice-logonserver___Win32_Release"
 			ConfigurationType="1"
 			CharacterSet="2"
 			WholeProgramOptimization="1"
@@ -145,7 +145,7 @@
 				OmitFramePointers="true"
 				EnableFiberSafeOptimizations="true"
 				WholeProgramOptimization="true"
-				AdditionalIncludeDirectories="&quot;..\..\src\arcemu-shared&quot;;&quot;..\..\extras\arcemu-windows-libraries\VC\include&quot;"
+				AdditionalIncludeDirectories="&quot;..\..\src\wowice-shared&quot;;&quot;..\..\extras\wowice-windows-libraries\VC\include&quot;"
 				PreprocessorDefinitions="_HAS_ITERATOR_DEBUGGING=0;WIN32;NDEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_WARNINGS"
 				StringPooling="true"
 				MinimalRebuild="false"
@@ -177,12 +177,12 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="ws2_32.lib msvcrt.lib libmysql_release_win32.lib libeay32_win32.lib dbghelp.lib zlib_release_win32.lib pcre_release_win32.lib"
-				OutputFile="$(OutDir)/arcemu-logonserver.exe"
+				OutputFile="$(OutDir)/wowice-logonserver.exe"
 				LinkIncremental="1"
-				AdditionalLibraryDirectories="..\..\extras\arcemu-windows-libraries\VC\lib"
+				AdditionalLibraryDirectories="..\..\extras\wowice-windows-libraries\VC\lib"
 				IgnoreDefaultLibraryNames="msvcrtd.lib"
 				GenerateDebugInformation="true"
-				ProgramDatabaseFile="$(OutDir)/arcemu-logonserver.pdb"
+				ProgramDatabaseFile="$(OutDir)/wowice-logonserver.pdb"
 				SubSystem="1"
 				OptimizeReferences="2"
 				EnableCOMDATFolding="2"
@@ -217,7 +217,7 @@
 		<Configuration
 			Name="Debug|x64"
 			OutputDirectory=".\..\..\bin\Debug_x64"
-			IntermediateDirectory=".\arcemu-logonserver___Win32_Debug_x64"
+			IntermediateDirectory=".\wowice-logonserver___Win32_Debug_x64"
 			ConfigurationType="1"
 			CharacterSet="2"
 			>
@@ -242,7 +242,7 @@
 				AdditionalOptions="/Zm256 /bigobj"
 				Optimization="0"
 				InlineFunctionExpansion="2"
-				AdditionalIncludeDirectories="&quot;..\..\src\arcemu-shared&quot;;&quot;..\..\extras\arcemu-windows-libraries\VC\include&quot;"
+				AdditionalIncludeDirectories="&quot;..\..\src\wowice-shared&quot;;&quot;..\..\extras\wowice-windows-libraries\VC\include&quot;"
 				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_WARNINGS;X64"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -271,11 +271,11 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="ws2_32.lib libmysql_debug_x64.lib libeay32_win64.lib dbghelp.lib zlib_debug_x64.lib pcre_debug_x64.lib"
-				OutputFile="$(OutDir)/arcemu-logonserver.exe"
+				OutputFile="$(OutDir)/wowice-logonserver.exe"
 				LinkIncremental="2"
-				AdditionalLibraryDirectories="..\..\extras\arcemu-windows-libraries\VC\lib"
+				AdditionalLibraryDirectories="..\..\extras\wowice-windows-libraries\VC\lib"
 				GenerateDebugInformation="true"
-				ProgramDatabaseFile="$(OutDir)/arcemu-logonserver.pdb"
+				ProgramDatabaseFile="$(OutDir)/wowice-logonserver.pdb"
 				SubSystem="1"
 				RandomizedBaseAddress="1"
 				FixedBaseAddress="1"
@@ -308,7 +308,7 @@
 		<Configuration
 			Name="Release|x64"
 			OutputDirectory=".\..\..\bin\Release_x64"
-			IntermediateDirectory=".\arcemu-logonserver___Win32_Release_x64"
+			IntermediateDirectory=".\wowice-logonserver___Win32_Release_x64"
 			ConfigurationType="1"
 			CharacterSet="2"
 			>
@@ -333,7 +333,7 @@
 				AdditionalOptions="/MP /Zm256"
 				Optimization="4"
 				InlineFunctionExpansion="2"
-				AdditionalIncludeDirectories="&quot;..\..\src\arcemu-shared&quot;;&quot;..\..\extras\arcemu-windows-libraries\VC\include&quot;"
+				AdditionalIncludeDirectories="&quot;..\..\src\wowice-shared&quot;;&quot;..\..\extras\wowice-windows-libraries\VC\include&quot;"
 				PreprocessorDefinitions="_HAS_ITERATOR_DEBUGGING=0;WIN32;NDEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_WARNINGS;_CRT_SECURE_NO_DEPRECATE;X64"
 				StringPooling="true"
 				MinimalRebuild="false"
@@ -364,11 +364,11 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="ws2_32.lib libmysql_release_x64.lib libeay32_win64.lib dbghelp.lib zlib_release_x64.lib pcre_release_x64.lib"
-				OutputFile="$(OutDir)/arcemu-logonserver.exe"
+				OutputFile="$(OutDir)/wowice-logonserver.exe"
 				LinkIncremental="1"
-				AdditionalLibraryDirectories="..\..\extras\arcemu-windows-libraries\VC\lib"
+				AdditionalLibraryDirectories="..\..\extras\wowice-windows-libraries\VC\lib"
 				GenerateDebugInformation="true"
-				ProgramDatabaseFile="$(OutDir)/arcemu-logonserver.pdb"
+				ProgramDatabaseFile="$(OutDir)/wowice-logonserver.pdb"
 				SubSystem="1"
 				OptimizeReferences="2"
 				EnableCOMDATFolding="2"
@@ -408,19 +408,19 @@
 			Name="WS Interface"
 			>
 			<File
-				RelativePath="..\..\src\arcemu-logonserver\LogonCommServer.cpp"
+				RelativePath="..\..\src\wowice-logonserver\LogonCommServer.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-logonserver\LogonCommServer.h"
+				RelativePath="..\..\src\wowice-logonserver\LogonCommServer.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-logonserver\LogonOpcodes.cpp"
+				RelativePath="..\..\src\wowice-logonserver\LogonOpcodes.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-logonserver\LogonOpcodes.h"
+				RelativePath="..\..\src\wowice-logonserver\LogonOpcodes.h"
 				>
 			</File>
 		</Filter>
@@ -428,23 +428,23 @@
 			Name="Client Handlers"
 			>
 			<File
-				RelativePath="..\..\src\arcemu-logonserver\AuthSocket.cpp"
+				RelativePath="..\..\src\wowice-logonserver\AuthSocket.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-logonserver\AuthSocket.h"
+				RelativePath="..\..\src\wowice-logonserver\AuthSocket.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-logonserver\AuthStructs.h"
+				RelativePath="..\..\src\wowice-logonserver\AuthStructs.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-logonserver\AutoPatcher.cpp"
+				RelativePath="..\..\src\wowice-logonserver\AutoPatcher.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-logonserver\AutoPatcher.h"
+				RelativePath="..\..\src\wowice-logonserver\AutoPatcher.h"
 				>
 			</File>
 		</Filter>
@@ -452,11 +452,11 @@
 			Name="Caching"
 			>
 			<File
-				RelativePath="..\..\src\arcemu-logonserver\AccountCache.cpp"
+				RelativePath="..\..\src\wowice-logonserver\AccountCache.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-logonserver\AccountCache.h"
+				RelativePath="..\..\src\wowice-logonserver\AccountCache.h"
 				>
 			</File>
 		</Filter>
@@ -464,7 +464,7 @@
 			Name="Console"
 			>
 			<File
-				RelativePath="..\..\src\arcemu-logonserver\LogonConsole.cpp"
+				RelativePath="..\..\src\wowice-logonserver\LogonConsole.cpp"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -484,12 +484,12 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-logonserver\LogonConsole.h"
+				RelativePath="..\..\src\wowice-logonserver\LogonConsole.h"
 				>
 			</File>
 		</Filter>
 		<File
-			RelativePath="..\..\src\arcemu-logonserver\LogonStdAfx.cpp"
+			RelativePath="..\..\src\wowice-logonserver\LogonStdAfx.cpp"
 			>
 			<FileConfiguration
 				Name="Debug|Win32"
@@ -525,19 +525,19 @@
 			</FileConfiguration>
 		</File>
 		<File
-			RelativePath="..\..\src\arcemu-logonserver\LogonStdAfx.h"
+			RelativePath="..\..\src\wowice-logonserver\LogonStdAfx.h"
 			>
 		</File>
 		<File
-			RelativePath="..\..\src\arcemu-logonserver\Main.cpp"
+			RelativePath="..\..\src\wowice-logonserver\Main.cpp"
 			>
 		</File>
 		<File
-			RelativePath="..\..\src\arcemu-logonserver\Main.h"
+			RelativePath="..\..\src\wowice-logonserver\Main.h"
 			>
 		</File>
 		<File
-			RelativePath="..\..\src\arcemu-logonserver\resources.rc"
+			RelativePath="..\..\src\wowice-logonserver\resources.rc"
 			>
 		</File>
 	</Files>

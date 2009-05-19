@@ -20,8 +20,8 @@
 	<Configurations>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory=".\arcemu-shared___Win32_Release"
-			IntermediateDirectory=".\arcemu-shared___Win32_Release"
+			OutputDirectory=".\wowice-shared___Win32_Release"
+			IntermediateDirectory=".\wowice-shared___Win32_Release"
 			ConfigurationType="4"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
@@ -31,7 +31,7 @@
 			<Tool
 				Name="VCPreBuildEventTool"
 				Description="Extracting SVN revision..."
-				CommandLine="cd $(SolutionDir)\..\src\arcemu-shared&#x0D;&#x0A;RevisionExtractor.exe&#x0D;&#x0A;"
+				CommandLine="cd $(SolutionDir)\..\src\wowice-shared&#x0D;&#x0A;RevisionExtractor.exe&#x0D;&#x0A;"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -55,7 +55,7 @@
 				OmitFramePointers="true"
 				EnableFiberSafeOptimizations="true"
 				WholeProgramOptimization="true"
-				AdditionalIncludeDirectories="&quot;..\..\src\arcemu-shared&quot;;&quot;..\..\extras\arcemu-windows-libraries\VC\include&quot;"
+				AdditionalIncludeDirectories="&quot;..\..\src\wowice-shared&quot;;&quot;..\..\extras\wowice-windows-libraries\VC\include&quot;"
 				PreprocessorDefinitions="WIN32,NDEBUG,_LIB;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_WARNINGS"
 				StringPooling="true"
 				MinimalRebuild="false"
@@ -193,8 +193,8 @@
 		</Configuration>
 		<Configuration
 			Name="Release|x64"
-			OutputDirectory=".\arcemu-shared___Win32_Release_x64"
-			IntermediateDirectory=".\arcemu-shared___Win32_Release_x64"
+			OutputDirectory=".\wowice-shared___Win32_Release_x64"
+			IntermediateDirectory=".\wowice-shared___Win32_Release_x64"
 			ConfigurationType="4"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
@@ -203,7 +203,7 @@
 			<Tool
 				Name="VCPreBuildEventTool"
 				Description="Extracting SVN revision..."
-				CommandLine="cd $(SolutionDir)\..\src\arcemu-shared&#x0D;&#x0A;RevisionExtractor.exe&#x0D;&#x0A;"
+				CommandLine="cd $(SolutionDir)\..\src\wowice-shared&#x0D;&#x0A;RevisionExtractor.exe&#x0D;&#x0A;"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -223,7 +223,7 @@
 				Optimization="4"
 				InlineFunctionExpansion="2"
 				WholeProgramOptimization="false"
-				AdditionalIncludeDirectories="&quot;..\..\src\arcemu-shared&quot;;&quot;..\..\extras\arcemu-windows-libraries\VC\include&quot;"
+				AdditionalIncludeDirectories="&quot;..\..\src\wowice-shared&quot;;&quot;..\..\extras\wowice-windows-libraries\VC\include&quot;"
 				PreprocessorDefinitions="_HAS_ITERATOR_DEBUGGING=0;WIN32;NDEBUG;_LIB;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_WARNINGS;_CRT_SECURE_NO_DEPRECATE;X64"
 				StringPooling="true"
 				MinimalRebuild="true"
@@ -278,8 +278,8 @@
 		</Configuration>
 		<Configuration
 			Name="Debug|x64"
-			OutputDirectory=".\arcemu-shared___Win32_Debug_x64"
-			IntermediateDirectory=".\arcemu-shared___Win32_Debug_x64"
+			OutputDirectory=".\wowice-shared___Win32_Debug_x64"
+			IntermediateDirectory=".\wowice-shared___Win32_Debug_x64"
 			ConfigurationType="4"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
@@ -288,7 +288,7 @@
 			<Tool
 				Name="VCPreBuildEventTool"
 				Description="Extracting SVN revision..."
-				CommandLine="cd $(SolutionDir)\..\src\arcemu-shared&#x0D;&#x0A;RevisionExtractor.exe&#x0D;&#x0A;"
+				CommandLine="cd $(SolutionDir)\..\src\wowice-shared&#x0D;&#x0A;RevisionExtractor.exe&#x0D;&#x0A;"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -308,7 +308,7 @@
 				AdditionalOptions="/Zm256 /bigobj"
 				Optimization="0"
 				InlineFunctionExpansion="2"
-				AdditionalIncludeDirectories="&quot;..\..\src\arcemu-shared&quot;;&quot;..\..\extras\arcemu-windows-libraries\VC\include&quot;"
+				AdditionalIncludeDirectories="&quot;..\..\src\wowice-shared&quot;;&quot;..\..\extras\wowice-windows-libraries\VC\include&quot;"
 				PreprocessorDefinitions="WIN32,_DEBUG,_LIB;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_WARNINGS;X64"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -366,62 +366,62 @@
 			Name="Database"
 			>
 			<File
-				RelativePath="..\..\src\arcemu-shared\Database\CreateInterface.cpp"
+				RelativePath="..\..\src\wowice-shared\Database\CreateInterface.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-shared\Database\Database.cpp"
+				RelativePath="..\..\src\wowice-shared\Database\Database.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-shared\Database\Database.h"
+				RelativePath="..\..\src\wowice-shared\Database\Database.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-shared\Database\DatabaseEnv.h"
+				RelativePath="..\..\src\wowice-shared\Database\DatabaseEnv.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-shared\Database\dbcfile.cpp"
+				RelativePath="..\..\src\wowice-shared\Database\dbcfile.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-shared\Database\dbcfile.h"
+				RelativePath="..\..\src\wowice-shared\Database\dbcfile.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-shared\Database\Field.h"
+				RelativePath="..\..\src\wowice-shared\Database\Field.h"
 				>
 			</File>
 			<Filter
 				Name="DataStores"
 				>
 				<File
-					RelativePath="..\..\src\arcemu-shared\Database\DataStore.h"
+					RelativePath="..\..\src\wowice-shared\Database\DataStore.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\src\arcemu-shared\Database\DBC.cpp"
+					RelativePath="..\..\src\wowice-shared\Database\DBC.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\src\arcemu-shared\Database\DBC.h"
+					RelativePath="..\..\src\wowice-shared\Database\DBC.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\src\arcemu-shared\Database\dbcfile.cpp"
+					RelativePath="..\..\src\wowice-shared\Database\dbcfile.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\src\arcemu-shared\Database\dbcfile.h"
+					RelativePath="..\..\src\wowice-shared\Database\dbcfile.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\src\arcemu-shared\Database\DBCStores.cpp"
+					RelativePath="..\..\src\wowice-shared\Database\DBCStores.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\src\arcemu-shared\Database\DBCStores.h"
+					RelativePath="..\..\src\wowice-shared\Database\DBCStores.h"
 					>
 				</File>
 			</Filter>
@@ -429,27 +429,27 @@
 				Name="Database Wrappers"
 				>
 				<File
-					RelativePath="..\..\src\arcemu-shared\Database\MySQLDatabase.cpp"
+					RelativePath="..\..\src\wowice-shared\Database\MySQLDatabase.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\src\arcemu-shared\Database\MySQLDatabase.h"
+					RelativePath="..\..\src\wowice-shared\Database\MySQLDatabase.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\src\arcemu-shared\Database\PostgresDatabase.cpp"
+					RelativePath="..\..\src\wowice-shared\Database\PostgresDatabase.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\src\arcemu-shared\Database\PostgresDatabase.h"
+					RelativePath="..\..\src\wowice-shared\Database\PostgresDatabase.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\src\arcemu-shared\Database\SQLiteDatabase.cpp"
+					RelativePath="..\..\src\wowice-shared\Database\SQLiteDatabase.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\src\arcemu-shared\Database\SQLiteDatabase.h"
+					RelativePath="..\..\src\wowice-shared\Database\SQLiteDatabase.h"
 					>
 				</File>
 			</Filter>
@@ -458,15 +458,15 @@
 			Name="Config"
 			>
 			<File
-				RelativePath="..\..\src\arcemu-shared\Config\Config.cpp"
+				RelativePath="..\..\src\wowice-shared\Config\Config.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-shared\Config\Config.h"
+				RelativePath="..\..\src\wowice-shared\Config\Config.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-shared\Config\ConfigEnv.h"
+				RelativePath="..\..\src\wowice-shared\Config\ConfigEnv.h"
 				>
 			</File>
 		</Filter>
@@ -474,43 +474,43 @@
 			Name="Auth"
 			>
 			<File
-				RelativePath="..\..\src\arcemu-shared\Auth\BigNumber.cpp"
+				RelativePath="..\..\src\wowice-shared\Auth\BigNumber.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-shared\Auth\BigNumber.h"
+				RelativePath="..\..\src\wowice-shared\Auth\BigNumber.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-shared\crc32.cpp"
+				RelativePath="..\..\src\wowice-shared\crc32.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-shared\crc32.h"
+				RelativePath="..\..\src\wowice-shared\crc32.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-shared\Auth\MD5.cpp"
+				RelativePath="..\..\src\wowice-shared\Auth\MD5.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-shared\Auth\MD5.h"
+				RelativePath="..\..\src\wowice-shared\Auth\MD5.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-shared\Auth\Sha1.cpp"
+				RelativePath="..\..\src\wowice-shared\Auth\Sha1.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-shared\Auth\Sha1.h"
+				RelativePath="..\..\src\wowice-shared\Auth\Sha1.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-shared\Auth\WowCrypt.cpp"
+				RelativePath="..\..\src\wowice-shared\Auth\WowCrypt.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-shared\Auth\WowCrypt.h"
+				RelativePath="..\..\src\wowice-shared\Auth\WowCrypt.h"
 				>
 			</File>
 		</Filter>
@@ -518,51 +518,51 @@
 			Name="Network"
 			>
 			<File
-				RelativePath="..\..\src\arcemu-shared\Network\CircularBuffer.cpp"
+				RelativePath="..\..\src\wowice-shared\Network\CircularBuffer.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-shared\Network\CircularBuffer.h"
+				RelativePath="..\..\src\wowice-shared\Network\CircularBuffer.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-shared\Network\ListenSocketWin32.h"
+				RelativePath="..\..\src\wowice-shared\Network\ListenSocketWin32.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-shared\Network\Network.h"
+				RelativePath="..\..\src\wowice-shared\Network\Network.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-shared\Network\Socket.cpp"
+				RelativePath="..\..\src\wowice-shared\Network\Socket.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-shared\Network\Socket.h"
+				RelativePath="..\..\src\wowice-shared\Network\Socket.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-shared\Network\SocketDefines.h"
+				RelativePath="..\..\src\wowice-shared\Network\SocketDefines.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-shared\Network\SocketMgrWin32.cpp"
+				RelativePath="..\..\src\wowice-shared\Network\SocketMgrWin32.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-shared\Network\SocketMgrWin32.h"
+				RelativePath="..\..\src\wowice-shared\Network\SocketMgrWin32.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-shared\Network\SocketOps.h"
+				RelativePath="..\..\src\wowice-shared\Network\SocketOps.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-shared\Network\SocketOpsWin32.cpp"
+				RelativePath="..\..\src\wowice-shared\Network\SocketOpsWin32.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-shared\Network\SocketWin32.cpp"
+				RelativePath="..\..\src\wowice-shared\Network\SocketWin32.cpp"
 				>
 			</File>
 		</Filter>
@@ -570,58 +570,58 @@
 			Name="Threading"
 			>
 			<File
-				RelativePath="..\..\src\arcemu-shared\Threading\Condition.h"
+				RelativePath="..\..\src\wowice-shared\Threading\Condition.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-shared\CThreads.cpp"
+				RelativePath="..\..\src\wowice-shared\CThreads.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-shared\CThreads.h"
+				RelativePath="..\..\src\wowice-shared\CThreads.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-shared\Threading\Guard.h"
+				RelativePath="..\..\src\wowice-shared\Threading\Guard.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-shared\Threading\LockedQueue.h"
+				RelativePath="..\..\src\wowice-shared\Threading\LockedQueue.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-shared\Threading\Mutex.cpp"
+				RelativePath="..\..\src\wowice-shared\Threading\Mutex.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-shared\Threading\Mutex.h"
+				RelativePath="..\..\src\wowice-shared\Threading\Mutex.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-shared\Threading\Queue.h"
+				RelativePath="..\..\src\wowice-shared\Threading\Queue.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-shared\Threading\RWLock.h"
+				RelativePath="..\..\src\wowice-shared\Threading\RWLock.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-shared\Threading\Threading.h"
+				RelativePath="..\..\src\wowice-shared\Threading\Threading.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-shared\Threading\ThreadStarter.h"
+				RelativePath="..\..\src\wowice-shared\Threading\ThreadStarter.h"
 				>
 			</File>
 			<Filter
 				Name="ThreadPool"
 				>
 				<File
-					RelativePath="..\..\src\arcemu-shared\Threading\ThreadPool.cpp"
+					RelativePath="..\..\src\wowice-shared\Threading\ThreadPool.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\src\arcemu-shared\Threading\ThreadPool.h"
+					RelativePath="..\..\src\wowice-shared\Threading\ThreadPool.h"
 					>
 				</File>
 			</Filter>
@@ -630,67 +630,67 @@
 			Name="Util"
 			>
 			<File
-				RelativePath="..\..\src\arcemu-shared\Array.h"
+				RelativePath="..\..\src\wowice-shared\Array.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-shared\ByteBuffer.h"
+				RelativePath="..\..\src\wowice-shared\ByteBuffer.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-shared\CallBack.cpp"
+				RelativePath="..\..\src\wowice-shared\CallBack.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-shared\CallBack.h"
+				RelativePath="..\..\src\wowice-shared\CallBack.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-shared\CrashHandler.cpp"
+				RelativePath="..\..\src\wowice-shared\CrashHandler.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-shared\CrashHandler.h"
+				RelativePath="..\..\src\wowice-shared\CrashHandler.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-shared\Errors.h"
+				RelativePath="..\..\src\wowice-shared\Errors.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-shared\LocationVector.h"
+				RelativePath="..\..\src\wowice-shared\LocationVector.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-shared\MapFile.cpp"
+				RelativePath="..\..\src\wowice-shared\MapFile.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-shared\MapFile.h"
+				RelativePath="..\..\src\wowice-shared\MapFile.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-shared\MapFileEntry.cpp"
+				RelativePath="..\..\src\wowice-shared\MapFileEntry.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-shared\MapFileEntry.h"
+				RelativePath="..\..\src\wowice-shared\MapFileEntry.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-shared\MemoryLeaks.cpp"
+				RelativePath="..\..\src\wowice-shared\MemoryLeaks.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-shared\MemoryLeaks.h"
+				RelativePath="..\..\src\wowice-shared\MemoryLeaks.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-shared\MersenneTwister.cpp"
+				RelativePath="..\..\src\wowice-shared\MersenneTwister.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-shared\MersenneTwister.h"
+				RelativePath="..\..\src\wowice-shared\MersenneTwister.h"
 				>
 			</File>
 			<File
@@ -698,86 +698,86 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-shared\PreallocatedQueue.h"
+				RelativePath="..\..\src\wowice-shared\PreallocatedQueue.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-shared\printStackTrace.cpp"
+				RelativePath="..\..\src\wowice-shared\printStackTrace.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-shared\printStackTrace.h"
+				RelativePath="..\..\src\wowice-shared\printStackTrace.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-shared\Singleton.h"
+				RelativePath="..\..\src\wowice-shared\Singleton.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-shared\StackBuffer.h"
+				RelativePath="..\..\src\wowice-shared\StackBuffer.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-shared\StackTrace.cpp"
+				RelativePath="..\..\src\wowice-shared\StackTrace.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-shared\StackTrace.h"
+				RelativePath="..\..\src\wowice-shared\StackTrace.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-shared\StackWalker.cpp"
+				RelativePath="..\..\src\wowice-shared\StackWalker.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-shared\StackWalker.h"
+				RelativePath="..\..\src\wowice-shared\StackWalker.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-shared\TextFile.cpp"
+				RelativePath="..\..\src\wowice-shared\TextFile.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-shared\TextFile.h"
+				RelativePath="..\..\src\wowice-shared\TextFile.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-shared\Timer.h"
+				RelativePath="..\..\src\wowice-shared\Timer.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-shared\Util.cpp"
+				RelativePath="..\..\src\wowice-shared\Util.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-shared\Util.h"
+				RelativePath="..\..\src\wowice-shared\Util.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-shared\WoWGuid.h"
+				RelativePath="..\..\src\wowice-shared\WoWGuid.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-shared\wowice_getopt.cpp"
+				RelativePath="..\..\src\wowice-shared\wowice_getopt.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-shared\wowice_getopt.h"
+				RelativePath="..\..\src\wowice-shared\wowice_getopt.h"
 				>
 			</File>
 			<Filter
 				Name="Log"
 				>
 				<File
-					RelativePath="..\..\src\arcemu-shared\Log.cpp"
+					RelativePath="..\..\src\wowice-shared\Log.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\src\arcemu-shared\Log.h"
+					RelativePath="..\..\src\wowice-shared\Log.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\src\arcemu-shared\NGLog.h"
+					RelativePath="..\..\src\wowice-shared\NGLog.h"
 					>
 				</File>
 			</Filter>
@@ -795,11 +795,11 @@
 			>
 		</File>
 		<File
-			RelativePath="..\..\src\arcemu-shared\Storage.h"
+			RelativePath="..\..\src\wowice-shared\Storage.h"
 			>
 		</File>
 		<File
-			RelativePath="..\..\src\arcemu-shared\wowiceConfig.h"
+			RelativePath="..\..\src\wowice-shared\wowiceConfig.h"
 			>
 		</File>
 	</Files>

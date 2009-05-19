@@ -2,7 +2,7 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="9.00"
-	Name="arcemu-realmserver"
+	Name="wowice-realmserver"
 	ProjectGUID="{B6F51344-229B-4E72-AD84-DB1271C5CFA2}"
 	RootNamespace="realmserver"
 	TargetFrameworkVersion="131072"
@@ -21,7 +21,7 @@
 		<Configuration
 			Name="Release|Win32"
 			OutputDirectory=".\..\..\bin\Release"
-			IntermediateDirectory=".\arcemu-realmserver___Win32_Release"
+			IntermediateDirectory=".\wowice-realmserver___Win32_Release"
 			ConfigurationType="1"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
@@ -52,7 +52,7 @@
 				FavorSizeOrSpeed="1"
 				OmitFramePointers="true"
 				WholeProgramOptimization="true"
-				AdditionalIncludeDirectories="..\..\src\arcemu-shared"
+				AdditionalIncludeDirectories="..\..\src\wowice-shared"
 				PreprocessorDefinitions="WIN32,NDEBUG,_CONSOLE;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_WARNINGS"
 				StringPooling="true"
 				MinimalRebuild="false"
@@ -88,12 +88,12 @@
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
 				AdditionalDependencies="ws2_32.lib libmysql.lib libeay32.lib dbghelp.lib zlib.lib pcre.lib"
-				OutputFile=".\..\..\bin\Release/arcemu-realmserver.exe"
+				OutputFile=".\..\..\bin\Release/wowice-realmserver.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
 				AdditionalLibraryDirectories="..\..\dep\lib32"
 				GenerateDebugInformation="true"
-				ProgramDatabaseFile=".\..\..\bin\Release/arcemu-realmserver.pdb"
+				ProgramDatabaseFile=".\..\..\bin\Release/wowice-realmserver.pdb"
 				SubSystem="1"
 				OptimizeReferences="2"
 				EnableCOMDATFolding="2"
@@ -127,7 +127,7 @@
 		<Configuration
 			Name="Release|x64"
 			OutputDirectory=".\..\..\bin\Release_x64"
-			IntermediateDirectory=".\arcemu-realmserver___Win32_Release_x64"
+			IntermediateDirectory=".\wowice-realmserver___Win32_Release_x64"
 			ConfigurationType="1"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
@@ -155,7 +155,7 @@
 				Optimization="4"
 				InlineFunctionExpansion="2"
 				WholeProgramOptimization="false"
-				AdditionalIncludeDirectories="..\..\src\arcemu-shared"
+				AdditionalIncludeDirectories="..\..\src\wowice-shared"
 				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_WARNINGS;X64"
 				StringPooling="true"
 				MinimalRebuild="false"
@@ -190,12 +190,12 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="ws2_32.lib libmysql.lib libeay32.lib dbghelp.lib zlib.lib pcre.lib"
-				OutputFile=".\..\..\bin\Release_x64/arcemu-realmserver.exe"
+				OutputFile=".\..\..\bin\Release_x64/wowice-realmserver.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
 				AdditionalLibraryDirectories="..\..\dep\lib64"
 				GenerateDebugInformation="true"
-				ProgramDatabaseFile=".\..\..\bin\Release_x64/arcemu-realmserver.pdb"
+				ProgramDatabaseFile=".\..\..\bin\Release_x64/wowice-realmserver.pdb"
 				SubSystem="1"
 				RandomizedBaseAddress="1"
 				DataExecutionPrevention="0"
@@ -227,7 +227,7 @@
 		<Configuration
 			Name="Debug|Win32"
 			OutputDirectory=".\..\..\bin\Debug"
-			IntermediateDirectory=".\arcemu-realmserver___Win32_Debug"
+			IntermediateDirectory=".\wowice-realmserver___Win32_Debug"
 			ConfigurationType="1"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
@@ -254,7 +254,7 @@
 				AdditionalOptions="/Zm250 /MP"
 				Optimization="0"
 				InlineFunctionExpansion="2"
-				AdditionalIncludeDirectories="..\..\src\arcemu-shared"
+				AdditionalIncludeDirectories="..\..\src\wowice-shared"
 				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_WARNINGS;_CRT_SECURE_NO_DEPRECATE"
 				IgnoreStandardIncludePath="false"
 				MinimalRebuild="false"
@@ -287,13 +287,13 @@
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
 				AdditionalDependencies="ws2_32.lib libmysql.lib libeay32.lib dbghelp.lib zlib.lib pcre.lib"
-				OutputFile=".\..\..\bin\Debug\arcemu-realmserver.exe"
+				OutputFile=".\..\..\bin\Debug\wowice-realmserver.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
 				AdditionalLibraryDirectories="..\..\dep\lib32"
 				ModuleDefinitionFile=""
 				GenerateDebugInformation="true"
-				ProgramDatabaseFile=".\..\..\bin\Debug\arcemu-realmserver.pdb"
+				ProgramDatabaseFile=".\..\..\bin\Debug\wowice-realmserver.pdb"
 				GenerateMapFile="false"
 				SubSystem="1"
 				RandomizedBaseAddress="1"
@@ -326,7 +326,7 @@
 		<Configuration
 			Name="Debug|x64"
 			OutputDirectory=".\..\..\bin\Debug_x64"
-			IntermediateDirectory=".\arcemu-realmserver___Win32_Debug"
+			IntermediateDirectory=".\wowice-realmserver___Win32_Debug"
 			ConfigurationType="1"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
@@ -353,7 +353,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				InlineFunctionExpansion="2"
-				AdditionalIncludeDirectories="..\..\src\arcemu-shared"
+				AdditionalIncludeDirectories="..\..\src\wowice-shared"
 				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_WARNINGS;X64"
 				IgnoreStandardIncludePath="false"
 				MinimalRebuild="true"
@@ -385,13 +385,13 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="ws2_32.lib libmysql.lib libeay32.lib dbghelp.lib zlib.lib pcre.lib"
-				OutputFile=".\..\..\bin\Debug_x64\arcemu-realmserver.exe"
+				OutputFile=".\..\..\bin\Debug_x64\wowice-realmserver.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
 				AdditionalLibraryDirectories="..\..\dep\lib64"
 				ModuleDefinitionFile=""
 				GenerateDebugInformation="true"
-				ProgramDatabaseFile=".\..\..\bin\Debug_x64\arcemu-realmserver.pdb"
+				ProgramDatabaseFile=".\..\..\bin\Debug_x64\wowice-realmserver.pdb"
 				GenerateMapFile="false"
 				SubSystem="1"
 				RandomizedBaseAddress="1"
@@ -430,19 +430,19 @@
 			Name="LogonComm"
 			>
 			<File
-				RelativePath="..\..\src\arcemu-realmserver\LogonCommClient.cpp"
+				RelativePath="..\..\src\wowice-realmserver\LogonCommClient.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-realmserver\LogonCommClient.h"
+				RelativePath="..\..\src\wowice-realmserver\LogonCommClient.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-realmserver\LogonCommHandler.cpp"
+				RelativePath="..\..\src\wowice-realmserver\LogonCommHandler.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-realmserver\LogonCommHandler.h"
+				RelativePath="..\..\src\wowice-realmserver\LogonCommHandler.h"
 				>
 			</File>
 		</Filter>
@@ -450,27 +450,27 @@
 			Name="Client"
 			>
 			<File
-				RelativePath="..\..\src\arcemu-realmserver\CharacterHandler.cpp"
+				RelativePath="..\..\src\wowice-realmserver\CharacterHandler.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-realmserver\QueryHandler.cpp"
+				RelativePath="..\..\src\wowice-realmserver\QueryHandler.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-realmserver\Session.cpp"
+				RelativePath="..\..\src\wowice-realmserver\Session.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-realmserver\Session.h"
+				RelativePath="..\..\src\wowice-realmserver\Session.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-realmserver\WorldSocket.cpp"
+				RelativePath="..\..\src\wowice-realmserver\WorldSocket.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-realmserver\WorldSocket.h"
+				RelativePath="..\..\src\wowice-realmserver\WorldSocket.h"
 				>
 			</File>
 		</Filter>
@@ -478,19 +478,19 @@
 			Name="Manager"
 			>
 			<File
-				RelativePath="..\..\src\arcemu-realmserver\ClientManager.cpp"
+				RelativePath="..\..\src\wowice-realmserver\ClientManager.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-realmserver\ClientManager.h"
+				RelativePath="..\..\src\wowice-realmserver\ClientManager.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-realmserver\ClusterManager.cpp"
+				RelativePath="..\..\src\wowice-realmserver\ClusterManager.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-realmserver\ClusterManager.h"
+				RelativePath="..\..\src\wowice-realmserver\ClusterManager.h"
 				>
 			</File>
 		</Filter>
@@ -498,23 +498,23 @@
 			Name="Worker Server"
 			>
 			<File
-				RelativePath="..\..\src\arcemu-realmserver\WorkerOpcodes.h"
+				RelativePath="..\..\src\wowice-realmserver\WorkerOpcodes.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-realmserver\WorkerServer.cpp"
+				RelativePath="..\..\src\wowice-realmserver\WorkerServer.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-realmserver\WorkerServer.h"
+				RelativePath="..\..\src\wowice-realmserver\WorkerServer.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-realmserver\WorkerServerSocket.cpp"
+				RelativePath="..\..\src\wowice-realmserver\WorkerServerSocket.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-realmserver\WorkerServerSocket.h"
+				RelativePath="..\..\src\wowice-realmserver\WorkerServerSocket.h"
 				>
 			</File>
 		</Filter>
@@ -522,7 +522,7 @@
 			Name="Defines"
 			>
 			<File
-				RelativePath="..\..\src\arcemu-realmserver\Structures.h"
+				RelativePath="..\..\src\wowice-realmserver\Structures.h"
 				>
 			</File>
 		</Filter>
@@ -530,24 +530,24 @@
 			Name="Storage"
 			>
 			<File
-				RelativePath="..\..\src\arcemu-realmserver\ObjectStorage.cpp"
+				RelativePath="..\..\src\wowice-realmserver\ObjectStorage.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\arcemu-realmserver\ObjectStorage.h"
+				RelativePath="..\..\src\wowice-realmserver\ObjectStorage.h"
 				>
 			</File>
 		</Filter>
 		<File
-			RelativePath="..\..\src\arcemu-realmserver\Master.cpp"
+			RelativePath="..\..\src\wowice-realmserver\Master.cpp"
 			>
 		</File>
 		<File
-			RelativePath="..\..\src\arcemu-realmserver\Master.h"
+			RelativePath="..\..\src\wowice-realmserver\Master.h"
 			>
 		</File>
 		<File
-			RelativePath="..\..\src\arcemu-realmserver\RStdAfx.cpp"
+			RelativePath="..\..\src\wowice-realmserver\RStdAfx.cpp"
 			>
 			<FileConfiguration
 				Name="Release|Win32"
@@ -583,7 +583,7 @@
 			</FileConfiguration>
 		</File>
 		<File
-			RelativePath="..\..\src\arcemu-realmserver\RStdAfx.h"
+			RelativePath="..\..\src\wowice-realmserver\RStdAfx.h"
 			>
 		</File>
 	</Files>
