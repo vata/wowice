@@ -13,22 +13,27 @@
  * this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <new>
-#include <malloc.h>
-
-#ifdef WIN32
-#ifndef SCRIPTLIB
-
-__declspec(dllexport) void* AllocateMemory(size_t iSize)
+class ChannelMgr :  public Singleton < ChannelMgr >
 {
-	return operator new(iSize);
-}
+ 
+public:
+	ChannelMgr();
+	~ChannelMgr();
 
-__declspec(dllexport) void FreeMemory(void* pPointer)
-{
-	operator delete(pPointer);
-}
+	Channel *GetCreateChannel(const char *name, Player * p, uint32 type_id);
+	Channel *GetChannel(const char *name, Player * p);
+	Channel * GetChannel(const char * name, uint32 team);
+#ifdef VOICE_CHAT
+	void VoiceDied();
+#endif
+	void RemoveChannel(Channel * chn);
+	bool seperatechannels;
 
-#endif		// SCRIPTLIB
-#endif		// WIN32
+private:
+	//team 0: aliance, team 1 horde
+	typedef map<string,Channel *> ChannelList;
+	ChannelList Channels[2];
+	Mutex lock;
+};
 
+#define channelmgr ChannelMgr::getSingleton()

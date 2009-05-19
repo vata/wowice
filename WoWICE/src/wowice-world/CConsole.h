@@ -13,22 +13,19 @@
  * this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <new>
-#include <malloc.h>
+#ifndef __CConsole_H
+#define __CConsole_H
 
-#ifdef WIN32
-#ifndef SCRIPTLIB
+#include "Common.h"
 
-__declspec(dllexport) void* AllocateMemory(size_t iSize)
+class ConsoleThread : public ThreadBase
 {
-	return operator new(iSize);
-}
+protected:
+	bool m_killSwitch;
+	bool m_isRunning;
+public:
+	bool run();
+	void terminate();
+};
 
-__declspec(dllexport) void FreeMemory(void* pPointer)
-{
-	operator delete(pPointer);
-}
-
-#endif		// SCRIPTLIB
-#endif		// WIN32
-
+#endif

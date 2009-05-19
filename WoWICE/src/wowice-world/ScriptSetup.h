@@ -13,22 +13,24 @@
  * this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <new>
-#include <malloc.h>
+#ifndef SCRIPTSETUP_H
+#define SCRIPTSETUP_H
 
-#ifdef WIN32
-#ifndef SCRIPTLIB
+#ifdef SCRIPTLIB
 
-__declspec(dllexport) void* AllocateMemory(size_t iSize)
+#include <svn_revision.h>
+#ifndef SKIP_ALLOCATOR_SHARING
+#include "CoreMemoryAllocator.cpp"
+#endif
+
+#define MAKE_SCRIPT_VERSION(major, minor) (uint32)(((uint16)major << 16) | ((uint16)minor))
+
+extern "C" SCRIPT_DECL uint32 _exp_get_version()
 {
-	return operator new(iSize);
+	return MAKE_SCRIPT_VERSION(BUILD_REVISION / 1000, BUILD_REVISION % 1000);
 }
 
-__declspec(dllexport) void FreeMemory(void* pPointer)
-{
-	operator delete(pPointer);
-}
+#endif
 
-#endif		// SCRIPTLIB
-#endif		// WIN32
+#endif
 

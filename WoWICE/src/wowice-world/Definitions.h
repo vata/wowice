@@ -13,22 +13,21 @@
  * this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <new>
-#include <malloc.h>
+#ifndef WOWSERVER_DEFINITION_H
+#define WOWSERVER_DEFINITION_H
 
-#ifdef WIN32
-#ifndef SCRIPTLIB
 
-__declspec(dllexport) void* AllocateMemory(size_t iSize)
+#define NUM_MAPS 700
+
+
+// Sorry...need this enumeration in Player.*
+enum INSTANCE_MODE
 {
-	return operator new(iSize);
-}
+    MODE_NORMAL = 0,
+    MODE_HEROIC = 1,
+    MODE_EPIC   = 2,
+	NUM_INSTANCE_MODES = 3
+};
 
-__declspec(dllexport) void FreeMemory(void* pPointer)
-{
-	operator delete(pPointer);
-}
 
-#endif		// SCRIPTLIB
-#endif		// WIN32
-
+#endif

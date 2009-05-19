@@ -12,23 +12,29 @@
  * You should have received a copy of the GNU General Public License along with
  * this program. If not, see <http://www.gnu.org/licenses/>.
  */
+ /*
+   Cebernic : This thread watching global schedule and execute it.
+ */
 
-#include <new>
-#include <malloc.h>
+#ifndef _COMMONSCHEDULETHREAD_
+#define _COMMONSCHEDULETHREAD_
 
-#ifdef WIN32
-#ifndef SCRIPTLIB
-
-__declspec(dllexport) void* AllocateMemory(size_t iSize)
+class CommonScheduleThread : public CThread
 {
-	return operator new(iSize);
-}
+	bool m_running;
+	bool m_busy;
+	std::multimap<uint32,uint32>::iterator itOrderMSGEntry;
 
-__declspec(dllexport) void FreeMemory(void* pPointer)
-{
-	operator delete(pPointer);
-}
+	uint32 BCTimerCount;
 
-#endif		// SCRIPTLIB
-#endif		// WIN32
+public:
+	CommonScheduleThread();
+	~CommonScheduleThread();
 
+	bool run();
+	void terminate();
+
+	void BroadCastExec();
+};
+
+#endif

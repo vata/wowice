@@ -13,22 +13,35 @@
  * this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <new>
-#include <malloc.h>
+#ifndef _BASECONSOLE_H
+#define _BASECONSOLE_H
 
-#ifdef WIN32
-#ifndef SCRIPTLIB
+class ConsoleSocket;
 
-__declspec(dllexport) void* AllocateMemory(size_t iSize)
+class BaseConsole
 {
-	return operator new(iSize);
-}
+public:
+	virtual ~BaseConsole() {}
+	virtual void Write(const char * Format, ...) = 0;
+	virtual void WriteNA(const char * Format) = 0;
+};
 
-__declspec(dllexport) void FreeMemory(void* pPointer)
+class RemoteConsole : public BaseConsole
 {
-	operator delete(pPointer);
-}
+	ConsoleSocket * m_pSocket;
+public:
+	RemoteConsole(ConsoleSocket* pSocket);
+	void Write(const char * Format, ...);
+	void WriteNA(const char * Format);
+};
 
-#endif		// SCRIPTLIB
-#endif		// WIN32
+class LocalConsole : public BaseConsole
+{
+public:
+	void Write(const char * Format, ...);
+	void WriteNA(const char * Format);
+};
 
+void HandleConsoleInput(BaseConsole * pConsole, const char * szInput);
+
+#endif
