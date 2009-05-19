@@ -28,14 +28,14 @@ public:
 
 	}
 
-	ARCEMU_INLINE void add(const TYPE& element)
+	WoWICE_INLINE void add(const TYPE& element)
 	{
 		mutex.Acquire();
 		queue.push_back(element);
 		mutex.Release();
 	}
 
-	ARCEMU_INLINE TYPE next()
+	WoWICE_INLINE TYPE next()
 	{
 		mutex.Acquire();
 		assert(queue.size() > 0);
@@ -45,7 +45,7 @@ public:
 		return t;
 	}
 
-	ARCEMU_INLINE size_t size()
+	WoWICE_INLINE size_t size()
 	{
 		mutex.Acquire();
 		size_t c = queue.size();
@@ -53,7 +53,7 @@ public:
 		return c;
 	}
 
-	ARCEMU_INLINE TYPE get_first_element()
+	WoWICE_INLINE TYPE get_first_element()
 	{
 		mutex.Acquire();
 		TYPE t; 
@@ -65,7 +65,7 @@ public:
 		return t;			
 	}
 
-	ARCEMU_INLINE void pop()
+	WoWICE_INLINE void pop()
 	{
 		mutex.Acquire();
 		ASSERT(queue.size() > 0);
@@ -73,7 +73,7 @@ public:
 		mutex.Release();
 	}
 
-	ARCEMU_INLINE void clear()
+	WoWICE_INLINE void clear()
 	{
 		mutex.Acquire();
 		queue.resize(0);

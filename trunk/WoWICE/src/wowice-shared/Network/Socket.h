@@ -60,7 +60,7 @@ public:
 	bool Send(const uint8 * Bytes, uint32 Size);
 
 	// Burst system - Locks the sending mutex.
-	ARCEMU_INLINE void BurstBegin() { m_writeMutex.Acquire(); }
+	WoWICE_INLINE void BurstBegin() { m_writeMutex.Acquire(); }
 
 	// Burst system - Adds bytes to output buffer.
 	bool BurstSend(const uint8 * Bytes, uint32 Size);
@@ -69,14 +69,14 @@ public:
 	void BurstPush();
 
 	// Burst system - Unlocks the sending mutex.
-	ARCEMU_INLINE void BurstEnd() { m_writeMutex.Release(); }
+	WoWICE_INLINE void BurstEnd() { m_writeMutex.Release(); }
 
 /* Client Operations */
 
 	// Get the client's ip in numerical form.
 	string GetRemoteIP();
-	ARCEMU_INLINE uint32 GetRemotePort() { return ntohs(m_client.sin_port); }
-	ARCEMU_INLINE SOCKET GetFd() { return m_fd; }
+	WoWICE_INLINE uint32 GetRemotePort() { return ntohs(m_client.sin_port); }
+	WoWICE_INLINE SOCKET GetFd() { return m_fd; }
 	
 /* Platform-specific methods */
 
@@ -84,16 +84,16 @@ public:
 	void ReadCallback(uint32 len);
 	void WriteCallback();
 
-	ARCEMU_INLINE bool IsDeleted() { return m_deleted; }
-	ARCEMU_INLINE bool IsConnected() { return m_connected; }
-	ARCEMU_INLINE sockaddr_in & GetRemoteStruct() { return m_client; }
-	ARCEMU_INLINE CircularBuffer& GetReadBuffer() { return readBuffer; }
-	ARCEMU_INLINE CircularBuffer& GetWriteBuffer() { return writeBuffer; }
+	WoWICE_INLINE bool IsDeleted() { return m_deleted; }
+	WoWICE_INLINE bool IsConnected() { return m_connected; }
+	WoWICE_INLINE sockaddr_in & GetRemoteStruct() { return m_client; }
+	WoWICE_INLINE CircularBuffer& GetReadBuffer() { return readBuffer; }
+	WoWICE_INLINE CircularBuffer& GetWriteBuffer() { return writeBuffer; }
 
 /* Deletion */
 	void Delete();
 
-	ARCEMU_INLINE in_addr GetRemoteAddress() { return m_client.sin_addr; }
+	WoWICE_INLINE in_addr GetRemoteAddress() { return m_client.sin_addr; }
 
 protected:
 
@@ -122,12 +122,12 @@ protected:
 public:
 
 	// Set completion port that this socket will be assigned to.
-	ARCEMU_INLINE void SetCompletionPort(HANDLE cp) { m_completionPort = cp; }
+	WoWICE_INLINE void SetCompletionPort(HANDLE cp) { m_completionPort = cp; }
 	
 	// Atomic wrapper functions for increasing read/write locks
-	ARCEMU_INLINE void IncSendLock() { InterlockedIncrement(&m_writeLock); }
-	ARCEMU_INLINE void DecSendLock() { InterlockedDecrement(&m_writeLock); }
-	ARCEMU_INLINE bool AcquireSendLock()
+	WoWICE_INLINE void IncSendLock() { InterlockedIncrement(&m_writeLock); }
+	WoWICE_INLINE void DecSendLock() { InterlockedDecrement(&m_writeLock); }
+	WoWICE_INLINE bool AcquireSendLock()
 	{
 		if(m_writeLock)
 			return false;
@@ -159,9 +159,9 @@ public:
 	void PostEvent(uint32 events);
 
 	// Atomic wrapper functions for increasing read/write locks
-	ARCEMU_INLINE void IncSendLock() { m_writeLockMutex.Acquire(); m_writeLock++; m_writeLockMutex.Release(); }
-	ARCEMU_INLINE void DecSendLock() { m_writeLockMutex.Acquire(); m_writeLock--; m_writeLockMutex.Release(); }
-	ARCEMU_INLINE bool HasSendLock() { bool res; m_writeLockMutex.Acquire(); res = (m_writeLock != 0); m_writeLockMutex.Release(); return res; }
+	WoWICE_INLINE void IncSendLock() { m_writeLockMutex.Acquire(); m_writeLock++; m_writeLockMutex.Release(); }
+	WoWICE_INLINE void DecSendLock() { m_writeLockMutex.Acquire(); m_writeLock--; m_writeLockMutex.Release(); }
+	WoWICE_INLINE bool HasSendLock() { bool res; m_writeLockMutex.Acquire(); res = (m_writeLock != 0); m_writeLockMutex.Release(); return res; }
 	bool AcquireSendLock()
 	{
 	  bool rv;
@@ -188,9 +188,9 @@ public:
 	// Posts a epoll event with the specifed arguments.
 	void PostEvent(int events, bool oneshot);
 	// Atomic wrapper functions for increasing read/write locks
-	ARCEMU_INLINE void IncSendLock() { m_writeLockMutex.Acquire(); m_writeLock++; m_writeLockMutex.Release(); }
-	ARCEMU_INLINE void DecSendLock() { m_writeLockMutex.Acquire(); m_writeLock--; m_writeLockMutex.Release(); }
-	ARCEMU_INLINE bool HasSendLock() { bool res; m_writeLockMutex.Acquire(); res = (m_writeLock != 0); m_writeLockMutex.Release(); return res; }
+	WoWICE_INLINE void IncSendLock() { m_writeLockMutex.Acquire(); m_writeLock++; m_writeLockMutex.Release(); }
+	WoWICE_INLINE void DecSendLock() { m_writeLockMutex.Acquire(); m_writeLock--; m_writeLockMutex.Release(); }
+	WoWICE_INLINE bool HasSendLock() { bool res; m_writeLockMutex.Acquire(); res = (m_writeLock != 0); m_writeLockMutex.Release(); return res; }
 	bool AcquireSendLock()
 	{
 		bool rv;

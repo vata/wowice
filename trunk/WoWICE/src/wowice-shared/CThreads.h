@@ -49,8 +49,8 @@ public:
 	CThread();
 	~CThread();
 
-	ARCEMU_INLINE void SetThreadState(CThreadState thread_state) { ThreadState = thread_state; }
-	ARCEMU_INLINE CThreadState GetThreadState() { return ThreadState; }
+	WoWICE_INLINE void SetThreadState(CThreadState thread_state) { ThreadState = thread_state; }
+	WoWICE_INLINE CThreadState GetThreadState() { return ThreadState; }
 	int GetThreadId() { return ThreadId; }
 	time_t GetStartTime() { return start_time; }
 	virtual bool run();

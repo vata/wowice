@@ -1417,23 +1417,23 @@ struct ScalingStatValuesEntry{
 
 #pragma pack(pop)
 
-ARCEMU_INLINE float GetRadius(SpellRadius *radius)
+WoWICE_INLINE float GetRadius(SpellRadius *radius)
 {
 	return radius->Radius;
 }
-ARCEMU_INLINE uint32 GetCastTime(SpellCastTime *time)
+WoWICE_INLINE uint32 GetCastTime(SpellCastTime *time)
 {
 	return time->CastTime;
 }
-ARCEMU_INLINE float GetMaxRange(SpellRange *range)
+WoWICE_INLINE float GetMaxRange(SpellRange *range)
 {
 	return range->maxRange;
 }
-ARCEMU_INLINE float GetMinRange(SpellRange *range)
+WoWICE_INLINE float GetMinRange(SpellRange *range)
 {
 	return range->minRange;
 }
-ARCEMU_INLINE uint32 GetDuration(SpellDuration *dur)
+WoWICE_INLINE uint32 GetDuration(SpellDuration *dur)
 {
 	return dur->Duration1;
 }
@@ -1627,7 +1627,7 @@ public:
 		}
 	}
 
-	ARCEMU_INLINE uint32 GetNumRows()
+	WoWICE_INLINE uint32 GetNumRows()
 	{
 		return m_numrows;
 	}
