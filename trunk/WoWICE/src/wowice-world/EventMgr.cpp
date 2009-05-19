@@ -13,22 +13,11 @@
  * this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <new>
-#include <malloc.h>
+#include "StdAfx.h"
 
-#ifdef WIN32
-#ifndef SCRIPTLIB
+initialiseSingleton( EventMgr );
 
-__declspec(dllexport) void* AllocateMemory(size_t iSize)
+TimedEvent * TimedEvent::Allocate(void* object, CallbackBase* callback, uint32 flags, time_t time, uint32 repeat)
 {
-	return operator new(iSize);
+	return new TimedEvent(object, callback, flags, time, repeat, 0);
 }
-
-__declspec(dllexport) void FreeMemory(void* pPointer)
-{
-	operator delete(pPointer);
-}
-
-#endif		// SCRIPTLIB
-#endif		// WIN32
-

@@ -13,22 +13,24 @@
  * this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <new>
-#include <malloc.h>
+#ifndef _VOICECHATCLIENTSOCKET_H
+#define _VOICECHATCLIENTSOCKET_H
 
-#ifdef WIN32
-#ifndef SCRIPTLIB
+#ifdef VOICE_CHAT
 
-__declspec(dllexport) void* AllocateMemory(size_t iSize)
+class VoiceChatClientSocket : public Socket
 {
-	return operator new(iSize);
-}
+	uint16 op;
+	uint16 remaining;
+public:
+	VoiceChatClientSocket(uint32 fd);
+	void OnDisconnect();
+	void OnRead();
+	void SendPacket(WorldPacket* data);
+	time_t next_ping;
+	time_t last_pong;
+};
 
-__declspec(dllexport) void FreeMemory(void* pPointer)
-{
-	operator delete(pPointer);
-}
-
-#endif		// SCRIPTLIB
-#endif		// WIN32
+#endif		// VOICE_CHAT
+#endif		// _VOICECHATCLIENTSOCKET_H
 

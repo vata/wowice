@@ -13,22 +13,19 @@
  * this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <new>
-#include <malloc.h>
+#ifndef _DATABASECLEANER_H
+#define _DATABASECLEANER_H
 
-#ifdef WIN32
-#ifndef SCRIPTLIB
-
-__declspec(dllexport) void* AllocateMemory(size_t iSize)
+class DatabaseCleaner : public Singleton<DatabaseCleaner>
 {
-	return operator new(iSize);
-}
+public:
+	void Run();
 
-__declspec(dllexport) void FreeMemory(void* pPointer)
-{
-	operator delete(pPointer);
-}
+protected:
+	void CleanCharacters();
+	void CleanWorld();
+	void Optimize();
+};
 
-#endif		// SCRIPTLIB
-#endif		// WIN32
+#endif
 

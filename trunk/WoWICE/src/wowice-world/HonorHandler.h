@@ -13,22 +13,17 @@
  * this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <new>
-#include <malloc.h>
+#ifndef HONORHANDLER_H
+#define HONORHANDLER_H
 
-#ifdef WIN32
-#ifndef SCRIPTLIB
-
-__declspec(dllexport) void* AllocateMemory(size_t iSize)
+class HonorHandler
 {
-	return operator new(iSize);
-}
+public:
+	static int32 CalculateHonorPointsForKill(Player *pPlayer, Unit* pVictim);
+	static void RecalculateHonorFields(Player *pPlayer);
+	static void AddHonorPointsToPlayer(Player *pPlayer, uint32 uAmount);
+	static void OnPlayerKilledUnit(Player *pPlayer, Unit* pVictim);	
+};
 
-__declspec(dllexport) void FreeMemory(void* pPointer)
-{
-	operator delete(pPointer);
-}
 
-#endif		// SCRIPTLIB
-#endif		// WIN32
-
+#endif

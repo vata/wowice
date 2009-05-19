@@ -13,22 +13,32 @@
  * this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <new>
-#include <malloc.h>
+//
+// NameTables.h
+//
 
-#ifdef WIN32
-#ifndef SCRIPTLIB
+#ifndef __NAMETABLES_H
+#define __NAMETABLES_H
 
-__declspec(dllexport) void* AllocateMemory(size_t iSize)
+struct NameTableEntry
 {
-	return operator new(iSize);
+	uint32 id;
+	const char *name;
+};
+
+static inline const char* LookupName(uint32 id, NameTableEntry *table)
+{
+	for(uint32 i = 0; table[i].name != 0; i++)
+	{
+		if (table[i].id == id)
+			return table[i].name;
+	}
+
+	return "UNKNOWN";
 }
 
-__declspec(dllexport) void FreeMemory(void* pPointer)
-{
-	operator delete(pPointer);
-}
+extern NameTableEntry g_worldOpcodeNames[];
+extern NameTableEntry g_logonOpcodeNames[];
+extern NameTableEntry g_pluginOpcodeNames[];
 
-#endif		// SCRIPTLIB
-#endif		// WIN32
-
+#endif

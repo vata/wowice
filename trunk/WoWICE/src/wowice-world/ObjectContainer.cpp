@@ -13,22 +13,26 @@
  * this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <new>
-#include <malloc.h>
+#include "StdAfx.h"
 
-#ifdef WIN32
-#ifndef SCRIPTLIB
-
-__declspec(dllexport) void* AllocateMemory(size_t iSize)
+void ObjectContainer::Activate(MapMgr *mgr)
 {
-	return operator new(iSize);
+
 }
 
-__declspec(dllexport) void FreeMemory(void* pPointer)
+void ObjectContainer::AddToWorld()
 {
-	operator delete(pPointer);
+	for(set<Object *>::iterator itr = groupObjects.begin(); itr != groupObjects.end(); ++itr)
+		(*itr)->AddToWorld();
 }
 
-#endif		// SCRIPTLIB
-#endif		// WIN32
+void ObjectContainer::AddToWorld(MapMgr *pMapMgr)
+{
+	for(set<Object *>::iterator itr = groupObjects.begin(); itr != groupObjects.end(); ++itr)
+		(*itr)->AddToWorld(pMapMgr);
+}
 
+void ObjectContainer::Deactivate(MapMgr *mgr)
+{
+
+}

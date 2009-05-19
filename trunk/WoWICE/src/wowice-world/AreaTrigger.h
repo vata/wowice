@@ -13,22 +13,38 @@
  * this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <new>
-#include <malloc.h>
+#ifndef __AREATRIGGERHANDLER_H
+#define __AREATRIGGERHANDLER_H
 
-#ifdef WIN32
-#ifndef SCRIPTLIB
 
-__declspec(dllexport) void* AllocateMemory(size_t iSize)
+enum AreaTriggerType
 {
-	return operator new(iSize);
-}
+	ATTYPE_NULL		 = 0,
+	ATTYPE_INSTANCE	 = 1,
+	ATTYPE_QUESTTRIGGER = 2,
+	ATTYPE_INN		  = 3,
+	ATTYPE_TELEPORT	 = 4,
+	ATTYPE_SPELL		= 5,
+	ATTYPE_BATTLEGROUND = 6,
+};
 
-__declspec(dllexport) void FreeMemory(void* pPointer)
+#pragma pack(push,1)
+typedef struct AreaTrigger
 {
-	operator delete(pPointer);
-}
+	uint32 AreaTriggerID;
+	uint8 Type;
+	uint32 Mapid;
+	uint32 PendingScreen;
+	char * Name;
+	float x;
+	float y;
+	float z;
+	float o;
+	uint32 required_honor_rank;
+	uint32 required_level;
+}AreaTrigger;
+#pragma pack(pop)
 
-#endif		// SCRIPTLIB
-#endif		// WIN32
 
+
+#endif

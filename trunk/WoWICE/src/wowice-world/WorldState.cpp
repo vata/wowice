@@ -13,22 +13,15 @@
  * this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <new>
-#include <malloc.h>
+#include "StdAfx.h"
 
-#ifdef WIN32
-#ifndef SCRIPTLIB
-
-__declspec(dllexport) void* AllocateMemory(size_t iSize)
+void WorldStateHandler::SetState(uint32 index, uint32 value)
 {
-	return operator new(iSize);
+	//try and find the state and modify
+	WorldStateMap::iterator itr=m_states.find(index);
+
+	if (itr == m_states.end())
+		m_states.insert(std::pair<uint32, uint32>(index, value));
+	else
+		itr->second=value;
 }
-
-__declspec(dllexport) void FreeMemory(void* pPointer)
-{
-	operator delete(pPointer);
-}
-
-#endif		// SCRIPTLIB
-#endif		// WIN32
-

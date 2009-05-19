@@ -13,22 +13,18 @@
  * this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <new>
-#include <malloc.h>
+//
+// WorldRunnable.h
+//
 
-#ifdef WIN32
-#ifndef SCRIPTLIB
+#ifndef __WORLDRUNNABLE_H
+#define __WORLDRUNNABLE_H
 
-__declspec(dllexport) void* AllocateMemory(size_t iSize)
+class WorldRunnable : public CThread
 {
-	return operator new(iSize);
-}
+public:
+	WorldRunnable();
+	bool run();
+};
 
-__declspec(dllexport) void FreeMemory(void* pPointer)
-{
-	operator delete(pPointer);
-}
-
-#endif		// SCRIPTLIB
-#endif		// WIN32
-
+#endif

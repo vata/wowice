@@ -13,22 +13,21 @@
  * this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <new>
-#include <malloc.h>
+#ifndef __WORLDSTATE_H
+#define __WORLDSTATE_H
 
-#ifdef WIN32
-#ifndef SCRIPTLIB
+class WorldStateHandler;
+typedef std::map<uint32, WorldStateHandler*> WorldStateHandlerMap;
+typedef std::map<uint32, uint32> WorldStateMap;
 
-__declspec(dllexport) void* AllocateMemory(size_t iSize)
+class WorldStateHandler
 {
-	return operator new(iSize);
-}
+public:
+	WorldStateMap m_states;
 
-__declspec(dllexport) void FreeMemory(void* pPointer)
-{
-	operator delete(pPointer);
-}
+	void SetState(uint32 index, uint32 value);
 
-#endif		// SCRIPTLIB
-#endif		// WIN32
+	ARCEMU_INLINE void EraseState(uint32 index) { m_states.erase(index); }
+};
 
+#endif
