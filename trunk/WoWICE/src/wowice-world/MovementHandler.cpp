@@ -39,7 +39,7 @@ uint32 TimeStamp()
 	return uint32(((t / 1000000L) * 1000) + ((t % 1000000L) / 1000));
 }
 
-ARCEMU_INLINE uint32 mTimeStamp()
+WoWICE_INLINE uint32 mTimeStamp()
 {
 	return timeGetTime();
 }
@@ -53,7 +53,7 @@ uint32 TimeStamp()
 	return (tp.tv_sec * 1000) + (tp.tv_usec / 1000);
 }
 
-ARCEMU_INLINE uint32 mTimeStamp()
+WoWICE_INLINE uint32 mTimeStamp()
 {
 	struct timeval tp;
 	gettimeofday(&tp, NULL);

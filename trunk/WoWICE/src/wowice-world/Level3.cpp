@@ -3482,4 +3482,188 @@ bool ChatHandler::HandleCollisionTestLOS(const char * args, WorldSession * m_ses
 		const LocationVector & loc1 = m_session->GetPlayer()->GetPosition();
 		bool res = CollideInterface.CheckLOS(pObj->GetMapId(), loc1.x, loc1.y, loc1.z, loc2.x, loc2.y, loc2.z);
 		bool res2 = CollideInterface.CheckLOS(pObj->GetMapId(), loc1.x, loc1.y, loc1.z+2.0f, loc2.x, loc2.y, loc2.z+2.0f);
-		boo                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          
+		bool res3 = CollideInterface.CheckLOS(pObj->GetMapId(), loc1.x, loc1.y, loc1.z+5.0f, loc2.x, loc2.y, loc2.z+5.0f);
+		SystemMessage(m_session, "Result was: %s %s %s.", res ? "in LOS" : "not in LOS", res2 ? "in LOS" : "not in LOS", res3 ? "in LOS" : "not in LOS");
+		return true;
+	} else {
+		SystemMessage(m_session, "Collision is not enabled.");
+		return true;
+	}
+}
+
+bool ChatHandler::HandleGetDeathState(const char * args, WorldSession * m_session)
+{
+    Player* SelectedPlayer = getSelectedChar(m_session, true);
+    if(!SelectedPlayer)
+        return true;
+
+    SystemMessage(m_session, "Death State: %d",SelectedPlayer->getDeathState());
+        return true;
+}
+
+
+bool ChatHandler::HandleCollisionGetHeight(const char * args, WorldSession * m_session)
+{
+	if (sWorld.Collision) {
+		Player * plr = m_session->GetPlayer();
+		float radius = 5.0f;
+
+		float posX = plr->GetPositionX();
+		float posY = plr->GetPositionY();
+		float posZ = plr->GetPositionZ();
+		float ori  = plr->GetOrientation();
+
+		LocationVector src(posX,posY,posZ);
+
+		LocationVector dest(posX+(radius*(cosf(ori))),posY+(radius*(sinf(ori))),posZ);
+		//LocationVector destest(posX+(radius*(cosf(ori))),posY+(radius*(sinf(ori))),posZ);
+
+
+		float z = CollideInterface.GetHeight(plr->GetMapId(), posX, posY, posZ + 2.0f);
+		float z2 = CollideInterface.GetHeight(plr->GetMapId(), posX, posY, posZ + 5.0f);
+		float z3 = CollideInterface.GetHeight(plr->GetMapId(), posX, posY, posZ);
+		float z4 = plr->GetMapMgr()->GetLandHeight(plr->GetPositionX(),plr->GetPositionY());
+		bool fp = CollideInterface.GetFirstPoint( plr->GetMapId(), src, dest, dest, -1.5f );
+
+		SystemMessage(m_session, "Results were: %f(offset2.0f) | %f(offset5.0f) | %f(org) | landheight:%f | target radius5 FP:%d", z, z2, z3,z4,fp);
+		return true;
+	} else {
+		SystemMessage(m_session, "Collision is not enabled.");
+		return true;
+	}
+}
+bool ChatHandler::HandleLevelUpCommand(const char* args, WorldSession *m_session)
+{
+	int levels = 0;
+
+	if (!*args)
+		levels = 1;
+	else
+		levels = atoi(args);
+
+	if(levels <= 0)
+		return false;
+
+	Player *plr = getSelectedChar(m_session, true);
+
+	if(!plr) plr = m_session->GetPlayer();
+
+	if(!plr) return false;
+
+	sGMLog.writefromsession(m_session, "used level up command on %s, with %u levels", plr->GetName(), levels);
+
+	levels += plr->getLevel();
+
+	if(levels>PLAYER_LEVEL_CAP)
+		levels=PLAYER_LEVEL_CAP;
+
+	LevelInfo * inf = objmgr.GetLevelInfo(plr->getRace(),plr->getClass(),levels);
+	if(!inf)
+		return false;
+	plr->ApplyLevelInfo(inf,levels);
+
+	WorldPacket data;
+	std::stringstream sstext;
+	sstext << "You have been leveled up to Level " << levels << '\0';
+	SystemMessage(plr->GetSession(), sstext.str().c_str());
+
+	plr->Social_TellFriendsOnline();
+
+	return true;
+}
+
+bool ChatHandler::HandleFixScaleCommand(const char * args, WorldSession * m_session)
+{
+	Creature * pCreature = getSelectedCreature(m_session, true);
+	if( pCreature == NULL )
+		return true;
+
+	float sc = (float)atof(args);
+	if(sc < 0.1f)
+	{
+		return false;
+	}
+
+	pCreature->SetFloatValue(OBJECT_FIELD_SCALE_X, sc);
+	pCreature->GetProto()->Scale = sc;
+	WorldDatabase.Execute("UPDATE creature_proto SET scale = '%f' WHERE entry = %u", sc, pCreature->GetEntry());
+	return true;
+}
+
+bool ChatHandler::HandleAddTrainerSpellCommand( const char * args, WorldSession * m_session )
+{
+	Creature * pCreature = getSelectedCreature(m_session, true);
+	if( pCreature == NULL )
+		return true;
+
+	uint32 spellid, cost, reqspell, reqlevel, delspell;
+	if( sscanf(args, "%u %u %u %u %u", &spellid, &cost, &reqspell, &reqlevel, &delspell) != 5 )
+		return false;
+
+	Trainer * pTrainer =  pCreature->GetTrainer();
+	if( pTrainer == NULL )
+	{
+		RedSystemMessage(m_session, "Target is not a trainer.");
+		return true;
+	}
+
+	SpellEntry* pSpell = dbcSpell.LookupEntryForced(spellid);
+	if(pSpell==NULL)
+	{
+		RedSystemMessage(m_session, "Invalid spell.");
+		return true;
+	}
+
+	if( pSpell->Effect[0] == SPELL_EFFECT_INSTANT_KILL || pSpell->Effect[1] == SPELL_EFFECT_INSTANT_KILL || pSpell->Effect[2] == SPELL_EFFECT_INSTANT_KILL )
+	{
+		RedSystemMessage(m_session, "No. You're not doing that.");
+		return true;
+	}
+
+	TrainerSpell sp;
+	sp.Cost = cost;
+	sp.IsProfession = false;
+	sp.pLearnSpell = pSpell;
+	sp.pCastRealSpell = NULL;
+	sp.pCastSpell = NULL;
+	sp.RequiredLevel = reqlevel;
+	sp.RequiredSpell = reqspell;
+	sp.DeleteSpell = delspell;
+
+	pTrainer->Spells.push_back(sp);
+	pTrainer->SpellCount++;
+
+	SystemMessage(m_session, "Added spell %u (%s) to trainer.", pSpell->Id, pSpell->Name);
+	sGMLog.writefromsession(m_session, "added spell %u to trainer %u", spellid, pCreature->GetEntry());
+	WorldDatabase.Execute("INSERT INTO trainer_spells VALUES(%u, %u, %u, %u, %u, %u, %u, %u, %u, %u)",
+		pCreature->GetEntry(), (int)0, pSpell->Id, cost, reqspell, (int)0, (int)0, reqlevel, delspell, (int)0);
+
+	return true;
+}
+
+bool ChatHandler::HandleSetTitle( const char *args, WorldSession *m_session )
+{
+	Player* plr = getSelectedChar( m_session, true );
+	if( plr == NULL )
+		return false;
+
+	int32 title = atol( args );
+	if( title > int32( PVPTITLE_END ) || title < - int32( PVPTITLE_END ) )
+	{
+		RedSystemMessage( m_session, "Argument %i is out of range!", title );
+		return false;
+	}
+	if( title == 0 )
+	{
+		plr->SetUInt64Value( PLAYER_FIELD_KNOWN_TITLES, 0 );
+		plr->SetUInt64Value( PLAYER_FIELD_KNOWN_TITLES1, 0 );
+	}
+	else if( title > 0 )
+		plr->SetKnownTitle( static_cast< RankTitles >( title ), true );
+	else
+		plr->SetKnownTitle( static_cast< RankTitles >( -title ), false );
+
+	plr->SetUInt32Value( PLAYER_CHOSEN_TITLE, 0 ); // better remove chosen one
+	SystemMessage( m_session, "Title has been %s.", title > 0 ? "set" : "reset" );
+	return true;
+}

@@ -57,8 +57,8 @@ public:
 	void SocketDisconnected();
 	void OnRead(WorldPacket* pck);
 
-	ARCEMU_INLINE uint32 GetVoiceServerIP() { return ip; }
-	ARCEMU_INLINE uint16 GetVoiceServerPort() { return port; }
+	WoWICE_INLINE uint32 GetVoiceServerIP() { return ip; }
+	WoWICE_INLINE uint16 GetVoiceServerPort() { return port; }
 	void CreateVoiceChannel(Channel * chn);
 	void DestroyVoiceChannel(Channel * chn);
 	bool CanCreateVoiceChannel(Channel * chn);

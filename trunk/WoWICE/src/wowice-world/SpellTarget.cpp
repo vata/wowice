@@ -12,7 +12,6 @@
  * You should have received a copy of the GNU General Public License along with
  * this program. If not, see <http://www.gnu.org/licenses/>.
  */
-// Coded by Captnoord for arcemu (2007), please give feedback to me if your able to.
 
 #include "StdAfx.h"
 

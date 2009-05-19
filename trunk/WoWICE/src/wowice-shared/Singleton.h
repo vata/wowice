@@ -44,8 +44,8 @@ public:
 	this->mSingleton = 0;
   }
 
-  ARCEMU_INLINE static type & getSingleton( ) { ASSERT( mSingleton ); return *mSingleton; }
-  ARCEMU_INLINE static type * getSingletonPtr( ) { return mSingleton; }
+  WoWICE_INLINE static type & getSingleton( ) { ASSERT( mSingleton ); return *mSingleton; }
+  WoWICE_INLINE static type * getSingletonPtr( ) { return mSingleton; }
 
 protected:
 

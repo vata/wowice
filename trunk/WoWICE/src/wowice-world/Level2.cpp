@@ -1371,7 +1371,7 @@ bool ChatHandler::HandleNPCEquipThreeCommand(const char * args, WorldSession * m
 	return true;
 }
 
-ARCEMU_INLINE void RepairItem2(Player * pPlayer, Item * pItem)
+WoWICE_INLINE void RepairItem2(Player * pPlayer, Item * pItem)
 {
     pItem->SetDurabilityToMax();
     pItem->m_isDirty = true;

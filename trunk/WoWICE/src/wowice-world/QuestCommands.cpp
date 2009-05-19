@@ -31,14 +31,14 @@ uint32 GetQuestIDFromLink(const char* questlink)
 	return atol(ptr+8); // quest id is just past "|Hquest:" (8 bytes)
 }
 
-ARCEMU_INLINE std::string MyConvertIntToString(const int arg)
+WoWICE_INLINE std::string MyConvertIntToString(const int arg)
 {
 	stringstream out;
 	out << arg;
 	return out.str();
 }
 
-ARCEMU_INLINE std::string MyConvertFloatToString(const float arg)
+WoWICE_INLINE std::string MyConvertFloatToString(const float arg)
 {
 	stringstream out;
 	out << arg;

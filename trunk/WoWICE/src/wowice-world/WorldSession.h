@@ -169,19 +169,19 @@ public:
 	~WorldSession();
 
 	Player * m_loggingInPlayer;
-	ARCEMU_INLINE void SendPacket(WorldPacket* packet)
+	WoWICE_INLINE void SendPacket(WorldPacket* packet)
 	{
 		if(_socket && _socket->IsConnected())
 			_socket->SendPacket(packet);
 	}
 
-	ARCEMU_INLINE void SendPacket(StackBufferBase * packet)
+	WoWICE_INLINE void SendPacket(StackBufferBase * packet)
 	{
 		if(_socket && _socket->IsConnected())
 			_socket->SendPacket(packet);
 	}
 
-	ARCEMU_INLINE void OutPacket(uint16 opcode)
+	WoWICE_INLINE void OutPacket(uint16 opcode)
 	{
 		if(_socket && _socket->IsConnected())
 			_socket->OutPacket(opcode, 0, NULL);
@@ -194,8 +194,8 @@ public:
 	uint32 m_currMsTime;
 	uint32 m_lastPing;
 
-	ARCEMU_INLINE uint32 GetAccountId() const { return _accountId; }
-	ARCEMU_INLINE Player* GetPlayer() { return _player; }
+	WoWICE_INLINE uint32 GetAccountId() const { return _accountId; }
+	WoWICE_INLINE Player* GetPlayer() { return _player; }
 	
 	/* Acct flags */
 	void SetAccountFlags(uint32 flags) { _accountFlags = flags; }
@@ -204,10 +204,10 @@ public:
 	/* GM Permission System */
 	void LoadSecurity(std::string securitystring);
 	void SetSecurity(std::string securitystring);
-	ARCEMU_INLINE char* GetPermissions() { return permissions; }
-	ARCEMU_INLINE int GetPermissionCount() { return permissioncount; }
-	ARCEMU_INLINE bool HasPermissions() { return (permissioncount > 0) ? true : false; }
-	ARCEMU_INLINE bool HasGMPermissions()
+	WoWICE_INLINE char* GetPermissions() { return permissions; }
+	WoWICE_INLINE int GetPermissionCount() { return permissioncount; }
+	WoWICE_INLINE bool HasPermissions() { return (permissioncount > 0) ? true : false; }
+	WoWICE_INLINE bool HasGMPermissions()
 	{
 		if(!permissioncount)
 			return false;
@@ -218,13 +218,13 @@ public:
 	bool CanUseCommand(char cmdstr);
 
 	
-	ARCEMU_INLINE void SetSocket(WorldSocket *sock)
+	WoWICE_INLINE void SetSocket(WorldSocket *sock)
 	{
 		_socket = sock;
 	}
-	ARCEMU_INLINE void SetPlayer(Player *plr) { _player = plr; }
+	WoWICE_INLINE void SetPlayer(Player *plr) { _player = plr; }
 	
-	ARCEMU_INLINE void SetAccountData(uint32 index, char* data, bool initial,uint32 sz)
+	WoWICE_INLINE void SetAccountData(uint32 index, char* data, bool initial,uint32 sz)
 	{
 		ASSERT(index < 8);
 		if(sAccountData[index].data)
@@ -237,7 +237,7 @@ public:
 			sAccountData[index].bIsDirty = false;
 	}
 	
-	ARCEMU_INLINE AccountDataEntry* GetAccountData(uint32 index)
+	WoWICE_INLINE AccountDataEntry* GetAccountData(uint32 index)
 	{
 		ASSERT(index < 8);
 		return &sAccountData[index];
@@ -251,7 +251,7 @@ public:
 
 	void LogoutPlayer(bool Save);
 
-	ARCEMU_INLINE void QueuePacket(WorldPacket* packet)
+	WoWICE_INLINE void QueuePacket(WorldPacket* packet)
 	{
 		m_lastPing = (uint32)UNIXTIME;
 		_recvQueue.Push(packet);
@@ -263,7 +263,7 @@ public:
 			_socket->OutPacket(opcode, len, data);
 	}
 
-	ARCEMU_INLINE WorldSocket* GetSocket() { return _socket; }
+	WoWICE_INLINE WorldSocket* GetSocket() { return _socket; }
 	
 	void Disconnect()
 	{
@@ -279,18 +279,18 @@ public:
 	void SendNotification(const char *message, ...);
 	void SendAuctionPlaceBidResultPacket(uint32 itemId, uint32 error);
 
-	ARCEMU_INLINE void SetInstance(uint32 Instance) { instanceId = Instance; }
-	ARCEMU_INLINE uint32 GetLatency() { return _latency; }
-	ARCEMU_INLINE string GetAccountName() { return _accountName; }
-	ARCEMU_INLINE const char * GetAccountNameS() { return _accountName.c_str(); }
+	WoWICE_INLINE void SetInstance(uint32 Instance) { instanceId = Instance; }
+	WoWICE_INLINE uint32 GetLatency() { return _latency; }
+	WoWICE_INLINE string GetAccountName() { return _accountName; }
+	WoWICE_INLINE const char * GetAccountNameS() { return _accountName.c_str(); }
 	const char * LocalizedWorldSrv(uint32 id);
 	const char * LocalizedMapName(uint32 id);
 	const char * LocalizedBroadCast(uint32 id);
 
-	ARCEMU_INLINE uint32 GetClientBuild() { return client_build; }
-	ARCEMU_INLINE void SetClientBuild(uint32 build) { client_build = build; }
+	WoWICE_INLINE uint32 GetClientBuild() { return client_build; }
+	WoWICE_INLINE void SetClientBuild(uint32 build) { client_build = build; }
 	bool bDeleted;
-	ARCEMU_INLINE uint32 GetInstance() { return instanceId; }
+	WoWICE_INLINE uint32 GetInstance() { return instanceId; }
 	Mutex deleteMutex;
 	void _HandleAreaTriggerOpcode(uint32 id);//real handle
 	int32 m_moveDelayTime;
@@ -298,10 +298,10 @@ public:
 
 	void CharacterEnumProc(QueryResult * result);
 	void LoadAccountDataProc(QueryResult * result);
-	ARCEMU_INLINE bool IsLoggingOut() { return _loggingOut; }
+	WoWICE_INLINE bool IsLoggingOut() { return _loggingOut; }
 
 	// Vehicles
-	ARCEMU_INLINE void SetActiveMover(WoWGuid guid)
+	WoWICE_INLINE void SetActiveMover(WoWGuid guid)
 	{
 		m_MoverWoWGuid = guid;
 		movement_packet[0] = m_MoverWoWGuid.GetNewGuidMask();
@@ -758,7 +758,7 @@ private:
 	uint32 instanceId;
 	uint8 _updatecount;
 public:
-	ARCEMU_INLINE MovementInfo* GetMovementInfo() { return &movement_info; }
+	WoWICE_INLINE MovementInfo* GetMovementInfo() { return &movement_info; }
 	static void InitPacketHandlerTable();
 	uint32 floodLines;
 	time_t floodTime;

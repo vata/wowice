@@ -3803,7 +3803,222 @@ void Unit::Strike( Unit* pVictim, uint32 weapon_damage_type, SpellEntry* ability
 							dmg.full_damage += int32((float(dmg.full_damage)*critextra/100.0f));
 						}
 						if(!pVictim->IsPlayer())
-							dmg.full_damage += float2int32(dmg.full_damage*static_cast< Player* >( this )->IncreaseCricticalByTypePCT[((Creature*)pVictim)->GetCreatureInfo() ? ((Creature*)pVictim)->GetCreatureInfo()->Type       €   W o W I C E \ s r c \ w o w i c e - w o r l d \ . s v n \ t m p \ t e x t - b a s e \ U n i t . c p p . s v n - b a s e . t m p                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     _FIELD_ENTRY) == 19668 )
+							dmg.full_damage += float2int32(dmg.full_damage*static_cast< Player* >( this )->IncreaseCricticalByTypePCT[((Creature*)pVictim)->GetCreatureInfo() ? ((Creature*)pVictim)->GetCreatureInfo()->Type : 0]);
+					//sLog.outString( "DEBUG: After IncreaseCricticalByTypePCT: %u" , dmg.full_damage );
+					}
+
+					dmg.full_damage += dmgbonus;
+
+					if( weapon_damage_type == RANGED )
+						dmg.full_damage = dmg.full_damage - float2int32(dmg.full_damage * CritRangedDamageTakenPctMod[dmg.school_type]);
+					else
+						dmg.full_damage = dmg.full_damage - float2int32(dmg.full_damage * CritMeleeDamageTakenPctMod[dmg.school_type]);
+
+					if(pVictim->IsPlayer())
+					{
+						//Resilience is a special new rating which was created to reduce the effects of critical hits against your character.
+						float dmg_reduction_pct = 2.0f * static_cast< Player* >(pVictim)->CalcRating( PLAYER_RATING_MODIFIER_MELEE_CRIT_RESILIENCE ) / 100.0f;
+						if( dmg_reduction_pct > 1.0f )
+							dmg_reduction_pct = 1.0f; //we cannot resist more then he is criticalling us, there is no point of the critical then :P
+						dmg.full_damage = float2int32( dmg.full_damage - dmg.full_damage*dmg_reduction_pct );
+						//sLog.outString( "DEBUG: After Resilience check: %u" , dmg.full_damage );
+					}
+
+					if (pVictim->GetTypeId() == TYPEID_UNIT && static_cast<Creature*>(pVictim)->GetCreatureInfo() && static_cast<Creature*>(pVictim)->GetCreatureInfo()->Rank != ELITE_WORLDBOSS)
+						pVictim->Emote( EMOTE_ONESHOT_WOUNDCRITICAL );
+					vproc |= PROC_ON_CRIT_HIT_VICTIM;
+					aproc |= PROC_ON_CRIT_ATTACK;
+					if( weapon_damage_type == RANGED )
+					{
+						vproc |= PROC_ON_RANGED_CRIT_ATTACK_VICTIM;
+						aproc |= PROC_ON_RANGED_CRIT_ATTACK;
+					}
+
+					if( IsPlayer() )
+					{
+						this->SetFlag( UNIT_FIELD_AURASTATE, AURASTATE_FLAG_CRITICAL );
+						if( !sEventMgr.HasEvent( this, EVENT_CRIT_FLAG_EXPIRE ) )
+							sEventMgr.AddEvent( ( Unit* )this, &Unit::EventAurastateExpire, uint32( AURASTATE_FLAG_CRITICAL ) , EVENT_CRIT_FLAG_EXPIRE, 5000, 1, 0 );
+						else sEventMgr.ModifyEventTimeLeft( this, EVENT_CRIT_FLAG_EXPIRE, 5000 );
+					}
+
+					CALL_SCRIPT_EVENT(pVictim, OnTargetCritHit)(this, float(dmg.full_damage));
+					CALL_SCRIPT_EVENT(this, OnCritHit)(pVictim, float(dmg.full_damage));
+				}
+				break;
+//--------------------------------crushing blow---------------------------------------------
+			case 6:
+				hit_status |= HITSTATUS_CRUSHINGBLOW;
+				dmg.full_damage = (dmg.full_damage * 3) >> 1;
+				break;
+//--------------------------------regular hit-----------------------------------------------
+			default:
+				break;
+			}
+//==========================================================================================
+//==============================Post Roll Damage Processing=================================
+//==========================================================================================
+//--------------------------absorption------------------------------------------------------
+			uint32 dm = dmg.full_damage;
+			abs = pVictim->AbsorbDamage(dmg.school_type,(uint32*)&dm);
+
+			if(dmg.full_damage > (int32)blocked_damage)
+			{
+				uint32 sh = pVictim->ManaShieldAbsorb(dmg.full_damage);
+//--------------------------armor reducing--------------------------------------------------
+				if(sh)
+				{
+					dmg.full_damage -= sh;
+					if(dmg.full_damage && !disable_dR)
+						CalculateResistanceReduction(pVictim,&dmg, ability);
+					dmg.full_damage += sh;
+					abs+=sh;
+				}
+				else if(!disable_dR)
+					CalculateResistanceReduction(pVictim,&dmg, ability);
+			}
+
+			if(abs)
+				vproc |= PROC_ON_ABSORB;
+
+			if (dmg.school_type == SCHOOL_NORMAL)
+			{
+				abs+=dmg.resisted_damage;
+				dmg.resisted_damage=0;
+			}
+
+			realdamage = dmg.full_damage-abs-dmg.resisted_damage-blocked_damage;
+			if(realdamage < 0)
+			{
+				realdamage = 0;
+				vstate = IMMUNE;
+				hit_status |= HITSTATUS_BLOCK;//ABSORBED;
+			}
+		}
+		break;
+	}
+
+//==========================================================================================
+//==============================Post Roll Special Cases Processing==========================
+//==========================================================================================
+//------------------------------- Special Effects Processing
+	// Paladin: Blessing of Sacrifice, and Warlock: Soul Link
+	if( pVictim->m_damageSplitTarget )
+	{
+		dmg.full_damage = pVictim->DoDamageSplitTarget(dmg.full_damage, dmg.school_type, true);
+		realdamage = dmg.full_damage;
+	}
+
+	//--------------------------special states processing---------------------------------------
+	if(pVictim->GetTypeId() == TYPEID_UNIT)
+	{
+		if(pVictim->GetAIInterface() && (pVictim->GetAIInterface()->getAIState()== STATE_EVADE ||
+										(pVictim->GetAIInterface()->GetIsSoulLinked() && pVictim->GetAIInterface()->getSoullinkedWith() != this)))
+		{
+			vstate = EVADE;
+			realdamage = 0;
+			dmg.full_damage = 0;
+			dmg.resisted_damage = 0;
+		}
+	}
+	if(pVictim->GetTypeId() == TYPEID_PLAYER && static_cast< Player* >(pVictim)->GodModeCheat == true)
+	{
+		dmg.resisted_damage = dmg.full_damage; //godmode
+	}
+//--------------------------dirty fixes-----------------------------------------------------
+	//vstate=1-wound,2-dodge,3-parry,4-interrupt,5-block,6-evade,7-immune,8-deflect
+	// the above code was remade it for reasons : damage shield needs moslty same flags as handleproc + dual wield should proc too ?
+	if (ability && ability->noproc)
+	{
+		disable_proc = true;
+	}
+	if( !disable_proc && weapon_damage_type != OFFHAND )
+	{
+		uint32 resisted_dmg;
+
+		//damage shield must come before handleproc to not loose 1 charge : speel gets removed before last charge
+		if( realdamage > 0 || vproc & PROC_ON_BLOCK_VICTIM )
+		{
+			pVictim->HandleProcDmgShield(vproc,this);
+			HandleProcDmgShield(aproc,pVictim);
+		}
+
+		this->HandleProc(aproc,pVictim, ability,realdamage,abs); //maybe using dmg.resisted_damage is better sometimes but then if using godmode dmg is resisted instead of absorbed....bad
+		m_procCounter = 0;
+
+		resisted_dmg = pVictim->HandleProc(vproc,this, ability,realdamage,abs);
+		pVictim->m_procCounter = 0;
+
+		if (resisted_dmg) {
+			dmg.resisted_damage+= resisted_dmg;
+			dmg.full_damage-= resisted_dmg;
+			realdamage-= resisted_dmg;
+		}
+	}
+//--------------------------spells triggering-----------------------------------------------
+	if(realdamage > 0 && ability == 0)
+	{
+		if( IsPlayer() && static_cast< Player* >( this )->m_onStrikeSpells.size() )
+		{
+			SpellCastTargets targets;
+			targets.m_unitTarget = pVictim->GetGUID();
+			targets.m_targetMask = 0x2;
+			Spell* cspell;
+
+			// Loop on hit spells, and strike with those.
+			for( map< SpellEntry*, pair< uint32, uint32 > >::iterator itr = static_cast< Player* >( this )->m_onStrikeSpells.begin();
+				itr != static_cast< Player* >( this )->m_onStrikeSpells.end(); ++itr )
+			{
+				if( itr->second.first )
+				{
+					// We have a *periodic* delayed spell.
+					uint32 t = getMSTime();
+					if( t > itr->second.second )  // Time expired
+					{
+						// Set new time
+						itr->second.second = t + itr->second.first;
+					}
+
+					// Cast.
+					cspell = SpellPool.PooledNew();
+					if (!cspell)
+						return;
+					cspell->Init(this, itr->first, true, NULL);
+					cspell->prepare(&targets);
+				}
+				else
+				{
+					cspell = SpellPool.PooledNew();
+					if (!cspell)
+						return;
+					cspell->Init(this, itr->first, true, NULL);
+					cspell->prepare(&targets);
+				}
+			}
+		}
+
+		if( IsPlayer() && static_cast< Player* >( this )->m_onStrikeSpellDmg.size() )
+		{
+			map< uint32, OnHitSpell >::iterator it2 = static_cast< Player* >( this )->m_onStrikeSpellDmg.begin();
+			map< uint32, OnHitSpell >::iterator itr;
+			uint32 min_dmg, max_dmg, range, dmg;
+			for(; it2 != static_cast< Player* >( this )->m_onStrikeSpellDmg.end(); )
+			{
+				itr = it2;
+				++it2;
+
+				min_dmg = itr->second.mindmg;
+				max_dmg = itr->second.maxdmg;
+				range = min_dmg - max_dmg;
+				dmg = min_dmg;
+				if(range) range += RandomUInt(range);
+
+				SpellNonMeleeDamageLog(pVictim, itr->second.spellid, dmg, true);
+			}
+		}
+
+		//ugly hack for shadowfiend restoring mana
+		if( GetUInt64Value(UNIT_FIELD_SUMMONEDBY) != 0 && GetUInt32Value(OBJECT_FIELD_ENTRY) == 19668 )
 		{
 			Player* owner = GetMapMgr()->GetPlayer((uint32)GetUInt64Value(UNIT_FIELD_SUMMONEDBY));
 			if ( owner != NULL )
