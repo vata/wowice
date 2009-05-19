@@ -2585,7 +2585,7 @@ bool ChatHandler::HandleLookupItemCommand(const char * args, WorldSession * m_se
 	if(!*args) return false;
 
 	string x = string(args);
-	arcemu_TOLOWER(x);
+	wowice_TOLOWER(x);
 	if(x.length() < 4)
 	{
 		RedSystemMessage(m_session, "Your search string must be at least 4 characters long.");
@@ -2606,7 +2606,7 @@ bool ChatHandler::HandleLookupItemCommand(const char * args, WorldSession * m_se
 
 		std::string litName	= std::string(lit ? lit->Name : "");
 
-		arcemu_TOLOWER(litName);
+		wowice_TOLOWER(litName);
 
 		bool localizedFound	= false;
 		if(FindXinYString(x, litName))
@@ -2639,7 +2639,7 @@ bool ChatHandler::HandleLookupObjectCommand(const char * args, WorldSession * m_
 	if(!*args) return false;
 
 	string x = string(args);
-	arcemu_TOLOWER(x);
+	wowice_TOLOWER(x);
 
 	StorageContainerIterator<GameObjectInfo> * itr = GameObjectNameStorage.MakeIterator();
 
@@ -2653,7 +2653,7 @@ bool ChatHandler::HandleLookupObjectCommand(const char * args, WorldSession * m_
 	{
 		i = itr->Get();
 		y = string(i->Name);
-		arcemu_TOLOWER(y);
+		wowice_TOLOWER(y);
 		if(FindXinYString(x,y))
 		{
 			//string objectID=MyConvertIntToString(i->ID);
@@ -2694,7 +2694,7 @@ bool ChatHandler::HandleLookupCreatureCommand(const char * args, WorldSession * 
 	if(!*args) return false;
 
 	string x = string(args);
-	arcemu_TOLOWER(x);
+	wowice_TOLOWER(x);
 	if(x.length() < 4)
 	{
 		RedSystemMessage(m_session, "Your search string must be at least 4 characters long.");
@@ -2714,7 +2714,7 @@ bool ChatHandler::HandleLookupCreatureCommand(const char * args, WorldSession * 
 
 		std::string liName	= std::string(li ? li->Name : "");
 
-		arcemu_TOLOWER(liName);
+		wowice_TOLOWER(liName);
 
 		bool localizedFound	= false;
 
@@ -2746,7 +2746,7 @@ bool ChatHandler::HandleLookupSpellCommand(const char * args, WorldSession * m_s
 	if(!*args) return false;
 
 	string x = string(args);
-	arcemu_TOLOWER(x);
+	wowice_TOLOWER(x);
 	if(x.length() < 4)
 	{
 		RedSystemMessage(m_session, "Your search string must be at least 4 characters long.");
@@ -2762,7 +2762,7 @@ bool ChatHandler::HandleLookupSpellCommand(const char * args, WorldSession * m_s
 	{
 		SpellEntry* spell = dbcSpell.LookupRow(index);
 		string y = string(spell->Name);
-		arcemu_TOLOWER(y);
+		wowice_TOLOWER(y);
 		if(FindXinYString(x, y))
  		{
  			// Print out the name in a cool highlighted fashion
@@ -2795,7 +2795,7 @@ bool ChatHandler::HandleLookupSkillCommand(const char * args, WorldSession * m_s
 	if(!*args) return false;
 
 	string x = string(args);
-	arcemu_TOLOWER(x);
+	wowice_TOLOWER(x);
 	if(x.length() < 4)
 	{
 		RedSystemMessage(m_session, "Your search string must be at least 4 characters long.");
@@ -2809,7 +2809,7 @@ bool ChatHandler::HandleLookupSkillCommand(const char * args, WorldSession * m_s
 	{
 		skilllineentry* skill = dbcSkillLine.LookupRow(index);
 		string y = string(skill->Name);
-		arcemu_TOLOWER(y);
+		wowice_TOLOWER(y);
 		if(FindXinYString(x, y))
  		{
  			// Print out the name in a cool highlighted fashion
@@ -2832,7 +2832,7 @@ bool ChatHandler::HandleLookupFactionCommand(const char * args, WorldSession * m
 	if(!*args) return false;
 
 	string x = string(args);
-	arcemu_TOLOWER(x);
+	wowice_TOLOWER(x);
 	if(x.length() < 4)
 	{
 		RedSystemMessage(m_session, "Your search string must be at least 4 characters long.");
@@ -2846,7 +2846,7 @@ bool ChatHandler::HandleLookupFactionCommand(const char * args, WorldSession * m
 	{
 		FactionDBC* faction = dbcFaction.LookupRow(index);
 		string y = string(faction->Name);
-		arcemu_TOLOWER(y);
+		wowice_TOLOWER(y);
 		if(FindXinYString(x, y))
  		{
  			// Print out the name in a cool highlighted fashion

@@ -71,20 +71,20 @@ public:
 
 	~SubGroup();
 
-	ARCEMU_INLINE GroupMembersSet::iterator GetGroupMembersBegin(void) { return m_GroupMembers.begin(); }
-	ARCEMU_INLINE GroupMembersSet::iterator GetGroupMembersEnd(void)   { return m_GroupMembers.end();   }
+	WoWICE_INLINE GroupMembersSet::iterator GetGroupMembersBegin(void) { return m_GroupMembers.begin(); }
+	WoWICE_INLINE GroupMembersSet::iterator GetGroupMembersEnd(void)   { return m_GroupMembers.end();   }
 
 	bool AddPlayer(PlayerInfo * info);
 	void RemovePlayer(PlayerInfo * info);
 	
-	ARCEMU_INLINE bool IsFull(void)				{ return m_GroupMembers.size() >= MAX_GROUP_SIZE_PARTY; }
-	ARCEMU_INLINE size_t GetMemberCount(void)		{ return m_GroupMembers.size(); }
+	WoWICE_INLINE bool IsFull(void)				{ return m_GroupMembers.size() >= MAX_GROUP_SIZE_PARTY; }
+	WoWICE_INLINE size_t GetMemberCount(void)		{ return m_GroupMembers.size(); }
 	
-	ARCEMU_INLINE uint32 GetID(void)			   { return m_Id; }
-	ARCEMU_INLINE void SetID(uint32 newid)		 { m_Id = newid; }
+	WoWICE_INLINE uint32 GetID(void)			   { return m_Id; }
+	WoWICE_INLINE void SetID(uint32 newid)		 { m_Id = newid; }
 
-	ARCEMU_INLINE void   SetParent(Group* parent)  { m_Parent = parent; }
-	ARCEMU_INLINE Group* GetParent(void)		   { return m_Parent; }
+	WoWICE_INLINE void   SetParent(Group* parent)  { m_Parent = parent; }
+	WoWICE_INLINE Group* GetParent(void)		   { return m_Parent; }
 
 	void   Disband();
 	bool HasMember(uint32 guid);
@@ -119,10 +119,10 @@ public:
 	// Transferring data to clients
 	void Update();
 
-	ARCEMU_INLINE void SendPacketToAll(WorldPacket *packet) { SendPacketToAllButOne(packet, NULL); }
+	WoWICE_INLINE void SendPacketToAll(WorldPacket *packet) { SendPacketToAllButOne(packet, NULL); }
 	void SendPacketToAllButOne(WorldPacket *packet, Player *pSkipTarget);
 
-	ARCEMU_INLINE void OutPacketToAll(uint16 op, uint16 len, const void* data) { OutPacketToAllButOne(op, len, data, NULL); }
+	WoWICE_INLINE void OutPacketToAll(uint16 op, uint16 len, const void* data) { OutPacketToAllButOne(op, len, data, NULL); }
 	void OutPacketToAllButOne(uint16 op, uint16 len, const void* data, Player *pSkipTarget);
 
 	void SendNullUpdate(Player *pPlayer);
@@ -135,7 +135,7 @@ public:
 	Player* FindFirstPlayer();
 	
 	// Accessing functions
-	ARCEMU_INLINE SubGroup* GetSubGroup(uint32 Id)
+	WoWICE_INLINE SubGroup* GetSubGroup(uint32 Id)
 	{
 		if(Id >= 8)
 			return 0;
@@ -143,19 +143,19 @@ public:
 		return m_SubGroups[Id];
 	}
 
-	ARCEMU_INLINE uint32 GetSubGroupCount(void) { return m_SubGroupCount; }
+	WoWICE_INLINE uint32 GetSubGroupCount(void) { return m_SubGroupCount; }
 
-	ARCEMU_INLINE uint8 GetMethod(void) { return m_LootMethod; }
-	ARCEMU_INLINE uint16 GetThreshold(void) { return m_LootThreshold; }
-	ARCEMU_INLINE PlayerInfo* GetLeader(void) { return m_Leader; }
-	ARCEMU_INLINE PlayerInfo* GetLooter(void) { return m_Looter; }
+	WoWICE_INLINE uint8 GetMethod(void) { return m_LootMethod; }
+	WoWICE_INLINE uint16 GetThreshold(void) { return m_LootThreshold; }
+	WoWICE_INLINE PlayerInfo* GetLeader(void) { return m_Leader; }
+	WoWICE_INLINE PlayerInfo* GetLooter(void) { return m_Looter; }
 
 	void MovePlayer(PlayerInfo* info, uint8 subgroup);
 
 	bool HasMember(Player *pPlayer);
 	bool HasMember(PlayerInfo * info);
-	ARCEMU_INLINE uint32 MemberCount(void) { return m_MemberCount; }
-	ARCEMU_INLINE bool IsFull() { return ((m_GroupType == GROUP_TYPE_PARTY && m_MemberCount >= MAX_GROUP_SIZE_PARTY) || (m_GroupType == GROUP_TYPE_RAID && m_MemberCount >= MAX_GROUP_SIZE_RAID)); }
+	WoWICE_INLINE uint32 MemberCount(void) { return m_MemberCount; }
+	WoWICE_INLINE bool IsFull() { return ((m_GroupType == GROUP_TYPE_PARTY && m_MemberCount >= MAX_GROUP_SIZE_PARTY) || (m_GroupType == GROUP_TYPE_RAID && m_MemberCount >= MAX_GROUP_SIZE_RAID)); }
 
 	SubGroup* FindFreeSubGroup();
 
@@ -164,8 +164,8 @@ public:
 	void SaveToDB();
 	void LoadFromDB(Field *fields);
 
-	ARCEMU_INLINE uint8 GetGroupType() { return m_GroupType; }
-	ARCEMU_INLINE uint32 GetID() { return m_Id; }
+	WoWICE_INLINE uint8 GetGroupType() { return m_GroupType; }
+	WoWICE_INLINE uint32 GetID() { return m_Id; }
 
 	void UpdateOutOfRangePlayer(Player * pPlayer, uint32 Flags, bool Distribute, WorldPacket * Packet);
 	void UpdateAllOutOfRangePlayersFor(Player * pPlayer);
@@ -174,18 +174,18 @@ public:
 
 	uint64 m_targetIcons[8];
 	bool m_disbandOnNoMembers;
-	ARCEMU_INLINE Mutex& getLock() { return m_groupLock; }
-	ARCEMU_INLINE void Lock() { m_groupLock.Acquire(); }
-	ARCEMU_INLINE void Unlock() { return m_groupLock.Release(); }
+	WoWICE_INLINE Mutex& getLock() { return m_groupLock; }
+	WoWICE_INLINE void Lock() { m_groupLock.Acquire(); }
+	WoWICE_INLINE void Unlock() { return m_groupLock.Release(); }
 	bool m_isqueued;
 
 	void SetAssistantLeader(PlayerInfo * pMember);
 	void SetMainTank(PlayerInfo * pMember);
 	void SetMainAssist(PlayerInfo * pMember);
 
-	ARCEMU_INLINE PlayerInfo * GetAssistantLeader() { return m_assistantLeader; }
-	ARCEMU_INLINE PlayerInfo * GetMainTank() { return m_mainTank; }
-	ARCEMU_INLINE PlayerInfo * GetMainAssist() { return m_mainAssist; }
+	WoWICE_INLINE PlayerInfo * GetAssistantLeader() { return m_assistantLeader; }
+	WoWICE_INLINE PlayerInfo * GetMainTank() { return m_mainTank; }
+	WoWICE_INLINE PlayerInfo * GetMainAssist() { return m_mainAssist; }
 
 	uint32 m_instanceIds[NUM_MAPS][NUM_INSTANCE_MODES];
 

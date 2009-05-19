@@ -15,7 +15,7 @@
 
 #include "StdAfx.h"
 
-#define BANNER "ArcEmu %s r%u/%s-%s-%s :: World Server"
+#define BANNER "WoWICE %s r%u/%s-%s-%s :: World Server"
 
 #ifndef WIN32
 #include <sched.h>
@@ -91,13 +91,13 @@ struct Addr
 #define DEF_VALUE_NOT_SET 0xDEADBEEF
 
 #ifdef WIN32
-        static const char* default_config_file = "configs/arcemu-world.conf";
-		static const char* default_optional_config_file = "configs/arcemu-optional.conf";
-        static const char* default_realm_config_file = "configs/arcemu-realms.conf";
+        static const char* default_config_file = "configs/wowice-world.conf";
+		static const char* default_optional_config_file = "configs/wowice-optional.conf";
+        static const char* default_realm_config_file = "configs/wowice-realms.conf";
 #else
-        static const char* default_config_file = CONFDIR "/arcemu-world.conf";
-		static const char* default_optional_config_file = CONFDIR "/arcemu-optional.conf";
-        static const char* default_realm_config_file = CONFDIR "/arcemu-realms.conf";
+        static const char* default_config_file = CONFDIR "/wowice-world.conf";
+		static const char* default_optional_config_file = CONFDIR "/wowice-optional.conf";
+        static const char* default_realm_config_file = CONFDIR "/wowice-realms.conf";
 #endif
 
 bool bServerShutdown = false;
@@ -176,7 +176,7 @@ bool Master::Run(int argc, char ** argv)
 	printf("\nRepack: %s | Author: %s | %s\n", REPACK, REPACK_AUTHOR, REPACK_WEBSITE);
 #endif
 	Log.Color(TBLUE);
-	printf("\nCopyright (C) 2008-2009 ArcEmu. http://www.arcemu.org/\n");
+	printf("\nCopyright (C) 2009 WoWICE. http://code.google.com/p/wowice/\n");
 	printf("This program is free software: you can redistribute it and/or modify\n");
 	printf("it under the terms of the GNU Affero General Public License as published by\n");
 	printf("the Free Software Foundation, either version 3 of the License, or\n");
@@ -187,16 +187,14 @@ bool Master::Run(int argc, char ** argv)
 	printf("GNU Affero General Public License for more details.\n");
 	printf("\x20\x20\x20\x20\x3a\x3a\x3a\x20\x20\x20\x20\x20\x3a\x3a\x3a\x3a\x3a\x3a\x3a\x3a\x3a\x20\x20\x20\x3a\x3a\x3a\x3a\x3a\x3a\x3a\x3a\x20\x20\x3a\x3a\x3a\x3a\x3a\x3a\x3a\x3a\x3a\x3a\x20\x3a\x3a\x3a\x3a\x20\x20\x20\x20\x3a\x3a\x3a\x3a\x20\x20\x3a\x3a\x3a\x20\x20\x20\x20\x3a\x3a\x3a\x20\xd\xa\x20\x20\x3a\x2b\x3a\x20\x3a\x2b\x3a\x20\x20\x20\x3a\x2b\x3a\x20\x20\x20\x20\x3a\x2b\x3a\x20\x3a\x2b\x3a\x20\x20\x20\x20\x3a\x2b\x3a\x20\x3a\x2b\x3a\x20\x20\x20\x20\x20\x20\x20\x20\x2b\x3a\x2b\x3a\x2b\x3a\x20\x3a\x2b\x3a\x2b\x3a\x2b\x20\x3a\x2b\x3a\x20\x20\x20\x20\x3a\x2b\x3a\x20\xd\xa\x20\x2b\x3a\x2b\x20\x20\x20\x2b\x3a\x2b\x20\x20\x2b\x3a\x2b\x20\x20\x20\x20\x2b\x3a\x2b\x20\x2b\x3a\x2b\x20\x20\x20\x20\x20\x20\x20\x20\x2b\x3a\x2b\x20\x20\x20\x20\x20\x20\x20\x20\x2b\x3a\x2b\x20\x2b\x3a\x2b\x3a\x2b\x20\x2b\x3a\x2b\x20\x2b\x3a\x2b\x20\x20\x20\x20\x2b\x3a\x2b\x20\xd\xa\x2b\x23\x2b\x2b\x3a\x2b\x2b\x23\x2b\x2b\x3a\x20\x2b\x23\x2b\x2b\x3a\x2b\x2b\x23\x3a\x20\x20\x2b\x23\x2b\x20\x20\x20\x20\x20\x20\x20\x20\x2b\x23\x2b\x2b\x3a\x2b\x2b\x23\x20\x20\x20\x2b\x23\x2b\x20\x20\x2b\x3a\x2b\x20\x20\x2b\x23\x2b\x20\x2b\x23\x2b\x20\x20\x20\x20\x2b\x3a\x2b\x20\xd\xa\x2b\x23\x2b\x20\x20\x20\x20\x20\x2b\x23\x2b\x20\x2b\x23\x2b\x20\x20\x20\x20\x2b\x23\x2b\x20\x2b\x23\x2b\x20\x20\x20\x20\x20\x20\x20\x20\x2b\x23\x2b\x20\x20\x20\x20\x20\x20\x20\x20\x2b\x23\x2b\x20\x20\x20\x20\x20\x20\x20\x2b\x23\x2b\x20\x2b\x23\x2b\x20\x20\x20\x20\x2b\x23\x2b\x20\xd\xa\x23\x2b\x23\x20\x20\x20\x20\x20\x23\x2b\x23\x20\x23\x2b\x23\x20\x20\x20\x20\x23\x2b\x23\x20\x23\x2b\x23\x20\x20\x20\x20\x23\x2b\x23\x20\x23\x2b\x23\x20\x20\x20\x20\x20\x20\x20\x20\x23\x2b\x23\x20\x20\x20\x20\x20\x20\x20\x23\x2b\x23\x20\x23\x2b\x23\x20\x20\x20\x20\x23\x2b\x23\x20\xd\xa\x23\x23\x23\x20\x20\x20\x20\x20\x23\x23\x23\x20\x23\x23\x23\x20\x20\x20\x20\x23\x23\x23\x20\x20\x23\x23\x23\x23\x23\x23\x23\x23\x20\x20\x23\x23\x23\x23\x23\x23\x23\x23\x23\x23\x20\x23\x23\x23\x20\x20\x20\x20\x20\x20\x20\x23\x23\x23\x20\x20\x23\x23\x23\x23\x23\x23\x23\x23\x20\x20");
 	printf("\n");
-	printf(" Website: http://www.ArcEmu.org	     			\n");
-	printf(" Forums: http://www.ArcEmu.org/forums/          \n");
-	printf(" Credits: http://www.ArcEmu.org/credits         \n");
-	printf(" SVN: http://arcemu.info/svn/                   \n");
+	printf(" Website: http://code.google.com/p/wowice/		\n");
+	printf(" SVN: https//wowice.googlecode.com/svn/trunk/   \n");
 	printf(" Have fun!                                      \n");
 	Log.Line();
 #ifdef REPACK
 	Log.Color(TRED);
 	printf("Warning: Using repacks is potentially dangerous. You should always compile\n");
-	printf("from the source yourself at www.arcemu.org.\n");
+	printf("from the source yourself at http://code.google.com/p/wowice/ .\n");
 	printf("By using this repack, you agree to not visit the arcemu website and ask\nfor support.\n");
 	printf("For all support, you should visit the repacker's website at %s\n", REPACK_WEBSITE);
 	Log.Color(TNORMAL);
@@ -235,7 +233,7 @@ bool Master::Run(int argc, char ** argv)
     
 #ifndef WIN32
 	if(geteuid() == 0 || getegid() == 0)
-		Log.LargeErrorMessage( LARGERRORMESSAGE_WARNING, "You are running ArcEmu as root.", "This is not needed, and may be a possible security risk.", "It is advised to hit CTRL+C now and", "start as a non-privileged user.", NULL);
+		Log.LargeErrorMessage( LARGERRORMESSAGE_WARNING, "You are running WoWICE as root.", "This is not needed, and may be a possible security risk.", "It is advised to hit CTRL+C now and", "start as a non-privileged user.", NULL);
 #endif
 
 	InitRandomNumberGenerators();
@@ -246,26 +244,26 @@ bool Master::Run(int argc, char ** argv)
 
 	Log.Notice( "Config", "Loading Config Files...\n" );
 	if( Config.MainConfig.SetSource( config_file ) )
-		Log.Success( "Config", ">> configs/arcemu-world.conf" );
+		Log.Success( "Config", ">> configs/wowice-world.conf" );
 	else
 	{
-		Log.Error( "Config", ">> configs/arcemu-world.conf" );
+		Log.Error( "Config", ">> configs/wowice-world.conf" );
 		return false;
 	}
 
 	if(Config.OptionalConfig.SetSource(optional_config_file))
-		Log.Success( "Config", ">> configs/arcemu-optional.conf");
+		Log.Success( "Config", ">> configs/wowice-optional.conf");
 	else
 	{
-		Log.Error("Config", ">> configs/arcemu-optional.conf");
+		Log.Error("Config", ">> configs/wowice-optional.conf");
 		return false;
 	}
 
 	if(Config.RealmConfig.SetSource(realm_config_file))
-		Log.Success( "Config", ">> configs/arcemu-realms.conf" );
+		Log.Success( "Config", ">> configs/wowice-realms.conf" );
 	else
 	{
-		Log.Error( "Config", ">> configs/arcemu-realms.conf" );
+		Log.Error( "Config", ">> configs/wowice-realms.conf" );
 		return false;
 	}
 
@@ -275,10 +273,10 @@ bool Master::Run(int argc, char ** argv)
 		char cmd[1024];
 		char banner[1024];
 		snprintf(banner, 1024, BANNER, BUILD_TAG, BUILD_REVISION, CONFIG, PLATFORM_TEXT, ARCH);
-		snprintf(cmd, 1024, "./arcemu-crashreport -r %d -d \"%s\"", BUILD_REVISION, banner);
+		snprintf(cmd, 1024, "./wowice-crashreport -r %d -d \"%s\"", BUILD_REVISION, banner);
 		system(cmd);
 	}
-	unlink("arcemu.uptime");
+	unlink("wowice.uptime");
 #endif
 
 	if( !_StartDB() )
@@ -392,7 +390,7 @@ bool Master::Run(int argc, char ** argv)
 	
  
 	/* write pid file */
-	FILE * fPid = fopen( "arcemu.pid", "w" );
+	FILE * fPid = fopen( "wowice.pid", "w" );
 	if( fPid )
 	{
 		uint32 pid;
@@ -438,7 +436,7 @@ bool Master::Run(int argc, char ** argv)
 			ThreadPool.ShowStats();
 			ThreadPool.IntegrityCheck();
 #if !defined(WIN32) && defined(__DEBUG__)
-			FILE * f = fopen( "arcemu.uptime", "w" );
+			FILE * f = fopen( "wowice.uptime", "w" );
 			if( f )
 			{
 				fprintf(f, "%u", sWorld.GetUptime());
@@ -625,7 +623,7 @@ bool Master::Run(int argc, char ** argv)
 	delete Player_Log;
 
 	// remove pid
-	remove( "arcemu.pid" );
+	remove( "wowice.pid" );
 
 	Log.Notice( "Shutdown", "Shutdown complete." );
 

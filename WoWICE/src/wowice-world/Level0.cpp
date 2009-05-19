@@ -191,7 +191,7 @@ bool ChatHandler::HandleStartCommand(const char* args, WorldSession *m_session)
 	else if (m_plyr && args && strlen(args) > 2)
 	{
 		race = args;
-		arcemu_TOLOWER(race);
+		wowice_TOLOWER(race);
 
 		// Teleport to specific race
 		if(race == "human")
@@ -270,7 +270,7 @@ bool ChatHandler::HandleInfoCommand(const char* args, WorldSession *m_session)
 		}
 	}
 	objmgr._playerslock.ReleaseReadLock();
-	GreenSystemMessage(m_session, "Server Revision: |r%sArcEmu r%u/%s-%s-%s %s(www.arcemu.org)", MSG_COLOR_WHITE,
+	GreenSystemMessage(m_session, "Server Revision: |r%sWoWICE r%u/%s-%s-%s %s(http://code.google.com/p/wowice/)", MSG_COLOR_WHITE,
 		BUILD_REVISION, CONFIG, PLATFORM_TEXT, ARCH, MSG_COLOR_LIGHTBLUE);
 	GreenSystemMessage(m_session, "Server Uptime: |r%s", sWorld.GetUptimeString().c_str());
 	GreenSystemMessage(m_session, "Current Players: |r%d (%d GMs)", count, gm);

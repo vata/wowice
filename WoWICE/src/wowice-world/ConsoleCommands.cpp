@@ -41,7 +41,7 @@ bool HandleInfoCommand(BaseConsole * pConsole, int argc, const char * argv[])
 	pConsole->Write("======================================================================\r\n");
 	pConsole->Write("Server Information: \r\n");
 	pConsole->Write("======================================================================\r\n");
-	pConsole->Write("Server Revision: ArcEmu r%u/%s-%s-%s (www.arcemu.org)\r\n", BUILD_REVISION, CONFIG, PLATFORM_TEXT, ARCH);
+	pConsole->Write("Server Revision: WoWICE r%u/%s-%s-%s (http://code.google.com/p/wowice/)\r\n", BUILD_REVISION, CONFIG, PLATFORM_TEXT, ARCH);
 	pConsole->Write("Server Uptime: %s\r\n", sWorld.GetUptimeString().c_str());
 	pConsole->Write("Current Players: %d (%d GMs, %d queued)\r\n", clientsNum, gm,  0);
 	pConsole->Write("Active Thread Count: %u\r\n", ThreadPool.GetActiveThreadCount());

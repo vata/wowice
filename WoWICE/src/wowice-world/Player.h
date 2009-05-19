@@ -547,8 +547,8 @@ struct FactionReputation
 	int32 standing;
 	uint8 flag;
 	int32 baseStanding;
-	ARCEMU_INLINE int32 CalcStanding() { return standing - baseStanding; }
-	ARCEMU_INLINE bool Positive() { return standing >= 0; }
+	WoWICE_INLINE int32 CalcStanding() { return standing - baseStanding; }
+	WoWICE_INLINE bool Positive() { return standing >= 0; }
 };
 
 typedef HM_NAMESPACE::hash_map<uint32, uint32> PlayerInstanceMap;
@@ -795,9 +795,9 @@ public:
 
 	bool IsPlayer() { return true; }
 
-	ARCEMU_INLINE Guild * GetGuild() { return m_playerInfo->guild; }
-	ARCEMU_INLINE GuildMember * GetGuildMember() { return m_playerInfo->guildMember; }
-	ARCEMU_INLINE GuildRank * GetGuildRankS() { return m_playerInfo->guildRank; }
+	WoWICE_INLINE Guild * GetGuild() { return m_playerInfo->guild; }
+	WoWICE_INLINE GuildMember * GetGuildMember() { return m_playerInfo->guildMember; }
+	WoWICE_INLINE GuildRank * GetGuildRankS() { return m_playerInfo->guildRank; }
 
 	void EventGroupFullUpdate();
 
@@ -894,8 +894,8 @@ public:
     void BuildFlagUpdateForNonGroupSet(uint32 index, uint32 flag);
 	std::string m_afk_reason;
 	void SetAFKReason(std::string reason) { m_afk_reason = reason; };
-	ARCEMU_INLINE const char* GetName() { return m_name.c_str(); }
-	ARCEMU_INLINE std::string* GetNameString() { return &m_name; }
+	WoWICE_INLINE const char* GetName() { return m_name.c_str(); }
+	WoWICE_INLINE std::string* GetNameString() { return &m_name; }
 	void Die();
 	//void KilledMonster(uint32 entry, const uint64 &guid);
 	void GiveXP(uint32 xp, const uint64 &guid, bool allowbonus);   // to stop rest xp being given
@@ -907,8 +907,8 @@ public:
     /************************************************************************/
     /* Taxi                                                                 */
     /************************************************************************/
-    ARCEMU_INLINE TaxiPath*    GetTaxiPath() { return m_CurrentTaxiPath; }
-    ARCEMU_INLINE bool         GetTaxiState() { return m_onTaxi; }
+    WoWICE_INLINE TaxiPath*    GetTaxiPath() { return m_CurrentTaxiPath; }
+    WoWICE_INLINE bool         GetTaxiState() { return m_onTaxi; }
     const uint32&       GetTaximask( uint8 index ) const { return m_taximask[index]; }
     void                LoadTaxiMask(const char* data);
     void                TaxiStart(TaxiPath* path, uint32 modelid, uint32 start_node);
@@ -916,11 +916,11 @@ public:
     void                EventDismount(uint32 money, float x, float y, float z);
     void                EventTaxiInterpolate();
 
-    ARCEMU_INLINE void         SetTaxiState    (bool state) { m_onTaxi = state; }
-    ARCEMU_INLINE void         SetTaximask     (uint8 index, uint32 value ) { m_taximask[index] = value; }
-    ARCEMU_INLINE void         SetTaxiPath     (TaxiPath *path) { m_CurrentTaxiPath = path; }
-    ARCEMU_INLINE void         SetTaxiPos()	{m_taxi_pos_x = m_position.x; m_taxi_pos_y = m_position.y; m_taxi_pos_z = m_position.z;}
-    ARCEMU_INLINE void         UnSetTaxiPos()	{m_taxi_pos_x = 0; m_taxi_pos_y = 0; m_taxi_pos_z = 0; }
+    WoWICE_INLINE void         SetTaxiState    (bool state) { m_onTaxi = state; }
+    WoWICE_INLINE void         SetTaximask     (uint8 index, uint32 value ) { m_taximask[index] = value; }
+    WoWICE_INLINE void         SetTaxiPath     (TaxiPath *path) { m_CurrentTaxiPath = path; }
+    WoWICE_INLINE void         SetTaxiPos()	{m_taxi_pos_x = m_position.x; m_taxi_pos_y = m_position.y; m_taxi_pos_z = m_position.z;}
+    WoWICE_INLINE void         UnSetTaxiPos()	{m_taxi_pos_x = 0; m_taxi_pos_y = 0; m_taxi_pos_z = 0; }
 
 	// Taxi related variables
 	vector<TaxiPath*>   m_taxiPaths;
@@ -950,15 +950,15 @@ public:
 
 	int32                GetOpenQuestSlot();
 	QuestLogEntry*       GetQuestLogForEntry(uint32 quest);
-	ARCEMU_INLINE QuestLogEntry*GetQuestLogInSlot(uint32 slot)  { return m_questlog[slot]; }
-    ARCEMU_INLINE uint32        GetQuestSharer()                { return m_questSharer; }
+	WoWICE_INLINE QuestLogEntry*GetQuestLogInSlot(uint32 slot)  { return m_questlog[slot]; }
+    WoWICE_INLINE uint32        GetQuestSharer()                { return m_questSharer; }
 
-    ARCEMU_INLINE void         SetQuestSharer(uint32 guid)     { m_questSharer = guid; }
+    WoWICE_INLINE void         SetQuestSharer(uint32 guid)     { m_questSharer = guid; }
     void                SetQuestLogSlot(QuestLogEntry *entry, uint32 slot);
 
-    ARCEMU_INLINE void         PushToRemovedQuests(uint32 questid)	{ m_removequests.insert(questid);}
-	ARCEMU_INLINE void			PushToFinishedDailies(uint32 questid) { DailyMutex.Acquire(); m_finishedDailies.insert(questid); DailyMutex.Release();}
-	ARCEMU_INLINE bool		HasFinishedDaily(uint32 questid) { return (m_finishedDailies.find(questid) == m_finishedDailies.end() ? false : true); }
+    WoWICE_INLINE void         PushToRemovedQuests(uint32 questid)	{ m_removequests.insert(questid);}
+	WoWICE_INLINE void			PushToFinishedDailies(uint32 questid) { DailyMutex.Acquire(); m_finishedDailies.insert(questid); DailyMutex.Release();}
+	WoWICE_INLINE bool		HasFinishedDaily(uint32 questid) { return (m_finishedDailies.find(questid) == m_finishedDailies.end() ? false : true); }
     void                AddToFinishedQuests(uint32 quest_id);
     void                EventTimedQuestExpire(Quest *qst, QuestLogEntry *qle, uint32 log_slot);
 	void				AreaExploredOrEventHappens( uint32 questId ); // scriptdev2
@@ -988,12 +988,12 @@ public:
 	std::set<uint32>    quest_mobs;
 
     void EventPortToGM(Player *p);
-	ARCEMU_INLINE uint32 GetTeam() { return m_team; }
-	ARCEMU_INLINE uint32 GetTeamInitial() { return myRace->team_id==7 ? 0 : 1; }
-	ARCEMU_INLINE void SetTeam(uint32 t) { m_team = t; m_bgTeam=t; }
-	ARCEMU_INLINE void ResetTeam() { m_team = myRace->team_id==7 ? 0 : 1; m_bgTeam=m_team; }
+	WoWICE_INLINE uint32 GetTeam() { return m_team; }
+	WoWICE_INLINE uint32 GetTeamInitial() { return myRace->team_id==7 ? 0 : 1; }
+	WoWICE_INLINE void SetTeam(uint32 t) { m_team = t; m_bgTeam=t; }
+	WoWICE_INLINE void ResetTeam() { m_team = myRace->team_id==7 ? 0 : 1; m_bgTeam=m_team; }
 
-	ARCEMU_INLINE bool IsInFeralForm()
+	WoWICE_INLINE bool IsInFeralForm()
 	{
 		int s = GetShapeShift();
 		if( s <= 0 )
@@ -1095,17 +1095,17 @@ public:
     /************************************************************************/
     /* PVP                                                                  */
     /************************************************************************/
-	ARCEMU_INLINE uint8 GetPVPRank()
+	WoWICE_INLINE uint8 GetPVPRank()
 	{
 		return (uint8)((GetUInt32Value(PLAYER_BYTES_3) >> 24) & 0xFF);
 	}
-	ARCEMU_INLINE void SetPVPRank(int newrank)
+	WoWICE_INLINE void SetPVPRank(int newrank)
 	{
 		SetUInt32Value(PLAYER_BYTES_3, ((GetUInt32Value(PLAYER_BYTES_3) & 0x00FFFFFF) | (uint8(newrank) << 24)));
 	}
 	uint32 GetMaxPersonalRating();
 
-	ARCEMU_INLINE bool HasTitle( RankTitles title )
+	WoWICE_INLINE bool HasTitle( RankTitles title )
 	{
 		return ( GetUInt64Value( PLAYER_FIELD_KNOWN_TITLES + ( ( title >> 6 ) << 1 )  ) & ( uint64(1) << ( title % 64 ) ) ) != 0;
 	}
@@ -1114,8 +1114,8 @@ public:
     /* Groups                                                               */
     /************************************************************************/
 	void                SetInviter(uint32 pInviter) { m_GroupInviter = pInviter; }
-	ARCEMU_INLINE uint32       GetInviter() { return m_GroupInviter; }
-	ARCEMU_INLINE bool         InGroup() { return (m_playerInfo->m_Group != NULL && !m_GroupInviter); }
+	WoWICE_INLINE uint32       GetInviter() { return m_GroupInviter; }
+	WoWICE_INLINE bool         InGroup() { return (m_playerInfo->m_Group != NULL && !m_GroupInviter); }
 	bool                IsGroupLeader()
 	{
 		if(m_playerInfo->m_Group != NULL)
@@ -1125,11 +1125,11 @@ public:
 		}
 		return false;
 	}
-	ARCEMU_INLINE int          HasBeenInvited() { return m_GroupInviter != 0; }
-	ARCEMU_INLINE Group*       GetGroup() { return m_playerInfo ? m_playerInfo->m_Group : NULL; }
-	ARCEMU_INLINE int8		   GetSubGroup() { return m_playerInfo->subGroup; }
+	WoWICE_INLINE int          HasBeenInvited() { return m_GroupInviter != 0; }
+	WoWICE_INLINE Group*       GetGroup() { return m_playerInfo ? m_playerInfo->m_Group : NULL; }
+	WoWICE_INLINE int8		   GetSubGroup() { return m_playerInfo->subGroup; }
     bool                IsGroupMember(Player *plyr);
-	ARCEMU_INLINE bool         IsBanned()
+	WoWICE_INLINE bool         IsBanned()
 	{
 		if(m_banned)
 		{
@@ -1138,19 +1138,19 @@ public:
 		}
 		return false;
 	}
-    ARCEMU_INLINE void         SetBanned() { m_banned = 4;}
-	ARCEMU_INLINE void         SetBanned(string Reason) { m_banned = 4; m_banreason = Reason;}
-	ARCEMU_INLINE void         SetBanned(uint32 timestamp, string& Reason) { m_banned = timestamp; m_banreason = Reason; }
-	ARCEMU_INLINE void         UnSetBanned() { m_banned = 0; }
-	ARCEMU_INLINE string       GetBanReason() {return m_banreason;}
+    WoWICE_INLINE void         SetBanned() { m_banned = 4;}
+	WoWICE_INLINE void         SetBanned(string Reason) { m_banned = 4; m_banreason = Reason;}
+	WoWICE_INLINE void         SetBanned(uint32 timestamp, string& Reason) { m_banned = timestamp; m_banreason = Reason; }
+	WoWICE_INLINE void         UnSetBanned() { m_banned = 0; }
+	WoWICE_INLINE string       GetBanReason() {return m_banreason;}
 
     /************************************************************************/
     /* Guilds                                                               */
     /************************************************************************/
-	ARCEMU_INLINE  bool        IsInGuild() {return (m_uint32Values[PLAYER_GUILDID] != 0) ? true : false;}
-	ARCEMU_INLINE uint32       GetGuildId() { return m_uint32Values[PLAYER_GUILDID]; }
+	WoWICE_INLINE  bool        IsInGuild() {return (m_uint32Values[PLAYER_GUILDID] != 0) ? true : false;}
+	WoWICE_INLINE uint32       GetGuildId() { return m_uint32Values[PLAYER_GUILDID]; }
 	void                SetGuildId(uint32 guildId);
-	ARCEMU_INLINE uint32       GetGuildRank() { return m_uint32Values[PLAYER_GUILDRANK]; }
+	WoWICE_INLINE uint32       GetGuildRank() { return m_uint32Values[PLAYER_GUILDRANK]; }
 	void                SetGuildRank(uint32 guildRank);
 	uint32              GetGuildInvitersGuid() { return m_invitersGuid; }
 	void                SetGuildInvitersGuid( uint32 guid ) { m_invitersGuid = guid; }
@@ -1164,9 +1164,9 @@ public:
 	void                EndDuel(uint8 WinCondition);
 	void                DuelCountdown();
 	void                SetDuelStatus(uint8 status) { m_duelStatus = status; }
-	ARCEMU_INLINE uint8        GetDuelStatus() { return m_duelStatus; }
+	WoWICE_INLINE uint8        GetDuelStatus() { return m_duelStatus; }
 	void                SetDuelState(uint8 state) { m_duelState = state; }
-	ARCEMU_INLINE uint8        GetDuelState() { return m_duelState; }
+	WoWICE_INLINE uint8        GetDuelState() { return m_duelState; }
     // duel variables
     Player*             DuelingWith;
 
@@ -1186,12 +1186,12 @@ public:
     /************************************************************************/
     /* Pets                                                                 */
     /************************************************************************/
-	ARCEMU_INLINE void			SetSummon(Pet *pet) { m_Summon = pet; }
-	ARCEMU_INLINE Pet*			GetSummon(void) { return m_Summon; }
+	WoWICE_INLINE void			SetSummon(Pet *pet) { m_Summon = pet; }
+	WoWICE_INLINE Pet*			GetSummon(void) { return m_Summon; }
 	uint32						GeneratePetNumber(void);
 	void						RemovePlayerPet(uint32 pet_number);
-	ARCEMU_INLINE void			AddPlayerPet(PlayerPet* pet, uint32 index) { m_Pets[index] = pet; }
-	ARCEMU_INLINE PlayerPet*	GetPlayerPet(uint32 idx)
+	WoWICE_INLINE void			AddPlayerPet(PlayerPet* pet, uint32 index) { m_Pets[index] = pet; }
+	WoWICE_INLINE PlayerPet*	GetPlayerPet(uint32 idx)
 	{
 		std::map<uint32, PlayerPet*>::iterator itr = m_Pets.find(idx);
 		if(itr != m_Pets.end()) return itr->second;
@@ -1201,9 +1201,9 @@ public:
 	void						SpawnPet(uint32 pet_number);
 	void						SpawnActivePet();
 	void						DismissActivePet();
-	ARCEMU_INLINE uint8         GetPetCount(void) { return (uint8)m_Pets.size(); }
-	ARCEMU_INLINE void			SetStableSlotCount(uint8 count) { m_StableSlotCount = count; }
-	ARCEMU_INLINE uint8			GetStableSlotCount(void) { return m_StableSlotCount; }
+	WoWICE_INLINE uint8         GetPetCount(void) { return (uint8)m_Pets.size(); }
+	WoWICE_INLINE void			SetStableSlotCount(uint8 count) { m_StableSlotCount = count; }
+	WoWICE_INLINE uint8			GetStableSlotCount(void) { return m_StableSlotCount; }
 	uint32						GetUnstabledPetNumber(void)
 	{
 		if(m_Pets.size() == 0) return 0;
@@ -1219,17 +1219,17 @@ public:
     /************************************************************************/
     /* Item Interface                                                       */
     /************************************************************************/
-	ARCEMU_INLINE ItemInterface* GetItemInterface() { return m_ItemInterface; } // Player Inventory Item storage
-	ARCEMU_INLINE void			ApplyItemMods(Item *item, int8 slot, bool apply,bool justdrokedown=false) {  _ApplyItemMods(item, slot, apply,justdrokedown); }
-	ARCEMU_INLINE bool			HasItemCount( uint32 item, uint32 count, bool inBankAlso = false ) const;
+	WoWICE_INLINE ItemInterface* GetItemInterface() { return m_ItemInterface; } // Player Inventory Item storage
+	WoWICE_INLINE void			ApplyItemMods(Item *item, int8 slot, bool apply,bool justdrokedown=false) {  _ApplyItemMods(item, slot, apply,justdrokedown); }
+	WoWICE_INLINE bool			HasItemCount( uint32 item, uint32 count, bool inBankAlso = false ) const;
     // item interface variables
     ItemInterface *     m_ItemInterface;
 
     /************************************************************************/
     /* Loot                                                                 */
     /************************************************************************/
-	ARCEMU_INLINE const uint64& GetLootGUID() const { return m_lootGuid; }
-	ARCEMU_INLINE void         SetLootGUID(const uint64 &guid) { m_lootGuid = guid; }
+	WoWICE_INLINE const uint64& GetLootGUID() const { return m_lootGuid; }
+	WoWICE_INLINE void         SetLootGUID(const uint64 &guid) { m_lootGuid = guid; }
 	void                SendLoot(uint64 guid,uint8 loot_type);
     // loot variables
     uint64              m_lootGuid;
@@ -1239,7 +1239,7 @@ public:
     /************************************************************************/
     /* World Session                                                        */
     /************************************************************************/
-	ARCEMU_INLINE WorldSession* GetSession() const { return m_session; }
+	WoWICE_INLINE WorldSession* GetSession() const { return m_session; }
 	void SetSession(WorldSession *s) { m_session = s; }
 	void SetBindPoint(float x, float y, float z, uint32 m, uint32 v) { m_bind_pos_x = x; m_bind_pos_y = y; m_bind_pos_z = z; m_bind_mapid = m; m_bind_zoneid = v;}
 	void SendDelayedPacket(WorldPacket *data, bool bDeleteOnSend)
@@ -1322,7 +1322,7 @@ public:
 	void EventDeath();
 	//Note:ModSkillLine -> value+=amt;ModSkillMax -->value=amt; --wierd
 	float GetSkillUpChance(uint32 id);
-	//ARCEMU_INLINE std::list<struct skilllines>getSkillLines() { return m_skilllines; }
+	//WoWICE_INLINE std::list<struct skilllines>getSkillLines() { return m_skilllines; }
 	float SpellCrtiticalStrikeRatingBonus;
 	float SpellHasteRatingBonus;
 	void ModAttackSpeed( int32 mod, ModType type );
@@ -1336,27 +1336,27 @@ public:
 	void UpdateHit(int32 hit);
 
 	bool canCast(SpellEntry *m_spellInfo);
-	ARCEMU_INLINE float GetSpellCritFromSpell() { return m_spellcritfromspell; }
-	ARCEMU_INLINE float GetHitFromSpell() { return m_hitfromspell; }
+	WoWICE_INLINE float GetSpellCritFromSpell() { return m_spellcritfromspell; }
+	WoWICE_INLINE float GetHitFromSpell() { return m_hitfromspell; }
 	void SetSpellCritFromSpell(float value) { m_spellcritfromspell = value; }
 	void SetHitFromSpell(float value) { m_hitfromspell = value; }
-	ARCEMU_INLINE uint32 GetHealthFromSpell() { return m_healthfromspell; }
-	ARCEMU_INLINE uint32 GetManaFromSpell() { return m_manafromspell; }
+	WoWICE_INLINE uint32 GetHealthFromSpell() { return m_healthfromspell; }
+	WoWICE_INLINE uint32 GetManaFromSpell() { return m_manafromspell; }
 	void SetHealthFromSpell(uint32 value) { m_healthfromspell = value;}
 	void SetManaFromSpell(uint32 value) { m_manafromspell = value;}
 	uint32 CalcTalentResetCost(uint32 resetnum);
 	void SendTalentResetConfirm();
 	void SendPetUntrainConfirm();
 	uint32 GetTalentResetTimes() { return m_talentresettimes; }
-	ARCEMU_INLINE void SetTalentResetTimes(uint32 value) { m_talentresettimes = value; }
+	WoWICE_INLINE void SetTalentResetTimes(uint32 value) { m_talentresettimes = value; }
 	void SetPlayerStatus(uint8 pStatus) { m_status = pStatus; }
-	ARCEMU_INLINE uint8 GetPlayerStatus() { return m_status; }
+	WoWICE_INLINE uint8 GetPlayerStatus() { return m_status; }
 	const float& GetBindPositionX( ) const { return m_bind_pos_x; }
 	const float& GetBindPositionY( ) const { return m_bind_pos_y; }
 	const float& GetBindPositionZ( ) const { return m_bind_pos_z; }
 	const uint32& GetBindMapId( ) const { return m_bind_mapid; }
 	const uint32& GetBindZoneId( ) const { return m_bind_zoneid; }
-	ARCEMU_INLINE uint8 GetShapeShift()
+	WoWICE_INLINE uint8 GetShapeShift()
 	{
 		return GetByte(UNIT_FIELD_BYTES_2,3);
 	}
@@ -1415,15 +1415,15 @@ public:
 	uint32 m_BreathDamageTimer;
 	// Visible objects
 	bool CanSee(Object* obj);
-	ARCEMU_INLINE bool IsVisible(Object* pObj) { return !(m_visibleObjects.find(pObj) == m_visibleObjects.end()); }
+	WoWICE_INLINE bool IsVisible(Object* pObj) { return !(m_visibleObjects.find(pObj) == m_visibleObjects.end()); }
 	void AddInRangeObject(Object* pObj);
 	void OnRemoveInRangeObject(Object* pObj);
 	void ClearInRangeSet();
-	ARCEMU_INLINE void AddVisibleObject(Object* pObj) { m_visibleObjects.insert(pObj); }
-	ARCEMU_INLINE void RemoveVisibleObject(Object* pObj) { m_visibleObjects.erase(pObj); }
-	ARCEMU_INLINE void RemoveVisibleObject(InRangeSet::iterator itr) { m_visibleObjects.erase(itr); }
-	ARCEMU_INLINE InRangeSet::iterator FindVisible(Object * obj) { return m_visibleObjects.find(obj); }
-	ARCEMU_INLINE void RemoveIfVisible(Object * obj)
+	WoWICE_INLINE void AddVisibleObject(Object* pObj) { m_visibleObjects.insert(pObj); }
+	WoWICE_INLINE void RemoveVisibleObject(Object* pObj) { m_visibleObjects.erase(pObj); }
+	WoWICE_INLINE void RemoveVisibleObject(InRangeSet::iterator itr) { m_visibleObjects.erase(itr); }
+	WoWICE_INLINE InRangeSet::iterator FindVisible(Object * obj) { return m_visibleObjects.find(obj); }
+	WoWICE_INLINE void RemoveIfVisible(Object * obj)
 	{
 		InRangeSet::iterator itr = m_visibleObjects.find(obj);
 		if(itr == m_visibleObjects.end())
@@ -1433,14 +1433,14 @@ public:
 		PushOutOfRange(obj->GetNewGUID());
 	}
 
-	ARCEMU_INLINE bool GetVisibility(Object * obj, InRangeSet::iterator *itr)
+	WoWICE_INLINE bool GetVisibility(Object * obj, InRangeSet::iterator *itr)
 	{
 		*itr = m_visibleObjects.find(obj);
 		return ((*itr) != m_visibleObjects.end());
 	}
 
-	ARCEMU_INLINE InRangeSet::iterator GetVisibleSetBegin() { return m_visibleObjects.begin(); }
-	ARCEMU_INLINE InRangeSet::iterator GetVisibleSetEnd() { return m_visibleObjects.end(); }
+	WoWICE_INLINE InRangeSet::iterator GetVisibleSetBegin() { return m_visibleObjects.begin(); }
+	WoWICE_INLINE InRangeSet::iterator GetVisibleSetEnd() { return m_visibleObjects.end(); }
 
 	//Transporters
 	bool m_lockTransportVariables;
@@ -1489,10 +1489,10 @@ public:
 	void UpdateNearbyGameObjects();
 
 	void CalcResistance(uint32 type);
-	ARCEMU_INLINE float res_M_crit_get(){return m_resist_critical[0];}
-	ARCEMU_INLINE void res_M_crit_set(float newvalue){m_resist_critical[0]=newvalue;}
-	ARCEMU_INLINE float res_R_crit_get(){return m_resist_critical[1];}
-	ARCEMU_INLINE void res_R_crit_set(float newvalue){m_resist_critical[1]=newvalue;}
+	WoWICE_INLINE float res_M_crit_get(){return m_resist_critical[0];}
+	WoWICE_INLINE void res_M_crit_set(float newvalue){m_resist_critical[0]=newvalue;}
+	WoWICE_INLINE float res_R_crit_get(){return m_resist_critical[1];}
+	WoWICE_INLINE void res_R_crit_set(float newvalue){m_resist_critical[1]=newvalue;}
 	uint32 FlatResistanceModifierPos[7];
 	uint32 FlatResistanceModifierNeg[7];
 	uint32 BaseResistanceModPctPos[7];
@@ -1529,7 +1529,7 @@ public:
 		uint32 mRatingToPoint[37]; //block, skill.. cant be decimal values
 	};
 */
-	ARCEMU_INLINE uint32* GetPlayedtime() { return m_playedtime; };
+	WoWICE_INLINE uint32* GetPlayedtime() { return m_playedtime; };
 	void CalcStat(uint32 t);
 	float CalcRating(uint32 t);
 	void RecalcAllRatings();
@@ -1542,15 +1542,15 @@ public:
 	uint32 SoulStoneReceiver;
 	void removeSoulStone();
 
-    ARCEMU_INLINE uint32 GetSoulStoneReceiver(){return SoulStoneReceiver;}
-    ARCEMU_INLINE void SetSoulStoneReceiver(uint32 StoneGUID){SoulStoneReceiver = StoneGUID;}
-    ARCEMU_INLINE uint32 GetSoulStone(){return SoulStone;}
-    ARCEMU_INLINE void SetSoulStone(uint32 StoneID){SoulStone = StoneID;}
+    WoWICE_INLINE uint32 GetSoulStoneReceiver(){return SoulStoneReceiver;}
+    WoWICE_INLINE void SetSoulStoneReceiver(uint32 StoneGUID){SoulStoneReceiver = StoneGUID;}
+    WoWICE_INLINE uint32 GetSoulStone(){return SoulStone;}
+    WoWICE_INLINE void SetSoulStone(uint32 StoneID){SoulStone = StoneID;}
 
 	uint64 misdirectionTarget;
 
-	ARCEMU_INLINE uint64 GetMisdirectionTarget(){return misdirectionTarget;}
-	ARCEMU_INLINE void SetMisdirectionTarget(uint64 PlayerGUID){misdirectionTarget = PlayerGUID;}
+	WoWICE_INLINE uint64 GetMisdirectionTarget(){return misdirectionTarget;}
+	WoWICE_INLINE void SetMisdirectionTarget(uint64 PlayerGUID){misdirectionTarget = PlayerGUID;}
 
 	bool bReincarnation;
 	bool removeReagentCost;
@@ -1583,7 +1583,7 @@ public:
 	uint32 m_ShapeShifted;
 	uint32 m_MountSpellId;
 
-	ARCEMU_INLINE bool IsMounted() {return (m_MountSpellId!=0 ? true : false); }
+	WoWICE_INLINE bool IsMounted() {return (m_MountSpellId!=0 ? true : false); }
 
 	void SendMountResult(uint32 result)
 	{
@@ -1645,13 +1645,13 @@ public:
 	bool FlyCheat;
 	void ZoneUpdate(uint32 ZoneId);
 	void UpdateChannels(uint16 AreaID);
-	ARCEMU_INLINE uint32 GetAreaID() { return m_AreaID; }
+	WoWICE_INLINE uint32 GetAreaID() { return m_AreaID; }
 	void SetAreaID(uint32 area) { m_AreaID = area; }
 	bool IsInCity();
 
 	// Instance IDs
 
-	ARCEMU_INLINE uint32 GetPersistentInstanceId(uint32 mapId, uint32 difficulty)
+	WoWICE_INLINE uint32 GetPersistentInstanceId(uint32 mapId, uint32 difficulty)
 	{
 		if(mapId >= NUM_MAPS || difficulty >= NUM_INSTANCE_MODES || m_playerInfo == NULL)
 			return 0;
@@ -1714,8 +1714,8 @@ public:
 	set<Player *> gmTargets;
 	uint32 m_UnderwaterMaxTime;
 	uint32 m_UnderwaterLastDmg;
-	ARCEMU_INLINE void setMyCorpse(Corpse * corpse) { myCorpse = corpse; }
-	ARCEMU_INLINE Corpse * getMyCorpse() { return myCorpse; }
+	WoWICE_INLINE void setMyCorpse(Corpse * corpse) { myCorpse = corpse; }
+	WoWICE_INLINE Corpse * getMyCorpse() { return myCorpse; }
 	bool bCorpseCreateable;
 	uint32 m_resurrectHealth, m_resurrectMana;
 	uint32 m_resurrectInstanceID, m_resurrectMapId;
@@ -1751,12 +1751,12 @@ public:
 	uint32 m_pvpTimer;
 
 	//! Is PVP flagged?
-	ARCEMU_INLINE bool IsPvPFlagged()
+	WoWICE_INLINE bool IsPvPFlagged()
 	{
 		return HasByteFlag(UNIT_FIELD_BYTES_2, 1, U_FIELD_BYTES_FLAG_PVP);
 	}
 
-	ARCEMU_INLINE void SetPvPFlag()
+	WoWICE_INLINE void SetPvPFlag()
 	{
 		StopPvPTimer();
 //		This is now done in Player::OnPushToWorld() to allow PvP-off characters to attack PvP-on characters without having to type /pvp
@@ -1767,26 +1767,26 @@ public:
 			SetFlag(PLAYER_FLAGS, 0x100);
 	}
 
-	ARCEMU_INLINE void RemovePvPFlag()
+	WoWICE_INLINE void RemovePvPFlag()
 	{
 		StopPvPTimer();
 		RemoveByteFlag(UNIT_FIELD_BYTES_2, 1, U_FIELD_BYTES_FLAG_PVP);
 		RemoveFlag(PLAYER_FLAGS, PLAYER_FLAG_PVP);
 	}
 
-	ARCEMU_INLINE bool IsFFAPvPFlagged()
+	WoWICE_INLINE bool IsFFAPvPFlagged()
 	{
 		return HasByteFlag(UNIT_FIELD_BYTES_2, 1, U_FIELD_BYTES_FLAG_FFA_PVP);
 	}
 
-	ARCEMU_INLINE void SetFFAPvPFlag()
+	WoWICE_INLINE void SetFFAPvPFlag()
 	{
 		StopPvPTimer();
 		SetByteFlag(UNIT_FIELD_BYTES_2, 1, U_FIELD_BYTES_FLAG_FFA_PVP);
 		SetFlag(PLAYER_FLAGS, PLAYER_FLAG_FREE_FOR_ALL_PVP);
 	}
 
-	ARCEMU_INLINE void RemoveFFAPvPFlag()
+	WoWICE_INLINE void RemoveFFAPvPFlag()
 	{
 		StopPvPTimer();
 		RemoveByteFlag(UNIT_FIELD_BYTES_2, 1, U_FIELD_BYTES_FLAG_FFA_PVP);
@@ -1794,9 +1794,9 @@ public:
 	}
 
 	//! Do this on /pvp off
-	ARCEMU_INLINE void ResetPvPTimer();
+	WoWICE_INLINE void ResetPvPTimer();
 	//! Stop the timer for pvp off
-	ARCEMU_INLINE void StopPvPTimer() { m_pvpTimer = 0; }
+	WoWICE_INLINE void StopPvPTimer() { m_pvpTimer = 0; }
 
 	//! Called at login to add the honorless buff, etc.
 	void LoginPvPSetup();
@@ -1805,8 +1805,8 @@ public:
 	//! PvP Toggle (called on /pvp)
 	void PvPToggle();
 
-	ARCEMU_INLINE uint32 LastHonorResetTime() const { return m_lastHonorResetTime; }
-	ARCEMU_INLINE void LastHonorResetTime(uint32 val) { m_lastHonorResetTime = val; }
+	WoWICE_INLINE uint32 LastHonorResetTime() const { return m_lastHonorResetTime; }
+	WoWICE_INLINE void LastHonorResetTime(uint32 val) { m_lastHonorResetTime = val; }
 	uint32 OnlineTime;
 	bool tutorialsDirty;
 	LevelInfo * lvlinfo;
@@ -1828,7 +1828,7 @@ public:
 	bool resend_speed;
 	bool rename_pending;
 	uint32 iInstanceType;
-	ARCEMU_INLINE void SetName(string& name) { m_name = name; }
+	WoWICE_INLINE void SetName(string& name) { m_name = name; }
 	// spell to (delay, last time)
 
 	FactionReputation * reputationByListId[128];
@@ -1839,7 +1839,7 @@ public:
 	int8 m_spellcomboPoints; // rogue talent Ruthlessness will change combopoints while consuming them. solutions 1) add post cast prochandling, 2) delay adding the CP
 	void UpdateComboPoints();
 
-	ARCEMU_INLINE void AddComboPoints(uint64 target, uint8 count)
+	WoWICE_INLINE void AddComboPoints(uint64 target, uint8 count)
 	{
         if(m_comboTarget == target)
 			m_comboPoints += count;
@@ -1851,7 +1851,7 @@ public:
 		UpdateComboPoints();
 	}
 
-	ARCEMU_INLINE void NullComboPoints() { if(!m_retainComboPoints) { m_comboTarget = 0; m_comboPoints = 0; m_spellcomboPoints=0; } UpdateComboPoints(); }
+	WoWICE_INLINE void NullComboPoints() { if(!m_retainComboPoints) { m_comboTarget = 0; m_comboPoints = 0; m_spellcomboPoints=0; } UpdateComboPoints(); }
 	uint32 m_speedChangeCounter;
 
 	void SendAreaTriggerMessage(const char * message, ...);
@@ -1859,7 +1859,7 @@ public:
 	// Trade Target
 	//Player *getTradeTarget() {return mTradeTarget;};
 
-	ARCEMU_INLINE Player * GetTradeTarget()
+	WoWICE_INLINE Player * GetTradeTarget()
 	{
 		if(!IsInWorld()) return 0;
 		return m_mapMgr->GetPlayer((uint32)mTradeTarget);
@@ -1876,7 +1876,7 @@ public:
 	void UnPossess();
 
 	/* Last Speeds */
-	ARCEMU_INLINE void UpdateLastSpeeds()
+	WoWICE_INLINE void UpdateLastSpeeds()
 	{
 		m_lastRunSpeed = m_runSpeed;
 		m_lastRunBackSpeed = m_backWalkSpeed;
@@ -1948,7 +1948,7 @@ public:
 	uint64 m_areaSpiritHealer_guid;
 	bool m_finishingmovesdodge;
 
-	ARCEMU_INLINE bool IsAttacking() {return m_attacking; }
+	WoWICE_INLINE bool IsAttacking() {return m_attacking; }
 
 	static void InitVisibleUpdateBits();
 	static UpdateMask m_visibleUpdateMask;
@@ -2162,12 +2162,12 @@ private:
 
 public:
 
-	ARCEMU_INLINE PlayerInfo * getPlayerInfo() const { return m_playerInfo; }
+	WoWICE_INLINE PlayerInfo * getPlayerInfo() const { return m_playerInfo; }
 
 	void LoadFieldsFromString(const char * string, uint32 firstField, uint32 fieldsNum);
 	void UpdateGlyphs();
 
-	ARCEMU_INLINE uint8 GetRune(uint32 index)
+	WoWICE_INLINE uint8 GetRune(uint32 index)
 	{
 		ASSERT(index < 6);
 		return m_runes[index];
@@ -2206,7 +2206,7 @@ public:
 	std::map<uint32,AchievementVal*> m_achievements;
 //	uint32 m_achievement_points; // for quick check in case it is used as currency*/
 
-    ARCEMU_INLINE AchievementMgr& GetAchievementMgr() { return m_achievementMgr; }
+    WoWICE_INLINE AchievementMgr& GetAchievementMgr() { return m_achievementMgr; }
 	AchievementMgr m_achievementMgr;
     /************************************************************************/
     /* Player Archievements - end				                            */
@@ -2217,14 +2217,14 @@ public:
     /************************************************************************/
 public:
 
-	ARCEMU_INLINE Vehicle * GetVehicle() { return (Vehicle *)m_vehicle; }
-	ARCEMU_INLINE int8 GetVehicleSeat() { return m_vehicleSeat; }
-	ARCEMU_INLINE void SetVehicle(Vehicle *v, int8 seat)
+	WoWICE_INLINE Vehicle * GetVehicle() { return (Vehicle *)m_vehicle; }
+	WoWICE_INLINE int8 GetVehicleSeat() { return m_vehicleSeat; }
+	WoWICE_INLINE void SetVehicle(Vehicle *v, int8 seat)
 	{
 		m_vehicle = (Unit *)v;
 		m_vehicleSeat = seat;
 	}
-	ARCEMU_INLINE void ResetVehicleSettings()
+	WoWICE_INLINE void ResetVehicleSettings()
 	{
 		m_vehicle = NULL;
 		m_vehicleSeat = -1;
@@ -2283,8 +2283,8 @@ public:
 		++m_itr;
 	}
 
-	ARCEMU_INLINE PlayerSkill* Grab() { return &m_itr->second; }
-	ARCEMU_INLINE bool End() { return (m_itr==m_endItr)?true:false; }
+	WoWICE_INLINE PlayerSkill* Grab() { return &m_itr->second; }
+	WoWICE_INLINE bool End() { return (m_itr==m_endItr)?true:false; }
 
 };
 

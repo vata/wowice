@@ -321,18 +321,18 @@ public:
 	virtual void HookOnUnitKill(Player * plr, Unit * pVictim) = 0;
 
 	/* Retreival Functions */
-	ARCEMU_INLINE uint32 GetId() { return m_id; }
-	ARCEMU_INLINE uint32 GetLevelGroup() { return m_levelGroup; }
-	ARCEMU_INLINE MapMgr* GetMapMgr() { return m_mapMgr; }
+	WoWICE_INLINE uint32 GetId() { return m_id; }
+	WoWICE_INLINE uint32 GetLevelGroup() { return m_levelGroup; }
+	WoWICE_INLINE MapMgr* GetMapMgr() { return m_mapMgr; }
 	
 	/* Creating a battleground requires a pre-existing map manager */
 	CBattleground(MapMgr * mgr, uint32 id, uint32 levelgroup, uint32 type);
 	virtual ~CBattleground();
 
 	/* Has it ended? */
-	ARCEMU_INLINE bool HasEnded() { return m_ended; }
+	WoWICE_INLINE bool HasEnded() { return m_ended; }
 	/* Has it started? */
-	ARCEMU_INLINE bool HasStarted() { return m_started; }
+	WoWICE_INLINE bool HasStarted() { return m_started; }
 
 	/* Send our current world states to a player . */
 	void SendWorldStates(Player * plr);
@@ -356,7 +356,7 @@ public:
 	void PlaySoundToAll(uint32 Sound);
 
 	/* Full? */
-	ARCEMU_INLINE bool IsFull() { return !(HasFreeSlots(0,m_type) || HasFreeSlots(1,m_type)); }
+	WoWICE_INLINE bool IsFull() { return !(HasFreeSlots(0,m_type) || HasFreeSlots(1,m_type)); }
 
 	/* Are we full? */
 	bool HasFreeSlots(uint32 Team, uint32 type);
@@ -383,8 +383,8 @@ public:
 	Creature * SpawnCreature(uint32 entry,float x, float y, float z, float o);
 	void UpdatePvPData();
 
-	ARCEMU_INLINE uint32 GetStartTime() { return m_startTime; }
-	ARCEMU_INLINE uint32 GetType() { return m_type; }
+	WoWICE_INLINE uint32 GetStartTime() { return m_startTime; }
+	WoWICE_INLINE uint32 GetType() { return m_type; }
 
 	// events should execute in the correct context
 	int32 event_GetInstanceID();
@@ -401,7 +401,7 @@ public:
 	void SetWorldState(uint32 Index, uint32 Value);
 	Creature * SpawnSpiritGuide(float x, float y, float z, float o, uint32 horde);
 
-	ARCEMU_INLINE uint32 GetLastResurrect() { return m_lastResurrect; }
+	WoWICE_INLINE uint32 GetLastResurrect() { return m_lastResurrect; }
 	void AddSpiritGuide(Creature * pCreature);
 	void RemoveSpiritGuide(Creature * pCreature);
 	void QueuePlayerForResurrect(Player * plr, Creature * spirit_healer);

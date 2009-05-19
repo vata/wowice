@@ -91,7 +91,7 @@ bool ChatHandler::HandleQuestLookupCommand(const char * args, WorldSession * m_s
 	if(!*args) return false;
 
 	string x = string(args);
-	arcemu_TOLOWER(x);
+	wowice_TOLOWER(x);
 	if(x.length() < 4)
 	{
 		RedSystemMessage(m_session, "Your search string must be at least 4 characters long.");
@@ -117,8 +117,8 @@ bool ChatHandler::HandleQuestLookupCommand(const char * args, WorldSession * m_s
 
 		std::string liName	= std::string(li ? li->Title : "");
 
-		arcemu_TOLOWER(liName);
- 		arcemu_TOLOWER(y);
+		wowice_TOLOWER(liName);
+ 		wowice_TOLOWER(y);
  
 		bool localizedFound	= false;
 		if(FindXinYString(x, liName))
@@ -534,7 +534,7 @@ bool ChatHandler::HandleQuestFinishCommand(const char * args, WorldSession * m_s
 				}
 			}
 			// if daily then append to finished dailies
-			if ( qst->is_repeatable == arcemu_QUEST_REPEATABLE_DAILY )
+			if ( qst->is_repeatable == wowice_QUEST_REPEATABLE_DAILY )
 				plr->PushToFinishedDailies( qst->id );
 			// Remove quests that are listed to be removed on quest complete.
 			set<uint32>::iterator iter = qst->remove_quest_list.begin();

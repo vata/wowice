@@ -101,8 +101,8 @@ public:
 	GameObject * CreateGameObject(uint32 entry);
 	GameObject * CreateAndSpawnGameObject(uint32 entryID, float x, float y, float z, float o, float scale);
 
-	ARCEMU_INLINE uint32 GenerateGameobjectGuid() { return ++m_GOHighGuid; }
-	ARCEMU_INLINE GameObject * GetGameObject(uint32 guid)
+	WoWICE_INLINE uint32 GenerateGameobjectGuid() { return ++m_GOHighGuid; }
+	WoWICE_INLINE GameObject * GetGameObject(uint32 guid)
 	{
 		if(guid > m_GOHighGuid)
 			return 0;
@@ -132,7 +132,7 @@ public:
 	DynamicObjectStorageMap m_DynamicObjectStorage;
 	DynamicObject * CreateDynamicObject();
 	
-	ARCEMU_INLINE DynamicObject * GetDynamicObject(uint32 guid)
+	WoWICE_INLINE DynamicObject * GetDynamicObject(uint32 guid)
 	{
 		DynamicObjectStorageMap::iterator itr = m_DynamicObjectStorage.find(guid);
 		return (itr != m_DynamicObjectStorage.end()) ? itr->second : 0;
@@ -198,31 +198,31 @@ public:
 	void UpdateCellActivity(uint32 x, uint32 y, int radius);
 
 	// Terrain Functions
-	ARCEMU_INLINE float  GetLandHeight(float x, float y) { return GetBaseMap()->GetLandHeight(x, y); }
-	ARCEMU_INLINE bool   IsUnderground(float x, float y,float z) { return GetBaseMap()->GetLandHeight(x, y) > (z+0.5f); }
-	ARCEMU_INLINE float  GetWaterHeight(float x, float y) { return GetBaseMap()->GetWaterHeight(x, y); }
-	ARCEMU_INLINE uint8  GetWaterType(float x, float y) { return GetBaseMap()->GetWaterType(x, y); }
-	ARCEMU_INLINE uint8  GetWalkableState(float x, float y) { return GetBaseMap()->GetWalkableState(x, y); }
-	ARCEMU_INLINE uint16 GetAreaID(float x, float y) { return GetBaseMap()->GetAreaID(x, y); }
+	WoWICE_INLINE float  GetLandHeight(float x, float y) { return GetBaseMap()->GetLandHeight(x, y); }
+	WoWICE_INLINE bool   IsUnderground(float x, float y,float z) { return GetBaseMap()->GetLandHeight(x, y) > (z+0.5f); }
+	WoWICE_INLINE float  GetWaterHeight(float x, float y) { return GetBaseMap()->GetWaterHeight(x, y); }
+	WoWICE_INLINE uint8  GetWaterType(float x, float y) { return GetBaseMap()->GetWaterType(x, y); }
+	WoWICE_INLINE uint8  GetWalkableState(float x, float y) { return GetBaseMap()->GetWalkableState(x, y); }
+	WoWICE_INLINE uint16 GetAreaID(float x, float y) { return GetBaseMap()->GetAreaID(x, y); }
 
-	ARCEMU_INLINE uint32 GetMapId() { return _mapId; }
+	WoWICE_INLINE uint32 GetMapId() { return _mapId; }
 
 	void PushToProcessed(Player* plr);
 
-	ARCEMU_INLINE bool HasPlayers() { return (m_PlayerStorage.size() > 0); }
-	ARCEMU_INLINE bool IsCombatInProgress() { return (_combatProgress.size() > 0); }
+	WoWICE_INLINE bool HasPlayers() { return (m_PlayerStorage.size() > 0); }
+	WoWICE_INLINE bool IsCombatInProgress() { return (_combatProgress.size() > 0); }
 	void TeleportPlayers();
 
-	ARCEMU_INLINE uint32 GetInstanceID() { return m_instanceID; }
-	ARCEMU_INLINE MapInfo *GetMapInfo() { return pMapInfo; }
+	WoWICE_INLINE uint32 GetInstanceID() { return m_instanceID; }
+	WoWICE_INLINE MapInfo *GetMapInfo() { return pMapInfo; }
 
 	bool _shutdown;
 
-	ARCEMU_INLINE MapScriptInterface * GetInterface() { return ScriptInterface; }
+	WoWICE_INLINE MapScriptInterface * GetInterface() { return ScriptInterface; }
 	virtual int32 event_GetInstanceID() { return m_instanceID; }
 
 	void LoadAllCells();
-	ARCEMU_INLINE size_t GetPlayerCount() { return m_PlayerStorage.size(); }
+	WoWICE_INLINE size_t GetPlayerCount() { return m_PlayerStorage.size(); }
 	uint32 GetTeamPlayersCount(uint32 teamId);
 
 	void _PerformObjectDuties();
@@ -249,7 +249,7 @@ public:
 
 	void SendInitialStates(Player * plr);
 	void SetWorldState(uint32 zoneid, uint32 index, uint32 value);
-	//ARCEMU_INLINE uint32 GetWorldState(uint32 state);
+	//WoWICE_INLINE uint32 GetWorldState(uint32 state);
 	
 	// better hope to clear any references to us when calling this :P
 	void InstanceShutdown()

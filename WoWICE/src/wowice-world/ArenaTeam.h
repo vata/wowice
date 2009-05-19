@@ -13,8 +13,8 @@
  * this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef arcemu_ARENATEAMS_H
-#define arcemu_ARENATEAMS_H
+#ifndef wowice_ARENATEAMS_H
+#define wowice_ARENATEAMS_H
 
 struct ArenaTeamMember
 {
@@ -108,4 +108,4 @@ public:
 	}
 };
 
-#endif		// arcemu_ARENATEAMS_H
+#endif		// wowice_ARENATEAMS_H

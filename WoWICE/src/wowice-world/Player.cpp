@@ -577,7 +577,7 @@ Player::~Player ( )
 	m_Pets.clear();
 }
 
-ARCEMU_INLINE uint32 GetSpellForLanguage(uint32 SkillID)
+WoWICE_INLINE uint32 GetSpellForLanguage(uint32 SkillID)
 {
 	switch(SkillID)
 	{

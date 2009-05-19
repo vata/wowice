@@ -105,11 +105,11 @@ public:
 	Map(uint32 mapid, MapInfo * inf);
 	~Map();
 
-	ARCEMU_INLINE string GetNameString() { return name; }
-	ARCEMU_INLINE const char* GetName() { return name.c_str(); }
-	ARCEMU_INLINE MapEntry* GetDBCEntry() { return me; }
+	WoWICE_INLINE string GetNameString() { return name; }
+	WoWICE_INLINE const char* GetName() { return name.c_str(); }
+	WoWICE_INLINE MapEntry* GetDBCEntry() { return me; }
 
-	ARCEMU_INLINE CellSpawns *GetSpawnsList(uint32 cellx,uint32 celly)
+	WoWICE_INLINE CellSpawns *GetSpawnsList(uint32 cellx,uint32 celly)
 	{
 		ASSERT(cellx < _sizeX);
 		ASSERT(celly < _sizeY);
@@ -117,7 +117,7 @@ public:
 
 		return spawns[cellx][celly];
 	}
-	ARCEMU_INLINE CellSpawns * GetSpawnsListAndCreate(uint32 cellx, uint32 celly)
+	WoWICE_INLINE CellSpawns * GetSpawnsListAndCreate(uint32 cellx, uint32 celly)
 	{
 		ASSERT(cellx < _sizeX);
 		ASSERT(celly < _sizeY);
@@ -136,7 +136,7 @@ public:
 	uint32 CreatureSpawnCount;
 	uint32 GameObjectSpawnCount;
 
-	ARCEMU_INLINE float  GetLandHeight(float x, float y)
+	WoWICE_INLINE float  GetLandHeight(float x, float y)
 	{ 
 		if(_terrain)
 		{
@@ -148,7 +148,7 @@ public:
 		}
 	}
 
-	ARCEMU_INLINE float  GetWaterHeight(float x, float y) 
+	WoWICE_INLINE float  GetWaterHeight(float x, float y) 
 	{ 
 		if(_terrain)
 		{ 
@@ -160,7 +160,7 @@ public:
 		}
 	}
 
-	ARCEMU_INLINE uint8  GetWaterType(float x, float y)
+	WoWICE_INLINE uint8  GetWaterType(float x, float y)
 	{
 		if(_terrain)
 		{ 
@@ -172,7 +172,7 @@ public:
 		}
 	}
 
-	ARCEMU_INLINE uint8  GetWalkableState(float x, float y)
+	WoWICE_INLINE uint8  GetWalkableState(float x, float y)
 	{
 		if(_terrain)
 		{ 
@@ -184,7 +184,7 @@ public:
 		}
 	}
 
-	ARCEMU_INLINE uint16 GetAreaID(float x, float y)
+	WoWICE_INLINE uint16 GetAreaID(float x, float y)
 	{
 		if(_terrain)
 		{ 
@@ -196,7 +196,7 @@ public:
 		}
 	}
 
-	ARCEMU_INLINE void CellGoneActive(uint32 x, uint32 y)
+	WoWICE_INLINE void CellGoneActive(uint32 x, uint32 y)
 	{ 
 		if(_terrain)
 		{ 
@@ -204,7 +204,7 @@ public:
 		}
 	}
 
-	ARCEMU_INLINE void CellGoneIdle(uint32 x,uint32 y)
+	WoWICE_INLINE void CellGoneIdle(uint32 x,uint32 y)
 	{ 
 		if(_terrain)
 		{ 

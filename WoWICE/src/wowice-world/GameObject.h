@@ -167,8 +167,8 @@ public:
 	GameObject(uint64 guid);
 	~GameObject( );
 
-	ARCEMU_INLINE GameObjectInfo* GetInfo() { return pInfo; }
-	ARCEMU_INLINE void SetInfo(GameObjectInfo * goi) { pInfo = goi; }
+	WoWICE_INLINE GameObjectInfo* GetInfo() { return pInfo; }
+	WoWICE_INLINE void SetInfo(GameObjectInfo * goi) { pInfo = goi; }
 
 	//void Create ( uint32 display_id, uint8 state, uint32 obj_field_entry, float scale, uint16 type, uint16 faction, uint32 mapid, float x, float y, float z, float ang );
    // void Create ( uint32 mapid, float x, float y, float z, float ang);
@@ -221,7 +221,7 @@ public:
 
 	void Deactivate();
 
-	ARCEMU_INLINE bool isQuestGiver()
+	WoWICE_INLINE bool isQuestGiver()
 	{
 		if(m_uint32Values[GAMEOBJECT_BYTES_1] == 2)
 			return true;
@@ -253,25 +253,25 @@ public:
 	void CallScriptUpdate();
    
 
-	ARCEMU_INLINE GameObjectAIScript* GetScript() { return myScript; }
+	WoWICE_INLINE GameObjectAIScript* GetScript() { return myScript; }
 
 	void TrapSearchTarget();	// Traps need to find targets faster :P
 
-	ARCEMU_INLINE bool HasAI() { return spell != 0; }
+	WoWICE_INLINE bool HasAI() { return spell != 0; }
 	GOSpawn * m_spawn;
 	void OnPushToWorld();
 	void OnRemoveInRangeObject(Object* pObj);
 	void RemoveFromWorld(bool free_guid);
 
-	ARCEMU_INLINE bool CanMine(){return (usage_remaining > 0);}
-	ARCEMU_INLINE void UseMine(){ if(usage_remaining) usage_remaining--;}
+	WoWICE_INLINE bool CanMine(){return (usage_remaining > 0);}
+	WoWICE_INLINE void UseMine(){ if(usage_remaining) usage_remaining--;}
 	void CalcMineRemaining(bool force)
 	{
 		if(force || !usage_remaining)
 			usage_remaining = GetInfo()->sound4 + RandomUInt(GetInfo()->sound5 - GetInfo()->sound4) - 1;
 	}
-	ARCEMU_INLINE bool CanFish() { return ( usage_remaining > 0 ); }
-	ARCEMU_INLINE void CatchFish() { if ( usage_remaining ) usage_remaining--; }
+	WoWICE_INLINE bool CanFish() { return ( usage_remaining > 0 ); }
+	WoWICE_INLINE void CatchFish() { if ( usage_remaining ) usage_remaining--; }
 	void CalcFishRemaining( bool force )
 	{
 		if ( force || !usage_remaining )

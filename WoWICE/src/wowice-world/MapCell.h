@@ -37,37 +37,37 @@ public:
 	//Init
 	void Init(uint32 x, uint32 y, uint32 mapid, MapMgr *mapmgr);
 	
-	ARCEMU_INLINE void AquireLock(){ m_objectlock.Acquire(); }
-	ARCEMU_INLINE void ReleaseLock(){ m_objectlock.Release(); }
+	WoWICE_INLINE void AquireLock(){ m_objectlock.Acquire(); }
+	WoWICE_INLINE void ReleaseLock(){ m_objectlock.Release(); }
 
 	//Object Managing
 	void AddObject(Object *obj); 
 	void RemoveObject(Object *obj);
 	bool HasObject(Object *obj) { return (_objects.find(obj) != _objects.end()); }
 	bool HasPlayers() { return ((_playerCount > 0) ? true : false); }
-	ARCEMU_INLINE size_t GetObjectCount() { return _objects.size(); }
+	WoWICE_INLINE size_t GetObjectCount() { return _objects.size(); }
 	void RemoveObjects();
-	ARCEMU_INLINE ObjectSet::iterator Begin() { return _objects.begin(); }
-	ARCEMU_INLINE ObjectSet::iterator End() { return _objects.end(); }
+	WoWICE_INLINE ObjectSet::iterator Begin() { return _objects.begin(); }
+	WoWICE_INLINE ObjectSet::iterator End() { return _objects.end(); }
 
 	//State Related
 	void SetActivity(bool state);
 
-	ARCEMU_INLINE bool IsActive() { return _active; }
-	ARCEMU_INLINE bool IsLoaded() { return _loaded; }
-	ARCEMU_INLINE void SetLoaded( bool Loaded = true ) { _loaded = Loaded; }
+	WoWICE_INLINE bool IsActive() { return _active; }
+	WoWICE_INLINE bool IsLoaded() { return _loaded; }
+	WoWICE_INLINE void SetLoaded( bool Loaded = true ) { _loaded = Loaded; }
 
 	//Object Loading Managing
 	void LoadObjects(CellSpawns * sp);
-	ARCEMU_INLINE uint32 GetPlayerCount() { return _playerCount; }
+	WoWICE_INLINE uint32 GetPlayerCount() { return _playerCount; }
 
-	ARCEMU_INLINE bool IsUnloadPending() { return _unloadpending; }
-	ARCEMU_INLINE void SetUnloadPending(bool up) { _unloadpending = up; }
+	WoWICE_INLINE bool IsUnloadPending() { return _unloadpending; }
+	WoWICE_INLINE void SetUnloadPending(bool up) { _unloadpending = up; }
 	void QueueUnloadPending();
 	void CancelPendingUnload();
 	void Unload();
-	ARCEMU_INLINE uint16 GetPositionX() { return _x; }
-	ARCEMU_INLINE uint16 GetPositionY() { return _y; }
+	WoWICE_INLINE uint16 GetPositionX() { return _x; }
+	WoWICE_INLINE uint16 GetPositionY() { return _y; }
 
 	ObjectSet _respawnObjects;
 

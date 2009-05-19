@@ -118,7 +118,7 @@ public:
 	int8 GetInternalBankSlotFromPlayer(int8 islot); //converts inventory slots into 0-x numbers
 
 	//buyback stuff
-	ARCEMU_INLINE Item* GetBuyBack(int32 slot) 
+	WoWICE_INLINE Item* GetBuyBack(int32 slot) 
 	{ 
 		if(slot >= 0 && slot < MAX_BUYBACK_SLOT)
 			return m_pBuyBack[slot];
@@ -133,7 +133,7 @@ public:
 	void CheckAreaItems();
 
 public:
-	ARCEMU_INLINE bool VerifyBagSlots(int8 ContainerSlot, int8 Slot)
+	WoWICE_INLINE bool VerifyBagSlots(int8 ContainerSlot, int8 Slot)
 	{
 		if( ContainerSlot < -1 || Slot < 0 )
 			return false;
@@ -256,8 +256,8 @@ public:
 		m_currentItem=NULL;
 	}
 
-	ARCEMU_INLINE Item* Grab() { return m_currentItem; }
-	ARCEMU_INLINE bool End() { return m_atEnd; }
+	WoWICE_INLINE Item* Grab() { return m_currentItem; }
+	WoWICE_INLINE bool End() { return m_atEnd; }
 };
 
 #endif
