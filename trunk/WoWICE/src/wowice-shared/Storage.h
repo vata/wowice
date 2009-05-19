@@ -72,15 +72,15 @@ public:
 
 	/** Returns the currently stored object
 	 */
-	ARCEMU_INLINE T * Get() { return Pointer; }
+	WoWICE_INLINE T * Get() { return Pointer; }
 
 	/** Sets the current object to P
 	 */
-	ARCEMU_INLINE void Set(T * P) { Pointer = P; }
+	WoWICE_INLINE void Set(T * P) { Pointer = P; }
 
 	/** Are we at the end of the storage container?
 	 */
-	ARCEMU_INLINE bool AtEnd() { return (Pointer == 0); }
+	WoWICE_INLINE bool AtEnd() { return (Pointer == 0); }
 
 	/** Virtual function to increment to the next element
 	 */
@@ -485,8 +485,8 @@ protected:
 	char * _formatString;
 public:
 	
-	ARCEMU_INLINE char * GetIndexName() { return _indexName; }
-	ARCEMU_INLINE char * GetFormatString() { return _formatString; }
+	WoWICE_INLINE char * GetIndexName() { return _indexName; }
+	WoWICE_INLINE char * GetFormatString() { return _formatString; }
 
 	/** False constructor to fool compiler
 	 */
@@ -588,7 +588,7 @@ public:
 
 	/** Loads the block using the format string.
 	 */
-	ARCEMU_INLINE void LoadBlock(Field * fields, T * Allocated)
+	WoWICE_INLINE void LoadBlock(Field * fields, T * Allocated)
 	{
 		char * p = Storage<T, StorageType>::_formatString;
 		char * structpointer = (char*)Allocated;

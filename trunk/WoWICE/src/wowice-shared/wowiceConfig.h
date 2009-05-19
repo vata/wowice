@@ -13,11 +13,11 @@
  * this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-// arcemu Configuration Header File
+// wowice Configuration Header File
 // Feel free to customize to your needs.
 
-#ifndef __arcemuCONFIG_H
-#define __arcemuCONFIG_H
+#ifndef __wowiceCONFIG_H
+#define __wowiceCONFIG_H
 
 #ifndef ENABLE_IMPROVED_TICKETSYSTEM
 #define GM_TICKET_MY_MASTER_COMPATIBLE
@@ -31,8 +31,8 @@
  */
 //#define USE_MEMORY_MAPPING_FOR_MAPS
 
-/** Enable/disable arcemu's Voice Chat support.
- * While not completely finished (but close!) you can link your arcemu server to a voice chat
+/** Enable/disable wowice's Voice Chat support.
+ * While not completely finished (but close!) you can link your wowice server to a voice chat
  * server (also compiled by default) and use the client's ingame voice chat function.
  * At the moment it is only good for joining, you can't leave a voice channel yet :P
  * Also, it only works for parties. Custom chat channels are not fully supported yet.
@@ -73,7 +73,7 @@
 /**
  * Optimize the server for MySQL usage.
  * This may give a small boost to performance.
- * Enable it if you do not plan on using arcemu with PostgreSQL or SQLite.
+ * Enable it if you do not plan on using wowice with PostgreSQL or SQLite.
  */
 #define OPTIMIZE_SERVER_FOR_MYSQL 1
 
@@ -91,5 +91,5 @@
  **/
 //#define ENABLE_AV
 
-#endif		// __arcemuCONFIG_H
+#endif		// __wowiceCONFIG_H
 

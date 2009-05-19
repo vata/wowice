@@ -691,13 +691,13 @@ std::string ConvertTimeStampToDataTime(uint32 timestamp);
 
 uint32 DecimalToMask(uint32 dec);
 
-WoWICE_INLINE void arcemu_TOLOWER(std::string& str)
+WoWICE_INLINE void wowice_TOLOWER(std::string& str)
 {
 	for(size_t i = 0; i < str.length(); ++i)
 		str[i] = (char)tolower(str[i]);
 };
 
-WoWICE_INLINE void arcemu_TOUPPER(std::string& str)
+WoWICE_INLINE void wowice_TOUPPER(std::string& str)
 {
 	for(size_t i = 0; i < str.length(); ++i)
 		str[i] = (char)toupper(str[i]);
