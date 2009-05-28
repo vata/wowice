@@ -409,7 +409,7 @@ void WorldSession::HandleCharCreateOpcode( WorldPacket & recv_data )
 	}
 
 	//Check if player has a level 55 or higher character on this realm and allow him to create DK.
-	//This check can be turned off in arcemu-optional.conf
+	//This check can be turned off in wowice-optional.conf
 	if( Config.OptionalConfig.GetBoolDefault( "ClassOptions" , "DeathKnightPreReq" , false ) && !has_level_55_char 
 		&& ( class_ == DEATHKNIGHT ))
 	{	

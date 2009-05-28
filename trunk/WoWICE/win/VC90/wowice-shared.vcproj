@@ -694,7 +694,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\logonserver\PeriodicFunctionCall_Thread.h"
+				RelativePath="..\..\src\wowice-logonserver\PeriodicFunctionCall_Thread.h"
 				>
 			</File>
 			<File

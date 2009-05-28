@@ -18,7 +18,7 @@
 
 #ifdef VOICE_CHAT
 
-#include "../arcemu-voicechat/arcemu_opcodes.h"
+#include "../wowice-voicechat/wowice_opcodes.h"
 #include "VoiceChatClientSocket.h"
 
 class VoiceChatClientSocket;
