@@ -5,5 +5,5 @@ bin_PROGRAMS = wowice-crashreport
 wowice_crashreport_SOURCES = \
 	Main.c
 
-arcemu_crashreport_LDADD =
-arcemu_crashreport_LDFLAGS = -L$(srcdir)/../wowice-crashreport
+wowice_crashreport_LDADD =
+wowice_crashreport_LDFLAGS = -L$(srcdir)/../wowice-crashreport

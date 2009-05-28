@@ -1,6 +1,6 @@
 INCLUDES += -I$(srcdir)/../wowice-shared
 
-bin_PROGRAMS = arcemu-world
+bin_PROGRAMS = wowice-world
 
 wowice_world_SOURCES = \
     AchievementMgr.cpp \
@@ -209,9 +209,9 @@ wowice_world_SOURCES = \
 	ConsoleCommands.h \
 	ConsoleListener.cpp
 	
-arcemu_world_LDADD = -lshared -lz -lpcre -lcollision
+wowice_world_LDADD = -lshared -lz -lpcre -lcollision
 
-arcemu_world_LDFLAGS = -L$(srcdir)/../wowice-shared \
+wowice_world_LDFLAGS = -L$(srcdir)/../wowice-shared \
                -L$(srcdir)/../collision \
                -L/usr/lib \
                @LIB_EXPORT@

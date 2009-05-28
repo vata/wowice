@@ -515,10 +515,6 @@
 					Name="Unit"
 					>
 					<File
-						RelativePath="..\..\src\wowice-world\Stats.cpp"
-						>
-					</File>
-					<File
 						RelativePath="..\..\src\wowice-world\Stats.h"
 						>
 					</File>
@@ -865,6 +861,10 @@
 				</File>
 				<File
 					RelativePath="..\..\src\wowice-world\ObjectMgr.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\src\wowice-world\Stats.cpp"
 					>
 				</File>
 			</Filter>

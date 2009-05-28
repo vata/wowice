@@ -19,7 +19,7 @@
 #ifdef WIN32
 __forceinline uint32 getMSTime() { return GetTickCount(); }
 #else
-ARCEMU_INLINE uint32 getMSTime()
+WoWICE_INLINE uint32 getMSTime()
 {
 	struct timeval tv;
 	gettimeofday(&tv, NULL);

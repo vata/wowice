@@ -1,8 +1,8 @@
-INCLUDES += -I$(srcdir) -I$(srcdir)/../arcemu-shared
+INCLUDES += -I$(srcdir) -I$(srcdir)/../wowice-shared
 
-bin_PROGRAMS = arcemu-logonserver
+bin_PROGRAMS = wowice-logonserver
 
-arcemu_logonserver_SOURCES = \
+wowice_logonserver_SOURCES = \
 	AccountCache.cpp \
 	AccountCache.h \
 	AuthSocket.cpp \
@@ -22,5 +22,5 @@ arcemu_logonserver_SOURCES = \
 	Main.h \
 	PeriodicFunctionCall_Thread.h
 
-arcemu_logonserver_LDADD = -lshared -lz
-arcemu_logonserver_LDFLAGS = -L$(srcdir)/../arcemu-shared
+wowice_logonserver_LDADD = -lshared -lz
+wowice_logonserver_LDFLAGS = -L$(srcdir)/../wowice-shared
