@@ -1,0 +1,1 @@
+SUBDIRS = collision wowice-crashreport wowice-shared wowice-logonserver wowice-world scripts 

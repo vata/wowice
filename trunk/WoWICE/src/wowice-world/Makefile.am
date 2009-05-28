@@ -1,8 +1,8 @@
-INCLUDES += -I$(srcdir)/../arcemu-shared
+INCLUDES += -I$(srcdir)/../wowice-shared
 
 bin_PROGRAMS = arcemu-world
 
-arcemu_world_SOURCES = \
+wowice_world_SOURCES = \
     AchievementMgr.cpp \
     AchievementMgr.h \
     CollideInterface.cpp \
@@ -211,7 +211,7 @@ arcemu_world_SOURCES = \
 	
 arcemu_world_LDADD = -lshared -lz -lpcre -lcollision
 
-arcemu_world_LDFLAGS = -L$(srcdir)/../arcemu-shared \
+arcemu_world_LDFLAGS = -L$(srcdir)/../wowice-shared \
                -L$(srcdir)/../collision \
                -L/usr/lib \
                @LIB_EXPORT@
