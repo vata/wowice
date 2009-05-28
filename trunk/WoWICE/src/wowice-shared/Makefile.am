@@ -31,8 +31,8 @@ libshared_a_SOURCES = \
     Threading/Mutex.cpp \
     Threading/ThreadPool.cpp \
     Storage.h \
-    arcemu_getopt.h \
-    arcemu_getopt.cpp \
+    wowice_getopt.h \
+    wowice_getopt.cpp \
     CrashHandler.h \
     CrashHandler.cpp \
     Auth/BigNumber.cpp \
