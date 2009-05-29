@@ -460,6 +460,7 @@ public:
 
 	/// Looting
 	void generateLoot();
+	bool HasLootForPlayer(Player * plr);
 
 	bool Skinned;
 

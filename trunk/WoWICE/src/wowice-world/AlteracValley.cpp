@@ -14,7 +14,6 @@
  */
 
 #include "StdAfx.h"
-#ifdef ENABLE_AV
 
 /**
 * AV World States
@@ -1933,7 +1932,7 @@ void AlteracValley::HookOnShadowSight()
 {
 
 }
-#endif
+
 
 
 
