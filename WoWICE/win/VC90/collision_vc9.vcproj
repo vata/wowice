@@ -377,11 +377,11 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\..\ArcEmu\src\collision\g3dlite\G3D\CollisionDetection.h"
+				RelativePath="..\..\src\collision\g3dlite\G3D\CollisionDetection.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\..\ArcEmu\src\collision\g3dlite\G3D\CoordinateFrame.h"
+				RelativePath="..\..\src\collision\g3dlite\G3D\CoordinateFrame.h"
 				>
 			</File>
 			<File
