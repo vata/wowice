@@ -36,11 +36,7 @@ const static uint32 BGMapIds[ BATTLEGROUND_NUM_TYPES ] =
 
 const static CreateBattlegroundFunc BGCFuncs[BATTLEGROUND_NUM_TYPES] = {
 	NULL,								// 0
-#ifdef ENABLE_AV
 	&AlteracValley::Create,				// AV
-#else
-	NULL,								// AV
-#endif
 	&WarsongGulch::Create,				// WSG
 	&ArathiBasin::Create,				// AB
 	NULL,								// 2v2
@@ -48,7 +44,7 @@ const static CreateBattlegroundFunc BGCFuncs[BATTLEGROUND_NUM_TYPES] = {
 	NULL,								// 5v5
 	&EyeOfTheStorm::Create,				// EotS
 	NULL,
-	&StrandOfTheAncient::Create,		// SOTA, needs to be updated when SOTA is in
+	&StrandOfTheAncient::Create,		// SOTA
 	NULL,
 	NULL,
 };
@@ -807,7 +803,7 @@ bool CBattlegroundManager::CanCreateInstance(uint32 Type, uint32 LevelGroup)
 /* Returns the minimum number of players (Only valid for battlegrounds) */
 uint32 CBattlegroundManager::GetMinimumPlayers(uint32 dbcIndex)
 {
-	switch((int)dbcIndex)
+	switch(dbcIndex)
 	{
 		case BATTLEGROUND_ALTERAC_VALLEY:
 			return Config.MainConfig.GetIntDefault("Battleground", "AV_MIN", dbcBattlemasterListStore.LookupEntry(dbcIndex)->min_players_per_faction);
@@ -833,7 +829,7 @@ uint32 CBattlegroundManager::GetMinimumPlayers(uint32 dbcIndex)
 /* Returns the maximum number of players (Only valid for battlegrounds) */
 uint32 CBattlegroundManager::GetMaximumPlayers(uint32 dbcIndex)
 {
-	switch((int)dbcIndex)
+	switch(dbcIndex)
 	{
 		case BATTLEGROUND_ALTERAC_VALLEY:
 			return Config.MainConfig.GetIntDefault("Battleground", "AV_MAX", dbcBattlemasterListStore.LookupEntry(dbcIndex)->min_players_per_faction);
@@ -909,6 +905,7 @@ CBattleground::CBattleground(MapMgr * mgr, uint32 id, uint32 levelgroup, uint32 
 		m_groups[i]->m_disbandOnNoMembers = false;
 		m_groups[i]->ExpandToRaid();
 	}
+	m_honorPerKill = HonorHandler::CalculateHonorPointsForKill(m_levelGroup * 10, m_levelGroup * 10);
 }
 
 CBattleground::~CBattleground()
@@ -928,6 +925,8 @@ CBattleground::~CBattleground()
 	}
 
 	m_resurrectMap.clear();
+	m_players[0].clear();
+	m_players[1].clear();	
 }
 
 void CBattleground::UpdatePvPData()
@@ -1024,6 +1023,8 @@ void CBattleground::BuildPvPUpdateDataPacket(WorldPacket * data)
 			*data << uint8(0);      // If the game has ended - this will be 1
 
 		*data << uint32((m_players[0].size() + m_players[1].size())-m_invisGMs);
+
+		uint32 FieldCount = GetFieldCount( GetType() );
 		for(uint32 i = 0; i < 2; ++i)
 		{
 			for(set<Player*>::iterator itr = m_players[i].begin(); itr != m_players[i].end(); ++itr)
@@ -1040,9 +1041,10 @@ void CBattleground::BuildPvPUpdateDataPacket(WorldPacket * data)
 				*data << bs->BonusHonor;
 				*data << bs->DamageDone;
 				*data << bs->HealingDone;
-				*data << uint32(0x2);
-				*data << bs->Misc1;
-				*data << bs->Misc2;
+
+				*data << FieldCount;
+				for( uint32 x = 0; x < FieldCount; ++x )
+					*data << bs->MiscData[x];
 			}
 		}
 	}
@@ -1421,7 +1423,7 @@ void CBattlegroundManager::SendBattlefieldStatus(Player * plr, uint32 Status, ui
 	{
 		if(Type >= BATTLEGROUND_ARENA_2V2 && Type <= BATTLEGROUND_ARENA_5V5)
 		{
-			data << uint32(0);		// Queue Slot 0..2. Only the first slot is used in wowice!
+			data << uint32(0);		// Queue Slot 0..2. Only the first slot is used in arcemu!
 			switch(Type)
 			{
 			case BATTLEGROUND_ARENA_2V2:
@@ -1464,9 +1466,9 @@ void CBattlegroundManager::SendBattlefieldStatus(Player * plr, uint32 Status, ui
 			break;
 		case 3:
 			if(Type >= BATTLEGROUND_ARENA_2V2 && Type <= BATTLEGROUND_ARENA_5V5)
-				data << MapId << uint32(0) << Time << uint8(0);
+				data << MapId << uint32(120000) << Time << uint8(0);
 			else
-				data << MapId << uint32(0) << Time << uint8(1);
+				data << MapId << uint32(120000) << Time << uint8(1);
 			break;
 		}
 	}

@@ -302,6 +302,8 @@ void CommandTableStorage::Init()
 		{ "getheight",           'd', &ChatHandler::HandleCollisionGetHeight,      "Gets height",                                                                                                       NULL, 0, 0, 0 },
         { "deathstate",          'd', &ChatHandler::HandleGetDeathState,           "returns current deathstate for target",                                                                         NULL, 0, 0, 0 },
 		{ "getpos",              'd', &ChatHandler::HandleGetPosCommand,           "",                                                                                                                  NULL, 0, 0, 0 },
+		{ "sendfailed",			 'd', &ChatHandler::HandleSendFailed,	           "",                                                                                                                  NULL, 0, 0, 0 },
+		{ "playmovie",			 'd', &ChatHandler::HandlePlayMovie,			   "Triggers a movie for a player",																						NULL, 0, 0, 0 },
 		{ NULL,                  '0', NULL,                                        "",                                                                                                                  NULL, 0, 0, 0 }
 	};
 	dupe_command_table(debugCommandTable, _debugCommandTable);
@@ -455,6 +457,7 @@ void CommandTableStorage::Init()
 		{ "explore",     'm', &ChatHandler::HandleExploreCheatCommand,     "Reveals the unexplored parts of the map.",        NULL, 0, 0, 0 },
 		{ "flyspeed",    'm', &ChatHandler::HandleModifySpeedCommand,      "Does the same thing as .modify speed",            NULL, 0, 0, 0 },
 		{ "stack",       'm', &ChatHandler::HandleAuraStackCheatCommand,   "Enables aura stacking cheat.",                    NULL, 0, 0, 0 },
+		{ "itemstack",   'm', &ChatHandler::HandleItemStackCheatCommand,   "Enables item stacking cheat.",                    NULL, 0, 0, 0 },
 		{ "triggerpass", 'm', &ChatHandler::HandleTriggerpassCheatCommand, "Ignores area trigger prerequisites.",             NULL, 0, 0, 0 },
 		{ NULL,          '0', NULL,                                        "",                                                NULL, 0, 0, 0 }
 	};
@@ -487,6 +490,7 @@ void CommandTableStorage::Init()
 		{ "renamepet",   'm', &ChatHandler::HandleRenamePetCommand,      "Renames a pet to <name>.",                               NULL, 0, 0, 0 },
 		{ "addspell",    'm', &ChatHandler::HandleAddPetSpellCommand,    "Teaches pet <spell>.",                                   NULL, 0, 0, 0 },
 		{ "removespell", 'm', &ChatHandler::HandleRemovePetSpellCommand, "Removes pet spell <spell>.",                             NULL, 0, 0, 0 },
+		{ "setlevel",    'm', &ChatHandler::HandlePetLevelCommand,       "Sets pet level to <level>.",                             NULL, 0, 0, 0 },
 #ifdef USE_SPECIFIC_AIAGENTS
 		{ "spawnbot",    'a', &ChatHandler::HandlePetSpawnAIBot,         ".pet spawnbot <type> - spawn a helper bot for your aid", NULL, 0, 0, 0 },
 #endif

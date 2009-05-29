@@ -14,7 +14,6 @@
  */
 
 #include "StdAfx.h"
-#ifdef ENABLE_AV
 enum AVControlPoints
 {
 	AV_CONTROL_POINT_STORMPIKE_AID_STATION	= 0,
@@ -44,7 +43,7 @@ enum AVSpawnTypes
 	AV_SPAWN_TYPE_HORDE_ASSAULT						= 2,
 	AV_SPAWN_TYPE_ALLIANCE_CONTROLLED_OR_DESTROYED	= 3,
 	AV_SPAWN_TYPE_HORDE_CONTROLLED_OR_DESTROYED		= 4,
-	AV_NUM_SPAWN_TYPES								= 5,
+	AV_NUM_SPAWN_TYPES								= 5
 };
 
 enum AVNodeStates
@@ -54,7 +53,7 @@ enum AVNodeStates
 	AV_NODE_STATE_ALLIANCE_CONTROLLED		= 2,
 	AV_NODE_STATE_HORDE_ASSAULTING			= 3,
 	AV_NODE_STATE_HORDE_CONTROLLED			= 4,
-	AV_NODE_STATE_COUNT						= 5,
+	AV_NODE_STATE_COUNT						= 5
 };
 
 struct AVLocation { float x; float y; float z; };
@@ -140,12 +139,6 @@ public:
 	// spawn home buff guard
 	void SpawnHomeGuard();
 };
-
-#define BG_SCORE_AV_GRAVEYARDS_ASSAULTED 0
-#define BG_SCORE_AV_GRAVEYARDS_DEFENDED 1
-#define BG_SCORE_AV_TOWERS_ASSAULTED 2
-#define BG_SCORE_AV_TOWERS_DEFENDED 3
-#define BG_SCORE_AV_MINES_CAPTURES 4
 
 // GENERAL AV DEFINES
 #define AV_NUM_REINFORCEMENTS				600		// Amount of reinforcements we start off with
@@ -253,4 +246,3 @@ public:
 	void HookOnShadowSight();
 };
 
-#endif
