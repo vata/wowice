@@ -173,7 +173,7 @@ pSpellEffect SpellEffectsHandler[TOTAL_SPELL_EFFECTS]={
 	&Spell::SpellEffectNULL,// unknown - 154
 	&Spell::SpellEffectNULL,// unknown - 155
 	&Spell::SpellEffectNULL,// unknown - 156
-	&Spell::SpellEffectNULL,// unknown - 157
+	&Spell::SpellEffectCreateItem2,	//157
 	&Spell::SpellEffectMilling,// Milling - 158
 	&Spell::SpellEffectNULL,// unknown - 159
 };
@@ -2502,14 +2502,13 @@ void Spell::SpellEffectCreateItem(uint32 i) // Create item
 	SlotResult slotresult;
 
 	skilllinespell* skill = objmgr.GetSpellSkill(GetProto()->Id);
+	if( GetProto()->EffectItemType[i] == NULL )
+		return;
 
-	for(int j=0; j<3; j++) // now create the Items
-	{
 		ItemPrototype *m_itemProto;
-		m_itemProto = ItemPrototypeStorage.LookupEntry( GetProto()->EffectItemType[j] );
-
-		if (!m_itemProto) continue;
-		if(GetProto()->EffectItemType[j] == 0) continue;
+		m_itemProto = ItemPrototypeStorage.LookupEntry( GetProto()->EffectItemType[i] );
+		if (!m_itemProto)
+			return;
 
 		uint32 item_count = damage;
 
@@ -2621,8 +2620,9 @@ void Spell::SpellEffectCreateItem(uint32 i) // Create item
 		}
 
 		// item count cannot be more than allowed in a single stack
-		if (item_count > m_itemProto->MaxCount)
-			item_count = m_itemProto->MaxCount;
+		uint32 itemMaxStack = (p_target->ItemStackCheat) ? 0x7fffffff : m_itemProto->MaxCount;
+		if( item_count > itemMaxStack )
+			item_count = itemMaxStack;
 
 		// item count cannot be more than item unique value
 		if (m_itemProto->Unique && item_count > m_itemProto->Unique)
@@ -2635,7 +2635,7 @@ void Spell::SpellEffectCreateItem(uint32 i) // Create item
 		}
 
 		slot = 0;
-		add = p_target->GetItemInterface()->FindItemLessMax(GetProto()->EffectItemType[j],1, false);
+		add = p_target->GetItemInterface()->FindItemLessMax(GetProto()->EffectItemType[i],1, false);
 		if (!add)
 		{
 			slotresult = p_target->GetItemInterface()->FindFreeInventorySlot(m_itemProto);
@@ -2758,7 +2758,34 @@ void Spell::SpellEffectCreateItem(uint32 i) // Create item
 					delete data;
 				}
 			}
+	}
+}
+
+void Spell::SpellEffectCreateItem2(uint32 i) // Create item
+{
+	//TODO: This spell effect has also a misc value - meaning is unknown yet
+	if( p_caster == NULL )
+		return;
+
+	uint32 new_item_id = GetProto()->EffectItemType[i];
+
+	if( new_item_id != NULL )
+	{
+		// create item
+		CreateItem( new_item_id );
+	}
+	else if( i_caster )
+	{
+		// provide player with item loot (clams)
+		// TODO: Finish this
+		/*if( !i_caster->loot )
+		{
+			i_caster->loot = new Loot;
+			lootmgr.FillItemLoot( i_caster->loot, i_caster->GetEntry() );
 		}
+		p_caster->SetLootGUID( i_caster->GetGUID() );
+		p_caster->SendLoot( i_caster->GetGUID(), LOOT_DISENCHANTING );
+		*/	
 	}
 }
 
@@ -5426,6 +5453,19 @@ void Spell::SpellEffectScriptEffect(uint32 i) // Script Effect
 				sp->Init( unitTarget, dbcSpell.LookupEntry( inc_resist_by_level_spell ), true, NULL );
 				SpellCastTargets tgt1( unitTarget->GetGUID() );
 				sp->prepare( &tgt1 );
+			}
+		}break;
+	case 46642: // 5,000 Gold
+		if( GetPlayerTarget() != NULL )
+		{
+			if( sWorld.GoldCapEnabled && ( GetPlayerTarget()->GetUInt32Value( PLAYER_FIELD_COINAGE ) + 50000000 ) > sWorld.GoldLimit )
+			{
+				GetPlayerTarget()->SetUInt32Value( PLAYER_FIELD_COINAGE, sWorld.GoldLimit );
+				GetPlayerTarget()->GetItemInterface()->BuildInventoryChangeError( NULL, NULL, INV_ERR_TOO_MUCH_GOLD );
+			}
+			else
+			{
+				GetPlayerTarget()->SetUInt32Value( PLAYER_FIELD_COINAGE, GetPlayerTarget()->GetUInt32Value( PLAYER_FIELD_COINAGE ) + 50000000 );
 			}
 		}break;
 	}

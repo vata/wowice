@@ -3862,7 +3862,7 @@ void Aura::EventPeriodicTriggerSpell(SpellEntry* spellInfo)
 
 
 	Unit * m_caster = GetUnitCaster();
-	// Notes: The caster seems to not exist thus it's guid doesn't exist :S - http://code.google.com/p/wowice/
+	// Notes: The caster seems to not exist thus it's guid doesn't exist :S - http://arcemu.org/forums/index.php?showtopic=15789
 	// m_caster is set to NULL by default, so !m_caster is like saying your mom weighs more then 0 which isn't giving it a value.
 	if(m_caster == NULL || !m_caster->IsInWorld() )
 		return;
@@ -7636,18 +7636,18 @@ void Aura::SpellAuraResistPushback(bool apply)
 
 	if(m_target->IsPlayer())
 	{
-		int32 val;
+		int32 val = 0;
 		if(apply)
 		{
 			val = mod->m_amount;
 			SetPositive();
 		}
 		else
-			val=-mod->m_amount;
+			val = -mod->m_amount;
 
-		for(uint32 x=0;x<7;x++)
+		for( uint32 x = 0; x < 7; x++ )
 		{
-			if (mod->m_miscValue & (((uint32)1)<<x) )
+			if (mod->m_miscValue & ( ( (uint32) 1 ) << x ) )
 			{
 				static_cast< Player* >( m_target )->SpellDelayResist[x] += val;
 			}
