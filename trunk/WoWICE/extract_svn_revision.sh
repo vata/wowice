@@ -1,7 +1,6 @@
 #!/usr/bin/env sh
 
 # SVN Revision Extractor for Unix systems
-# Written by Burlex, 2008/02/20
 
 revision=`LC_ALL=C svn info | grep Revision | cut -d' ' -f2`
 if [ -z $revision ]; then
