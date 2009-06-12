@@ -1265,6 +1265,7 @@ bool ChatHandler::HandleShowCheatsCommand(const char* args, WorldSession* m_sess
 	print_cheat_status("Power", plyr->PowerCheat);
 	print_cheat_status("Fly", plyr->FlyCheat);
 	print_cheat_status("AuraStack", plyr->AuraStackCheat);
+	print_cheat_status("ItemStack", plyr->ItemStackCheat);
 	print_cheat_status("TriggerPass", plyr->TriggerpassCheat);
 	SystemMessage(m_session, "%u cheats active, %u inactive.", active, inactive);
 
@@ -1382,6 +1383,16 @@ bool ChatHandler::HandleModifyLevelCommand(const char* args, WorldSession* m_ses
 	}
 
 	plr->ApplyLevelInfo(Info, Level);
+	if( plr->getClass() == WARLOCK )
+	{
+		if( plr->GetSummon() && plr->GetSummon()->IsInWorld() && plr->GetSummon()->isAlive() )
+		{
+			plr->GetSummon()->SetUInt32Value(UNIT_FIELD_LEVEL, Level);
+			plr->GetSummon()->ApplyStatsForLevel();
+			plr->GetSummon()->UpdateSpellList();
+		}
+	}
+
 	return true;
 }
 
@@ -1627,12 +1638,14 @@ bool ChatHandler::HandleDismissPetCommand(const char* args, WorldSession* m_sess
 			return true;
 		}
 	}
-	else // no player selected, see if it is a pet
+	else
 	{
+		// no player selected, see if it is a pet
 		Creature* pCrt = getSelectedCreature(m_session, false);
 		if(!pCrt)
 		{
-			return false; // show usage string
+			// show usage string
+			return false;
 		}
 		if(pCrt->IsPet())
 		{
@@ -1643,9 +1656,74 @@ bool ChatHandler::HandleDismissPetCommand(const char* args, WorldSession* m_sess
 			RedSystemMessage(m_session, "No player or pet selected.");
 			return true;
 		}
+		plr = pPet->GetPetOwner();
 	}
 
 	pPet->Dismiss();
+	GreenSystemMessage(m_session, "Dismissed %s's pet.", plr->GetName());
+	plr->GetSession()->SystemMessage("%s dismissed your pet.", m_session->GetPlayer()->GetName());
+	return true;
+}
+
+bool ChatHandler::HandlePetLevelCommand(const char* args, WorldSession* m_session)
+{
+	if( !args )
+	{
+		return false;
+	}
+
+	int32 newLevel = atol(args);
+	if( newLevel < 1 )
+	{
+		return false;
+	}
+
+	Player* plr = getSelectedChar(m_session, false);
+	Pet* pPet = NULL;
+	if(plr)
+	{
+		pPet = plr->GetSummon();
+		if(!pPet)
+		{
+			RedSystemMessage(m_session, "Player has no pet.");
+			return true;
+		}
+	}
+	else
+	{
+		// no player selected, see if it is a pet
+		Creature* pCrt = getSelectedCreature(m_session, false);
+		if(!pCrt)
+		{
+			// show usage string
+			return false;
+		}
+		if(pCrt->IsPet())
+		{
+			pPet = (Pet*)pCrt;
+		}
+		if(!pPet)
+		{
+			RedSystemMessage(m_session, "No player or pet selected.");
+			return true;
+		}
+		plr = pPet->GetPetOwner();
+	}
+
+	// Should GMs be allowed to set a pet higher than its owner?  I don't think so
+	if( (uint32)newLevel > plr->getLevel() )
+	{
+		newLevel = plr->getLevel();
+	}
+
+	pPet->SetUInt32Value( UNIT_FIELD_LEVEL, newLevel );
+	pPet->SetUInt32Value( UNIT_FIELD_PETEXPERIENCE, 0 );
+	pPet->SetUInt32Value( UNIT_FIELD_PETNEXTLEVELEXP, pPet->GetNextLevelXP(newLevel) );
+	pPet->ApplyStatsForLevel();
+	pPet->UpdateSpellList();
+
+	GreenSystemMessage(m_session, "Set %s's pet to level %lu.", plr->GetName(), newLevel);
+	plr->GetSession()->SystemMessage("%s set your pet to level %lu.", m_session->GetPlayer()->GetName(), newLevel);
 	return true;
 }
 
@@ -2024,6 +2102,33 @@ bool ChatHandler::HandleNullFollowCommand(const char* args, WorldSession * m_ses
 	return true;
 }
 
+bool ChatHandler::HandleItemStackCheatCommand(const char* args, WorldSession* m_session)
+{
+	Player* p = getSelectedChar(m_session, true);
+	if(!p)
+		return true;
+
+	bool turnCheatOn;
+	if(!*args)
+		turnCheatOn = (p->ItemStackCheat) ? false : true;
+	else if(stricmp(args, "on") == 0)
+		turnCheatOn = true;
+	else if(stricmp(args, "off") == 0)
+		turnCheatOn = false;
+	else
+		return false;
+	
+	p->ItemStackCheat = turnCheatOn;
+	BlueSystemMessage(m_session, "%s the item stack cheat on %s.", (turnCheatOn) ? "activated" : "deactivated", p->GetName());
+	GreenSystemMessageToPlr(p, "%s %s the item stack cheat on you.%s", m_session->GetPlayer()->GetName(), (turnCheatOn) ? "activated" : "deactivated", (turnCheatOn) ? "" : "  WARNING!!! Make sure all your item stacks are normal (if possible) before logging off, or else you may lose some items!");
+	if(p != m_session->GetPlayer() )
+	{
+		sGMLog.writefromsession(m_session, "item stack cheat on %s set to %s", p->GetName(), (turnCheatOn) ? "on" : "off");
+	}
+	return true;
+}
+
+
 bool ChatHandler::HandleAuraStackCheatCommand(const char* args, WorldSession * m_session)
 {
 	Player * plyr = getSelectedChar(m_session, true);
@@ -2359,7 +2464,7 @@ bool ChatHandler::HandleCreatureSpawnCommand(const char *args, WorldSession *m_s
 	sp->bytes2 = 0;
 	//sp->respawnNpcLink = 0;
 	sp->stand_state = 0;
-	sp->channel_spell=sp->channel_target_creature=sp->channel_target_go=0;
+	sp->channel_target_creature = sp->channel_target_go = sp->channel_spell = 0;
 	sp->MountedDisplayID = 0;
 	sp->Item1SlotDisplay = 0;
 	sp->Item2SlotDisplay = 0;
@@ -3149,6 +3254,7 @@ bool ChatHandler::HandleRenameGuildCommand(const char* args, WorldSession *m_ses
 
 	GreenSystemMessage(m_session, "Changed guild name of %s to %s. This will take effect next restart.", plr->GetGuild()->GetGuildName(), args);
 	CharacterDatabase.Execute("UPDATE guilds SET `guildName` = \"%s\" WHERE `guildId` = '%u'", CharacterDatabase.EscapeString(string(args)).c_str(), plr->GetGuild()->GetGuildId());
+	sGMLog.writefromsession(m_session, "Changed guild name of '%s' to '%s'", plr->GetGuild()->GetGuildName(), args);
 	return true;
 }
 
@@ -3176,7 +3282,7 @@ bool ChatHandler::HandleGuildDisbandCommand(const char* args, WorldSession *m_se
 		return false;
 
 	GreenSystemMessage(m_session, "Disbanded Guild: %s", plr->GetGuild()->GetGuildName());
-	sGMLog.writefromsession(m_session, "Disbaned Guild %s", plr->GetGuild()->GetGuildName());
+	sGMLog.writefromsession(m_session, "Disbanded Guild %s", plr->GetGuild()->GetGuildName());
 	plr->GetGuild()->Disband();
 	return true;
 }
@@ -3202,6 +3308,7 @@ bool ChatHandler::HandleGuildJoinCommand(const char * args,WorldSession *m_sessi
 	{
 		pGuild->AddGuildMember(ptarget->getPlayerInfo(),m_session,-2);
 		GreenSystemMessage(m_session, "You have joined the guild '%s'",pGuild->GetGuildName());
+		sGMLog.writefromsession(m_session, "Force joined guild '%s'", pGuild->GetGuildName());
 		return true;
 	}
 
@@ -3338,32 +3445,44 @@ bool ChatHandler::HandleWhisperBlockCommand(const char * args, WorldSession * m_
 
 bool ChatHandler::HandleGenderChanger(const char* args, WorldSession *m_session)
 {
-	int gender;
-	Player* target = objmgr.GetPlayer((uint32)m_session->GetPlayer()->GetSelection());
-	if(!target) {
+	uint8 gender;
+	Player* target = objmgr.GetPlayer( (uint32)m_session->GetPlayer()->GetSelection() );
+	if( target == NULL )
+	{
 		SystemMessage(m_session, "Select A Player first.");
 		return true;
 	}
-	uint32 displayId = target->GetUInt32Value(UNIT_FIELD_NATIVEDISPLAYID);
-	if (!*args)
+	uint32 displayId = target->GetUInt32Value( UNIT_FIELD_NATIVEDISPLAYID );
+	if( *args == NULL )
+		gender = target->getGender()== 1 ? 0 : 1;
+	else
 	{
-		if (target->getGender()== 1)
-			gender = 0;
-		else
+		gender = (uint8)atoi( (char*)args );
+		if( gender > 1 )
 			gender = 1;
 	}
-	else
-		gender = min((int)atoi((char*)args),1);
-	target->setGender(gender);
+	
+	if( gender == target->getGender() )
+	{
+		SystemMessage( m_session, "%s's gender is already set to %s(%u).", target->GetName(), gender? "Female" : "Male", gender );
+		return true;
+	}
+
+	target->setGender( gender );
+
 	if( target->getGender() == 0 )
 	{
-		target->SetUInt32Value(UNIT_FIELD_DISPLAYID, (target->getRace()==RACE_BLOODELF)?displayId+1:displayId-1 );
-		target->SetUInt32Value(UNIT_FIELD_NATIVEDISPLAYID, (target->getRace()==RACE_BLOODELF)?displayId+1:displayId-1 );
-	} else {
-		target->SetUInt32Value(UNIT_FIELD_DISPLAYID, (target->getRace()==RACE_BLOODELF)?displayId-1:displayId+1 );
-		target->SetUInt32Value(UNIT_FIELD_NATIVEDISPLAYID, (target->getRace()==RACE_BLOODELF)?displayId-1:displayId+1 );
+		target->SetUInt32Value( UNIT_FIELD_DISPLAYID, ( target->getRace() == RACE_BLOODELF ) ? ++displayId : --displayId );
+		target->SetUInt32Value( UNIT_FIELD_NATIVEDISPLAYID, displayId );
 	}
-	SystemMessage(m_session, "Set %s's gender to %s(%u).", target->GetName(), gender?"Female":"Male", gender);
+	else
+	{
+		target->SetUInt32Value( UNIT_FIELD_DISPLAYID, ( target->getRace() == RACE_BLOODELF )? --displayId : ++displayId );
+		target->SetUInt32Value( UNIT_FIELD_NATIVEDISPLAYID, displayId );
+	}
+	target->EventModelChange();
+
+	SystemMessage( m_session, "Set %s's gender to %s(%u).", target->GetName(), gender ? "Female" : "Male", gender );
 	return true;
 }
 
@@ -3561,6 +3680,15 @@ bool ChatHandler::HandleLevelUpCommand(const char* args, WorldSession *m_session
 	if(!inf)
 		return false;
 	plr->ApplyLevelInfo(inf,levels);
+	if(plr->getClass() == WARLOCK)
+	{
+		if( plr->GetSummon() && plr->GetSummon()->IsInWorld() && plr->GetSummon()->isAlive() )
+		{
+			plr->GetSummon()->SetUInt32Value(UNIT_FIELD_LEVEL, levels);
+			plr->GetSummon()->ApplyStatsForLevel();
+			plr->GetSummon()->UpdateSpellList();
+		}
+	}
 
 	WorldPacket data;
 	std::stringstream sstext;
@@ -3667,3 +3795,4 @@ bool ChatHandler::HandleSetTitle( const char *args, WorldSession *m_session )
 	SystemMessage( m_session, "Title has been %s.", title > 0 ? "set" : "reset" );
 	return true;
 }
+

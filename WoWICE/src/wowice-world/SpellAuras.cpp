@@ -608,18 +608,16 @@ WoWICE_INLINE void ApplyFloatPSM(float ** m,int32 v,uint32 mask, float def)
 
 Unit * Aura::GetUnitCaster()
 {
+	if( !m_target && GET_TYPE_FROM_GUID(m_casterGuid) == HIGHGUID_TYPE_PLAYER)
+	{
+		Unit * unit = objmgr.GetPlayer( (uint32)m_casterGuid );
+		if( unit )
+			return unit;
+	}
+	if( !m_target )
+		return NULL;
 
-	if ( !m_target )
-	return NULL;
-	
-	/* Don't think these are needed .. 
-	if ( m_target == NULL )
-		return;
-	// Try uncommenting this if it crashes.
-	if ( m_casterGuid == NULL )
-		return NULL; */
-
-	if ( m_casterGuid == m_target->GetGUID() )
+	if( m_casterGuid == m_target->GetGUID() )
 		return m_target;
 
 	if( m_target->GetMapMgr() )
@@ -7662,12 +7660,10 @@ void Aura::SpellAuraModShieldBlockPCT( bool apply )
 		if( apply )
 		{
 			p_target->m_modblockabsorbvalue += ( uint32 )mod->m_amount;
-
 		}
 		else
 		{
 			p_target->m_modblockabsorbvalue -= ( uint32 )mod->m_amount;
-
 		}
 		p_target->UpdateStats();
 	}

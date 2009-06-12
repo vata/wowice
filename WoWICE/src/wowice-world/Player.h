@@ -100,6 +100,7 @@ enum ShapeshiftForm
 	FORM_AMBIENT            = 6,
 	FORM_GHOUL              = 7,
 	FORM_DIREBEAR           = 8,
+	FORM_SHADOWDANCE		= 13,
 	FORM_CREATUREBEAR       = 14,
 	FORM_GHOSTWOLF          = 16,
 	FORM_BATTLESTANCE       = 17,
@@ -400,6 +401,7 @@ struct PlayerCreateInfo{
 	float   mindmg;
 	float   maxdmg;
 	uint32  introid;
+	uint32 taximask[12];
 	std::list<CreateInfo_ItemStruct> items;
 	std::list<CreateInfo_SkillStruct> skills;
 	std::list<CreateInfo_ActionBarStruct> actionbars;
@@ -1088,7 +1090,7 @@ public:
     /* Factions                                                             */
     /************************************************************************/
 	void smsg_InitialFactions();
-	uint32 GetFactionId();
+	uint32 GetInitialFactionId();
     // factions variables
     int32 pctReputationMod;
 
@@ -1726,6 +1728,7 @@ public:
 	CharRaceEntry * myRace;
 	CharClassEntry * myClass;
 	Unit * linkTarget;
+	bool ItemStackCheat;
 	bool AuraStackCheat;
 	bool TriggerpassCheat;
 	bool SafeTeleport(uint32 MapID, uint32 InstanceID, float X, float Y, float Z, float O);

@@ -15,9 +15,6 @@
 
 #include "StdAfx.h"
 
-#define GROWL_RANK_1	2649
-#define COWER_RANK_1	1742
-
 #define WATER_ELEMENTAL	510
 #define PET_IMP			416
 #define PET_VOIDWALKER	1860
@@ -36,6 +33,7 @@ uint32 GetAutoCastTypeForSpell( SpellEntry * ent )
 	/* Warlock Pet Spells													*/
 	/************************************************************************/
 	case SPELL_HASH_BLOOD_PACT:			// Blood Pact
+	case SPELL_HASH_FEL_INTELLIGENCE:
 	case SPELL_HASH_AVOIDANCE:
 	case SPELL_HASH_PARANOIA:
 		return AUTOCAST_EVENT_ON_SPAWN;
@@ -49,6 +47,11 @@ uint32 GetAutoCastTypeForSpell( SpellEntry * ent )
 	case SPELL_HASH_CONSUME_SHADOWS:
 	case SPELL_HASH_LESSER_INVISIBILITY:
 		return AUTOCAST_EVENT_LEAVE_COMBAT;
+		break;
+
+	case SPELL_HASH_WAR_STOMP: // Doomguard spell
+	case SPELL_HASH_SACRIFICE: // We don't want auto sacrifice :P
+		return AUTOCAST_EVENT_NONE; 
 		break;
 
 	/************************************************************************/
@@ -238,7 +241,7 @@ void Pet::CreateAsSummon( uint32 entry, CreatureInfo *ci, Creature* created_from
 
 Pet::Pet( uint64 guid ) : Creature( guid )
 {
-    m_isPet = true;
+	m_isPet = true;
 	m_PetXP = 0;
 	Summon = false;
 	memset(ActionBar, 0, sizeof(uint32)*10);
@@ -584,7 +587,6 @@ void Pet::InitializeMe( bool first )
 	// Load our spells
 	if( Summon ) // Summons - always
 	{
-		SetDefaultSpells();
 		// Adds parent +frost spell damage
 		if( GetEntry() == WATER_ELEMENTAL )
 		{
@@ -600,7 +602,6 @@ void Pet::InitializeMe( bool first )
 	}
 	else if( first ) // Hunter pets - after taming
 	{
-		SetDefaultSpells();						// create our spells
 		SetTPs( GetTPsForLevel( getLevel() ) );	// set talent points
 	}
 	else // Hunter pets - load from db
@@ -632,7 +633,7 @@ void Pet::InitializeMe( bool first )
 		SetDefaultActionbar();
 	}
 
-	SkillUp();
+	UpdateSpellList( false );
 	SendSpellsToOwner();
 
 	// set to active
@@ -771,7 +772,7 @@ void Pet::GiveXP( uint32 xp )
 		nxp = GetNextLevelXP( m_uint32Values[ UNIT_FIELD_LEVEL ] );
 		SetUInt32Value( UNIT_FIELD_PETNEXTLEVELEXP, nxp );
 		ApplyStatsForLevel();
-		SkillUp();
+		UpdateSpellList();
 	}
 
 	SetUInt32Value( UNIT_FIELD_PETEXPERIENCE, xp );
@@ -793,42 +794,65 @@ uint32 Pet::GetNextLevelXP(uint32 level)
 	return FL2UINT(xp);
 }
 
-void Pet::SetDefaultSpells()
+void Pet::UpdateSpellList( bool showLearnSpells )
 {
-	if( Summon )
+	// SkillLine 1
+	uint32 s = 0;
+	// SkillLine 2
+	uint32 s2 = 0;
+
+	// Creature info from DBC (CreatureFamily.dbc contains Skill Line for SkillLineAbility.dbc entry)
+	if( myFamily )
 	{
-		// this one's easy :p we just pull em from the owner.
-		map<uint32, set<uint32> >::iterator it1;
-		set<uint32>::iterator it2;
-		it1 = m_Owner->SummonSpells.find(GetEntry());
-		if(it1 != m_Owner->SummonSpells.end())
+		s = myFamily->skilline;
+		s2 = myFamily->tameable;
+	}
+	// Creature Family not loaded for this ? Get Skill Line from DB instead (table creature_names)
+	else if( GetCreatureInfo() )
+	{
+		CreatureFamilyEntry* f = dbcCreatureFamily.LookupEntry( GetCreatureInfo()->Family );
+		if( f )
 		{
-			it2 = it1->second.begin();
-			for(; it2 != it1->second.end(); ++it2)
+			s = f->skilline;
+			s2 = f->tameable;
+		}
+	}
+	if( s || s2 )
+	{
+		skilllinespell* sls;
+		uint32 rowcount = dbcSkillLineSpell.GetNumRows();
+		uint32 current = 0;
+		SpellEntry* sp;
+		for( uint32 idx = 0; idx < rowcount; ++idx )
+		{
+			sls = dbcSkillLineSpell.LookupRow( idx );
+			// Update existing spell, or add new "automatic-acquired" spell
+			if( (sls->skilline == s || sls->skilline == s2) && sls->acquireMethod == 2 )
 			{
-				AddSpell( dbcSpell.LookupEntry( *it2 ), false );
+				sp = dbcSpell.LookupEntry( sls->spell );
+				if( sp && getLevel() >= sp->baseLevel )
+				{
+					// Pet is able to learn this spell; now check if it already has it, or a higher rank of it
+					bool addThisSpell = true;
+					for(PetSpellMap::iterator itr = mSpells.begin(); itr != mSpells.end(); ++itr)
+					{
+						if( (itr->first->NameHash == sp->NameHash) && (itr->first->RankNumber >= sp->RankNumber) )
+						{
+							// Pet already has this spell, or a higher rank. Don't add it.
+							addThisSpell = false;
+						}
+					}
+					if( addThisSpell )
+					{
+						AddSpell(sp, true, showLearnSpells);
+					}
+				}
 			}
 		}
 	}
-	else if( GetCreatureInfo() ) //Hunter pet
-	{
-		uint32 Line = GetCreatureInfo()->SpellDataID;
-		if( Line == 0 )
-			sLog.outError("DB Error: You miss spell data for creature id %u in your DB.", GetCreatureInfo()->Id );
-		else
-		{
-			CreatureSpellDataEntry * SpellData = dbcCreatureSpellData.LookupEntry( Line );
-			if( SpellData )
-				for( uint32 i = 0; i < 3; ++i )
-					if( SpellData->Spells[i] != 0 )
-						AddSpell( dbcSpell.LookupEntry( SpellData->Spells[i] ), false ); //add spell to pet
-		}
-
-		AddSpell( dbcSpell.LookupEntry( GROWL_RANK_1 ), false );
-	}
 }
 
-void Pet::AddSpell( SpellEntry * sp, bool learning )
+void Pet::AddSpell( SpellEntry * sp, bool learning, bool showLearnSpell )
 {
 	if( sp == NULL )
 		return;
@@ -850,34 +874,14 @@ void Pet::AddSpell( SpellEntry * sp, bool learning )
 	else
 	{
 	   // Active spell add to the actionbar.
-		bool has=false;
-		for(int i = 0; i < 10; ++i)
-		{
-			if(ActionBar[i] == sp->Id)
-			{
-				has=true;
-				break;
-			}
-		}
-
-		if( !has )
-		{
-			for(int i = 0; i < 10; ++i)
-			{
-				if(ActionBar[i] == 0)
-				{
-					ActionBar[i] = sp->Id;
-					break;
-				}
-			}
-		}
+		bool ab_replace = false;
 
 		bool done=false;
 		if( learning )
 		{
 			for(PetSpellMap::iterator itr = mSpells.begin(); itr != mSpells.end(); ++itr)
 			{
-				if(sp->NameHash == itr->first->NameHash)
+				if( sp->NameHash == itr->first->NameHash )
 				{
 					// replace the action bar
 					for(int i = 0; i < 10; ++i)
@@ -885,6 +889,7 @@ void Pet::AddSpell( SpellEntry * sp, bool learning )
 						if(ActionBar[i] == itr->first->Id)
 						{
 							ActionBar[i] = sp->Id;
+							ab_replace = true;
 							break;
 						}
 					}
@@ -898,37 +903,67 @@ void Pet::AddSpell( SpellEntry * sp, bool learning )
 					if(ss==AUTOCAST_SPELL_STATE)
 						SetAutoCast(asp, true);
 
-					if(asp->autocast_type==AUTOCAST_EVENT_ON_SPAWN)
+					if( asp->autocast_type == AUTOCAST_EVENT_ON_SPAWN )
 						CastSpell(this, sp, false);
 
-					RemoveSpell(itr->first);
+					RemoveSpell(itr->first, showLearnSpell);
 					done=true;
 					break;
 				}
 			}
 		}
 
-		if(done==false)
+		if( !ab_replace )
 		{
-			if(mSpells.find(sp) != mSpells.end())
+			bool has=false;
+			for(int i = 0; i < 10; ++i)
+			{
+				if( ActionBar[i] == sp->Id )
+				{
+					has=true;
+					break;
+				}
+			}
+
+			if( !has )
+			{
+				for(int i = 0; i < 10; ++i)
+				{
+					if( ActionBar[i] == 0 )
+					{
+						ActionBar[i] = sp->Id;
+						break;
+					}
+				}
+			}
+		}
+
+		if( done==false )
+		{
+			if( mSpells.find(sp) != mSpells.end() )
 				return;
 
-			if(learning)
+			if( learning )
 			{
 				AI_Spell * asp = CreateAISpell(sp);
 				uint16 ss = (asp->autocast_type > 0) ? AUTOCAST_SPELL_STATE : DEFAULT_SPELL_STATE;
 				mSpells[sp] = ss;
-				if(ss==AUTOCAST_SPELL_STATE)
+				if( ss == AUTOCAST_SPELL_STATE )
 					SetAutoCast(asp,true);
 
-				if(asp->autocast_type==AUTOCAST_EVENT_ON_SPAWN)
+				// Phase shift gets cast on spawn, right?
+				if( asp->autocast_type == AUTOCAST_EVENT_ON_SPAWN || asp->spell->NameHash == SPELL_HASH_PHASE_SHIFT )
 					CastSpell(this, sp, false);
 			}
 			else
 				mSpells[sp] = DEFAULT_SPELL_STATE;
 		}
 	}
-	if(IsInWorld())
+
+	if( showLearnSpell && m_Owner && m_Owner->GetSession() && !(sp->Attributes & ATTRIBUTES_NO_CAST) )
+		m_Owner->GetSession()->OutPacket(SMSG_PET_LEARNED_SPELL, 2, &sp->Id);
+
+	if( IsInWorld() )
 		SendSpellsToOwner();
 }
 
@@ -1000,31 +1035,28 @@ void Pet::WipeTalents()
 	SendSpellsToOwner();
 }
 
-void Pet::RemoveSpell(SpellEntry * sp)
+void Pet::RemoveSpell(SpellEntry * sp, bool showUnlearnSpell)
 {
 	mSpells.erase(sp);
 	map<uint32, AI_Spell*>::iterator itr = m_AISpellStore.find(sp->Id);
-	if(itr != m_AISpellStore.end())
+	if( itr != m_AISpellStore.end() )
 	{
+		if( itr->second->autocast_type != AUTOCAST_EVENT_NONE )
+		{
+			list<AI_Spell*>::iterator it3;
+			for(list<AI_Spell*>::iterator it2 = m_autoCastSpells[itr->second->autocast_type].begin(); it2 != m_autoCastSpells[itr->second->autocast_type].end(); )
+			{
+				it3 = it2++;
+				if( (*it3) == itr->second )
+				{
+					m_autoCastSpells[itr->second->autocast_type].erase(it3);
+				}
+			}
+		}
 		for(list<AI_Spell*>::iterator it = m_aiInterface->m_spells.begin(); it != m_aiInterface->m_spells.end(); ++it)
 		{
 			if((*it) == itr->second)
 			{
-				/*if((*it)->autocast_type > 0)
-					m_autoCastSpells[(*it)->autocast_type].remove((*it));*/
-				if((*it)->autocast_type > 0)
-				{
-					for(list<AI_Spell*>::iterator i3 = m_autoCastSpells[(*it)->autocast_type].begin();
-						i3 != m_autoCastSpells[(*it)->autocast_type].end(); ++i3)
-					{
-						if( (*i3) == itr->second )
-						{
-							m_autoCastSpells[(*it)->autocast_type].erase(i3);
-							break;
-						}
-					}
-				}
-
 				m_aiInterface->m_spells.erase(it);
 				m_aiInterface->CheckNextSpell(itr->second);
 				break;
@@ -1055,7 +1087,7 @@ void Pet::RemoveSpell(SpellEntry * sp)
 			ActionBar[pos] = 0;
 	}
 
-	if( m_Owner != NULL && m_Owner->GetSession() != NULL )
+	if( showUnlearnSpell && m_Owner && m_Owner->GetSession() )
 		m_Owner->GetSession()->OutPacket( SMSG_PET_UNLEARNED_SPELL, 2, &sp->Id );
 }
 
@@ -1088,22 +1120,22 @@ void Pet::ApplySummonLevelAbilities()
 
 	switch( GetEntry() )
 	{
-	case 416: //Imp
+	case PET_IMP:
 		stat_index = 0;
 		m_aiInterface->disable_melee = true;
 		break;
-	case 1860: //VoidWalker
+	case PET_VOIDWALKER:
 		stat_index = 1;
 		break;
-	case 1863: //Succubus
+	case PET_SUCCUBUS:
 		stat_index = 2;
 		break;
-	case 417: //Felhunter
+	case PET_FELHUNTER:
 		stat_index = 3;
 		break;
 	case 11859: // Doomguard
 	case 89:	// Infernal
-	case 17252: // Felguard
+	case PET_FELGUARD:
 		stat_index = 4;
 		break;
 	/*case 11859: // Doomguard
@@ -1116,11 +1148,11 @@ void Pet::ApplySummonLevelAbilities()
 	case 17252: // Felguard
 		stat_index = 6;
 		break;*/
-	case 510:	// Mage's water elemental
+	case WATER_ELEMENTAL:
 		stat_index = 5;
 		m_aiInterface->disable_melee = true;
 		break;
-	case 19668:    // Priest's Shadowfiend, until someone knows the stats that real have
+	case SHADOWFIEND:
 		stat_index = 5;
 		break;
 	case 26125:
@@ -1261,7 +1293,7 @@ void Pet::ApplyPetLevelAbilities()
 	SetUInt32Value( UNIT_FIELD_MAXHEALTH, base_hp );
 
 	//Family Aura
-	if( pet_family > 45 )
+	if( pet_family > 46 )
 		sLog.outError( "PETSTAT: Creature family %i [%s] has missing data.", pet_family, myFamily->name );
 	else if( family_aura[ pet_family ] != 0 )
 		this->CastSpell( this, family_aura[ pet_family ], true );
@@ -1392,6 +1424,7 @@ AI_Spell * Pet::HandleAutoCastEvent()
 		else
 		{
 			// bad pointers somehow end up here :S
+			sLog.outError("Bad AI_Spell detected in AutoCastEvent!\n");
 			m_autoCastSpells[AUTOCAST_EVENT_ATTACK].erase(itr);
 		}
 	}
@@ -1446,8 +1479,14 @@ void Pet::HandleAutoCastEvent( AutoCastEvents Type )
 		it2 = itr++;
 		sp = *it2;
 
-		if( sp->spell == NULL || sp->autocast_type != Type ) {
+		if( sp->spell == NULL )
+		{
 			sLog.outError("Found corrupted spell at m_autoCastSpells, skipping");
+			continue;
+		}
+		else if( sp->autocast_type != Type )
+		{
+			sLog.outError("Found corrupted spell (%lu) at m_autoCastSpells, skipping", sp->entryId);
 			continue;
 		}
 
@@ -1517,25 +1556,6 @@ Group *Pet::GetGroup()
 	if( m_Owner )
 		return m_Owner->GetGroup();
 	return NULL;
-}
-
-void Pet::SkillUp()
-{
-	// Pets increase in spell ranks as they level up
-	SpellEntry *sp;
-	PetSpellMap::iterator itr;
-	list< SpellEntry* > spells_to_add;
-
-	for( itr = mSpells.begin(); itr != mSpells.end(); itr++ )
-	{
-		sp = objmgr.GetNextSpellRank( itr->first, getLevel() );
-		if( itr->first != sp )
-			spells_to_add.push_back( sp );
-	}
-	
-	list< SpellEntry* >::iterator i = spells_to_add.begin();
-	for( ; i != spells_to_add.end(); i++ )
-		AddSpell( (*i), true ); // old rank is removed in AddSpell(..)
 }
 
 
