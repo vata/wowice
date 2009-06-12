@@ -1578,6 +1578,13 @@ void ApplyNormalFixes()
 		sp->Effect[0] = SPELL_EFFECT_POWER_DRAIN; // should be Power Burn, not Power Drain. Power Drain leeches mana which is incorrect.
 
 	/**********************************************************
+	* Gift of the Naaru - Draenei RACIAL
+	**********************************************************/
+	sp = dbcSpell.LookupEntryForced( 28880 );
+	if( sp != NULL )
+		sp->Effect[1] = SPELL_EFFECT_DUMMY;
+
+	/**********************************************************
 	 * thrown - add a 1.6 second cooldown
 	 **********************************************************/
 	const static uint32 thrown_spells[] = {SPELL_RANGED_GENERAL,SPELL_RANGED_THROW,SPELL_RANGED_WAND, 26679, 27084, 29436, 37074, 41182, 41346, 0};
@@ -4655,6 +4662,38 @@ void ApplyNormalFixes()
 
 	// Insert mage spell fixes here
 
+		//Missile Barrage
+		sp = dbcSpell.LookupEntryForced( 44404 );
+        if( sp != NULL )
+        {
+			sp->procFlags = PROC_ON_CAST_SPELL;
+			sp->procChance = 4;
+        }
+		sp = dbcSpell.LookupEntryForced( 54486 );
+        if( sp != NULL )
+        {
+			sp->procFlags = PROC_ON_CAST_SPELL;
+			sp->procChance = 8;
+        }
+		sp = dbcSpell.LookupEntryForced( 54488 );
+        if( sp != NULL )
+        {
+			sp->procFlags = PROC_ON_CAST_SPELL;
+			sp->procChance = 12;
+        }
+		sp = dbcSpell.LookupEntryForced( 54489 );
+        if( sp != NULL )
+        {
+			sp->procFlags = PROC_ON_CAST_SPELL;
+			sp->procChance = 16;
+        }
+		sp = dbcSpell.LookupEntryForced( 54490 );
+        if( sp != NULL )
+        {
+			sp->procFlags = PROC_ON_CAST_SPELL;
+			sp->procChance = 20;
+        }
+
 		// Brain Freeze rank 1
 		sp = dbcSpell.LookupEntryForced( 44546 );
 		if(sp != NULL)
@@ -6040,64 +6079,9 @@ void ApplyNormalFixes()
 			sp->AuraInterruptFlags = 0; //we remove it on proc or timeout
 			sp->procChance = 100;
 		}
-		//pounce
-		sp = dbcSpell.LookupEntryForced( 9007 );
-		if( sp != NULL )
-		{
-			sp->MechanicsType = MECHANIC_BLEEDING;
-		}
-		sp = dbcSpell.LookupEntryForced( 9824 );
-		if( sp != NULL )
-		{
-			sp->MechanicsType = MECHANIC_BLEEDING;
-		}
-		sp = dbcSpell.LookupEntryForced( 9826 );
-		if( sp != NULL )
-		{
-			sp->MechanicsType = MECHANIC_BLEEDING;
-		}
-		sp = dbcSpell.LookupEntryForced( 27007 );
-		if( sp != NULL )
-		{
-			sp->MechanicsType = MECHANIC_BLEEDING;
-		}
-		sp = dbcSpell.LookupEntryForced( 49803 );
-		if( sp != NULL )
-		{
-			sp->MechanicsType = MECHANIC_BLEEDING;
-		}
-
-		//rip
-		sp = dbcSpell.LookupEntryForced( 1079 );
-		if( sp != NULL )
-			sp->MechanicsType = MECHANIC_BLEEDING;
-		sp = dbcSpell.LookupEntryForced( 9492 );
-		if( sp != NULL )
-			sp->MechanicsType = MECHANIC_BLEEDING;
-		sp = dbcSpell.LookupEntryForced( 9493 );
-		if( sp != NULL )
-			sp->MechanicsType = MECHANIC_BLEEDING;
-		sp = dbcSpell.LookupEntryForced( 9752 );
-		if( sp != NULL )
-			sp->MechanicsType = MECHANIC_BLEEDING;
-		sp = dbcSpell.LookupEntryForced( 9894 );
-		if( sp != NULL )
-			sp->MechanicsType = MECHANIC_BLEEDING;
-		sp = dbcSpell.LookupEntryForced( 9896 );
-		if( sp != NULL )
-			sp->MechanicsType = MECHANIC_BLEEDING;
-		sp = dbcSpell.LookupEntryForced( 27008 );
-		if( sp != NULL )
-			sp->MechanicsType = MECHANIC_BLEEDING;
-		sp = dbcSpell.LookupEntryForced( 49799 );
-		if( sp != NULL )
-			sp->MechanicsType = MECHANIC_BLEEDING;
-		sp = dbcSpell.LookupEntryForced( 49800 );
-		if( sp != NULL )
-			sp->MechanicsType = MECHANIC_BLEEDING;
 
 		//rake
-		sp = dbcSpell.LookupEntryForced( 1822 );
+	 /* sp = dbcSpell.LookupEntryForced( 1822 );
 		if( sp != NULL )
 			sp->MechanicsType = MECHANIC_BLEEDING;
 		sp = dbcSpell.LookupEntryForced( 1823 );
@@ -6128,24 +6112,7 @@ void ApplyNormalFixes()
 			sp->MechanicsType = MECHANIC_BLEEDING;
 		sp = dbcSpell.LookupEntryForced( 48568 );
 		if( sp != NULL )
-			sp->MechanicsType = MECHANIC_BLEEDING;
-
-		//Pounce Bleed
-		sp = dbcSpell.LookupEntryForced( 9007 );
-		if( sp != NULL )
-			sp->DurationIndex = 18000;
-		sp = dbcSpell.LookupEntryForced( 9824 );
-		if( sp != NULL )
-			sp->DurationIndex = 18000;
-		sp = dbcSpell.LookupEntryForced( 9826 );
-		if( sp != NULL )
-			sp->DurationIndex = 18000;
-		sp = dbcSpell.LookupEntryForced( 27007 );
-		if( sp != NULL )
-			sp->DurationIndex = 18000;
-		sp = dbcSpell.LookupEntryForced( 49804 );
-		if( sp != NULL )
-			sp->DurationIndex = 18000;
+			sp->MechanicsType = MECHANIC_BLEEDING; */
 
 		//Druid: Natural Shapeshifter
 		sp = dbcSpell.LookupEntryForced( 16833 );
@@ -6216,7 +6183,7 @@ void ApplyNormalFixes()
 			sp->procChance=6; //procchance dynamic. 3ppm
 			sp->procFlags = PROC_ON_MELEE_ATTACK | PROC_ON_CRIT_ATTACK;
 		}
-		uint32 mm = (1<<(FORM_BEAR-1))|(1<<(FORM_DIREBEAR-1))|(1<<(FORM_MOONKIN-1))|(1<<(FORM_CAT-1));
+		uint32 mm = DecimalToMask(FORM_BEAR) | DecimalToMask(FORM_DIREBEAR) | DecimalToMask(FORM_MOONKIN) | DecimalToMask(FORM_CAT);
 
 		sp = dbcSpell.LookupEntryForced( 16972 );
 		if( sp != NULL )

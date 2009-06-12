@@ -1570,6 +1570,19 @@ uint32 Unit::HandleProc( uint32 flag, Unit* victim, SpellEntry* CastingSpell, ui
 					if( CastingSpell->NameHash != SPELL_HASH_CONFLAGRATE )
 						continue;
 				}break;
+				//Mage - Missile Barrage
+				case 44401:
+					{
+						if( CastingSpell == NULL )
+							continue;
+
+						if( CastingSpell->NameHash != SPELL_HASH_ARCANE_BLAST &&
+							CastingSpell->NameHash != SPELL_HASH_ARCANE_BARRAGE &&
+							CastingSpell->NameHash != SPELL_HASH_FIREBALL &&
+							CastingSpell->NameHash != SPELL_HASH_FROSTBOLT && 
+							CastingSpell->NameHash != SPELL_HASH_FROSTFIRE_BOLT )
+							continue;
+					}break;
 				//mage - Improved Scorch
 				case 22959:
 					{
@@ -2644,6 +2657,11 @@ uint32 Unit::HandleProc( uint32 flag, Unit* victim, SpellEntry* CastingSpell, ui
 					case 46916: //Bloodsurge - Slam! effect should dissapear after casting Slam only
 						{
 							if( CastingSpell->NameHash != SPELL_HASH_SLAM )
+								continue;
+						}break;
+					case 44401: //Missile Barriage should dissapear after casting Arcane Missiles
+						{
+							if( CastingSpell->NameHash != SPELL_HASH_ARCANE_MISSILES )
 								continue;
 						}break;
 					}
