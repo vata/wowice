@@ -432,7 +432,7 @@ public:
 				return true;
 		return false;
 	}
-		// Aura Handlers
+	// Aura Handlers
 	void SpellAuraNULL(bool apply);
 	void SpellAuraBindSight(bool apply);
 	void SpellAuraModPossess(bool apply);

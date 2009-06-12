@@ -619,7 +619,6 @@ void Object::_BuildValuesUpdate(ByteBuffer * data, UpdateMask *updateMask, Playe
 			uint32 oldFlags = 0;
 
 			if(pThis->TaggerGuid == target->GetGUID())
-
 			{
 				// Our target is our tagger.
 				oldFlags = U_DYN_FLAG_TAGGED_BY_OTHER;
@@ -627,7 +626,7 @@ void Object::_BuildValuesUpdate(ByteBuffer * data, UpdateMask *updateMask, Playe
 				if(Flags & U_DYN_FLAG_TAGGED_BY_OTHER)
 					Flags &= ~oldFlags;
 
-				if(!(Flags & U_DYN_FLAG_LOOTABLE))
+				if( !(Flags & U_DYN_FLAG_LOOTABLE) && pThis->HasLootForPlayer( target ) )
 					Flags |= U_DYN_FLAG_LOOTABLE;
 			}
 			else
@@ -2123,7 +2122,24 @@ void Object::DealDamage(Unit *pVictim, uint32 damage, uint32 targetEvent, uint32
 	/* -------------------------- HIT THAT CAUSES VICTIM TO DIE ---------------------------*/
 	if ((isCritter || health <= damage) && !pVictim->bUnbeatable)
 	{
-		if(pVictim->IsUnit() && this->IsPlayer()) // Player delivered a killing blow
+		// A Player has died
+		if( pVictim->IsPlayer() )
+		{
+			((Player*)pVictim)->GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_DEATH, 1, 0, 0);
+			((Player*)pVictim)->GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_DEATH_AT_MAP, pVictim->GetMapId(), 1, 0);
+			// A Player killed a Player
+			if( this->IsPlayer() )
+			{
+				((Player*)pVictim)->GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_KILLED_BY_PLAYER, 1, 0, 0);
+			}
+			// A Creature killed a Player
+			else if( this->IsCreature() )
+			{
+				((Player*)pVictim)->GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_KILLED_BY_CREATURE, 1, 0, 0);
+			}
+		}
+		// Player delivered a killing blow
+		if( pVictim->IsUnit() && this->IsPlayer() )
 		{
 			((Player*)this)->GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_KILLING_BLOW, GetMapId(), 0, 0);
 		}
@@ -2170,18 +2186,11 @@ void Object::DealDamage(Unit *pVictim, uint32 damage, uint32 targetEvent, uint32
 
 				sHookInterface.OnKillPlayer( plr, static_cast< Player* >( pVictim ) );
 				bool setAurastateFlag = false;
-				if(plr->getLevel() > pVictim->getLevel())
+				if( plr->getLevel() >= (pVictim->getLevel() - 8) && (plr->GetGUID() != pVictim->GetGUID()) )
 				{
-					unsigned int diff = plr->getLevel() - pVictim->getLevel();
-					if( diff <= 8 )
-					{
-						HonorHandler::OnPlayerKilledUnit(plr, pVictim);
-						setAurastateFlag = true;
-					}
-				}
-				else
-				{
-					HonorHandler::OnPlayerKilledUnit( plr, pVictim );
+					plr->GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_HONORABLE_KILL_AT_AREA, plr->GetAreaID(), 1, 0);
+					plr->GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_EARN_HONORABLE_KILL, 1, 0, 0);
+					HonorHandler::OnPlayerKilledUnit(plr, pVictim);
 					setAurastateFlag = true;
 				}
 
@@ -3198,13 +3207,14 @@ void Object::EventSpellDamage(uint64 Victim, uint32 SpellID, uint32 Damage)
 	SpellNonMeleeDamageLog(pUnit, SpellID, Damage, true);
 }
 
+//! Object has an active state
 bool Object::CanActivate()
 {
 	switch(m_objectTypeId)
 	{
 	case TYPEID_UNIT:
 		{
-			if(!IsPet())
+			if ( !IsPet() )
 				return true;
 		}break;
 
@@ -3220,17 +3230,17 @@ bool Object::CanActivate()
 
 void Object::Activate(MapMgr * mgr)
 {
-	switch(m_objectTypeId)
+	switch ( m_objectTypeId )
 	{
 	case TYPEID_UNIT:
-		mgr->activeCreatures.insert((Creature*)this);
+		mgr->activeCreatures.insert( ( Creature* )this );
 		break;
 
 	case TYPEID_GAMEOBJECT:
-		mgr->activeGameObjects.insert((GameObject*)this);
+		mgr->activeGameObjects.insert( ( GameObject* )this );
 		break;
 	}
-
+	// Objects are active so set to true.
 	Active = true;
 }
 

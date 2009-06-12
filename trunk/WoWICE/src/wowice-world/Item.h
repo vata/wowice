@@ -236,6 +236,8 @@ public:
 	WoWICE_INLINE uint32 GetDurabilityMax() { return GetUInt32Value( ITEM_FIELD_MAXDURABILITY ); }
 	WoWICE_INLINE bool IsAmmoBag() { return (m_itemProto->Class == ITEM_CLASS_QUIVER); }
 
+	uint32 CountGemsWithLimitId(uint32 Limit);
+
 	void RemoveFromWorld();
 
 	Loot* loot;

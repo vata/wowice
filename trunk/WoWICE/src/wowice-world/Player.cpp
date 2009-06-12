@@ -337,6 +337,7 @@ mOutOfRangeIdCount(0)
 	m_explorationTimer	  = getMSTime();
 	linkTarget			  = 0;
 	AuraStackCheat			 = false;
+	ItemStackCheat = false;
 	TriggerpassCheat = false;
 	m_pvpTimer			  = 0;
 	m_globalCooldown = 0;
@@ -667,7 +668,7 @@ bool Player::Create(WorldPacket& data )
 		m_session->Disconnect();
 		// don't use Log.LargeErrorMessage() here, it doesn't handle %s %u in the string.
 		if(class_ == DEATHKNIGHT)
-			sLog.outError("Account Name: %s tried to create a deathknight, however your player creatinfo table does not support this class, please update your database.", m_session->GetAccountName().c_str());
+			sLog.outError("Account Name: %s tried to create a deathknight, however your playercreateinfo table does not support this class, please update your database.", m_session->GetAccountName().c_str());
 		else
 			sLog.outError("Account Name: %s tried to create an invalid character with race %u and class %u, if this is intended please update your playercreateinfo table inside your database.", m_session->GetAccountName().c_str(), race, class_);
 		return false;
@@ -693,8 +694,6 @@ bool Player::Create(WorldPacket& data )
 	m_restAmount = 0;
 	m_restState = 0;
 
-	memset(m_taximask, 0, sizeof(uint32)*12);
-
 	// set race dbc
 	myRace = dbcCharRace.LookupEntry(race);
 	myClass = dbcCharClass.LookupEntry(class_);
@@ -714,20 +713,8 @@ bool Player::Create(WorldPacket& data )
 	uint8 powertype = static_cast<uint8>(myClass->power_type);
 
 	// Automatically add the race's taxi hub to the character's taximask at creation time ( 1 << (taxi_node_id-1) )
-	memset(m_taximask,0,sizeof(m_taximask));
-	switch(race)
-	{
-	case RACE_TAUREN:	m_taximask[0]= 2097152;		break;
-	case RACE_HUMAN:	m_taximask[0]= 2;			break;
-	case RACE_DWARF:	m_taximask[0]= 32;			break;
-	case RACE_GNOME:	m_taximask[0]= 32;			break;
-	case RACE_ORC:		m_taximask[0]= 4194304;		break;
-	case RACE_TROLL:	m_taximask[0]= 4194304;		break;
-	case RACE_UNDEAD:	m_taximask[0]= 1024;		break;
-	case RACE_NIGHTELF:	m_taximask[0]= 100663296;	break;
-	case RACE_BLOODELF:	m_taximask[2]= 131072;		break;
-	case RACE_DRAENEI:	m_taximask[2]= 536870912;	break;
-	}
+	// this is defined in table playercreateinfo, field taximask
+	memcpy(m_taximask, info->taximask, sizeof(m_taximask));
 
 	// Set Starting stats for char
 	//SetFloatValue(OBJECT_FIELD_SCALE_X, ((race==RACE_TAUREN)?1.3f:1.0f));
@@ -769,7 +756,7 @@ bool Player::Create(WorldPacket& data )
 	}
 	UpdateGlyphs();
 
-	SetUInt32Value(PLAYER_CHARACTER_POINTS2, sWorld.MaxProfs );
+	SetUInt32Value(PLAYER_CHARACTER_POINTS2, sWorld.MaxProfs);
 
 	SetUInt32Value(UNIT_FIELD_BYTES_0, ( ( race ) | ( class_ << 8 ) | ( gender << 16 ) | ( powertype << 24 ) ) );
 	//UNIT_FIELD_BYTES_1	(standstate) | (unk1) | (unk2) | (attackstate)
@@ -787,11 +774,13 @@ bool Player::Create(WorldPacket& data )
 	SetUInt32Value(UNIT_FIELD_STAT4, info->spirit );
 	SetFloatValue(UNIT_FIELD_BOUNDINGRADIUS, 0.388999998569489f );
 	SetFloatValue(UNIT_FIELD_COMBATREACH, 1.5f   );
-	if(race != 10)
+	if( race != RACE_BLOODELF )
 	{
 		SetUInt32Value(UNIT_FIELD_DISPLAYID, info->displayId + gender );
 		SetUInt32Value(UNIT_FIELD_NATIVEDISPLAYID, info->displayId + gender );
-	} else	{
+	} 
+	else	
+	{
 		SetUInt32Value(UNIT_FIELD_DISPLAYID, info->displayId - gender );
 		SetUInt32Value(UNIT_FIELD_NATIVEDISPLAYID, info->displayId - gender );
 	}
@@ -808,7 +797,6 @@ bool Player::Create(WorldPacket& data )
 	SetUInt32Value(PLAYER_BYTES_3, ((gender) | (0x00 << 8) | (0x00 << 16) | (GetPVPRank() << 24)));
 	SetUInt32Value(PLAYER_NEXT_LEVEL_XP, 400);
 	SetUInt32Value(PLAYER_FIELD_BYTES, 0x08 );
-	SetUInt32Value(PLAYER_CHARACTER_POINTS2,2);
 	SetFloatValue(UNIT_MOD_CAST_SPEED, 1.0f);
 	SetUInt32Value(PLAYER_FIELD_MAX_LEVEL, sWorld.m_levelCap);
 
@@ -1716,11 +1704,13 @@ void Player::GiveXP(uint32 xp, const uint64 &guid, bool allowbonus)
 		SetUInt32Value(UNIT_FIELD_HEALTH,GetUInt32Value(UNIT_FIELD_MAXHEALTH));
 		SetUInt32Value(UNIT_FIELD_POWER1,GetUInt32Value(UNIT_FIELD_MAXPOWER1));
 
-		// if warlock has summonned pet, increase its level too
-		if(info->class_ == WARLOCK) {
+		// if warlock has summoned pet, increase its level too
+		if(info->class_ == WARLOCK)
+		{
 			if((m_Summon != NULL) && (m_Summon->IsInWorld()) && (m_Summon->isAlive())) {
 				m_Summon->ModUnsigned32Value(UNIT_FIELD_LEVEL, 1);
 				m_Summon->ApplyStatsForLevel();
+				m_Summon->UpdateSpellList();
 			}
 		}
 		//Event_Achiement_Received(ACHIEVEMENT_CRITERIA_TYPE_REACH_LEVEL,0,level);
@@ -2270,14 +2260,33 @@ void Player::SaveToDB(bool bNewCharacter /* =false */)
 	if( m_bg != NULL && IS_ARENA( m_bg->GetType() ) )
 		in_arena = true;
 
-	if(m_uint32Values[PLAYER_CHARACTER_POINTS2]>2)
-		m_uint32Values[PLAYER_CHARACTER_POINTS2]=2;
+	if( m_uint32Values[PLAYER_CHARACTER_POINTS2] > sWorld.MaxProfs )
+		m_uint32Values[PLAYER_CHARACTER_POINTS2] = sWorld.MaxProfs;
 
 	//Calc played times
 	uint32 playedt = (uint32)UNIXTIME - m_playedtime[2];
 	m_playedtime[0] += playedt;
 	m_playedtime[1] += playedt;
 	m_playedtime[2] += playedt;
+
+	// active cheats
+	uint32 active_cheats = 0;
+	if( CooldownCheat )
+		active_cheats |= 0x01;
+	if( CastTimeCheat )
+		active_cheats |= 0x02;
+	if( GodModeCheat )
+		active_cheats |= 0x04;
+	if( PowerCheat )
+		active_cheats |= 0x08;
+	if( FlyCheat )
+		active_cheats |= 0x10;
+	if( AuraStackCheat )
+		active_cheats |= 0x20;
+	if( ItemStackCheat )
+		active_cheats |= 0x40;
+	if( TriggerpassCheat )
+		active_cheats |= 0x80;
 
 	std::stringstream ss;
 	ss << "REPLACE INTO characters VALUES ("
@@ -2298,6 +2307,7 @@ void Player::SaveToDB(bool bNewCharacter /* =false */)
 
 	ss << uint32(getLevel()) << ","
 	<< m_uint32Values[PLAYER_XP] << ","
+	<< active_cheats << ","
 
 	// dump exploration data
 	<< "'";
@@ -2689,11 +2699,11 @@ void Player::LoadFromDBProc(QueryResultVector & results)
 		return;
 	}
 
-	if (result->GetFieldCount() != 82)
+	if (result->GetFieldCount() != 83)
 	{
 		Log.Error ("Player::LoadFromDB",
-				"Expected 82 fields from the database, "
-				"but received %u!",
+				"Expected 83 fields from the database, "
+				"but received %u!  You may need to update your character database.",
 				(unsigned int) result->GetFieldCount ());
 		RemovePendingPlayer();
 		return;
@@ -2709,7 +2719,7 @@ void Player::LoadFromDBProc(QueryResultVector & results)
 		return;
 	}
 
-	uint32 banned = fields[33].GetUInt32();
+	uint32 banned = fields[34].GetUInt32();
 	if(banned && (banned < 100 || banned > (uint32)UNIXTIME))
 	{
 		RemovePendingPlayer();
@@ -2754,7 +2764,7 @@ void Player::LoadFromDBProc(QueryResultVector & results)
 	info = objmgr.GetPlayerCreateInfo(getRace(), getClass());
 	if(!info)
 	{
-		sLog.outError("%s: player guid %u has no playerCreateInfo!\n", (unsigned int)GetLowGUID());
+ 		sLog.outError("player guid %u has no playerCreateInfo!\n", (unsigned int)GetLowGUID());
 		RemovePendingPlayer();
 		return;
 	}
@@ -2779,13 +2789,31 @@ void Player::LoadFromDBProc(QueryResultVector & results)
 	// set xp
 	m_uint32Values[PLAYER_XP] = get_next_field.GetUInt32();
 
+	// Load active cheats
+	uint32 active_cheats = get_next_field.GetUInt32();
+	if(active_cheats & 0x01)
+		CooldownCheat = true;
+	if(active_cheats & 0x02)
+		CastTimeCheat = true;
+	if(active_cheats & 0x04)
+		GodModeCheat = true;
+	if(active_cheats & 0x08)
+		PowerCheat = true;
+	if(active_cheats & 0x10)
+		FlyCheat = true;
+	if(active_cheats & 0x20)
+		AuraStackCheat = true;
+	if(active_cheats & 0x40)
+		ItemStackCheat = true;
+	if(active_cheats & 0x80)
+		TriggerpassCheat = true;
+
 	// Process exploration data.
 	LoadFieldsFromString(get_next_field.GetString(), PLAYER_EXPLORED_ZONES_1, PLAYER_EXPLORED_ZONES_LENGTH);
 
 	// Load achievements - trying to do this asynchronously causes a crash :/
 	// This needs to be done before loading spells, skills, etc. so that Realm-First! stuff doesn't get spammed to everybody every time the player loads.
 	m_achievementMgr.LoadFromDB(CharacterDatabase.Query("SELECT achievement, date FROM character_achievement WHERE guid = '%u'", GetUInt32Value(OBJECT_FIELD_GUID)),CharacterDatabase.Query("SELECT criteria, counter, date FROM character_achievement_progress WHERE guid = '%u'", GetUInt32Value(OBJECT_FIELD_GUID)));
-	m_achievementMgr.CheckAllAchievementCriteria();
 
 	// Process skill data.
 	uint32 Counter = 0;
@@ -2975,11 +3003,13 @@ void Player::LoadFromDBProc(QueryResultVector & results)
 	SetFloatValue(UNIT_FIELD_BOUNDINGRADIUS, 0.388999998569489f );
 	SetFloatValue(UNIT_FIELD_COMBATREACH, 1.5f   );
 
-	if(getRace() != 10)
+	if( getRace() != RACE_BLOODELF )
 	{
 		SetUInt32Value(UNIT_FIELD_DISPLAYID, info->displayId + getGender() );
 		SetUInt32Value(UNIT_FIELD_NATIVEDISPLAYID, info->displayId + getGender() );
-	} else	{
+	}
+	else	
+	{
 		SetUInt32Value(UNIT_FIELD_DISPLAYID, info->displayId - getGender() );
 		SetUInt32Value(UNIT_FIELD_NATIVEDISPLAYID, info->displayId - getGender() );
 	}
@@ -3278,36 +3308,6 @@ void Player::LoadFromDBProc(QueryResultVector & results)
 	RolloverHonor();
     iInstanceType = get_next_field.GetUInt32();
 
-	//load achievement status             /*Alice*/  - Must be rewrited.... crash
-/*	m_achievement_points = get_next_field.GetUInt32();
-	start = (char*)get_next_field.GetString();//buff;
-	while(start)
-	{
-		AchievementVal *newachi = new AchievementVal;
-		uint32 achiid;
-
-		end = strchr(start,',');
-		if(!end)break;
-		*end=0;
-		achiid = atol(start);
-		start = end +1;
-
-		end = strchr(start,',');
-		if(!end)break;
-		*end=0;
-		newachi->completed_at_stamp = atol(start);
-		start = end +1;
-
-		end = strchr(start,',');
-		if(!end)break;
-		*end=0;
-		newachi->cur_value = atol(start);
-		start = end +1;
-
-		m_achievements[ achiid ] = newachi;
-	};*/
-	//end loading achievements
-
 	// Load Glyphs and apply their auras
 	LoadFieldsFromString(get_next_field.GetString(), PLAYER_FIELD_GLYPHS_1, 8);
 	GlyphPropertyEntry *glyph;
@@ -3463,6 +3463,8 @@ void Player::LoadFromDBProc(QueryResultVector & results)
 			}
 		}
 	}
+	// Update achievements
+	m_achievementMgr.CheckAllAchievementCriteria();
 }
 
 void Player::SetPersistentInstanceId(Instance *pInstance)
@@ -5783,16 +5785,20 @@ bool Player::CanSee(Object* obj) // * Invisibility & Stealth Detection - Partha 
 			{
 				Unit *uObj = static_cast<Unit *>(obj);
 
-				if(uObj->IsSpiritHealer()) // can't see spirit-healers when alive
+				if( uObj->IsSpiritHealer()) // can't see spirit-healers when alive
 					return false;
+				
+				// always see our units
+				if( GetGUID() == uObj->GetUInt64Value( UNIT_FIELD_CREATEDBY ) )
+					return true;
 
-				if(uObj->m_invisible // Invisibility - Detection of Units
+				if( uObj->m_invisible // Invisibility - Detection of Units
 						&& m_invisDetect[uObj->m_invisFlag] < 1) // can't see invisible without proper detection
 					return bGMTagOn; // GM can see invisible units
 
 				if( m_invisible && uObj->m_invisDetect[m_invisFlag] < 1 ) // Invisible - can see those that detect, but not others
 					return m_isGmInvisible;
-
+				
 				return true;
 			}
 		//------------------------------------------------------------------
@@ -6039,7 +6045,10 @@ bool Player::HasItemCount( uint32 item, uint32 count, bool inBankAlso ) const
 void Player::SendLoot(uint64 guid,uint8 loot_type)
 {
 	Group * m_Group = m_playerInfo->m_Group;
-	if(!IsInWorld()) return;
+
+	if( !IsInWorld() )
+		return;
+
 	Loot * pLoot = NULL;
 	uint32 guidtype = GET_TYPE_FROM_GUID(guid);
 	int8 loot_method = -1;
@@ -6134,9 +6143,9 @@ void Player::SendLoot(uint64 guid,uint8 loot_type)
 
 		//quest items check. type 4/5
         //quest items that dont start quests.
-        if((itemProto->Bonding == ITEM_BIND_QUEST) && !(itemProto->QuestId) && !HasQuestForItem(iter->item.itemproto->ItemId))
+        if((itemProto->Bonding == ITEM_BIND_QUEST) && !(itemProto->QuestId) && !HasQuestForItem(itemProto->ItemId))
             continue;
-        if((itemProto->Bonding == ITEM_BIND_QUEST2) && !(itemProto->QuestId) && !HasQuestForItem(iter->item.itemproto->ItemId))
+        if((itemProto->Bonding == ITEM_BIND_QUEST2) && !(itemProto->QuestId) && !HasQuestForItem(itemProto->ItemId))
             continue;
 
         //quest items that start quests need special check to avoid drops all the time.
@@ -6186,7 +6195,6 @@ void Player::SendLoot(uint64 guid,uint8 loot_type)
 				}
             }
         }
-
 
 		slottype = 0;
 		if(m_Group != NULL && loot_type < 2)
@@ -6260,12 +6268,12 @@ void Player::SendLoot(uint64 guid,uint8 loot_type)
 
 				if(iter->item.itemproto)
 				{
-					iter->roll = new LootRoll(60000, (m_Group != NULL ? m_Group->MemberCount() : 1),  guid, x, iter->item.itemproto->ItemId, factor, uint32(ipid), GetMapMgr());
+					iter->roll = new LootRoll(60000, (m_Group != NULL ? m_Group->MemberCount() : 1),  guid, x, itemProto->ItemId, factor, uint32(ipid), GetMapMgr());
 
 					data2.Initialize(SMSG_LOOT_START_ROLL);
 					data2 << guid;
 					data2 << x;
-					data2 << uint32(iter->item.itemproto->ItemId);
+					data2 << uint32(itemProto->ItemId);
 					data2 << uint32(factor);
 					if(iter->iRandomProperty)
 						data2 << uint32(iter->iRandomProperty->ID);
@@ -6920,7 +6928,8 @@ void Player::Reset_ToLevel1()
 	SetUInt32Value(UNIT_FIELD_STAT4, info->spirit );
 	SetUInt32Value(UNIT_FIELD_ATTACK_POWER, info->attackpower );
 	SetUInt32Value(PLAYER_CHARACTER_POINTS1,0);
-	SetUInt32Value(PLAYER_CHARACTER_POINTS2,2);
+	// resetting level shouldn't change # of available professions (it doesn't change what professions are learned)...
+	// SetUInt32Value(PLAYER_CHARACTER_POINTS2,sWorld.MaxProfs);
 	for(uint32 x=0;x<7;x++)
 		SetFloatValue(PLAYER_FIELD_MOD_DAMAGE_DONE_PCT+x, 1.00);
 
@@ -8187,9 +8196,6 @@ void Player::ZoneUpdate(uint32 ZoneId)
 				// leave the old channel
 
 				chn->Part( this , false );
-
-
-
 			}
 		}
 	}
@@ -8958,6 +8964,16 @@ void Player::UpdatePvPArea()
 		return;
 	}
 #endif
+
+	if( bGMTagOn )
+	{
+		if(IsPvPFlagged())
+			RemovePvPFlag();
+		else
+			StopPvPTimer();
+		RemoveFFAPvPFlag();
+		return;
+	}
 
 	// This is where all the magic happens :P
 	if((at->category == AREAC_ALLIANCE_TERRITORY && GetTeam() == 0) || (at->category == AREAC_HORDE_TERRITORY && GetTeam() == 1))
@@ -12533,3 +12549,14 @@ void Player::SendTriggerMovie( uint32 movieID )
 	if( m_session )
 		m_session->OutPacket( SMSG_TRIGGER_MOVIE, 4, &movieID );
 }
+
+uint32 Player::GetInitialFactionId()
+{
+	
+	PlayerCreateInfo * pci = objmgr.GetPlayerCreateInfo(getRace(), getClass());
+	if( pci )
+		return pci->factiontemplate;
+	else 
+		return 35;
+}
+
