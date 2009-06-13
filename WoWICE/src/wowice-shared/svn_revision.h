@@ -5,7 +5,7 @@
 #define SVN_REVISION_H
 
 static const char * BUILD_TAG = "TRUNK";
-static int BUILD_REVISION = 15;
+static int BUILD_REVISION = 2620;
 
 #endif		 // SVN_REVISION_H
 

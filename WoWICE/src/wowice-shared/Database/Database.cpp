@@ -13,6 +13,7 @@
  * this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+
 #include "DatabaseEnv.h"
 #include "../CrashHandler.h"
 #include "../NGLog.h"
