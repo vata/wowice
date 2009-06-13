@@ -159,7 +159,7 @@ pSpellEffect SpellEffectsHandler[TOTAL_SPELL_EFFECTS]={
 	&Spell::SpellEffectTriggerSpell,			// triggers a spell from target back to caster - used at Malacrass f.e.
 	&Spell::SpellEffectNULL,					// unknown - 141 // triggers spell, magic one,  (Mother spell) http://www.thottbot.com/s41065
 	&Spell::SpellEffectTriggerSpellWithValue,	//SPELL_EFFECT_TRIGGER_SPELL_WITH_VALUE - 142 // triggers some kind of "Put spell on target" thing... (dono for sure) http://www.thottbot.com/s40872 and http://www.thottbot.com/s33076
-	&Spell::SpellEffectNULL,					// unknown - 143 // Master -> deamon effecting spell, http://www.thottbot.com/s25228 and http://www.thottbot.com/s35696
+	&Spell::SpellEffectNULL,					// unknown - 143 // Master -> demon effecting spell, http://www.thottbot.com/s25228 and http://www.thottbot.com/s35696
 	&Spell::SpellEffectNULL,// unknown - 144
 	&Spell::SpellEffectNULL,// unknown - 145
 	&Spell::SpellEffectNULL,// unknown - 146
@@ -519,7 +519,7 @@ void Spell::SpellEffectSchoolDMG(uint32 i) // dmg school
 			{
 				if(u_caster)
 					dmg += float2int32(float(u_caster->GetRAP())*0.15f);
-				dmg *= float2int32( 0.9f + RandomFloat( 0.2f ) ); // randomised damage
+				dmg *= float2int32( 0.9f + RandomFloat( 0.2f ) ); // randomized damage
 			}break;
 		case SPELL_HASH_GORE: // boar/ravager: Gore (50% chance of double damage)
 			{
@@ -1565,7 +1565,7 @@ out:
 		}break;
 	case 9976:// Polly Eats the E.C.A.C.
 		{
-			//FIXME: Don't know what this does
+			//FIX ME: Don't know what this does
 		}break;
 	case 10137:// Fizzule's Whistle
 		{
@@ -1629,7 +1629,7 @@ out:
 		}break;
 	case 13280:// Gnomish Death Ray
 		{
-			//FIXME: Drop life
+			//FIX ME: Drop life
 		}break;
 	case 17816:// Sharp Dresser
 		{
@@ -1655,9 +1655,9 @@ out:
 		{
 			//FIXME:Find firecrackers
 		}break;
-	case 26373:// Lunar Invititation
+	case 26373:// Lunar Invitation
 		{
-			//FIXME: Teleports the caster from within Greater Moonlight
+			//FIX ME: Teleports the caster from within Greater Moonlight
 		}break;
 	case 26374:// Elune's Candle
 		{
@@ -1684,7 +1684,7 @@ out:
 		{
 			// related to Hex of Ravenclaw,
 			// its a dispell spell.
-			//FIXME:Dont know whats the usage of this dummy
+			//FIXME:Dont know what's the usage of this dummy
 		}break;
 	case 8283:// Snufflenose Command
 		{
@@ -1773,8 +1773,8 @@ out:
 		{
 			//you throw the mug
 			//and the guy gets pissed well everyone gets pissed and he crushes the door so you can get past
-			//maybe after like 30 seconds so you can get past.  but lke I said I have never done it myself
-			//so i am not 100% sure what happens.
+			//maybe after like 30 seconds so you can get past.  but like I said I have never done it myself
+			//so I am not 100% sure what happens.
 		}break;
 	case 15991://Revive Ringo
 		{
@@ -1902,8 +1902,8 @@ out:
 	case 27517:// Use this banner at the Arena in Blackrock Depths to challenge Theldren
 		{
 			//This is used to make Theldren spawn at the place where it used
-			//I couldnt find theldrin, and his men in creature names database
-			//Someone has to write this and this is related to The Challange quest
+			//I couldn't find theldrin, and his men in creature names database
+			//Someone has to write this and this is related to The Challenge quest
 			/*By moving to the center grate, you trigger the arena event.
 			A random group of mobs (spiders, worms, bats, raptors) spawns,
 			and you have to kill them. After the last one dies, and a small
@@ -2102,7 +2102,7 @@ void Spell::SpellEffectApplyAura(uint32 i)  // Apply Aura
 					}
 					if (!immune)
 					{
-						// Spells wich do more than just one thing (damage and the effect) dont have a mechanic and we should only cancel the aura to be placed
+						// Spells that do more than just one thing (damage and the effect) don't have a mechanic and we should only cancel the aura to be placed
 						switch (m_spellInfo->EffectApplyAuraName[i])
 						{
 						case SPELL_AURA_MOD_CONFUSE:
@@ -2300,7 +2300,7 @@ void Spell::SpellEffectHeal(uint32 i) // Heal
 					SpellEntry *spellInfo = dbcSpell.LookupEntry(pSpellId );
 					if(spellInfo)
 					{
-						//heal value is receivad by the level of current active talent :s
+						//heal value is received by the level of current active talent :s
 						//maybe we should use CalculateEffect(uint32 i) to gain SM benefits
 						int32 value = 0;
 						int32 basePoints = spellInfo->EffectBasePoints[i]+1;//+(m_caster->getLevel()*basePointsPerLevel);
@@ -2397,7 +2397,7 @@ void Spell::SpellEffectHeal(uint32 i) // Heal
 							uint32 amplitude = taura->GetSpellProto()->EffectAmplitude[0] / 1000;
 							if( !amplitude ) amplitude = 3;
 
-							//our hapiness is that we did not store the aura mod amount so we have to recalc it
+							//our happiness is that we did not store the aura mod amount so we have to recalc it
 							Spell *spell = SpellPool.PooledNew();
 							if (!spell)
 								return;
@@ -2469,9 +2469,9 @@ void Spell::SpellEffectAddExtraAttacks(uint32 i) // Add Extra Attacks
 
 void Spell::SpellEffectDodge(uint32 i)
 {
-	//i think this actually enbles the skill to be able to dodge melee+ranged attacks
+	//i think this actually enables the skill to be able to dodge melee+ranged attacks
 	//value is static and sets value directly which will be modified by other factors
-	//this is only basic value and will be overwiten elsewhere !!!
+	//this is only basic value and will be overwritten elsewhere !!!
 	//	if(unitTarget->IsPlayer())
 	//		unitTarget->SetFloatValue(PLAYER_DODGE_PERCENTAGE,damage);
 }
@@ -2484,7 +2484,7 @@ void Spell::SpellEffectParry(uint32 i)
 
 void Spell::SpellEffectBlock(uint32 i)
 {
-	//i think this actually enbles the skill to be able to block melee+ranged attacks
+	//i think this actually enables the skill to be able to block melee+ranged attacks
 	//value is static and sets value directly which will be modified by other factors
 	//	if(unitTarget->IsPlayer())
 	//		unitTarget->SetFloatValue(PLAYER_BLOCK_PERCENTAGE,damage);
@@ -2899,9 +2899,9 @@ void Spell::SpellEffectWeapon(uint32 i)
 
 void Spell::SpellEffectDefense(uint32 i)
 {
-	//i think this actually enbles the skill to be able to use defense
+	//i think this actually enables the skill to be able to use defense
 	//value is static and sets value directly which will be modified by other factors
-	//this is only basic value and will be overwiten elsewhere !!!
+	//this is only basic value and will be overwritten elsewhere !!!
 	//	if(unitTarget->IsPlayer())
 	//		unitTarget->SetFloatValue(UNIT_FIELD_RESISTANCES,damage);
 }
@@ -2916,13 +2916,13 @@ void Spell::SpellEffectPersistentAA(uint32 i) // Persistent Area Aura
 
 	//Note: this code seems to be useless
 	//this must be only source point or dest point
-	//this AREA aura it's apllied on area
+	//this AREA aura it's applied on area
 	//it can'be on unit or self or item or object
-	//uncomment it if i'm wrong
+	//uncomment it if I'm wrong
 	//We are thinking in general so it might be useful later DK
 
 	// grep: this is a hack!
-	// our shitty dynobj system doesnt support GO casters, so we gotta
+	// our shitty dynobj system doesn't support GO casters, so we gotta
 	// kinda have 2 summoners for traps that apply AA.
 	DynamicObject * dynObj = m_caster->GetMapMgr()->CreateDynamicObject();
 
@@ -3006,7 +3006,7 @@ void Spell::SpellEffectSummon(uint32 i)
 	if(GetProto()->EffectMiscValue[i] != 24207) //Tempfix
 		u_caster->RemoveFieldSummon();
 
-	/* This is for summon water elemenal, etc */
+	/* This is for summon water elemental, etc */
 	CreatureInfo * ci = CreatureNameStorage.LookupEntry(GetProto()->EffectMiscValue[i]);
 	CreatureProto * cp = CreatureProtoStorage.LookupEntry(GetProto()->EffectMiscValue[i]);
 	if( !ci || !cp )
@@ -3144,7 +3144,7 @@ void Spell::SpellEffectLeap(uint32 i) // Leap
 	u_caster->RemoveAurasByInterruptFlag(AURA_INTERRUPT_ON_ANY_DAMAGE_TAKEN);
 	// cebernic: 2008-10-11
 	// thanks for the guys who gave the suggestions to my private forum(p2wow.com)
-	// Blink works perfectly atm.Features:no traversed / never outspace falling:D / calc right everwhere even multi floors or underground / much blizzlike.
+	// Blink works perfectly atm.Features:no traversed / never outspace falling:D / calc right everywhere even multi floors or underground / much blizzlike.
 	// a couple hours i wasted, so it full tested.
 
 	if (sWorld.Collision) {
@@ -3172,7 +3172,7 @@ void Spell::SpellEffectLeap(uint32 i) // Leap
 		LocationVector finaldest(posX,posY,posZ);
 
 
-		uint8 steps = 20; // heigher percision,but more performance waste,radius =20.0f may each 1y will be checked.
+		uint8 steps = 20; // higher precision, but more performance waste, radius =20.0f may each 1y will be checked.
 		float radius_steps = radius / steps;
 		uint8 i =0;
 
@@ -3193,7 +3193,7 @@ void Spell::SpellEffectLeap(uint32 i) // Leap
 				newposZ = m_caster->GetMapMgr()->GetLandHeight(newposX,newposY);
 			}
 
-			if ( fabs( ( newposZ - finaldest.z ) / radius_steps ) > 1.0f ) {flag |= _POS_BREAK; break;} // too heigh
+			if ( fabs( ( newposZ - finaldest.z ) / radius_steps ) > 1.0f ) {flag |= _POS_BREAK; break;} // too high
 
 
 			LocationVector dest(newposX,newposY,newposZ);
@@ -3282,7 +3282,7 @@ void Spell::SpellEffectEnergize(uint32 i) // Energize
 		SpellEntry *motherspell = dbcSpell.LookupEntry(pSpellId);
 		if(motherspell)
 		{
-			//heal amount from procspell (we only proced on a heal spell)
+			//heal amount from procspell (we only proceed on a heal spell)
 			uint32 healamt = 0;
 			if(ProcedOnSpell->Effect[0] == SPELL_EFFECT_HEAL || ProcedOnSpell->Effect[0] == SPELL_EFFECT_SCRIPT_EFFECT)
 				healamt=ProcedOnSpell->EffectBasePoints[0]+1;
@@ -3382,7 +3382,7 @@ void Spell::SpellEffectTriggerMissile(uint32 i) // Trigger Missile
 
 		if(sqrt(r)> spellRadius) continue;
 
-		if(!isAttackable(m_caster, static_cast<Unit*>(*itr)))//Fixme only enemy targets?
+		if(!isAttackable(m_caster, static_cast<Unit*>(*itr)))//Fix Me: only enemy targets?
 			continue;
 
 		Spell * sp = SpellPool.PooledNew();
@@ -3617,7 +3617,7 @@ void Spell::SpellEffectOpenLockItem(uint32 i)
 		|| gameObjTarget->GetByte( GAMEOBJECT_BYTES_1, 1 ) == GAMEOBJECT_TYPE_GOOBER )
 		gameObjTarget->SetUInt32Value(GAMEOBJECT_FLAGS, gameObjTarget->GetUInt32Value( GAMEOBJECT_FLAGS ) | 1);
 
-	if(gameObjTarget->GetMapMgr()->GetMapInfo()->type==INSTANCE_NULL)//dont close doors for instances
+	if(gameObjTarget->GetMapMgr()->GetMapInfo()->type==INSTANCE_NULL)//don't close doors for instances
 		sEventMgr.AddEvent(gameObjTarget,&GameObject::EventCloseDoor, EVENT_GAMEOBJECT_DOOR_CLOSE,10000,1,0);
 
 	sEventMgr.AddEvent(gameObjTarget, &GameObject::Despawn, (uint32)0, (uint32)1, EVENT_GAMEOBJECT_ITEM_SPAWN, 6*60*1000, 1, 0);
@@ -4069,8 +4069,8 @@ void Spell::SpellEffectDualWield(uint32 i)
 
 void Spell::SpellEffectSummonWild(uint32 i)  // Summon Wild
 {
-	//these are some cretures that have your faction and do not respawn
-	//number of creatures is actualy dmg (the usual formula), sometimes =3 sometimes =1
+	//these are some creatures that have your faction and do not respawn
+	//number of creatures is actually dmg (the usual formula), sometimes =3 sometimes =1
 	if( !u_caster || !u_caster->IsInWorld() ) return;
 
 	uint32 cr_entry=GetProto()->EffectMiscValue[i];
@@ -4119,7 +4119,7 @@ void Spell::SpellEffectSummonWild(uint32 i)  // Summon Wild
 		if(p->m_faction)
 			p->m_factionDBC = dbcFaction.LookupEntry(p->m_faction->Faction);
 		p->PushToWorld(u_caster->GetMapMgr());
-		//make sure they will be desumonized (roxor)
+		//make sure they will be desummoned (roxor)
 		sEventMgr.AddEvent(p, &Creature::SummonExpire, EVENT_SUMMON_EXPIRE, GetDuration(), 1,0);
 	}
 }
@@ -4228,82 +4228,6 @@ void Spell::SpellEffectSkillStep(uint32 i) // Skill Step
 		else
 			target->_AddSkillLine( skill, 1, max );
 	}
-
-	//professions fix, for unknow reason when u learn profession it
-	//does not teach find herbs for herbalism etc. moreover there is no spell
-	//in spell.dbc that would teach u this. It means blizz does it in some tricky way too
-	switch( skill )
-	{
-	case SKILL_ALCHEMY:
-		target->addSpell( 2330 );//Minor Healing Potion
-		target->addSpell( 2329 );//Elixir of Lion's Strength
-		target->addSpell( 7183 );//Elixir of Minor Defense
-		break;
-	case SKILL_ENCHANTING:
-		target->addSpell( 7418 );//Enchant Bracer - Minor Health
-		target->addSpell( 7428 );//Enchant Bracer - Minor Deflection
-		target->addSpell( 7421 );//Runed Copper Rod
-		target->addSpell( 13262 );//Disenchant
-		break;
-	case SKILL_HERBALISM:
-		target->addSpell( 2383 );//find herbs
-		break;
-	case SKILL_MINING:
-		target->addSpell( 2657 );//smelt copper
-		target->addSpell( 2656 );//smelting
-		target->addSpell( 2580 );//find minerals
-		break;
-	case SKILL_FIRST_AID:
-		target->addSpell( 3275 );//Linen Bandage
-		break;
-	case SKILL_TAILORING:
-		target->addSpell( 2963 );//Bolt of Linen Cloth
-
-		target->addSpell( 2387 );//Linen Cloak
-		target->addSpell( 2393 );//White Linen Shirt
-		target->addSpell( 3915 );//Brown Linen Shirt
-		target->addSpell( 12044 );//Simple Linen Pants
-		break;
-	case SKILL_LEATHERWORKING:
-		target->addSpell( 2149 );//Handstitched Leather Boots
-		target->addSpell( 2152 );//Light Armor Kit
-		target->addSpell( 2881 );//Light Leather
-		target->addSpell( 7126 );//Handstitched Leather Vest
-		target->addSpell( 9058 );//Handstitched Leather Cloak
-		target->addSpell( 9059 );//Handstitched Leather Bracers
-		break;
-	case SKILL_ENGINERING:
-		target->addSpell( 3918 );//Rough Blasting Powder
-		target->addSpell( 3919 );//Rough Dynamite
-		target->addSpell( 3920 );//Crafted Light Shot
-		break;
-	case SKILL_COOKING:
-		target->addSpell( 2538 );//Charred Wolf Meat
-		target->addSpell( 2540 );//Roasted Boar Meat
-		target->addSpell( 818 );//Basic Campfire
-		target->addSpell( 8604 );//Herb Baked Egg
-		break;
-	case SKILL_BLACKSMITHING:
-		target->addSpell( 2660 );//Rough Sharpening Stone
-		target->addSpell( 2663 );//Copper Bracers
-		target->addSpell( 12260 );//Rough Copper Vest
-		target->addSpell( 2662 );//Copper Chain Pants
-		target->addSpell( 3115 );//Rough Weightstone
-		break;
-	case SKILL_JEWELCRAFTING:
-		target->addSpell( 25255 );// Delicate Copper Wire
-		target->addSpell( 25493 );// Braided Copper Ring
-		target->addSpell( 26925 );// Woven Copper Ring
-		target->addSpell( 32259 );// Rough Stone Statue
-		break;
-	case SKILL_INSCRIPTION:
-		target->addSpell( 48114 ); // scroll of intellect
-		target->addSpell( 45382 ); // scroll of stamina
-		target->addSpell( 48116 ); // scroll of spirit
-		target->addSpell( 52738 ); // Ivory Ink
-		target->addSpell( 51005 ); // Milling
-		break;
-	};
 }
 
 void Spell::SpellEffectSummonObject(uint32 i)
@@ -4386,7 +4310,7 @@ void Spell::SpellEffectSummonObject(uint32 i)
 		{
 			if( p_caster )
 			{
-				sChatHandler.BlueSystemMessage(p_caster->GetSession(), "non-existant gameobject %u tried to be created by SpellEffectSummonObject. Report to devs!", entry);
+				sChatHandler.BlueSystemMessage(p_caster->GetSession(), "non-existent gameobject %u tried to be created by SpellEffectSummonObject. Report to devs!", entry);
 			}
 			return;
 		}
@@ -4482,7 +4406,7 @@ void Spell::SpellEffectEnchantItemTemporary(uint32 i)  // Enchant Item Temporary
 	if(!itemTarget || !p_caster) return;
 	uint32 Duration = damage > 1 ? damage : 3600;
 
-	// dont allow temporary enchants unless we're the owner of the item
+	// don't allow temporary enchants unless we're the owner of the item
 	if(itemTarget->GetOwner() != p_caster) return;
 
 	EnchantEntry * Enchantment = dbcEnchant.LookupEntry(GetProto()->EffectMiscValue[i]);
@@ -5138,7 +5062,7 @@ void Spell::SpellEffectScriptEffect(uint32 i) // Script Effect
 	case 23784:
 		{
 			if( !p_caster || !unitTarget)
-				return; //can't imagine how this talent got to anybody else then a player casted on pet
+				return; //can't imagine how this talent got to anybody else then a player casting on pet
 			uint32 casted_spell_id = 0 ;
 			uint32 inc_resist_by_level = 0 ;
 			uint32 inc_resist_by_level_spell = 0 ;
@@ -5198,7 +5122,7 @@ void Spell::SpellEffectScriptEffect(uint32 i) // Script Effect
 	case 23830:
 		{
 			if( !p_caster  || !unitTarget)
-				return; //can't imagine how this talent got to anybody else then a player casted on pet
+				return; //can't imagine how this talent got to anybody else then a player casting on pet
 			uint32 casted_spell_id = 0 ;
 			uint32 inc_resist_by_level = 0 ;
 			uint32 inc_resist_by_level_spell = 0 ;
@@ -5258,7 +5182,7 @@ void Spell::SpellEffectScriptEffect(uint32 i) // Script Effect
 	case 23831:
 		{
 			if( !p_caster || !unitTarget)
-				return; //can't imagine how this talent got to anybody else then a player casted on pet
+				return; //can't imagine how this talent got to anybody else then a player casting on pet
 			uint32 casted_spell_id = 0 ;
 			uint32 inc_resist_by_level = 0 ;
 			uint32 inc_resist_by_level_spell = 0 ;
@@ -5318,7 +5242,7 @@ void Spell::SpellEffectScriptEffect(uint32 i) // Script Effect
 	case 23832:
 		{
 			if( !p_caster || !unitTarget)
-				return; //can't imagine how this talent got to anybody else then a player casted on pet
+				return; //can't imagine how this talent got to anybody else then a player casting on pet
 			uint32 casted_spell_id = 0 ;
 			uint32 inc_resist_by_level = 0 ;
 			uint32 inc_resist_by_level_spell = 0 ;
@@ -5400,7 +5324,7 @@ void Spell::SpellEffectScriptEffect(uint32 i) // Script Effect
 	case 35708:
 		{
 			if( !p_caster || !unitTarget)
-				return; //can't imagine how this talent got to anybody else then a player casted on pet
+				return; //can't imagine how this talent got to anybody else then a player casting on pet
 			uint32 casted_spell_id = 0 ;
 			uint32 inc_resist_by_level = 0 ;
 			uint32 inc_resist_by_level_spell = 0 ;
@@ -5503,10 +5427,10 @@ void Spell::SpellEffectAddComboPoints(uint32 i) // Add Combo Points
 	//if this is a procspell Ruthlessness (maybe others later)
 	if(pSpellId && GetProto()->Id==14157)
 	{
-		//it seems this combo adding procspell is going to change combopoint count before they will get reseted. We add it after the reset
+		//it seems this combo adding procspell is going to change combopoint count before they will get reset. We add it after the reset
 		/* burlex - this is wrong, and exploitable.. :/ if someone uses this they will have unlimited combo points */
-		//re-enabled this by Zack. Explained why it is used + recheked to make sure initialization is good ...
-		// while casting a spell talent will trigger uppon the spell prepare faze
+		//re-enabled this by Zack. Explained why it is used + rechecked to make sure initialization is good ...
+		// while casting a spell talent will trigger upon the spell prepare faze
 		// the effect of the talent is to add 1 combo point but when triggering spell finishes it will clear the extra combo point
 		p_caster->m_spellcomboPoints += damage;
 		return;
@@ -5640,7 +5564,7 @@ void Spell::SpellEffectSummonTotem(uint32 i) // Summon Totem
 
 	if(slot > 3)
 	{
-		sLog.outDebug("Totem slot is : %u and max shoud be 3, i = %u , target = %u \n",slot,i,m_spellInfo->EffectImplicitTargetA[i]);
+		sLog.outDebug("Totem slot is : %u and max should be 3, i = %u , target = %u \n",slot,i,m_spellInfo->EffectImplicitTargetA[i]);
 		return; // Just 4 totems
 	}
 
@@ -5744,7 +5668,7 @@ void Spell::SpellEffectSummonTotem(uint32 i) // Summon Totem
 			return;
 		}
 
-		//added by Zack : Some shaman talents are casted on player but it should be inherited or something by totems
+		//added by Zack : Some shaman talents are cast on player but it should be inherited or something by totems
 		pTotem->InheritSMMods(p_caster);
 
 		// Totems get spell damage and healing bonus from the Shaman
@@ -5879,7 +5803,7 @@ void Spell::SpellEffectSelfResurrect(uint32 i)
 			health = GetProto()->EffectMiscValue[i];
 			mana = -damage;
 		}break;
-	case 21169: //Reincarnation. Ressurect with 20% health and mana
+	case 21169: //Reincarnation. Resurrect with 20% health and mana
 		{
 			int32 amt = 20;
 			if( GetProto()->SpellGroupType)
@@ -6146,7 +6070,7 @@ void Spell::SpellEffectDisenchant( uint32 i )
 		lootmgr.FillDisenchantingLoot( it->loot, it->GetEntry() );
 	}
 
-	Log.Debug( "SpellEffect", "Succesfully disenchanted item %d", uint32( itemTarget->GetEntry() ) );
+	Log.Debug( "SpellEffect", "Successfully disenchanted item %d", uint32( itemTarget->GetEntry() ) );
 	p_caster->SendLoot( itemTarget->GetGUID(), LOOT_DISENCHANTING );
 
 	//We can increase Enchanting skill up to 60
@@ -6361,7 +6285,7 @@ void Spell::SpellEffectDestroyAllTotems(uint32 i)
 	float RetreivedMana = 0.0f;
 	for(uint32 x=0;x<4;x++)
 	{
-		// atm totems are considert creature's
+		// atm totems are considered creatures
 		if(p_caster->m_TotemSlots[x])
 		{
 			uint32 SpellID = p_caster->m_TotemSlots[x]->GetUInt32Value(UNIT_CREATED_BY_SPELL);
@@ -6764,7 +6688,7 @@ void Spell::SpellEffectSpellSteal( uint32 i )
 		{
 			aur = unitTarget->m_auras[x];
 			if(aur->GetSpellId() != 15007 && !aur->IsPassive()
-				//				&& aur->IsPositive()	// Zack : We are only checking positiv auras. There is no meaning to check again
+				//				&& aur->IsPositive()	// Zack : We are only checking positive auras. There is no meaning to check again
 				) //Nothing can dispel resurrection sickness
 			{
 				if(aur->GetSpellProto()->DispelType == DISPEL_MAGIC)
@@ -6838,7 +6762,7 @@ void Spell::SpellEffectProspecting(uint32 i)
 
 	if ( itemTarget->loot->items.size() > 0 )
 	{
-		Log.Debug("SpellEffect","Succesfully prospected item %d", uint32(itemTarget->GetEntry()));
+		Log.Debug("SpellEffect","Successfully prospected item %d", uint32(itemTarget->GetEntry()));
 		p_caster->SendLoot( itemTarget->GetGUID(), LOOT_PROSPECTING );
 	}
 	else // this should never happen either
@@ -6868,7 +6792,7 @@ void Spell::SpellEffectMilling(uint32 i)
 
 	if ( itemTarget->loot->items.size() > 0 )
 	{
-		Log.Debug("SpellEffect","Succesfully milled item %d", uint32(itemTarget->GetEntry()));
+		Log.Debug("SpellEffect","Successfully milled item %d", uint32(itemTarget->GetEntry()));
 		p_caster->SendLoot( itemTarget->GetGUID(), LOOT_MILLING );
 	}
 	else // this should never happen either
@@ -6922,7 +6846,7 @@ void Spell::SpellEffectResurrectNew(uint32 i)
 
 	if(playerTarget->isAlive() || !playerTarget->IsInWorld())
 		return;
-	//resurr
+	//resurrect
 	//playerTarget->resurrector = p_caster->GetLowGUID();
 	playerTarget->m_resurrectMapId = p_caster->GetMapId();
 	playerTarget->m_resurrectInstanceID = p_caster->GetInstanceID();
@@ -6951,7 +6875,7 @@ void Spell::SpellEffectTranformItem(uint32 i)
 	result  = owner->GetItemInterface()->SafeFullRemoveItemByGuid(i_caster->GetGUID());
 	if(!result)
 	{
-		//something went wrong if this happen, item doesnt exist, so it wasnt destroyed.
+		//something went wrong if this happen, item doesn't exist, so it wasn't destroyed.
 		return;
 	}
 
@@ -7059,7 +6983,7 @@ void Spell::SpellEffectSpawn(uint32 i)
 	// this effect is mostly for custom teleporting
 	switch(GetProto()->Id)
 	{
-	case 10418: // Arugal spawn-in spell , teleports it to 3 locations randomly sneeking players (bastard ;P)
+	case 10418: // Arugal spawn-in spell , teleports it to 3 locations randomly sneaking players (bastard ;P)
 		{
 			if(!u_caster || u_caster->IsPlayer())
 				return;

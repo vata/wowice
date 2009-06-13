@@ -673,6 +673,12 @@ uint8 Spell::DidHit(uint32 effindex,Unit* target)
 	if(u_victim->SchoolImmunityList[GetProto()->School] && !dispelMechanic)
 		return SPELL_DID_HIT_IMMUNE;
 
+	/* Check if player target has god mode */
+	if( p_victim && p_victim->GodModeCheat )
+	{
+		return SPELL_DID_HIT_IMMUNE;
+	}
+
 	/*************************************************************************/
 	/* Check if the target is immune to this mechanic                        */
 	/*************************************************************************/
@@ -834,7 +840,7 @@ uint8 Spell::DidHit(uint32 effindex,Unit* target)
 	}
 
 }
-//generate possible target list for a spell. Use as last resort since it is not acurate
+//generate possible target list for a spell. Use as last resort since it is not accurate
 //this function makes a rough estimation for possible target !
 //!!!disabled parts that were not tested !!
 void Spell::GenerateTargets(SpellCastTargets *store_buff)
@@ -931,7 +937,7 @@ void Spell::GenerateTargets(SpellCastTargets *store_buff)
 //						}
 					}break;
 					// spells like 17278:Cannon Fire and 21117:Summon Son of Flame A
-				case 17: // A single target at a xyz location or the target is a possition xyz
+				case 17: // A single target at a xyz location or the target is a position xyz
 				case 18:// Land under caster.Maybe not correct
 					{
 						store_buff->m_srcX=m_caster->GetPositionX();
@@ -1050,7 +1056,7 @@ void Spell::GenerateTargets(SpellCastTargets *store_buff)
 						//shit
 					}break;
 				case 27:{ // target is owner of pet
-					// please correct this if not correct does the caster variablen need a Pet caster variable?
+					// please correct this if not correct does the caster variable need a Pet caster variable?
 						if(u_caster && u_caster->IsPet())
 							store_buff->m_unitTarget = static_cast< Pet* >( u_caster )->GetPetOwner()->GetGUID();
 					}break;
@@ -1271,8 +1277,8 @@ uint8 Spell::prepare( SpellCastTargets * targets )
 		else
 		{
 			// HACK, real problem is the way spells are handled
-			// when a spell is channeling and a new spell is casted
-			// that is a channeling spell, but not triggert by a aura
+			// when a spell is channeling and a new spell is cast
+			// that is a channeling spell, but not triggered by a aura
 			// the channel bar/spell is bugged
 			if( u_caster && u_caster->GetUInt64Value( UNIT_FIELD_CHANNEL_OBJECT) > 0 && u_caster->GetCurrentSpell() )
 			{
@@ -1377,8 +1383,12 @@ void Spell::cancel()
 					delete ((GameObject*)(p_caster->GetSummonedObject()));
 					p_caster->SetSummonedObject(NULL);
 				}
+
 				if (m_timer > 0)
+				{
 					p_caster->delayAttackTimer(-m_timer);
+					RemoveItems();
+				}
 //				p_caster->setAttackTimer(1000, false);
 			 }
 		}
@@ -1389,7 +1399,7 @@ void Spell::cancel()
 
 	// prevent memory corruption. free it up later.
 	// if this is true it means we are currently in the cast() function somewhere else down the stack
-	// (recursive spells) and we don't wanna have this class delete'd when we return to it.
+	// (recursive spells) and we don't wanna have this class deleted when we return to it.
 	// at the end of cast() it will get freed anyway.
 	if( !m_isCasting )
 		finish(false);
@@ -1734,7 +1744,7 @@ void Spell::cast(bool check)
 			{
 				for(uint32 x=0;x<3;x++)
 				{
-                    // check if we actualy have a effect
+					// check if we actually have a effect
 					if( GetProto()->Effect[x])
 					{
 						isDuelEffect = isDuelEffect ||  GetProto()->Effect[x] == SPELL_EFFECT_DUEL;
@@ -1965,7 +1975,7 @@ void Spell::AddTime(uint32 type)
 void Spell::update(uint32 difftime)
 {
 	// skip cast if we're more than 2/3 of the way through
-	// TODO: determine which spells can be casted while moving.
+	// TODO: determine which spells can be cast while moving.
 	// Client knows this, so it should be easy once we find the flag.
 	// XD, it's already there!
 	if( ( GetProto()->InterruptFlags & CAST_INTERRUPT_ON_MOVEMENT ) &&
@@ -2136,12 +2146,10 @@ void Spell::finish(bool successful)
 	if( !m_triggeredSpell && p_caster != NULL && p_caster->CooldownCheat )
 		p_caster->ClearCooldownForSpell( GetProto()->Id );
 
-
 	/*
 	We set current spell only if this spell has cast time or is channeling spell
 	otherwise it's instant spell and we delete it right after completion
 	*/
-
 	if( u_caster != NULL )
 	{
 		if(!m_triggeredSpell && (GetProto()->ChannelInterruptFlags || m_castTime>0))
@@ -2467,7 +2475,7 @@ void Spell::SendSpellGo()
 	{
 		if( flags & SPELL_GO_FLAGS_POWER_UPDATE )
 			data << uint32( 0 ); //no idea about this :S.If not sent there is no visual update
-		//we already substracted power
+		//we already subtracted power
 		data << uint8( m_rune_avail_before );
 		data << uint8( cur_have_runes );
 		for(uint8 i=0;i<m_runes_to_update;i++)
@@ -2500,9 +2508,9 @@ void Spell::writeSpellMissedTargets( WorldPacket * data )
 	 * The flags at the end known to us so far are.
 	 * 1 = Miss
 	 * 2 = Resist
-	 * 3 = Dodge // mellee only
+	 * 3 = Dodge // melee only
 	 * 4 = Deflect
-	 * 5 = Block // mellee only
+	 * 5 = Block // melee only
 	 * 6 = Evade
 	 * 7 = Immune
 	 */
@@ -2707,7 +2715,7 @@ bool Spell::HasPower()
 	}
 
 
-	//FIXME: add handler for UNIT_FIELD_POWER_COST_MODIFIER
+	//FIX ME: add handler for UNIT_FIELD_POWER_COST_MODIFIER
 	//UNIT_FIELD_POWER_COST_MULTIPLIER
 	if( u_caster != NULL )
 	{
@@ -2828,7 +2836,7 @@ bool Spell::TakePower()
 			}break;
 	}
 
-	//FIXME: add handler for UNIT_FIELD_POWER_COST_MODIFIER
+	//FIX ME: add handler for UNIT_FIELD_POWER_COST_MODIFIER
 	//UNIT_FIELD_POWER_COST_MULTIPLIER
 	if( u_caster != NULL )
 	{
@@ -3010,7 +3018,7 @@ void Spell::HandleAddAura(uint64 guid)
 		return;
 
 	// Applying an aura to a flagged target will cause you to get flagged.
-    // self casting doesnt flag himself.
+	// self casting doesn't flag himself.
 	if(Target->IsPlayer() && p_caster && p_caster != static_cast< Player* >(Target))
 	{
 		if(static_cast< Player* >(Target)->IsPvPFlagged())
@@ -3184,7 +3192,7 @@ uint8 Spell::CanCast(bool tolerate)
 	if (!GetProto())
 		return SPELL_FAILED_SPELL_UNAVAILABLE;
 
-	// how this happended ? cebernic
+	// how does this happen? cebernic
 	if (GetProto()->School < NORMAL_DAMAGE || GetProto()->School > ARCANE_DAMAGE)
 		return SPELL_FAILED_SPELL_UNAVAILABLE;
 
@@ -3302,12 +3310,12 @@ uint8 Spell::CanCast(bool tolerate)
 		}
 
 		/**
-		 *	Arena spell check, is cooldown longer then 15 minuntes?
+		*	Arena spell check, is cooldown longer then 15 minutes?
 		 */
 		if (p_caster->m_bg && ( p_caster->m_bg->GetType() >= BATTLEGROUND_ARENA_2V2 && p_caster->m_bg->GetType() <= BATTLEGROUND_ARENA_5V5 ) &&
 			( GetProto()->RecoveryTime > 900000 || GetProto()->CategoryRecoveryTime > 900000 ) )
 				return SPELL_FAILED_SPELL_UNAVAILABLE;
-		if (p_caster->m_bg && !p_caster->m_bg->HasStarted() && (m_spellInfo->Id == 1953 || m_spellInfo->Id == 36554))//Dont allow blink or shadowstep  if in a BG and the BG hasnt started.
+		if (p_caster->m_bg && !p_caster->m_bg->HasStarted() && (m_spellInfo->Id == 1953 || m_spellInfo->Id == 36554))//Don't allow blink or shadowstep  if in a BG and the BG hasn't started.
 			return SPELL_FAILED_SPELL_UNAVAILABLE;
 
 		/**
@@ -3627,7 +3635,7 @@ uint8 Spell::CanCast(bool tolerate)
 			return SPELL_FAILED_NOT_READY;
 		}
 
-		// Let's not allow players to blink trew gates.
+		// Let's not allow players to blink through gates.
 		// Until we fix the real problem this will work.
 		if (p_caster->m_bg && !p_caster->m_bg->HasStarted())
 		{
@@ -3637,7 +3645,7 @@ uint8 Spell::CanCast(bool tolerate)
 	}
 
 	/**
-	 *	Targetted Item Checks
+	*	Targeted Item Checks
 	 */ 
 	if (p_caster && m_targets.m_itemTarget)
 	{
@@ -4093,7 +4101,7 @@ uint8 Spell::CanCast(bool tolerate)
 					if( !target->IsCreature() || target->GetEntry() != 10556 ) // Lazy Peon
 						return SPELL_FAILED_BAD_TARGETS;
 				}break;
-				case 603: //curse of doom, can't be casted on players
+				case 603: //curse of doom, can't be cast on players
 				case 30910:
 				case 47867: // Curse of doom rank 4
 				{
@@ -4327,7 +4335,7 @@ uint8 Spell::CanCast(bool tolerate)
 					if(r<=10)
 						return SPELL_FAILED_NOT_FISHABLE;
 
-					// if we are already fishing, dont cast it again
+					// if we are already fishing, don't cast it again
 					if(p_caster->GetSummonedObject())
 						if(p_caster->GetSummonedObject()->GetEntry() == GO_FISHING_BOBBER)
 							return SPELL_FAILED_SPELL_IN_PROGRESS;
@@ -4538,7 +4546,7 @@ uint8 Spell::CanCast(bool tolerate)
 				/* -Supalosa- For some reason, being charmed or sleep'd is counted as 'Stunned'.
 				Check it: http://www.wowhead.com/?spell=700 */
 
-				// Immune Movement Impairment and Loss of Control (PvP Trinkets) --- USED STIL???
+				// Immune Movement Impairment and Loss of Control (PvP Trinkets) --- USED STILL???
 				case SPELL_HASH_IMMUNE_MOVEMENT_IMPAIRMENT:
 					break;
 
@@ -4602,7 +4610,7 @@ void Spell::RemoveItems()
 				int32 charges = (int32)i_caster->GetUInt32Value( ITEM_FIELD_SPELL_CHARGES + x );
 				if ( charges == -1 ) // if expendable item && item has no charges remaining -> delete item
 				{
-					//i bet this crashed happend due to some script. Items wihtout owners ?
+					//I bet this crashed happened due to some script. Items without owners ?
 					if( i_caster->GetOwner() && i_caster->GetOwner()->GetItemInterface() )
 						i_caster->GetOwner()->GetItemInterface()->SafeFullRemoveItemByGuid( i_caster->GetGUID() );
 					i_caster = NULL;
@@ -4657,7 +4665,7 @@ int32 Spell::CalculateEffect(uint32 i,Unit *target)
 	int32 basePoints = GetProto()->EffectBasePoints[i] + 1;
 	int32 randomPoints = GetProto()->EffectDieSides[i];
 
-	//added by Zack : some talents inherit their basepoints from the previously casted spell: see mage - Master of Elements
+	//added by Zack : some talents inherit their basepoints from the previously cast spell: see mage - Master of Elements
 	if(forced_basepoints[i])
 		basePoints = forced_basepoints[i];
 
@@ -4715,7 +4723,7 @@ exit:
 		m_requiresCP = true;
 		value += ( comboDamage * p_caster->m_comboPoints );
 			//this is ugly so i will explain the case maybe someone ha a better idea :
-			// while casting a spell talent will trigger uppon the spell prepare faze
+			// while casting a spell talent will trigger upon the spell prepare faze
 			// the effect of the talent is to add 1 combo point but when triggering spell finishes it will clear the extra combo point
 		p_caster->m_spellcomboPoints = 0;
 	}
@@ -4846,7 +4854,7 @@ exit:
 
 /*	else if ( GetProto()->NameHash == SPELL_HASH_HUNTER_S_MARK && target && target->HasAurasWithNameHash( SPELL_HASH_HUNTER_S_MARK ) ) //Hunter - Hunter's Mark
 	{
-		value = value / 10; //aditional stacks only increase value by X
+		value = value / 10; //additional stacks only increase value by X
 	}*/
 
 	if( p_caster != NULL )
@@ -4938,12 +4946,12 @@ void Spell::HandleTeleport(uint32 id, Unit* Target)
 		sEventMgr.AddEvent(pTarget, &Player::EventTeleport, mapid, x, y, z, EVENT_PLAYER_TELEPORT, 1, 1,EVENT_FLAG_DO_NOT_EXECUTE_IN_WORLD_CONTEXT);
 }
 
-void Spell::CreateItem(uint32 itemId)
+void Spell::CreateItem( uint32 itemId )
 {
-    if( !itemId )
+	/// Creates number of items equal to a "damage" of the effect
+	if( !itemId || !p_caster )
         return;
 
-	Player*			pUnit = static_cast< Player* >( m_caster );
 	Item*			newItem;
 	Item*			add;
 	SlotResult		slotresult;
@@ -4952,51 +4960,49 @@ void Spell::CreateItem(uint32 itemId)
 	m_itemProto = ItemPrototypeStorage.LookupEntry( itemId );
 	if( m_itemProto == NULL )
 	    return;
+	
+	if( damage < 1 )
+		return;
 
-	if (pUnit->GetItemInterface()->CanReceiveItem(m_itemProto, 1))
+	uint32 addcount = (uint32)damage;
+
+	if ( p_caster->GetItemInterface()->CanReceiveItem( m_itemProto, addcount ) )
 	{
-		SendCastResult(SPELL_FAILED_TOO_MANY_OF_ITEM);
+		SendCastResult( SPELL_FAILED_TOO_MANY_OF_ITEM );
 		return;
 	}
 
-	add = pUnit->GetItemInterface()->FindItemLessMax(itemId, 1, false);
-	if (!add)
+	add = p_caster->GetItemInterface()->FindItemLessMax( itemId, addcount, false );
+	if (!add )
 	{
-		slotresult = pUnit->GetItemInterface()->FindFreeInventorySlot(m_itemProto);
-		if(!slotresult.Result)
+		slotresult = p_caster->GetItemInterface()->FindFreeInventorySlot( m_itemProto );
+		if( !slotresult.Result )
 		{
-			SendCastResult(SPELL_FAILED_TOO_MANY_OF_ITEM);
+			SendCastResult( SPELL_FAILED_TOO_MANY_OF_ITEM );
 			return;
 		}
 
-		newItem = objmgr.CreateItem(itemId, pUnit);
-		if (newItem==NULL)
+		newItem = objmgr.CreateItem( itemId, p_caster );
+		if( newItem == NULL )
 			return;
 
-		AddItemResult result = pUnit->GetItemInterface()->SafeAddItem(newItem, slotresult.ContainerSlot, slotresult.Slot);
-		if(!result)
+		AddItemResult result = p_caster->GetItemInterface()->SafeAddItem( newItem, slotresult.ContainerSlot, slotresult.Slot );
+		if( !result )
 		{
 			newItem->DeleteMe();
 			return;
 		}
 
-		newItem->SetUInt64Value(ITEM_FIELD_CREATOR,m_caster->GetGUID());
-		newItem->SetUInt32Value(ITEM_FIELD_STACK_COUNT, damage);
+		newItem->SetUInt64Value( ITEM_FIELD_CREATOR, p_caster->GetGUID() );
+		newItem->SetUInt32Value( ITEM_FIELD_STACK_COUNT, addcount );
 
-		/*WorldPacket data(45);
-		p_caster->GetSession()->BuildItemPushResult(&data, p_caster->GetGUID(), 1, 1, itemId ,0,0xFF,1,0xFFFFFFFF);
-		p_caster->SendMessageToSet(&data, true);*/
-		p_caster->GetSession()->SendItemPushResult(newItem,true,false,true,true,slotresult.ContainerSlot,slotresult.Slot,1);
+		p_caster->GetSession()->SendItemPushResult( newItem, true, false, true, true, slotresult.ContainerSlot, slotresult.Slot, addcount );
 		newItem->m_isDirty = true;
-
 	}
 	else
 	{
-		add->SetUInt32Value(ITEM_FIELD_STACK_COUNT,add->GetUInt32Value(ITEM_FIELD_STACK_COUNT) + damage);
-		/*WorldPacket data(45);
-		p_caster->GetSession()->BuildItemPushResult(&data, p_caster->GetGUID(), 1, 1, itemId ,0,0xFF,1,0xFFFFFFFF);
-		p_caster->SendMessageToSet(&data, true);*/
-		p_caster->GetSession()->SendItemPushResult(add,true,false,true,false,p_caster->GetItemInterface()->GetBagSlotByGuid(add->GetGUID()),0xFFFFFFFF,1);
+		add->ModUnsigned32Value( ITEM_FIELD_STACK_COUNT, addcount );
+		p_caster->GetSession()->SendItemPushResult( add, true, false, true, false, p_caster->GetItemInterface()->GetBagSlotByGuid(add->GetGUID()), 0xFFFFFFFF, addcount );
 		add->m_isDirty = true;
 	}
 }
@@ -5261,7 +5267,7 @@ void Spell::Heal(int32 amount, bool ForceCrit)
 			}
 
 			//Shady: does it correct> caster casts heal and proc ..._VICTIM ?
-			// Or mb i'm completely wrong? So if true  - just replace with old string.
+			// Or mb I'm completely wrong? So if true  - just replace with old string.
 			//u_caster->HandleProc(PROC_ON_SPELL_CRIT_HIT_VICTIM, unitTarget, GetProto(), amount);
 			//Replaced with following one:
 
@@ -5334,7 +5340,7 @@ void Spell::Heal(int32 amount, bool ForceCrit)
 void Spell::DetermineSkillUp(uint32 skillid,uint32 targetlevel)
 {
 	if(!p_caster)return;
-	if(p_caster->GetSkillUpChance(skillid)<0.01)return;//to preven getting higher skill than max
+	if(p_caster->GetSkillUpChance(skillid)<0.01)return;//to prevent getting higher skill than max
 	int32 diff=p_caster->_GetSkillLineCurrent(skillid,false)/5-targetlevel;
 	if(diff<0)diff=-diff;
 	float chance;
@@ -5393,7 +5399,7 @@ void Spell::SafeAddMissedTarget(uint64 guid)
         if((*i).TargetGuid==guid)
         {
             //sLog.outDebug("[SPELL] Something goes wrong in spell target system");
-			// this isnt actually wrong, since we only have one missed target map,
+			// this isn't actually wrong, since we only have one missed target map,
 			// whereas hit targets have multiple maps per effect.
             return;
         }
@@ -5407,7 +5413,7 @@ void Spell::SafeAddModeratedTarget(uint64 guid, uint16 type)
 		if((*i).TargetGuid==guid)
         {
             //sLog.outDebug("[SPELL] Something goes wrong in spell target system");
-			// this isnt actually wrong, since we only have one missed target map,
+			// this isn't actually wrong, since we only have one missed target map,
 			// whereas hit targets have multiple maps per effect.
 			return;
         }

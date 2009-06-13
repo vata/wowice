@@ -797,10 +797,6 @@ public:
 
 	bool IsPlayer() { return true; }
 
-	WoWICE_INLINE Guild * GetGuild() { return m_playerInfo->guild; }
-	WoWICE_INLINE GuildMember * GetGuildMember() { return m_playerInfo->guildMember; }
-	WoWICE_INLINE GuildRank * GetGuildRankS() { return m_playerInfo->guildRank; }
-
 	void EventGroupFullUpdate();
 
 	/************************************************************************/
@@ -822,6 +818,7 @@ public:
 	void _AddLanguages(bool All);
 	void _AdvanceAllSkills(uint32 count);
 	void _ModifySkillMaximum(uint32 SkillLine, uint32 NewMax);
+	void _LearnSkillSpells(uint32 SkillLine, uint32 Current);
 
 
 	void RecalculateHonor();
@@ -1149,14 +1146,17 @@ public:
     /************************************************************************/
     /* Guilds                                                               */
     /************************************************************************/
-	WoWICE_INLINE  bool        IsInGuild() {return (m_uint32Values[PLAYER_GUILDID] != 0) ? true : false;}
-	WoWICE_INLINE uint32       GetGuildId() { return m_uint32Values[PLAYER_GUILDID]; }
-	void                SetGuildId(uint32 guildId);
-	WoWICE_INLINE uint32       GetGuildRank() { return m_uint32Values[PLAYER_GUILDRANK]; }
-	void                SetGuildRank(uint32 guildRank);
-	uint32              GetGuildInvitersGuid() { return m_invitersGuid; }
-	void                SetGuildInvitersGuid( uint32 guid ) { m_invitersGuid = guid; }
-	void                UnSetGuildInvitersGuid() { m_invitersGuid = 0; }
+	WoWICE_INLINE Guild *		GetGuild() { return m_playerInfo->guild; }
+	WoWICE_INLINE bool			IsInGuild() {return (m_uint32Values[PLAYER_GUILDID] != 0) ? true : false;}
+	WoWICE_INLINE uint32		GetGuildId() { return m_uint32Values[PLAYER_GUILDID]; }
+	void						SetGuildId(uint32 guildId);
+	WoWICE_INLINE uint32		GetGuildRank() { return m_uint32Values[PLAYER_GUILDRANK]; }
+	WoWICE_INLINE GuildRank*	GetGuildRankS() { return m_playerInfo->guildRank; }
+	void						SetGuildRank(uint32 guildRank);
+	uint32						GetGuildInvitersGuid() { return m_invitersGuid; }
+	void						SetGuildInvitersGuid( uint32 guid ) { m_invitersGuid = guid; }
+	void						UnSetGuildInvitersGuid() { m_invitersGuid = 0; }
+	WoWICE_INLINE GuildMember * GetGuildMember() { return m_playerInfo->guildMember; }
 
     /************************************************************************/
     /* Duel                                                                 */
@@ -1216,7 +1216,7 @@ public:
 		return 0;
 	}
 	void						EventSummonPet(Pet *new_pet); //if we charmed or simply summoned a pet, this function should get called
-	void						EventDismissPet(); //if pet/charm died or whatever happned we should call this function
+	void						EventDismissPet(); //if pet/charm died or whatever happened we should call this function
 
     /************************************************************************/
     /* Item Interface                                                       */
@@ -1322,7 +1322,7 @@ public:
 	void EventAttackStop();
 	void EventAttackUpdateSpeed() { }
 	void EventDeath();
-	//Note:ModSkillLine -> value+=amt;ModSkillMax -->value=amt; --wierd
+	//Note:ModSkillLine -> value+=amt;ModSkillMax -->value=amt; --weird
 	float GetSkillUpChance(uint32 id);
 	//WoWICE_INLINE std::list<struct skilllines>getSkillLines() { return m_skilllines; }
 	float SpellCrtiticalStrikeRatingBonus;
@@ -1561,7 +1561,7 @@ public:
 	map<uint32, WeaponModifier> damagedone;
 	map<uint32, WeaponModifier> tocritchance;
 	uint32 Seal;
-	uint32 LastSeal;//need for paladin talent. We can eighter make a proc before auras are removed or use this. Some proc also need effect to appear so we would need 2 procs without double procing :S
+	uint32 LastSeal;//need for paladin talent. We can either make a proc before auras are removed or use this. Some proc also need effect to appear so we would need 2 procs without double procing :S
 	uint32 judgespell;
 	bool cannibalize;
 	uint8 cannibalizeCount;
@@ -2090,7 +2090,7 @@ protected:
 
 	uint32      m_lastHonorResetTime;
 	uint32      _fields[PLAYER_END];
-	int			hearth_of_wild_pct;		//druid hearth of wild talent used on shapeshifting. We eighter know what is last talent level or memo on learn
+	int			hearth_of_wild_pct;		//druid hearth of wild talent used on shapeshifting. We either know what is last talent level or memo on learn
 
 	uint32 m_team;
 	float       m_lastRunSpeed;
@@ -2187,11 +2187,11 @@ public:
 	void VampiricSpell(uint32 dmg, Unit* pTarget);
 
 	/************************************************************************/
-    /* Player Archievements						                            */
+	/* Player Achievements						                            */
     /************************************************************************/
 /*public:
 	//this may change in time, We will call it each time a new monitored position is reached
-	//it is up to this function to decide if we actually made an archievement in that type or not
+	//it is up to this function to decide if we actually made an achievement in that type or not
 	void Event_Achiement_Received(uint32 achievementtype,uint32 pentry,uint32 pvalue); //entry is not always used
 	void SendAchievmentStatus( uint32 criteriaid, uint32 new_value, uint32 at_stamp=0 );
 	void SendAchievmentEarned( uint32 archiId, uint32 at_stamp=0 );
@@ -2212,7 +2212,7 @@ public:
     WoWICE_INLINE AchievementMgr& GetAchievementMgr() { return m_achievementMgr; }
 	AchievementMgr m_achievementMgr;
     /************************************************************************/
-    /* Player Archievements - end				                            */
+	/* Player Achievements - end				                            */
     /************************************************************************/
 
     /************************************************************************/

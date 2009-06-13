@@ -572,7 +572,7 @@ void WorldSession::HandleAcceptTrade(WorldPacket & recv_data)
 			// Trade Gold
 			if(pTarget->mTradeGold)
 			{
-				// Check they dont have more than the max gold
+				// Check they don't have more than the max gold
 				if(sWorld.GoldCapEnabled && (_player->GetUInt32Value(PLAYER_FIELD_COINAGE) + pTarget->mTradeGold) > sWorld.GoldLimit)
 				{
 					_player->GetItemInterface()->BuildInventoryChangeError(NULL, NULL, INV_ERR_TOO_MUCH_GOLD);
@@ -586,7 +586,7 @@ void WorldSession::HandleAcceptTrade(WorldPacket & recv_data)
 
 			if(_player->mTradeGold)
 			{
-				// Check they dont have more than the max gold
+				// Check they don't have more than the max gold
 				if(sWorld.GoldCapEnabled && (pTarget->GetUInt32Value(PLAYER_FIELD_COINAGE) + _player->mTradeGold) > sWorld.GoldLimit)
 				{
 					pTarget->GetItemInterface()->BuildInventoryChangeError(NULL, NULL, INV_ERR_TOO_MUCH_GOLD);
@@ -623,7 +623,7 @@ void WorldSession::HandleAcceptTrade(WorldPacket & recv_data)
 			plr->mTradeTarget = 0;
 			_player->mTradeTarget = 0;
 
-			// Save for eachother
+			// Save for each other
 			plr->SaveToDB(false);
 			_player->SaveToDB(false);
 	}

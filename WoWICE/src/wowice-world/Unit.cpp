@@ -575,7 +575,7 @@ void Unit::Update( uint32 p_time )
 	if(!IsDead())
 	{
 		//-----------------------POWER & HP REGENERATION-----------------
-/* Please dont do temp fixes. Better report to me. Thx. Shady */
+		/* Please don't do temp fixes. Better report to me. Thx. Shady */
         if( p_time >= m_H_regenTimer )
 		    RegenerateHealth();
 	    else
@@ -814,7 +814,7 @@ void Unit::GiveGroupXP(Unit *pVictim, Player *PlayerInGroup)
 		}
 
 		xp = CalculateXpToGive(pVictim, pHighLvlPlayer);
-		//i'm not sure about this formula is correct or not. Maybe some brackets are wrong placed ?
+		//I'm not sure about this formula is correct or not. Maybe some brackets are wrong placed ?
 		for(int i=0;i<active_player_count;i++)
 		{
 			Player * plr = active_player_list[i];
@@ -884,7 +884,7 @@ uint32 Unit::HandleProc( uint32 flag, Unit* victim, SpellEntry* CastingSpell, ui
 	bool can_delete = !bProcInUse; //if this is a nested proc then we should have this set to TRUE by the father proc
 	bProcInUse = true; //locking the proc list
 
-	/* hmm whats a reasonable value here */
+	/* hmm what's a reasonable value here */
 	if( m_procCounter > 40 )
 	{
 		/* something has proceed over 10 times in a loop :/ dump the spellids to the crashlog, as the crashdump will most likely be useless. */
@@ -1158,7 +1158,7 @@ uint32 Unit::HandleProc( uint32 flag, Unit* victim, SpellEntry* CastingSpell, ui
 						CastingSpell->NameHash != SPELL_HASH_MANGLE___CAT )
 						continue;
 				}break;
-				case 17106: //druid intencity
+				case 17106: //druid intensity
 				{
 					if( CastingSpell == NULL )
 						continue;
@@ -1279,7 +1279,7 @@ uint32 Unit::HandleProc( uint32 flag, Unit* victim, SpellEntry* CastingSpell, ui
 					else
 						continue; //no weapon no joy
 					//float chance=float(it->GetProto()->Delay)*float(talentlevel)/600.0f;
-					float chance = float( it->GetProto()->Delay ) * float(talentlevel ) / 300.0f; //zack this had a very low proc rate. Kinda liek a waisted talent
+					float chance = float( it->GetProto()->Delay ) * float(talentlevel ) / 300.0f; //zack this had a very low proc rate. Kinda like a wasted talent
 					uint32 myroll = RandomUInt( 100 );
 					if( myroll > chance )
 						continue;
@@ -1335,7 +1335,7 @@ uint32 Unit::HandleProc( uint32 flag, Unit* victim, SpellEntry* CastingSpell, ui
 				case 31125:
 					{
 						if( CastingSpell == NULL )
-							continue;//this should not ocur unless we made a fuckup somewhere
+							continue;//this should not occur unless we made a fuckup somewhere
 						//only trigger effect for specified spells
 						if( CastingSpell->NameHash != SPELL_HASH_BACKSTAB && //backstab
 							CastingSpell->NameHash != SPELL_HASH_SINISTER_STRIKE && //sinister strike
@@ -1361,7 +1361,7 @@ uint32 Unit::HandleProc( uint32 flag, Unit* victim, SpellEntry* CastingSpell, ui
 				case 17800:
 					{
 						if( CastingSpell == NULL )
-							continue;//this should not ocur unless we made a fuckup somewhere
+							continue;//this should not occur unless we made a fuckup somewhere
 						//only trigger effect for specified spells
 						if( CastingSpell->NameHash!=SPELL_HASH_SHADOW_BOLT)//shadow bolt
 							continue;
@@ -1452,7 +1452,7 @@ uint32 Unit::HandleProc( uint32 flag, Unit* victim, SpellEntry* CastingSpell, ui
 				case 17941:
 					{
 						if( CastingSpell == NULL )
-							continue;//this should not ocur unless we made a fuckup somewhere
+							continue;//this should not occur unless we made a fuckup somewhere
 						//only trigger effect for specified spells
 						if( CastingSpell->NameHash != SPELL_HASH_CORRUPTION && //Corruption
 							CastingSpell->NameHash != SPELL_HASH_DRAIN_LIFE )//Drain Life
@@ -1488,7 +1488,7 @@ uint32 Unit::HandleProc( uint32 flag, Unit* victim, SpellEntry* CastingSpell, ui
 				case 18118:
 					{
 						if( CastingSpell == NULL )
-							continue;//this should not ocur unless we made a fuckup somewhere
+							continue;//this should not occur unless we made a fuckup somewhere
 						//only trigger effect for specified spells
 						skilllinespell* skillability = objmgr.GetSpellSkill(CastingSpell->Id);
 						if( !skillability )
@@ -1500,7 +1500,7 @@ uint32 Unit::HandleProc( uint32 flag, Unit* victim, SpellEntry* CastingSpell, ui
 				case 30300:
 					{
 						if( CastingSpell == NULL )
-							continue;//this should not ocur unless we made a fuckup somewhere
+							continue;//this should not occur unless we made a fuckup somewhere
 						//only trigger effect for specified spells
 						if(!(CastingSpell->c_is_flags & SPELL_FLAG_IS_DAMAGING))
 							continue;
@@ -1509,11 +1509,11 @@ uint32 Unit::HandleProc( uint32 flag, Unit* victim, SpellEntry* CastingSpell, ui
 							continue;
 					}break;
 				//warlock - Soul Leech
-				//this whole spell should get rewriten. Uses bad formulas, bad trigger method, spell is rewriten ...
+					//this whole spell should get rewritten. Uses bad formulas, bad trigger method, spell is rewritten ...
 				case 30294:
 					{
 						if( CastingSpell == NULL )
-							continue;//this should not ocur unless we made a fuckup somewhere
+							continue;//this should not occur unless we made a fuckup somewhere
 						//only trigger effect for specified spells
 						uint32 amount;
 						switch( CastingSpell->NameHash )
@@ -1553,7 +1553,7 @@ uint32 Unit::HandleProc( uint32 flag, Unit* victim, SpellEntry* CastingSpell, ui
 				case 18093:
 					{
 						if( CastingSpell == NULL )
-							continue;//this should not ocur unless we made a fuckup somewhere
+							continue;//this should not occur unless we made a fuckup somewhere
 						//only trigger effect for specified spells
 						if( CastingSpell->NameHash != SPELL_HASH_RAIN_OF_FIRE && //Rain of Fire
 							CastingSpell->NameHash != SPELL_HASH_HELLFIRE_EFFECT && //Hellfire
@@ -1587,7 +1587,7 @@ uint32 Unit::HandleProc( uint32 flag, Unit* victim, SpellEntry* CastingSpell, ui
 				case 22959:
 					{
 						if( CastingSpell == NULL )
-							continue;//this should not ocur unless we made a fuckup somewhere
+							continue;//this should not occur unless we made a fuckup somewhere
 						//only trigger effect for specified spells
 						if( CastingSpell->NameHash != SPELL_HASH_SCORCH ) //Scorch
 							continue;
@@ -1596,7 +1596,7 @@ uint32 Unit::HandleProc( uint32 flag, Unit* victim, SpellEntry* CastingSpell, ui
 				case 28682:
 					{
 						if( CastingSpell == NULL )
-							continue;//this should not ocur unless we made a fuckup somewhere
+							continue;//this should not occur unless we made a fuckup somewhere
 						//only trigger effect for specified spells
 						if( !( CastingSpell->c_is_flags & SPELL_FLAG_IS_DAMAGING)
 							|| CastingSpell->School != SCHOOL_FIRE )
@@ -1634,7 +1634,7 @@ uint32 Unit::HandleProc( uint32 flag, Unit* victim, SpellEntry* CastingSpell, ui
 						//find aura on self and get it's value
 						Aura *pa = this->FindAura( origId );
 						if( !pa || !this->GetMapMgr() )
-							return 0; //omg we have this proc on us and on second check we don't ? Return instead of continue since this seems to be a corupted object
+							return 0; //omg we have this proc on us and on second check we don't ? Return instead of continue since this seems to be a corrupted object
 
 						//check if we jumped proctimes
 						if( pa->GetModAmount( 0 ) == 1 )
@@ -1734,8 +1734,8 @@ uint32 Unit::HandleProc( uint32 flag, Unit* victim, SpellEntry* CastingSpell, ui
 				case 15258:
 					{
 						if( CastingSpell == NULL )
-							continue;//this should not ocur unless we made a fuckup somewhere
-						if( CastingSpell->School != SCHOOL_SHADOW || !( CastingSpell->c_is_flags & SPELL_FLAG_IS_DAMAGING ) ) //we need damaging spells for this, so we suppose all shadow spells casted on target are dmging spells = Wrong
+							continue;//this should not occur unless we made a fuckup somewhere
+						if( CastingSpell->School != SCHOOL_SHADOW || !( CastingSpell->c_is_flags & SPELL_FLAG_IS_DAMAGING ) ) //we need damaging spells for this, so we suppose all shadow spells cast on target are dmging spells = Wrong
 							continue;
 					}break;
 				//priest - Inspiration
@@ -1776,7 +1776,7 @@ uint32 Unit::HandleProc( uint32 flag, Unit* victim, SpellEntry* CastingSpell, ui
 				case 29203:
 					{
 						if( CastingSpell == NULL )
-							continue;//this should not ocur unless we made a fuckup somewhere
+							continue;//this should not occur unless we made a fuckup somewhere
 						//only trigger effect for specified spells
 						if( CastingSpell->NameHash != SPELL_HASH_HEALING_WAVE ) //healing wave
 							continue;
@@ -1787,7 +1787,7 @@ uint32 Unit::HandleProc( uint32 flag, Unit* victim, SpellEntry* CastingSpell, ui
 				case 30165:
 					{
 						if( CastingSpell == NULL )
-							continue;//this should not ocur unless we made a fuckup somewhere
+							continue;//this should not occur unless we made a fuckup somewhere
 						//only trigger effect for specified spells
 						if( !(CastingSpell->c_is_flags & SPELL_FLAG_IS_DAMAGING)) //healing wave
 							continue;
@@ -1908,7 +1908,7 @@ uint32 Unit::HandleProc( uint32 flag, Unit* victim, SpellEntry* CastingSpell, ui
 					{
 						if(!IsPlayer())
 							continue;
-						//!! The wierd thing is that we need the spell thet trigegred this enchant spell in order to output logs ..we are using oldspell info too
+						//!! The weird thing is that we need the spell that triggered this enchant spell in order to output logs ..we are using oldspell info too
 						//we have to recalc the value of this spell
 						SpellEntry *spellInfo = dbcSpell.LookupEntry(origId);
 						uint32 AP_owerride = spellInfo->EffectBasePoints[0]+1;
@@ -1922,7 +1922,7 @@ uint32 Unit::HandleProc( uint32 flag, Unit* victim, SpellEntry* CastingSpell, ui
 				case 14157:
 					{
 						if( CastingSpell == NULL )
-							continue;//this should not ocur unless we made a fuckup somewhere
+							continue;//this should not occur unless we made a fuckup somewhere
 						//we need a finishing move for this
 						if(!(CastingSpell->c_is_flags & SPELL_FLAG_IS_FINISHING_MOVE) || victim==this)
 							continue;
@@ -1937,7 +1937,7 @@ uint32 Unit::HandleProc( uint32 flag, Unit* victim, SpellEntry* CastingSpell, ui
 				case 14181:
 					{
 						if( CastingSpell == NULL )
-							continue;//this should not ocur unless we made a fuckup somewhere
+							continue;//this should not occur unless we made a fuckup somewhere
 						int32 proc_Chance;
 						//chance is based actually on combopoint count and not 100% always
 						if( CastingSpell->c_is_flags & SPELL_FLAG_IS_FINISHING_MOVE && IsPlayer())
@@ -1954,7 +1954,7 @@ uint32 Unit::HandleProc( uint32 flag, Unit* victim, SpellEntry* CastingSpell, ui
 				case 31238:
 					{
 						if( CastingSpell == NULL )
-							continue;//this should not ocur unless we made a fuckup somewhere
+							continue;//this should not occur unless we made a fuckup somewhere
 						if(!(CastingSpell->c_is_flags & SPELL_FLAG_IS_FINISHING_MOVE))
 							continue;
 					}break;
@@ -1962,7 +1962,7 @@ uint32 Unit::HandleProc( uint32 flag, Unit* victim, SpellEntry* CastingSpell, ui
 				case 13977:
 					{
 						if( CastingSpell == NULL )
-							continue;//this should not ocur unless we made a fuckup somewhere
+							continue;//this should not occur unless we made a fuckup somewhere
 						//we need a Ambush, Garrote, or Cheap Shot
 						if( CastingSpell == NULL )
 							continue;
@@ -1988,7 +1988,7 @@ uint32 Unit::HandleProc( uint32 flag, Unit* victim, SpellEntry* CastingSpell, ui
 				case 15269:
 					{
 						if( CastingSpell == NULL )
-							continue;//this should not ocur unless we made a fuckup somewhere
+							continue;//this should not occur unless we made a fuckup somewhere
 						if( CastingSpell->School != SCHOOL_SHADOW || !( CastingSpell->c_is_flags & SPELL_FLAG_IS_DAMAGING ) )
 							continue;
 					}break;
@@ -2004,7 +2004,7 @@ uint32 Unit::HandleProc( uint32 flag, Unit* victim, SpellEntry* CastingSpell, ui
 					{
 						//requires damageing spell
 						if( CastingSpell == NULL )
-							continue;//this should not ocur unless we made a fuckup somewhere
+							continue;//this should not occur unless we made a fuckup somewhere
 						if( !( CastingSpell->c_is_flags & SPELL_FLAG_IS_DAMAGING ) )
 							continue;
 					}break;
@@ -2023,7 +2023,7 @@ uint32 Unit::HandleProc( uint32 flag, Unit* victim, SpellEntry* CastingSpell, ui
 					{
 						if( CastingSpell == NULL )
 							continue;
-						if( CastingSpell->School!=SCHOOL_FIRE && CastingSpell->School!=SCHOOL_FROST) //fire and frost criticals
+						if( CastingSpell->School!=SCHOOL_FIRE && CastingSpell->School!=SCHOOL_FROST) //fire and frost critical's
 							continue;
 						dmg_overwrite = CastingSpell->manaCost * ( ospinfo->EffectBasePoints[0] + 1 ) / 100;
 					}break;
@@ -2055,7 +2055,7 @@ uint32 Unit::HandleProc( uint32 flag, Unit* victim, SpellEntry* CastingSpell, ui
 							power_word_id = 17;
 						//make a direct strike then exit rest of handler
 						int tdmg = abs * ( ospinfo->EffectBasePoints[0] + 1 ) / 100;
-						//somehow we should make this not caused any threat (tobedone)
+						//somehow we should make this not caused any threat (to be done)
 						SpellNonMeleeDamageLog( victim, power_word_id, tdmg, false, true );
 						continue;
 					}break;
@@ -2092,7 +2092,7 @@ uint32 Unit::HandleProc( uint32 flag, Unit* victim, SpellEntry* CastingSpell, ui
 				//paladin - Seal of Blood
 				case 31893:
 					{
-						//we loose health depending on father of trigger spell when trigering this effect
+						//we loose health depending on father of trigger spell when triggering this effect
 						uint32 totaldmg = dmg + (dmg * 35) / 100;
 						int32 healthtoloose = (ospinfo->EffectBasePoints[1] * totaldmg) / 100;
 						if( healthtoloose > (int32)GetUInt32Value( UNIT_FIELD_HEALTH ) )
@@ -2190,7 +2190,7 @@ uint32 Unit::HandleProc( uint32 flag, Unit* victim, SpellEntry* CastingSpell, ui
 				case 31834:
 					{
 						if( CastingSpell == NULL )
-							continue;//this should not ocur unless we made a fuckup somewhere
+							continue;//this should not occur unless we made a fuckup somewhere
 						if( CastingSpell->NameHash != SPELL_HASH_HOLY_LIGHT )
 							continue;
 					}break;
@@ -2198,10 +2198,10 @@ uint32 Unit::HandleProc( uint32 flag, Unit* victim, SpellEntry* CastingSpell, ui
 				case 25997:
 					{
 						if( victim == this )
-							continue; //not self casted crits
-						//requires damageing spell
+							continue; //not self-cast crits
+						//requires damaging spell
 						if( CastingSpell == NULL )
-							continue;//this should not ocur unless we made a fuckup somewhere
+							continue;//this should not occur unless we made a fuckup somewhere
 						if(!(CastingSpell->c_is_flags & SPELL_FLAG_IS_DAMAGING))
 							continue;
 
@@ -2224,7 +2224,7 @@ uint32 Unit::HandleProc( uint32 flag, Unit* victim, SpellEntry* CastingSpell, ui
 				//paladin - Blessed Life
 				case 31828:
 					{
-						//we should test is damage is from enviroment or not :S
+						//we should test is damage is from environment or not :S
 						resisted_dmg = dmg/2;
 						continue; //there is no visual for this ?
 					}break;
@@ -2260,7 +2260,7 @@ uint32 Unit::HandleProc( uint32 flag, Unit* victim, SpellEntry* CastingSpell, ui
 							continue;
 					}break;
 				//Spell Haste Trinket
-				//http://www.wowhead.com/?item=28190 scarab of the infinite cicle
+				//http://www.wowhead.com/?item=28190 scarab of the infinite circle
 				case 33370:
 					{
 						if( CastingSpell == NULL )
@@ -2314,7 +2314,7 @@ uint32 Unit::HandleProc( uint32 flag, Unit* victim, SpellEntry* CastingSpell, ui
 				case 39805:
 					{
 						if( CastingSpell == NULL )
-							continue;//this should not ocur unless we made a fuckup somewhere
+							continue;//this should not occur unless we made a fuckup somewhere
 						//trigger on lightning and chain lightning. Spell should be identical , well maybe next time :P
 						if(	CastingSpell->NameHash == SPELL_HASH_LIGHTNING_BOLT || CastingSpell->NameHash == SPELL_HASH_CHAIN_LIGHTNING )
 						{
@@ -2367,7 +2367,7 @@ uint32 Unit::HandleProc( uint32 flag, Unit* victim, SpellEntry* CastingSpell, ui
 						if (!CastingSpell || CastingSpell->School != SCHOOL_FIRE || !(CastingSpell->c_is_flags & SPELL_FLAG_IS_DAMAGING))
 							continue;
 					}break;
-				case 45062: //Vial of the Sunwel
+				case 45062: //Vial of the Sunwell
 				case 39950:
 					{
 						if (!CastingSpell ||  !(CastingSpell->c_is_flags & SPELL_FLAG_IS_HEALING))
@@ -2442,7 +2442,7 @@ uint32 Unit::HandleProc( uint32 flag, Unit* victim, SpellEntry* CastingSpell, ui
 					}break;
 
 					//http://www.wowhead.com/?item=32496  Memento of Tyrande
-				case 37656: //dont say damaging spell but EACH time spell is casted there is a chance (so can be healing spell)
+				case 37656: //don't say damaging spell but EACH time spell is cast there is a chance (so can be healing spell)
 					{
 						if( CastingSpell == NULL )
 							continue;
@@ -2565,7 +2565,7 @@ uint32 Unit::HandleProc( uint32 flag, Unit* victim, SpellEntry* CastingSpell, ui
 
 		if(spellId==17364 || spellId==32175 || spellId==32176) //Stormstrike
 			continue;
-		if(spellId==22858 && isInBack(victim)) //retatliation needs target to be not in front. Can be casted by creatures too
+		if(spellId==22858 && isInBack(victim)) //retatliation needs target to be not in front. Can be cast by creatures too
 			continue;
 
 		SpellCastTargets targets;
@@ -2610,13 +2610,13 @@ uint32 Unit::HandleProc( uint32 flag, Unit* victim, SpellEntry* CastingSpell, ui
 		{
 			if((iter2->second.ProcFlag & flag))
 			{
-				//Fixes for spells that dont lose charges when dmg is absorbd
+				//Fixes for spells that don't lose charges when dmg is absorbed
 				if(iter2->second.ProcFlag==680&&dmg==0) continue;
 				if(CastingSpell)
 				{
 
 					SpellCastTime *sd = dbcSpellCastTime.LookupEntry(CastingSpell->CastingTimeIndex);
-					if(!sd) continue; // this shouldnt happen though :P
+					if(!sd) continue; // this shouldn't happen though :P
 					//if we did not proc these then we should not remove them
 					if( CastingSpell->Id == iter2->second.spellId)
 						continue;
@@ -2928,7 +2928,7 @@ void Unit::CalculateResistanceReduction(Unit *pVictim,dealdamage * dmg, SpellEnt
 		  if(AverageResistance > 0.75f)
 			AverageResistance = 0.75f;
 
-		  // NOT WOWWIKILIKE but i think it's actual to add some fullresist chance frome resistances
+		  // NOT WOWWIKILIKE but i think it's actually to add some fullresist chance from resistances
 		  if (!ability || !(ability->Attributes & ATTRIBUTES_IGNORE_INVULNERABILITY))
 		  {
 			  float Resistchance=(float)pVictim->GetResistance( (*dmg).school_type)/(float)pVictim->getLevel();
@@ -3138,7 +3138,7 @@ uint32 Unit::GetSpellDidHitResult( Unit* pVictim, uint32 weapon_damage_type, Spe
 	//==========================================================================================
 	//==============================One Roll Processing=========================================
 	//==========================================================================================
-	//--------------------------------cummulative chances generation----------------------------
+	//--------------------------------cumulative chances generation----------------------------
 	float chances[4];
 	chances[0]=std::max(0.0f,100.0f-hitchance);
 	chances[1]=chances[0]+dodge;
@@ -3537,7 +3537,7 @@ void Unit::Strike( Unit* pVictim, uint32 weapon_damage_type, SpellEntry* ability
 //==========================================================================================
 //==============================One Roll Processing=========================================
 //==========================================================================================
-//--------------------------------cummulative chances generation----------------------------
+	//--------------------------------cumulative chances generation----------------------------
 	float chances[7];
 	chances[0]=std::max(0.0f,100.0f-hitchance);
 	chances[1]=chances[0]+dodge;
@@ -3589,7 +3589,7 @@ void Unit::Strike( Unit* pVictim, uint32 weapon_damage_type, SpellEntry* ability
 		pVictim->Emote(EMOTE_ONESHOT_PARRYUNARMED);			// Animation
 		if( this->IsPlayer() && this->getClass() == WARRIOR)
 		{
-			//allmighty warrior overpower
+			//almighty warrior overpower
 			/*if( this->IsPlayer() && static_cast< Player* >( this )->getClass() == WARRIOR )
 			{
 				static_cast< Player* >( this )->AddComboPoints( pVictim->GetGUID(), 1 );
@@ -3954,7 +3954,7 @@ void Unit::Strike( Unit* pVictim, uint32 weapon_damage_type, SpellEntry* ability
 	{
 		uint32 resisted_dmg;
 
-		//damage shield must come before handleproc to not loose 1 charge : speel gets removed before last charge
+		//damage shield must come before handleproc to not loose 1 charge : spell gets removed before last charge
 		if( realdamage > 0 || vproc & PROC_ON_BLOCK_VICTIM )
 		{
 			pVictim->HandleProcDmgShield(vproc,this);
@@ -4070,12 +4070,12 @@ void Unit::Strike( Unit* pVictim, uint32 weapon_damage_type, SpellEntry* ability
 	}
 	else
 	{
-		if( realdamage > 0 )//FIXME: add log for miss,block etc for ability and ranged
+		if( realdamage > 0 )//FIX ME: add log for miss,block etc for ability and ranged
 		{
 			// here we send "dmg.resisted_damage" for "AbsorbedDamage", "0" for "ResistedDamage", and "false" for "PhysicalDamage" even though "School" is "SCHOOL_NORMAL"   o_O
 			SendSpellNonMeleeDamageLog( this, pVictim, ability->Id, realdamage, dmg.school_type, dmg.resisted_damage, 0, false, blocked_damage, ( ( hit_status & HITSTATUS_CRICTICAL ) != 0 ), true );
 		}
-		//FIXME: add log for miss,block etc for ability and ranged
+		//FIX ME: add log for miss,block etc for ability and ranged
 		//example how it works
 		//SendSpellLog(this,pVictim,ability->Id,SPELL_LOG_MISS);
 	}
@@ -4526,7 +4526,7 @@ void Unit::AddAura(Aura * aur)
 		}
 		else
 		{
-			//these auras stack to infinit and with anything. Don't ask me why there is no better solution for them :P
+			//these auras stack to infinite and with anything. Don't ask me why there is no better solution for them :P
 			for( uint32 x = StartCheck; x < CheckLimit; x++ )
 				if( !m_auras[x] )
 				{
@@ -4537,7 +4537,7 @@ void Unit::AddAura(Aura * aur)
 	}
 	else
 	{
-		//talents just get applied always. Maybe we should check stack for these aswell ?
+		//talents just get applied always. Maybe we should check stack for these as well?
 		for(uint32 x=MAX_PASSIVE_AURAS_START;x<MAX_PASSIVE_AURAS_END;x++)
 			if( !m_auras[x])
 			{
@@ -4583,10 +4583,10 @@ void Unit::AddAura(Aura * aur)
 		target->SendMessageToSet(&data, true);
 	}
 
-	//Zack : if all mods were resisted it means we did not apply anything and we do not need to delete this spell eighter
+	//Zack : if all mods were resisted it means we did not apply anything and we do not need to delete this spell either
 	if( aur->TargetWasImuneToMods() )
 	{
-		//TODO : notify client that we are imune to this spell
+		//TODO : notify client that we are immune to this spell
 		sEventMgr.RemoveEvents( aur );
 		AuraPool.PooledDelete( aur );
 		return;
@@ -4874,7 +4874,7 @@ void Unit::RemoveAllAuraType( uint32 auratype )
 {
     for( uint32 x = MAX_TOTAL_AURAS_START; x < MAX_TOTAL_AURAS_END; x++ )
 		if( m_auras[x] && m_auras[x]->HasModType( auratype ) )
-			m_auras[x]->Remove();//remove all morph auras containig to this spell (like wolf motph also gives speed)
+			m_auras[x]->Remove();//remove all morph auras containing to this spell (like wolf morph also gives speed)
 }
 
 
@@ -4889,7 +4889,7 @@ void Unit::RemoveAllAuraFromSelfType2(uint32 auratype, uint32 butskip_hash)
 				&& proto->NameHash != butskip_hash
 				&& m_auras[x]->GetCaster() == this
 				)
-				RemoveAura(m_auras[x]->GetSpellId());//remove all morph auras containig to this spell (like wolf motph also gives speed)
+				RemoveAura(m_auras[x]->GetSpellId());//remove all morph auras containing to this spell (like wolf morph also gives speed)
 		}
 }
 
@@ -4988,11 +4988,11 @@ void Unit::castSpell( Spell * pSpell )
 	if(m_currentSpell && pSpell != m_currentSpell)
 	{
 /*
-		//removed by zack : Spell system does not really handle well paralel casting. We are forced to cancel previous cast
+		//removed by zack : Spell system does not really handle well parallel casting. We are forced to cancel previous cast
 		//eventually make creatures be able to cast secondary spell that is tracked or figure out where is this deleted
 		if(m_spellsbusy)
 		{
-			// shouldn't really happen. but due to spell sytem bugs there are some cases where this can happen.
+			// shouldn't really happen. but due to spell system bugs there are some cases where this can happen.
 			sEventMgr.AddEvent(this,&Unit::CancelSpell,m_currentSpell,EVENT_UNIT_DELAYED_SPELL_CANCEL,1,1,EVENT_FLAG_DO_NOT_EXECUTE_IN_WORLD_CONTEXT);
 		}
 		else*/
@@ -5112,7 +5112,7 @@ int32 Unit::GetSpellDmgBonus(Unit *pVictim, SpellEntry *spellInfo,int32 base_dmg
 //------------------------------by school----------------------------------------------
 	float summaryPCTmod = caster->GetDamageDonePctMod(school)-1; //value is initialized with 1
 	summaryPCTmod += pVictim->DamageTakenPctMod[school];
-	summaryPCTmod += caster->DamageDoneModPCT[school];	// BURLEX FIXME
+	summaryPCTmod += caster->DamageDoneModPCT[school];	// BURLEX FIX ME
 	summaryPCTmod += pVictim->ModDamageTakenByMechPCT[spellInfo->MechanicsType];
 	int32 res = (int32)((base_dmg+bonus_damage)*summaryPCTmod + bonus_damage);
 return res;
@@ -5127,7 +5127,7 @@ void Unit::InterruptSpell()
 		//m_currentSpell->cancel();
 		if(m_spellsbusy)
 		{
-			// shouldn't really happen. but due to spell sytem bugs there are some cases where this can happen.
+			// shouldn't really happen. but due to spell system bugs there are some cases where this can happen.
 			sEventMgr.AddEvent(this,&Unit::CancelSpell,m_currentSpell,EVENT_UNIT_DELAYED_SPELL_CANCEL,1,1,EVENT_FLAG_DO_NOT_EXECUTE_IN_WORLD_CONTEXT);
 			m_currentSpell=NULL;
 		}
@@ -5493,11 +5493,11 @@ uint32 Unit::AbsorbDamage( uint32 School, uint32* dmg )
 				if((*dmg) >= ch)
 				{
 					/*
-						looks like followed lines are not soo good, we check and cast on spell id 31231_
+						looks like the following lines are not so good, we check and cast on spell id 31231_
 						and adding the cooldown to it, but it looks like this spell is useless(all it's doing is_
-						casting 45182, so we can do all this staf on 45182 at first place), BUT_
-						as long as procceding cheat death is not so hight (how many rogue at the sametime_
-						gonna get to this point?) so it's better to use it cuz we wont loos anything!!
+						casting 45182, so we can do all this stuff on 45182 at first place), BUT_
+						as long as proceeding cheat death is not so height (how many rogue at the same time_
+						gonna get to this point?) so it's better to use it because we wont lose anything!!
 					*/
 					static_cast< Player* >( this )->CastSpell(this->GetGUID(), dSpell, true);
 					// set dummy effect,
@@ -5547,6 +5547,12 @@ uint32 Unit::AbsorbDamage( uint32 School, uint32* dmg )
 			*dmg=0;
 			break;
 		}
+	}
+
+	if(IsPlayer() && ((Player*)this)->GodModeCheat)
+	{
+		abs += *dmg;
+		*dmg = 0;
 	}
 
 	return abs;
@@ -6054,7 +6060,7 @@ void Unit::RemoveAurasByInterruptFlagButSkip(uint32 flag, uint32 skip)
 		//some spells do not get removed all the time only at specific intervals
 		if((a->m_spellProto->AuraInterruptFlags & flag) && (a->m_spellProto->Id != skip) && a->m_spellProto->proc_interval==0)
 		{
-			//the black sheeps of sociaty
+			//the black sheep's of society
 			if(a->m_spellProto->AuraInterruptFlags & AURA_INTERRUPT_ON_CAST_SPELL)
 			{
 				switch(a->GetSpellProto()->Id)
@@ -6062,7 +6068,7 @@ void Unit::RemoveAurasByInterruptFlagButSkip(uint32 flag, uint32 skip)
 					//priest - surge of light
 					case 33151:
 						{
-							//our luck. it got trigered on smite..we do not remove it just yet
+							//our luck. it got triggered on smite..we do not remove it just yet
 							if( m_currentSpell && m_currentSpell->GetProto()->NameHash == SPELL_HASH_SMITE )
 								continue;
 
@@ -6508,7 +6514,7 @@ void Unit::SetFacing(float newo)
 	m_aiInterface->SendMoveToPacket(m_position.x,m_position.y,m_position.z,m_position.o,1,0x100); // MoveFlags = 0x100 (run)
 }
 
-//guardians are temporary spawn that will inherit master faction and will folow them. Apart from that they have their own mind
+//guardians are temporary spawn that will inherit master faction and will follow them. Apart from that they have their own mind
 Unit* Unit::create_guardian(uint32 guardian_entry,uint32 duration,float angle, uint32 lvl, GameObject * obj, LocationVector * Vec)
 {
 	CreatureProto * proto = CreatureProtoStorage.LookupEntry(guardian_entry);
@@ -6595,7 +6601,7 @@ float Unit::get_chance_to_daze(Unit *target)
 	if( !defense_skill )
 		defense_skill = 1;
 	float chance_to_daze = attack_skill * 20 / defense_skill;//if level is equal then we get a 20% chance to daze
-	chance_to_daze = chance_to_daze * std::min(target->getLevel() / 30.0f, 1.0f );//for targets below level 30 the chance decreses
+	chance_to_daze = chance_to_daze * std::min(target->getLevel() / 30.0f, 1.0f );//for targets below level 30 the chance decreases
 	if( chance_to_daze > 40 )
 		return 40.0f;
 	else
@@ -6920,7 +6926,7 @@ void Unit::CombatStatusHandler_ResetPvPTimeout()
 		}
 	}
 	// TESTING GROUND TESTING
-	//this->SendChatMessage( CHAT_MSG_MONSTER_SAY , LANG_UNIVERSAL , "Eye of C'thun AI Initialised" );
+	//this->SendChatMessage( CHAT_MSG_MONSTER_SAY , LANG_UNIVERSAL , "Eye of C'thun AI Initialized" );
 	//this->SendChatMessage(
 	//	this->Emote( EMOTE_ONESHOT_SPELLCAST );
 	// yay for recursive mutexes
@@ -7394,7 +7400,7 @@ bool Unit::isAttackReady(bool offhand)
 
 void Unit::ReplaceAIInterface(AIInterface *new_interface)
 {
-	delete m_aiInterface;	//be carefull when you do this. Might screw unit states !
+	delete m_aiInterface;	//be careful when you do this. Might screw unit states !
 	m_aiInterface = new_interface;
 }
 
@@ -7460,7 +7466,7 @@ void Unit::AggroPvPGuards()
 void Unit::EventStunOrImmobilize(Unit *proc_target, bool is_victim)
 {
 	if ( this == proc_target )
-		return; //how and why would we stun ourselfs
+		return; //how and why would we stun ourselves
 
 	int32 t_trigger_on_stun,t_trigger_on_stun_chance;
 	if( is_victim == false )
@@ -7504,7 +7510,7 @@ void Unit::EventStunOrImmobilize(Unit *proc_target, bool is_victim)
 void Unit::EventChill(Unit *proc_target, bool is_victim)
 {
 	if ( this == proc_target )
-		return; //how and why would we chill ourselfs
+		return; //how and why would we chill ourselves
 
 	int32 t_trigger_on_chill,t_trigger_on_chill_chance;
 	if( is_victim == false )
