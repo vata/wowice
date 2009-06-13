@@ -294,7 +294,7 @@ uint32 Object::BuildCreateUpdateBlockForPlayer(ByteBuffer *data, Player *target)
 
 //That is dirty fix it actually creates update of 1 field with
 //the given value ignoring existing changes in fields and so on
-//usefull if we want update this field for certain players
+//useful if we want update this field for certain players
 //NOTE: it does not change fields. This is also very fast method
 WorldPacket *Object::BuildFieldUpdatePacket( uint32 index,uint32 value)
 {
@@ -968,7 +968,7 @@ void Object::SendMessageToSet(WorldPacket *data, bool bToSelf,bool myteam_only)
 }
 
 ////////////////////////////////////////////////////////////////////////////
-/// Fill the object's Update Values from a space deliminated list of values.
+/// Fill the object's Update Values from a space delimitated list of values.
 void Object::LoadValues(const char* data)
 {
 	// thread-safe ;) strtok is not.
@@ -1727,7 +1727,7 @@ void Object::_setFaction()
 	if(!factT)
 	{
 		factT = dbcFactionTemplate.LookupRow( 0 );
-		//this is causeing a lot of crashes cause people have shitty dbs
+		//this is causing a lot of crashes cause people have shitty dbs
 //		return;
 	}
 	m_faction = factT;
@@ -2167,7 +2167,7 @@ void Object::DealDamage(Unit *pVictim, uint32 damage, uint32 targetEvent, uint32
 		}
 
 		/* -------------------------------- HONOR + BATTLEGROUND CHECKS ------------------------ */
-		//Zack : this event should ocure before setting death state !
+		//Zack : this event should occur before setting death state !
 		plr = NULL;
 		if( IsPlayer() )
 			plr = static_cast< Player* >( this );

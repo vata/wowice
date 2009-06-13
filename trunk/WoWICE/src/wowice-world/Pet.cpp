@@ -328,7 +328,7 @@ void Pet::SendSpellsToOwner()
 	*data << GetGUID();
 	*data << uint32( myFamily != NULL ? myFamily->ID : 0 );	// pet family to determine talent tree
 	*data << m_ExpireTime;
-	*data << uint8( GetPetState() );	// 0x0 = passive, 0x1 = defensive, 0x2 = agressive
+	*data << uint8( GetPetState() );	// 0x0 = passive, 0x1 = defensive, 0x2 = aggressive
 	*data << uint8( GetPetAction() );	// 0x0 = stay, 0x1 = follow, 0x2 = attack
 	*data << uint16( 0 );				// flags: 0xFF = disabled pet bar (eg. when pet stunned)
 
@@ -441,11 +441,11 @@ AI_Spell * Pet::CreateAISpell(SpellEntry * info)
 	sp->spell = info;
 	sp->cooldown = objmgr.GetPetSpellCooldown(info->Id);
 	if( sp->cooldown == 0 )
-		sp->cooldown = info->StartRecoveryTime; //avoid spell spaming
+		sp->cooldown = info->StartRecoveryTime; //avoid spell spamming
 	if( sp->cooldown == 0 )
 		sp->cooldown = info->StartRecoveryCategory; //still 0 ?
 	if( sp->cooldown == 0 )
-		sp->cooldown = PET_SPELL_SPAM_COOLDOWN; //omg, avoid spaming at least
+		sp->cooldown = PET_SPELL_SPAM_COOLDOWN; //omg, avoid spamming at least
 	sp->cooldowntime = 0;
 
 	if( info->Effect[0] == SPELL_EFFECT_APPLY_AURA || info->Effect[0] == SPELL_EFFECT_APPLY_AREA_AURA || info->Effect[0] == SPELL_EFFECT_APPLY_AREA_AURA2 )
@@ -801,22 +801,36 @@ void Pet::UpdateSpellList( bool showLearnSpells )
 	// SkillLine 2
 	uint32 s2 = 0;
 
-	// Creature info from DBC (CreatureFamily.dbc contains Skill Line for SkillLineAbility.dbc entry)
-	if( myFamily )
+	if( GetCreatureInfo() )
 	{
-		s = myFamily->skilline;
-		s2 = myFamily->tameable;
-	}
-	// Creature Family not loaded for this ? Get Skill Line from DB instead (table creature_names)
-	else if( GetCreatureInfo() )
-	{
-		CreatureFamilyEntry* f = dbcCreatureFamily.LookupEntry( GetCreatureInfo()->Family );
-		if( f )
+		if( GetCreatureInfo()->Family == 0 && Summon )
 		{
-			s = f->skilline;
-			s2 = f->tameable;
+			// Get spells from the owner
+			map<uint32, set<uint32> >::iterator it1;
+			set<uint32>::iterator it2;
+			it1 = m_Owner->SummonSpells.find(GetEntry());
+			if(it1 != m_Owner->SummonSpells.end())
+			{
+				it2 = it1->second.begin();
+				for(; it2 != it1->second.end(); ++it2)
+				{
+					AddSpell( dbcSpell.LookupEntry( *it2 ), false, false );
+				}
+			}
+			return;
+		}
+		else
+		{
+			// Get Creature family from DB (table creature_names, field family), load the skill line from CreatureFamily.dbc for use with SkillLineAbiliby.dbc entry
+			CreatureFamilyEntry* f = dbcCreatureFamily.LookupEntry( GetCreatureInfo()->Family );
+			if( f )
+			{
+				s = f->skilline;
+				s2 = f->tameable;
+			}
 		}
 	}
+
 	if( s || s2 )
 	{
 		skilllinespell* sls;
@@ -1497,7 +1511,7 @@ void Pet::HandleAutoCastEvent( AutoCastEvents Type )
 		}
 		else
 		{
-			//modified by Zack: Spell targetting will be generated in the castspell function now.You cannot force to target self all the time
+			//modified by Zack: Spell targeting will be generated in the castspell function now.You cannot force to target self all the time
 			CastSpell( static_cast< Unit* >( NULL ), sp->spell, false);
 		}
 	}

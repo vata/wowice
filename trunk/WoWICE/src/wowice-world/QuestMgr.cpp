@@ -98,7 +98,7 @@ uint32 QuestMgr::PlayerMeetsReqs(Player* plr, Quest* qst, bool skiplevelcheck)
 				}
 			}
 		}
-		if( !questscompleted ) // If none of listed quests is done, next part isnt available.
+		if( !questscompleted ) // If none of listed quests is done, next part isn't available.
 			return QMGR_QUEST_NOT_AVAILABLE;
 	}
 
@@ -213,7 +213,7 @@ uint32 QuestMgr::CalcStatus(Object* quest_giver, Player* plr)
 
 	if(!bValid)
 	{
-        //anoying msg that is not needed since all objects dont exactly have quests 
+		//annoying message that is not needed since all objects don't exactly have quests 
 		//sLog.outDebug("QUESTS: Warning, invalid NPC "I64FMT" specified for CalcStatus. TypeId: %d.", quest_giver->GetGUID(), quest_giver->GetTypeId());
 		return status;
 	}
@@ -293,14 +293,14 @@ uint32 QuestMgr::ActiveQuestsCount(Object* quest_giver, Player* plr)
 
 void QuestMgr::BuildOfferReward(WorldPacket *data, Quest* qst, Object* qst_giver, uint32 menutype, uint32 language, Player * plr)
 {
-	LocalizedQuest * lq = (language>0) ? sLocalizationMgr.GetLocalizedQuest(qst->id,language):NULL;
+	LocalizedQuest * lq = ( language > 0 )?sLocalizationMgr.GetLocalizedQuest( qst->id, language ):NULL;
 	ItemPrototype * it;
 	uint32 i = 0;
 	data->SetOpcode(SMSG_QUESTGIVER_OFFER_REWARD);
 	*data << qst_giver->GetGUID();
 	*data << qst->id;
 
-	if(lq)
+	if( lq )
 	{
 		*data << lq->Title;
 		*data << lq->CompletionText;
@@ -313,41 +313,42 @@ void QuestMgr::BuildOfferReward(WorldPacket *data, Quest* qst, Object* qst_giver
 	
 	//uint32 a = 0, b = 0, c = 1, d = 0, e = 1;
 
-	*data << (qst->next_quest_id ? uint32(1) : uint32(0));	  // next quest shit
-	*data << uint32(0);										 // maybe required money
+	*data << ( qst->next_quest_id ? uint32(1) : uint32(0) );// next quest shit
+	*data << uint32(0);										// maybe required money
+
 	*data << qst->completionemotecount;
-	for(i = 0; i < qst->completionemotecount; i++){
+	for( i = 0; i < qst->completionemotecount; i++ )
+	{
 		*data << qst->completionemote[i];
 		*data << qst->completionemotedelay[i];
 	}
 
 	*data << qst->count_reward_choiceitem;
-	if (qst->count_reward_choiceitem)
+	if( qst->count_reward_choiceitem )
 	{
-		for(i = 0; i < 6; ++i)
+		for( i = 0; i < 6; ++i )
 		{
-			if(qst->reward_choiceitem[i])
+			if( qst->reward_choiceitem[i] )
 			{
 				*data << qst->reward_choiceitem[i];
 				*data << qst->reward_choiceitemcount[i];
-				it = ItemPrototypeStorage.LookupEntry(qst->reward_choiceitem[i]);
-				*data << (it ? it->DisplayInfoID : uint32(0));
+				it = ItemPrototypeStorage.LookupEntry( qst->reward_choiceitem[i] );
+				*data << ( it ? it->DisplayInfoID : uint32(0) );
 			}
 		}
 	}
-    
 
 	*data << qst->count_reward_item;
-	if (qst->count_reward_item)
+	if( qst->count_reward_item )
 	{
-		for(uint32 i = 0; i < 4; ++i)
+		for( uint32 i = 0; i < 4; ++i )
 		{
 			if(qst->reward_item[i])
 			{
 				*data << qst->reward_item[i];
 				*data << qst->reward_itemcount[i];
-				it = ItemPrototypeStorage.LookupEntry(qst->reward_item[i]);
-				*data << (it ? it->DisplayInfoID : uint32(0));
+				it = ItemPrototypeStorage.LookupEntry( qst->reward_item[i] );
+				*data << ( it ? it->DisplayInfoID : uint32(0) );
 			}
 		}
 	}
@@ -364,14 +365,15 @@ void QuestMgr::BuildOfferReward(WorldPacket *data, Quest* qst, Object* qst_giver
 
 void QuestMgr::BuildQuestDetails(WorldPacket *data, Quest* qst, Object* qst_giver, uint32 menutype, uint32 language, Player * plr)
 {
-	LocalizedQuest * lq = (language>0) ? sLocalizationMgr.GetLocalizedQuest(qst->id,language):NULL;
+	LocalizedQuest * lq = ( language > 0 )?sLocalizationMgr.GetLocalizedQuest( qst->id,language ):NULL;
 	std::map<uint32, uint8>::const_iterator itr;
 
 	data->SetOpcode( SMSG_QUESTGIVER_QUEST_DETAILS );
 
-	*data <<  qst_giver->GetGUID();
-	*data <<  (uint32)(0) << (uint32)(0); //new in 3.0.2
-	*data <<  qst->id;
+	*data << qst_giver->GetGUID();			// npc guid
+	*data << uint64(0);						// (questsharer?) guid
+	*data << qst->id;						// quest id
+
 	if(lq)
 	{
 		*data << lq->Title;
@@ -385,52 +387,51 @@ void QuestMgr::BuildQuestDetails(WorldPacket *data, Quest* qst, Object* qst_give
 		*data <<  qst->objectives;
 	}
 
-	*data <<  uint32(1);
-	*data << qst->suggestedplayers;		 // "Suggested players"
-	*data <<  uint8(0);		//3.0.2 no idea. Maybe some text ?
+	*data << uint32(1);						// Activate accept
+	*data << qst->suggestedplayers;			// "Suggested players"
+	*data << uint8(0);						// Added in 3.0.2, name or text(?)
 
-	*data << qst->count_reward_choiceitem;
+
 	ItemPrototype *ip;
 	uint32 i;
 
-	for(i = 0; i < 6; ++i)
+	*data << qst->count_reward_choiceitem;
+	for( i = 0; i < 6; ++i )
 	{
-		ip = ItemPrototypeStorage.LookupEntry(qst->reward_choiceitem[i]);
-		if(!qst->reward_choiceitem[i]) continue;
+		if( !qst->reward_choiceitem[i] )
+			continue;
 
 		*data << qst->reward_choiceitem[i];
 		*data << qst->reward_choiceitemcount[i];
-		if(ip)
-			*data << ip->DisplayInfoID;
-		else
-			*data << uint32(0);
+		ip = ItemPrototypeStorage.LookupEntry(qst->reward_item[i]);
+		*data << ( ip ? ip->DisplayInfoID : uint32(0) );
+
 	}
 
 	*data << qst->count_reward_item;
-
-	for(i = 0; i < 4; ++i)
+	for( i = 0; i < 4; ++i )
 	{
-		ip = ItemPrototypeStorage.LookupEntry(qst->reward_item[i]);
-		if(!qst->reward_item[i]) continue;
+		if( !qst->reward_item[i] )
+			continue;
 
 		*data << qst->reward_item[i];
 		*data << qst->reward_itemcount[i];
-		if(ip)
-			*data << ip->DisplayInfoID;
-		else
-			*data << uint32(0);
+		ip = ItemPrototypeStorage.LookupEntry(qst->reward_item[i]);
+		*data << ( ip ? ip->DisplayInfoID : uint32(0) );
 	}
 
-	*data << GenerateRewardMoney( plr, qst );//14
-	*data << qst->bonushonor; // Bonus Honor
-	*data << qst->reward_spell; // this is the spell the quest finisher teaches you, or the icon of the spell if effect_on_player is not 0
-	*data << qst->effect_on_player; // this is the spell the quest finisher casts on you as a reward
-	*data << qst->rewardtitleid; //10 reward title
-	*data << qst->rewardtalents; // reward talents
-	*data << qst->detailemotecount;
-	for(i = 0; i < qst->detailemotecount; i++){
-		*data << qst->detailemote[i];
-		*data << qst->detailemotedelay[i];
+	*data << GenerateRewardMoney( plr, qst );	// Money reward
+	*data << qst->bonushonor;					// Honor reward
+	*data << qst->reward_spell;					// this is the spell (id) the quest finisher teaches you, or the icon of the spell if effect_on_player is not 0
+	*data << qst->effect_on_player;				// this is the spell (id) the quest finisher casts on you as a reward
+	*data << qst->rewardtitleid;				// Title reward (ID)
+	*data << qst->rewardtalents;				// Talent reward
+
+	*data << qst->detailemotecount;				// Amount of emotes (4?)
+	for( i = 0; i < qst->detailemotecount; i++ )
+	{
+		*data << qst->detailemote[i];			// Emote ID
+		*data << qst->detailemotedelay[i];		// Emote Delay
 	}
 }
 
@@ -466,7 +467,7 @@ void QuestMgr::BuildRequestItems(WorldPacket *data, Quest* qst, Object* qst_give
 
 	// item count
 	*data << qst->count_required_item;
-	
+
 	// (loop for each item)
 	for(uint32 i = 0; i < 4; ++i)
 	{
@@ -480,14 +481,14 @@ void QuestMgr::BuildRequestItems(WorldPacket *data, Quest* qst, Object* qst_give
 	}
 
 	// wtf is this?
-    if(status == QMGR_QUEST_NOT_FINISHED)
-    {
-	    *data << uint32(0); //incomplete button
-    }
-    else
-    {
-        *data << uint32(2);
-    }
+	if(status == QMGR_QUEST_NOT_FINISHED)
+	{
+		*data << uint32(0); //incomplete button
+	}
+	else
+	{
+		*data << uint32(2);
+	}
 
 	*data << uint32(8);
 	*data << uint32(10);
@@ -663,7 +664,7 @@ bool QuestMgr::OnGameObjectActivate(Player *plr, GameObject *go)
 		if( qle != NULL )
 		{
 			qst = qle->GetQuest();
-			// dont waste time on quests without mobs
+			// don't waste time on quests without mobs
 			if( qst->count_required_mob == 0 )
 				continue;
 
@@ -674,7 +675,7 @@ bool QuestMgr::OnGameObjectActivate(Player *plr, GameObject *go)
 					qle->m_mobcount[j] < qst->required_mobcount[j] )
 				{
 					// add another kill.
-					// (auto-dirtys it)
+					// (auto-dirty's it)
 					qle->IncrementMobCount( j );
 					qle->SendUpdateAddKill( j );
 					CALL_QUESTSCRIPT_EVENT( qle, OnGameObjectActivate )( entry, plr, qle );
@@ -720,7 +721,7 @@ void QuestMgr::OnPlayerKill(Player* plr, Creature* victim)
 							qst->required_mobtype[j] == QUEST_MOB_TYPE_CREATURE &&
 							qle->m_mobcount[j] < qst->required_mobcount[j] )
 						{
-							// add another kill.(auto-dirtys it)
+							// add another kill.(auto-dirty's it)
 							qle->IncrementMobCount( j );
 							qle->SendUpdateAddKill( j );
 							CALL_QUESTSCRIPT_EVENT( qle, OnCreatureKill)( entry, plr, qle );
@@ -751,7 +752,7 @@ void QuestMgr::OnPlayerKill(Player* plr, Creature* victim)
 				for(gitr = pGroup->GetSubGroup(k)->GetGroupMembersBegin(); gitr != pGroup->GetSubGroup(k)->GetGroupMembersEnd(); ++gitr)
 				{
 					gplr = (*gitr)->m_loggedInPlayer;
-					if(gplr && gplr != plr && plr->isInRange(gplr,300) && gplr->HasQuestMob(entry)) // dont double kills also dont give kills to party members at another side of the world
+					if(gplr && gplr != plr && plr->isInRange(gplr,300) && gplr->HasQuestMob(entry)) // don't double kills also don't give kills to party members at another side of the world
 					{
 						for( i = 0; i < 25; ++i )
 						{
@@ -771,7 +772,7 @@ void QuestMgr::OnPlayerKill(Player* plr, Creature* victim)
 											qle->m_mobcount[j] < qst->required_mobcount[j] )
 										{
 											// add another kill.
-											// (auto-dirtys it)
+											// (auto-dirty's it)
 											qle->IncrementMobCount( j );
 											qle->SendUpdateAddKill( j );
 											CALL_QUESTSCRIPT_EVENT( qle, OnCreatureKill )( entry, plr, qle );
@@ -807,7 +808,7 @@ void QuestMgr::OnPlayerCast(Player* plr, uint32 spellid, uint64& victimguid)
 	{
 		if((qle = plr->GetQuestLogInSlot(i)) != 0)
 		{
-			// dont waste time on quests without casts
+			// don't waste time on quests without casts
 			if(!qle->IsCastQuest())
 				continue;
 
@@ -891,7 +892,7 @@ void QuestMgr::OnPlayerExploreArea(Player* plr, uint32 AreaID)
 	{
 		if((qle = plr->GetQuestLogInSlot(i)) != 0)
 		{
-			// dont waste time on quests without triggers
+			// don't waste time on quests without triggers
 			if( qle->GetQuest()->count_requiredtriggers == 0 )
 				continue;
 
@@ -991,7 +992,7 @@ void QuestMgr::OnQuestFinished(Player* plr, Quest* qst, Object *qst_giver, uint3
 	if ( qst->reward_money < 0 && plr->GetUInt32Value( PLAYER_FIELD_COINAGE ) < uint32(-qst->reward_money) )
 		return;
 
-	// Check they dont have more than the max gold
+	// Check they don't have more than the max gold
 	if(sWorld.GoldCapEnabled && (plr->GetUInt32Value(PLAYER_FIELD_COINAGE) + qst->reward_money) > sWorld.GoldLimit)
 	{
 		plr->GetItemInterface()->BuildInventoryChangeError(NULL, NULL, INV_ERR_TOO_MUCH_GOLD);
@@ -1032,7 +1033,7 @@ void QuestMgr::OnQuestFinished(Player* plr, Quest* qst, Object *qst_giver, uint3
 		}
 	}
 
-    //details: hmm as i can remember, repeatable quests give faction rep still after first completation
+    //details: hmm as i can remember, repeatable quests give faction rep still after first completion
     if(IsQuestRepeatable(qst) || IsQuestDaily(qst))
     {
 		// Reputation reward
@@ -1893,7 +1894,7 @@ void QuestMgr::LoadExtraQuestStuff()
 			qst = QuestStorage.LookupEntry(quest);
 			if(!qst)
 			{
-				//printf("Tried to add starter to npc %d for non-existant quest %d.\n", creature, quest);
+				//printf("Tried to add starter to npc %d for non-existent quest %d.\n", creature, quest);
 			}
 			else 
 			{
@@ -1917,7 +1918,7 @@ void QuestMgr::LoadExtraQuestStuff()
 			qst = QuestStorage.LookupEntry(quest);
 			if(!qst)
 			{
-				//printf("Tried to add finisher to npc %d for non-existant quest %d.\n", creature, quest);
+				//printf("Tried to add finisher to npc %d for non-existent quest %d.\n", creature, quest);
 			} 
 			else 
 			{
@@ -1941,7 +1942,7 @@ void QuestMgr::LoadExtraQuestStuff()
 			qst = QuestStorage.LookupEntry(quest);
 			if(!qst)
 			{
-				//printf("Tried to add starter to go %d for non-existant quest %d.\n", creature, quest);
+				//printf("Tried to add starter to go %d for non-existent quest %d.\n", creature, quest);
 			} 
 			else
 			{
@@ -1965,7 +1966,7 @@ void QuestMgr::LoadExtraQuestStuff()
 			qst = QuestStorage.LookupEntry(quest);
 			if(!qst)
 			{
-				//printf("Tried to add finisher to go %d for non-existant quest %d.\n", creature, quest);
+				//printf("Tried to add finisher to go %d for non-existent quest %d.\n", creature, quest);
 			} 
 			else 
 			{
@@ -1995,7 +1996,7 @@ void QuestMgr::LoadExtraQuestStuff()
 			qst = QuestStorage.LookupEntry(quest);
 			if(!qst)
 			{
-				//printf("Tried to add association to item %d for non-existant quest %d.\n", item, quest);
+				//printf("Tried to add association to item %d for non-existent quest %d.\n", item, quest);
 			} 
 			else 
 			{

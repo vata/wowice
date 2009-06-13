@@ -304,7 +304,7 @@ void WorldSocket::InformationRetreiveCallback(WorldPacket & recvData, uint32 req
 	delete [] key;
 
 	//checking if player is already connected
-    //disconnect corrent player and login this one(blizzlike)
+	//disconnect current player and login this one(blizzlike)
 
 	if(recvData.rpos() != recvData.wpos())
 		recvData.read((uint8*)lang.data(), 4);
