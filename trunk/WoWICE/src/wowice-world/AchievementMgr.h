@@ -1,18 +1,3 @@
-/*
- * This program is free software: you can redistribute it and/or modify it under
- * the terms of the GNU General Public License as published by the Free Software
- * Foundation, either version 3 of the License, or (at your option) any later
- * version.
- *
- * This program is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
- * details.
- *
- * You should have received a copy of the GNU General Public License along with
- * this program. If not, see <http://www.gnu.org/licenses/>.
- */
-
 #ifndef _ACHIEVEMENTMGR_H
 #define _ACHIEVEMENTMGR_H 
 
@@ -281,12 +266,10 @@ public:
 	void SaveToDB();
 	void CheckAllAchievementCriteria();
 	void SendAllAchievementData(Player* player);
-	void SendRespondInspectAchievements(Player* player);
 	void UpdateAchievementCriteria(AchievementCriteriaTypes type, int32 miscvalue1, int32 miscvalue2, uint32 time);
 	void UpdateAchievementCriteria(AchievementCriteriaTypes type);
-	void BuildAllDataPacket(WorldPacket *data, bool self=true);
-	bool GMCompleteAchievement(WorldSession* gmSession, uint32 achievementID);
-	bool GMCompleteCriteria(WorldSession* gmSession, uint32 criteriaID);
+	bool GMCompleteAchievement(WorldSession* gmSession, int32 achievementID);
+	bool GMCompleteCriteria(WorldSession* gmSession, int32 criteriaID);
 	void GMResetAchievement(int achievementID);
 	void GMResetCriteria(int criteriaID);
 	bool HasCompleted(uint32 achievementID);
@@ -299,7 +282,7 @@ private:
 	void GiveAchievementReward(AchievementEntry const* entry);
 	void SendAchievementEarned(AchievementEntry const* achievement);
 	void SendCriteriaUpdate(CriteriaProgress *progress);
-	void SetCriteriaProgress(AchievementCriteriaEntry const* entry, int32 newValue, bool relative=false);
+	void SetCriteriaProgress(AchievementCriteriaEntry const* entry, int32 newValue, bool relative = false);
 	void UpdateCriteriaProgress(AchievementCriteriaEntry const* entry, int32 updateByValue);
 	void CompletedCriteria(AchievementCriteriaEntry const* entry);
 	void CompletedAchievement(AchievementEntry const* entry);
@@ -309,6 +292,7 @@ private:
 	Player* m_player;
 	CriteriaProgressMap m_criteriaProgress;
 	CompletedAchievementMap m_completedAchievements;
+	bool isCharacterLoading;
 };
 
 // Function declarations - related to achievements - not in AchievementMgr class - defined in AchievementMgr.cpp
