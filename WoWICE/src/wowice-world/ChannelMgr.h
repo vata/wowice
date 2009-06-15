@@ -30,7 +30,7 @@ public:
 	bool seperatechannels;
 
 private:
-	//team 0: aliance, team 1 horde
+	//team 0: alliance, team 1 horde
 	typedef map<string,Channel *> ChannelList;
 	ChannelList Channels[2];
 	Mutex lock;
