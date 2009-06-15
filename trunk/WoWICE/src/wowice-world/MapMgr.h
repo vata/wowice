@@ -305,7 +305,7 @@ private:
 	UpdateQueue _updates;
 	PUpdateQueue _processQueue;
 
-	/* Sessions */	
+	/* Sessions */
 	SessionSet Sessions;
 
 	/* Map Information */
