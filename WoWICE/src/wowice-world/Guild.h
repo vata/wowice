@@ -394,6 +394,10 @@ public:
 	 */
 	static void SendGuildCommandResult(WorldSession * pClient, uint32 iCmd, const char * szMsg, uint32 iType);
 
+	/** Sends a turn in petition result to the client.
+	 */
+	static void SendTurnInPetitionResult( WorldSession * pClient, uint32 result );
+
 	/** Logs a guild event and sends it to all online players.
 	 */
 	void LogGuildEvent(uint8 iEvent, uint8 iStringCount, ...);

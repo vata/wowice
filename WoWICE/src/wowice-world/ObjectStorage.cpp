@@ -35,8 +35,8 @@ const char * gFishingFormat								= "uuu";
 const char * gWorldMapInfoFormat						= "uuuuuufffusuuuuuuufu";
 const char * gZoneGuardsFormat							= "uuu";
 const char * gUnitModelSizeFormat						= "uf";
-const char * gWorldStringTableFormat        = "us"; // p2wow added [for worldserver common message storage]
-const char * gWorldBroadCastFormat          = "usu";// announce message
+const char * gWorldStringTableFormat					= "us"; // p2wow added [for worldserver common message storage]
+const char * gWorldBroadCastFormat						= "usu";// announce message
 
 /** SQLStorage symbols
  */
@@ -166,7 +166,6 @@ void ObjectMgr::LoadExtraCreatureProtoStuff()
 			AI_Spell *sp;
 			SpellEntry * spe;
 			uint32 entry;
-
 
 			do
 			{
