@@ -1946,4 +1946,4 @@
 #define UNIT_FIELD_SPIRIT						  UNIT_FIELD_STAT4
 
 
-#endif
+#endif	

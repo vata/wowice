@@ -1,16 +1,29 @@
 /*
- * This program is free software: you can redistribute it and/or modify it under
- * the terms of the GNU General Public License as published by the Free Software
- * Foundation, either version 3 of the License, or (at your option) any later
- * version.
+
+crc32.h
+
+Author: Tatu Ylonen <ylo@cs.hut.fi>
+
+Copyright (c) 1992 Tatu Ylonen, Espoo, Finland
+				   All rights reserved
+
+Created: Tue Feb 11 14:37:27 1992 ylo
+
+Functions for computing 32-bit CRC.
+
+*/
+
+/*
+ * $Id: crc32.h,v 1.1.1.1 1996/02/18 21:38:11 ylo Exp $
+ * $Log: crc32.h,v $
+ * Revision 1.1.1.1  1996/02/18 21:38:11  ylo
+ * 	Imported ssh-1.2.13.
  *
- * This program is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
- * details.
+ * Revision 1.2  1995/07/13  01:21:45  ylo
+ * 	Removed "Last modified" header.
+ * 	Added cvs log.
  *
- * You should have received a copy of the GNU General Public License along with
- * this program. If not, see <http://www.gnu.org/licenses/>.
+ * $Endlog$
  */
 
 #ifndef CRC32_H

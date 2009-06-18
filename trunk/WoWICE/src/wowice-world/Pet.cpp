@@ -731,6 +731,7 @@ void Pet::PetSafeDelete()
 
 	sEventMgr.RemoveEvents( this ); // to avoid crash of double delete
 	delete this;					// destructs pet -> creature -> unit...
+	//this = NULL;
 }
 
 void Pet::DelayedRemove( bool bTime, bool bDeath )

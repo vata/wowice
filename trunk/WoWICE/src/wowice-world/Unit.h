@@ -617,7 +617,7 @@ enum INVIS_FLAG
 	INVIS_FLAG_TOTAL
 };
 
-enum FIELD_PADDING//Since this field isnt used you can expand it for you needs
+enum FIELD_PADDING//Since this field isn't used you can expand it for you needs
 {
 	PADDING_NONE
 };
