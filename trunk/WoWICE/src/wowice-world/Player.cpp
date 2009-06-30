@@ -359,6 +359,7 @@ mOutOfRangeIdCount(0)
 	flying_aura = 0;
 	resend_speed = false;
 	rename_pending = false;
+	DualWield2H = false;
 	iInstanceType		   = 0;
 	memset(reputationByListId, 0, sizeof(FactionReputation*) * 128);
 
@@ -2085,7 +2086,7 @@ void Player::addSpell(uint32 spell_id)
 				break;
 			case SKILL_TYPE_CLASS:
 			case SKILL_TYPE_ARMOR:
-				if(skill->id == SKILL_LOCKPICKING || skill->id == SKILL_POISONS)
+				if(skill->id == SKILL_LOCKPICKING )
 					max=5*getLevel();
 				break;
 		};
@@ -6843,6 +6844,41 @@ void Player::Reset_Spells()
   mDeletedSpells.clear();
 }
 
+void Player::ResetDualWield2H()
+{
+	DualWield2H = false;
+
+	if( !GetItemInterface() )
+		return;
+
+	Item *mainhand = GetItemInterface()->GetInventoryItem( INVENTORY_SLOT_NOT_SET, EQUIPMENT_SLOT_MAINHAND );
+	Item *offhand = GetItemInterface()->GetInventoryItem( INVENTORY_SLOT_NOT_SET, EQUIPMENT_SLOT_OFFHAND );
+	if( offhand && ( offhand->GetProto()->InventoryType == INVTYPE_2HWEAPON ||
+		mainhand && mainhand->GetProto()->InventoryType == INVTYPE_2HWEAPON ) )
+	{
+		// we need to de-equip this
+		offhand = GetItemInterface()->SafeRemoveAndRetreiveItemFromSlot( INVENTORY_SLOT_NOT_SET, EQUIPMENT_SLOT_OFFHAND, false );
+		if( offhand == NULL )
+			return; // should never happen
+		SlotResult result = GetItemInterface()->FindFreeInventorySlot( offhand->GetProto() );
+		if( !result.Result )
+		{
+			// no free slots for this item, try to send it by mail
+			offhand->RemoveFromWorld();
+			offhand->SetOwner( NULL );
+			offhand->SaveToDB( INVENTORY_SLOT_NOT_SET, 0, true, NULL );
+			sMailSystem.SendAutomatedMessage( NORMAL, GetGUID(), GetGUID(), "Your offhand item", "", 0, 0, offhand->GetUInt32Value( OBJECT_FIELD_GUID), MAIL_STATIONERY_GM );
+			offhand->DeleteMe();
+			offhand = NULL;
+		}
+		else if( !GetItemInterface()->SafeAddItem( offhand, result.ContainerSlot, result.Slot) && !GetItemInterface()->AddItemToFreeSlot( offhand ) ) // shouldn't happen either.
+		{
+			offhand->DeleteMe();
+			offhand = NULL;
+		}
+	}
+}
+
 void Player::Reset_Talents()
 {
 	unsigned int numRows = dbcTalent.GetNumRows();
@@ -6895,6 +6931,10 @@ void Player::Reset_Talents()
 		SetUInt32Value(PLAYER_CHARACTER_POINTS1, 0);
 	}
 
+	if( DualWield2H )
+	{
+		ResetDualWield2H();
+	}
 }
 
 void Player::Reset_ToLevel1()
@@ -10563,7 +10603,7 @@ void Player::_LearnSkillSpells(uint32 SkillLine, uint32 curr_sk)
 		if( (sls->skilline == SkillLine) && (sls->acquireMethod == 1) )
 		{
 			sp = dbcSpell.LookupEntry( sls->spell );
-			if( sp && (getLevel() >= sp->baseLevel) && (curr_sk >= sls->minSkillLineRank) )
+			if( sp && (curr_sk >= sls->minSkillLineRank) )
 			{
 				// Player is able to learn this spell; check if they already have it, or a higher rank (shouldn't, but just in case)
 				bool addThisSpell = true;
@@ -10645,7 +10685,7 @@ void Player::_UpdateMaxSkillCounts()
 	uint32 new_max;
 	for(SkillMap::iterator itr = m_skills.begin(); itr != m_skills.end(); ++itr)
 	{
-		if(itr->second.Skill->type == SKILL_TYPE_WEAPON || itr->second.Skill->id == SKILL_LOCKPICKING || itr->second.Skill->id == SKILL_POISONS)
+		if(itr->second.Skill->type == SKILL_TYPE_WEAPON || itr->second.Skill->id == SKILL_LOCKPICKING )
 		{
 			new_max = 5 * getLevel();
 		}

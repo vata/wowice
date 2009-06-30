@@ -1794,6 +1794,8 @@ public:
 	void SpellEffectForgetSpecialization(uint32 i);
 	void SpellEffectRedirectThreat(uint32 i);
 	void SpellEffectReduceThreatPercent(uint32 i);
+	void SpellEffectRenamePet(uint32 i);
+	void SpellEffectDualWield2H(uint32 i);
 
     // Spell Targets Handlers
     void SpellTargetNULL(uint32 i, uint32 j);

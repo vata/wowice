@@ -1863,7 +1863,8 @@ void Spell::cast(bool check)
 				}
 				++spellidPtr;
 			}
-			if( !isTamingQuestSpell )
+			// Don't call QuestMgr::OnPlayerCast for next-attack spells, either.  It will be called during the actual spell cast.
+			if( !(hasAttribute(ATTRIBUTE_ON_NEXT_ATTACK) && !m_triggeredSpell) && !isTamingQuestSpell )
 			{
 				uint32 numTargets = 0;
 				TargetsList::iterator itr = UniqueTargets.begin();
@@ -2198,6 +2199,9 @@ void Spell::SendCastResult(uint8 result)
 		Extra = GetProto()->Totem[1] ? GetProto()->Totem[1] : GetProto()->Totem[0];
 		break;
 
+	case SPELL_FAILED_ONLY_SHAPESHIFT:
+		Extra = GetProto()->RequiredShapeShift;
+		break;
 	//case SPELL_FAILED_TOTEM_CATEGORY: seems to be fully client sided.
 	}
 
@@ -3284,7 +3288,7 @@ uint8 Spell::CanCast(bool tolerate)
 	/**
 	 *	Player caster checks
 	 */
-	if (p_caster)
+	if( p_caster )
 	{
 		/**
 		 *	Stealth check
@@ -3295,7 +3299,7 @@ uint8 Spell::CanCast(bool tolerate)
 		/**
 		 *	Indoor/Outdoor check
 		 */
-		if (sWorld.Collision)
+		if( sWorld.Collision )
 		{
 			if (GetProto()->MechanicsType == MECHANIC_MOUNTED)
 			{
@@ -3452,6 +3456,16 @@ uint8 Spell::CanCast(bool tolerate)
 				}
 			}
 		}
+
+		/**
+		 *	check if spell requires shapeshift
+		 */
+		// I think Spell prototype's RequiredShapeShift is not entirely accurate ....
+		//if( GetProto()->RequiredShapeShift && !(GetProto()->RequiredShapeShift == (uint32)1 << (FORM_SHADOW - 1)) && !((uint32)1 << (p_caster->GetShapeShift()-1) & GetProto()->RequiredShapeShift ) )
+		//{
+		//	return SPELL_FAILED_ONLY_SHAPESHIFT;
+		//}
+
 
 		/**
 		 *	check if spell is allowed while we have a battleground flag
@@ -4220,6 +4234,10 @@ uint8 Spell::CanCast(bool tolerate)
 					if( !target || target->GetEntry() != 17203) // Nightstalker
 						return SPELL_FAILED_BAD_TARGETS;
 					break;
+				case 47394: // Kurun's Blessing
+					if( !target || target->GetEntry() != 26261) // Grizzly Hills Giant
+						return SPELL_FAILED_BAD_TARGETS;
+					break;
 				default:
 					break;
 			}
@@ -4849,6 +4867,14 @@ exit:
 			value = u_caster->GetUInt32Value( UNIT_FIELD_STAT1 ) >> 2;
 		}
 	}
+    else if ( GetProto()->NameHash == SPELL_HASH_HAMMER_OF_THE_RIGHTEOUS )
+	{
+        if( p_caster != NULL )
+		{
+            //4x 1h weapon-dps ->  4*(mindmg+maxdmg)/speed/2 = 2*(mindmg+maxdmg)/speed
+            value = float2int32( ( p_caster->GetFloatValue( UNIT_FIELD_MINDAMAGE ) + p_caster->GetFloatValue( UNIT_FIELD_MAXDAMAGE ) ) / ( float( p_caster->GetUInt32Value( UNIT_FIELD_BASEATTACKTIME ) ) / 1000.0f ) ) << 1;
+        }
+    }
 	else if ( GetProto()->NameHash == SPELL_HASH_BACKSTAB && i == 2 ) // Egari: spell 31220 is interfering with combopoints
 		return GetProto()->EffectBasePoints[i] + 1;
 
@@ -4908,32 +4934,32 @@ exit:
 
 void Spell::HandleTeleport(uint32 id, Unit* Target)
 {
-	if(Target->GetTypeId()!=TYPEID_PLAYER)
+	if( Target->GetTypeId() != TYPEID_PLAYER )
+	{
 		return;
+	}
 
 	Player* pTarget = static_cast< Player* >( Target );
 
 	float x,y,z;
 	uint32 mapid;
 
-	// predefined behavior
-	if (GetProto()->Id == 8690 || GetProto()->Id == 556 || GetProto()->Id == 39937)// 556 - Astral Recall ; 39937 - Ruby Slippers
+	TeleportCoords* TC = TeleportCoordStorage.LookupEntry(id);
+	if( !TC )
 	{
+		// no teleport coordinates found, default to bind position
+
 		x = pTarget->GetBindPositionX();
 		y = pTarget->GetBindPositionY();
 		z = pTarget->GetBindPositionZ();
 		mapid = pTarget->GetBindMapId();
 	}
-	else // normal behavior
+	else
 	{
-		TeleportCoords* TC = TeleportCoordStorage.LookupEntry(id);
-		if(!TC)
-			return;
-
-		x=TC->x;
-		y=TC->y;
-		z=TC->z;
-		mapid=TC->mapId;
+		x = TC->x;
+		y = TC->y;
+		z = TC->z;
+		mapid = TC->mapId;
 	}
 
 	pTarget->EventAttackStop();
@@ -4942,8 +4968,10 @@ void Spell::HandleTeleport(uint32 id, Unit* Target)
 	// We use a teleport event on this one. Reason being because of UpdateCellActivity,
 	// the game object set of the updater thread WILL Get messed up if we teleport from a gameobject
 	// caster.
-	if(!sEventMgr.HasEvent(pTarget, EVENT_PLAYER_TELEPORT))
+	if( !sEventMgr.HasEvent(pTarget, EVENT_PLAYER_TELEPORT) )
+	{
 		sEventMgr.AddEvent(pTarget, &Player::EventTeleport, mapid, x, y, z, EVENT_PLAYER_TELEPORT, 1, 1,EVENT_FLAG_DO_NOT_EXECUTE_IN_WORLD_CONTEXT);
+	}
 }
 
 void Spell::CreateItem( uint32 itemId )

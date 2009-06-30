@@ -167,15 +167,15 @@ pSpellEffect SpellEffectsHandler[TOTAL_SPELL_EFFECTS]={
 	&Spell::SpellEffectNULL,// unknown - 148
 	&Spell::SpellEffectNULL,// unknown - 149
 	&Spell::SpellEffectNULL,// unknown - 150
-	&Spell::SpellEffectNULL,// Summon Target - 151
+	&Spell::SpellEffectTriggerSpell,// SPELL_EFFECT_TRIGGER_SPELL_2 - 151
 	&Spell::SpellEffectNULL,// Summon Refer-a-Friend - 152
 	&Spell::SpellEffectNULL,// Create tamed pet - 153
 	&Spell::SpellEffectNULL,// unknown - 154
-	&Spell::SpellEffectNULL,// unknown - 155
+	&Spell::SpellEffectDualWield2H,// DualWield2H (ex: Titan's Grip) - 155
 	&Spell::SpellEffectNULL,// unknown - 156
 	&Spell::SpellEffectCreateItem2,	//157
 	&Spell::SpellEffectMilling,// Milling - 158
-	&Spell::SpellEffectNULL,// unknown - 159
+	&Spell::SpellEffectRenamePet,// Allow pet rename - 159
 };
 
 const char* SpellEffectNames[TOTAL_SPELL_EFFECTS] = {
@@ -1063,10 +1063,10 @@ out:
 			case 20214:
 			case 20215:
 				{
-					if(!p_caster) return;
+					if( p_caster == NULL )
+						return;
 					SpellEntry * sp = p_caster->last_heal_spell ? p_caster->last_heal_spell : GetProto();
-					uint32 cost = float2int32( float( float(sp->manaCost) * 0.6f ) );
-					p_caster->Energize(p_caster, 20272, cost, POWER_TYPE_MANA );
+					p_caster->Energize( p_caster, 20272, 60 * u_caster->GetUInt32Value( UNIT_FIELD_BASE_MANA ) * sp->ManaCostPercentage / 10000, POWER_TYPE_MANA );
 				}break;
 			case 38443:
 				{
@@ -1926,86 +1926,43 @@ out:
 	case 49894:
 	case 49895:
 		{
-			if(!u_caster)
+			if( u_caster == NULL || unitTarget == NULL )
 				return;
-			if(spellId == 52375)
+			if( spellId == 52375 )
 				damage = damage * 2 / 5;
-			if(isAttackable(u_caster, unitTarget, false))
-				u_caster->SpellNonMeleeDamageLog(unitTarget, spellId, damage, true);
-			else if(unitTarget->IsCreature())
+			if( isAttackable( u_caster, unitTarget, false ) )
+				u_caster->SpellNonMeleeDamageLog( unitTarget, spellId, damage, true );
+			else if( unitTarget->IsCreature() )
 			{
-				CreatureInfo * ci = static_cast< Creature* >(unitTarget)->GetCreatureInfo();
-				if(ci && ci->Type == UNDEAD)
-					u_caster->Heal(unitTarget, spellId, float2int32(damage * 1.5f));
+				CreatureInfo * ci = static_cast< Creature* >( unitTarget )->GetCreatureInfo();
+				if( ci && ci->Type == UNDEAD )
+					u_caster->Heal( unitTarget, spellId, float2int32( damage * 1.5f ) );
 			}
-
 		}break;
 	}
 }
 
 void Spell::SpellEffectTeleportUnits( uint32 i )  // Teleport Units
 {
-
-	if(!unitTarget) return;
+	if( !unitTarget )
+	{
+		return;
+	}
 
 	uint32 spellId = GetProto()->Id;
 
 	// Try a dummy SpellHandler
 	if( sScriptMgr.CallScriptedDummySpell( spellId, i, this ) )
-		return;
-
-	// Shadowstep
-	if( GetProto()->NameHash == SPELL_HASH_SHADOWSTEP && p_caster && p_caster->IsInWorld() )
 	{
-		/* this is rather tricky actually. we have to calculate the orientation of the creature/player, and then calculate a little bit of distance behind that. */
-		float ang;
-		if( unitTarget == m_caster )
-		{
-			/* try to get a selection */
-			unitTarget = m_caster->GetMapMgr()->GetUnit(p_caster->GetSelection());
-			//			if( (unitTarget == NULL ) || !isHostile(p_caster, unitTarget) || (unitTarget->CalcDistance(p_caster) > 25.0f)) //removed by Zack : no idea why hostile is used. Isattackable should give a wider solution range
-			if( (!unitTarget ) || !isAttackable(p_caster, unitTarget, !(GetProto()->c_is_flags & SPELL_FLAG_IS_TARGETINGSTEALTHED) ) || (unitTarget->CalcDistance(p_caster) > 28.0f))
-				return;
-		}
-
-		if( unitTarget->GetTypeId() == TYPEID_UNIT )
-		{
-			if( unitTarget->GetUInt64Value( UNIT_FIELD_TARGET ) != 0 )
-			{
-				/* We're chasing a target. We have to calculate the angle to this target, this is our orientation. */
-				ang = m_caster->calcAngle(m_caster->GetPositionX(), m_caster->GetPositionY(), unitTarget->GetPositionX(), unitTarget->GetPositionY());
-
-				/* convert degree angle to radians */
-				ang = ang * float(M_PI) / 180.0f;
-			}
-			else
-			{
-				/* Our orientation has already been set. */
-				ang = unitTarget->GetOrientation();
-			}
-		}
-		else
-		{
-			/* Players orientation is sent in movement packets */
-			ang = unitTarget->GetOrientation();
-		}
-
-		// avoid teleporting into the model on scaled models
-		const static float shadowstep_distance = 1.6f * unitTarget->GetFloatValue(OBJECT_FIELD_SCALE_X);
-		float new_x = unitTarget->GetPositionX() - (shadowstep_distance * cosf(ang));
-		float new_y = unitTarget->GetPositionY() - (shadowstep_distance * sinf(ang));
-
-		/* Send a movement packet to "charge" at this target. Similar to warrior charge. */
-		p_caster->z_axisposition = 0.0f;
-		p_caster->SafeTeleport(p_caster->GetMapId(), p_caster->GetInstanceID(), LocationVector(new_x, new_y, (unitTarget->GetPositionZ() + 0.1f), unitTarget->GetOrientation()));
-
 		return;
 	}
 
 	/* TODO: Remove Player From bg */
 
-	if(unitTarget->GetTypeId() == TYPEID_PLAYER)
+	if( unitTarget->GetTypeId() == TYPEID_PLAYER )
+	{
 		HandleTeleport(spellId, unitTarget);
+	}
 }
 
 void Spell::SpellEffectApplyAura(uint32 i)  // Apply Aura
@@ -3269,13 +3226,6 @@ void Spell::SpellEffectEnergize(uint32 i) // Energize
 	//yess there is always someone special : shamanistic rage - talent
 	if(GetProto()->Id == 30824)
 		modEnergy = damage*GetUnitTarget()->GetAP() / 100;
-	//paladin illumination
-	else if(GetProto()->Id == 20272 && ProcedOnSpell)
-	{
-		SpellEntry *motherspell = dbcSpell.LookupEntry(pSpellId);
-		if(motherspell)
-			modEnergy = (motherspell->EffectBasePoints[0]+1)*ProcedOnSpell->manaCost / 100;
-	}
 	//paladin - Spiritual Attunement
 	else if(GetProto()->Id == 31786 && ProcedOnSpell)
 	{
@@ -7115,4 +7065,21 @@ void Spell::SpellEffectForgetSpecialization(uint32 i)
 	playerTarget->removeSpell( spellid, false, false, 0);
 
 	sLog.outDebug("Player %u have forgot spell %u from spell %u ( caster: %u)", playerTarget->GetLowGUID(), spellid, GetProto()->Id, m_caster->GetLowGUID());
+}
+
+void Spell::SpellEffectDualWield2H( uint32 i )
+{
+	if( !playerTarget )
+		return;
+
+	playerTarget->DualWield2H = true;
+}
+
+void Spell::SpellEffectRenamePet( uint32 i )
+{
+	if( !unitTarget || !unitTarget->IsPet() || 
+		!static_cast<Pet*>(unitTarget)->GetPetOwner() || static_cast<Pet*>(unitTarget)->GetPetOwner()->getClass() != HUNTER )
+		return;
+
+	unitTarget->SetByte( UNIT_FIELD_BYTES_2, 2, 0x3 );
 }
