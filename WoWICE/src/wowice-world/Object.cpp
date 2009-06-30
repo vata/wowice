@@ -2973,11 +2973,7 @@ void Object::SpellNonMeleeDamageLog(Unit *pVictim, uint32 spellID, uint32 damage
 //==========================================================================================
 //==============================Post Roll Calculations======================================
 //==========================================================================================
-	//dirty fix for Ice Lance
-	if( ( pVictim->m_rooted -pVictim->m_stunned) > 0 && spellInfo->NameHash == SPELL_HASH_ICE_LANCE ) //Ice Lance deals 3x damage if target is frozen
-	{
-		res *= 3;
-	}
+
 //------------------------------absorption--------------------------------------------------
 	uint32 ress=(uint32)res;
 	uint32 abs_dmg = pVictim->AbsorbDamage(school, &ress);
@@ -3087,7 +3083,7 @@ void Object::SpellNonMeleeDamageLog(Unit *pVictim, uint32 spellID, uint32 damage
 		if( pVictim->isAlive() && this->IsUnit() )
 		{
 			//Shadow Word:Death
-			if( spellID == 32379 || spellID == 32996 )
+			if( spellID == 32379 || spellID == 32996 || spellID == 48157 || spellID == 48158 ) 
 			{
 				uint32 damage = (uint32)( res + abs_dmg );
 				uint32 absorbed = static_cast< Unit* >( this )->AbsorbDamage( school, &damage );

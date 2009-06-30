@@ -506,8 +506,6 @@ const ItemProf* GetProficiencyBySkill( uint32 skill )
 			return &prof[16];
 		case SKILL_THROWN:
 			return &prof[17];
-		case SKILL_SPEARS:
-			return &prof[18];
 		case SKILL_CROSSBOWS:
 			return &prof[19];
 		case SKILL_WANDS:

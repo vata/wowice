@@ -374,6 +374,7 @@ public:
 
 	WoWICE_INLINE bool isVendor()		const { return HasFlag( UNIT_NPC_FLAGS, UNIT_NPC_FLAG_VENDOR ); }
 	WoWICE_INLINE bool isTrainer()		const { return HasFlag( UNIT_NPC_FLAGS, UNIT_NPC_FLAG_TRAINER ); }
+	WoWICE_INLINE bool isClass()		const { return HasFlag( UNIT_NPC_FLAGS, UNIT_NPC_FLAG_TRAINER_CLASS ); }
 	WoWICE_INLINE bool isProf()			const { return HasFlag( UNIT_NPC_FLAGS, UNIT_NPC_FLAG_TRAINER_PROF ); }
 	WoWICE_INLINE bool isQuestGiver()	const { return HasFlag( UNIT_NPC_FLAGS, UNIT_NPC_FLAG_QUESTGIVER ); }
 	WoWICE_INLINE bool isGossip()		const { return HasFlag( UNIT_NPC_FLAGS, UNIT_NPC_FLAG_GOSSIP ); }

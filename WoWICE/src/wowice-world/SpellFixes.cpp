@@ -1321,7 +1321,11 @@ void ApplyNormalFixes()
 		//////////////////////////////////////////
 		// DRUID								//
 		//////////////////////////////////////////
-
+		if( sp->NameHash == SPELL_HASH_DASH )
+		{
+			// mask for FORM_CAT(1) = 1 << (1 - 1), which is 1
+			sp->RequiredShapeShift = 1;
+		}
 
 
 	} // END OF LOOP
@@ -2284,6 +2288,13 @@ void ApplyNormalFixes()
 			sp->procFlags = PROC_ON_MELEE_ATTACK;
 			sp->EffectTriggerSpell[0] = 53742;
 			sp->EffectApplyAuraName[0] = SPELL_AURA_PROC_TRIGGER_SPELL;
+		}
+
+		//Paladin - Hammer of the Righteous
+		sp = dbcSpell.LookupEntryForced( 53595);
+		if( sp != NULL )
+		{
+			sp->speed = 0;	//without, no damage is done
 		}
 
 		//Paladin - Seal of Blood
