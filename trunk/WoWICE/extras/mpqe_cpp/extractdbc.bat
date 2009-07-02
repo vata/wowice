@@ -16,18 +16,18 @@ if not exist sfmpq.dll goto nolibrary
 :begin
 echo.
 set /p wowdir= World of Warcraft directory (C:\Program Files\World of Warcraft, . if current directory) : 
-set /p arcdir= WoWICE directory (C:\WoWICE) : 
+set /p wowicedir= WoWICE directory (C:\WoWICE) : 
 set /p wowloc= World of Warcraft Language (enUS, enGB, deDE, frFR, koKR, etc.) : 
 echo.
 echo.
 if not exist "%wowdir%\data\%wowloc%\*.mpq" goto nompq
 if "%extractor%"=="mpqe.exe" (
 	for %%I in ("%wowdir%\data\%wowloc%\*.mpq") do (
-	   %extractor% %extswitches% /d "%arcdir%" "%%~fI" *.dbc
+	   %extractor% %extswitches% /d "%wowicedir%" "%%~fI" *.dbc
 	)
 	ren %arcdir%\DBFilesClient dbc
 ) else (
-   %extractor% %extswitches% /d "%arcdir%\dbc" "%wowdir%\data\%wowloc%\*.mpq" *.dbc
+   %extractor% %extswitches% /d "%wowicedir%\dbc" "%wowdir%\data\%wowloc%\*.mpq" *.dbc
 )
 goto exit
 
@@ -58,6 +58,6 @@ set extswitches=
 set tryagain=
 set extractor=
 set wowdir=
-set arcdir=
+set wowicedir=
 set wowloc=
 pause
