@@ -13,6 +13,12 @@
  * this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+//////////////////////////////////////////////
+// Notes: .Execute is ASYNC! - 
+// We should probably be using QueryBuffer for ASYNC and NONE-ASYNC queries to not lag the emu.
+// See: Player::_SavePetSpells for example of usage
+// updated: Tuesday, June 16th 2009 - Hasbro 
+//////////////////////////////////////////////
 
 #include "DatabaseEnv.h"
 #include "../CrashHandler.h"
