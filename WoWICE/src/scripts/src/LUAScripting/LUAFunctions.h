@@ -132,6 +132,7 @@ int luaUnit_MoveFly(lua_State * L, Unit * ptr);
 int luaUnit_NoRespawn(lua_State * L, Unit * ptr);
 int luaUnit_HasItem(lua_State * L, Unit * ptr);
 int luaUnit_FlyCheat(lua_State * L, Unit * ptr);
+int luaUnit_IsGM(lua_State * L, Unit * ptr);
 
 //////////////////////
 ///////OTHERS/////////

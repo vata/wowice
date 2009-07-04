@@ -6885,7 +6885,8 @@ void Player::Reset_Talents()
 	uint8 playerClass = getClass();
 	SpellEntry* spellInfo;
 	SpellEntry* spellInfo2;
-	uint8 i, j, k;
+	uint32 i;
+	uint8 j, k;
 
 	// Loop through all talents.
 	for(i = 0; i < numRows; ++i)
@@ -6916,8 +6917,8 @@ void Player::Reset_Talents()
 					{
 						if( spellInfo->Effect[k] == SPELL_EFFECT_LEARN_SPELL )
 						{
-							//removeSpell(spellInfo->EffectTriggerSpell[k], false, 0, 0);
-							//remove higher ranks of this spell too (like earth shield lvl 1 is talent and the rest is thought from trainer)
+							// removeSpell(spellInfo->EffectTriggerSpell[k], false, 0, 0);
+							// remove higher ranks of this spell too (like earth shield lvl 1 is talent and the rest is taught from trainer)
 							spellInfo2 = dbcSpell.LookupEntry( spellInfo->EffectTriggerSpell[k] );
 							if( spellInfo2 != NULL )
 							{
@@ -6925,7 +6926,7 @@ void Player::Reset_Talents()
 							}
 						}
 					}
-					//remove them all in 1 shot
+					// remove them all in 1 shot
 					removeSpellByHashName(spellInfo->NameHash);
 				}
 			}
