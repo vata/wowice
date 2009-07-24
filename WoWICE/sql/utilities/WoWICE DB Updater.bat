@@ -179,6 +179,12 @@ ECHO [Importing] 2387_LightWell.sql
 mysql -h %server% --user=%user% --password=%pass% --port=%port% %wdb% --force < ..\world_updates\2387_LightWell.sql
 ECHO [Importing] 2582_quests.sql
 mysql -h %server% --user=%user% --password=%pass% --port=%port% %wdb% --force < ..\world_updates\2582_quests.sql
+ECHO [Importing] 2612_quests.sql
+mysql -h %server% --user=%user% --password=%pass% --port=%port% %wdb% --force < ..\world_updates\2612_quests.sql
+ECHO [Importing] 2649_playercreateinfo.sql
+mysql -h %server% --user=%user% --password=%pass% --port=%port% %wdb% --force < ..\world_updates\2649_playercreateinfo.sql
+ECHO [Importing] 2682_creature_spawns.sql
+mysql -h %server% --user=%user% --password=%pass% --port=%port% %wdb% --force < ..\world_updates\2682_creature_spawns.sql
 ECHO [Importing] ArcScript_full.sql
 mysql -h %server% --user=%user% --password=%pass% --port=%port% %wdb% --force < ..\ArcScripts\ArcScript_full.sql
 ECHO [Importing] spellfixes.sql
@@ -232,6 +238,11 @@ ECHO [Importing] 2084_character_achievement_progress.sql
 mysql -h %server% --user=%user% --password=%pass% --port=%port% %chr% < ..\character_updates\2084_character_achievement_progress.sql
 ECHO [Importing] 2310_guilds.sql
 mysql -h %server% --user=%user% --password=%pass% --port=%port% %chr% < ..\character_updates\2310_guilds.sql
+ECHO [Importing] 2642_characters.sql
+mysql -h %server% --user=%user% --password=%pass% --port=%port% %chr% < ..\character_updates\2642_characters.sql
+ECHO [Importing] 2742_guilds.sql
+mysql -h %server% --user=%user% --password=%pass% --port=%port% %chr% < ..\character_updates\2742_guilds.sql
+
 ECHO [Importing] Finished
 ECHO  Update Success.
 ECHO.
@@ -342,6 +353,12 @@ ECHO [Importing] 2387_LightWell.sql
 mysql -h %server% --user=%user% --password=%pass% --port=%port% %wdb% --force < ..\world_updates\2387_LightWell.sql
 ECHO [Importing] 2582_quests.sql
 mysql -h %server% --user=%user% --password=%pass% --port=%port% %wdb% --force < ..\world_updates\2582_quests.sql
+ECHO [Importing] 2612_quests.sql
+mysql -h %server% --user=%user% --password=%pass% --port=%port% %wdb% --force < ..\world_updates\2612_quests.sql
+ECHO [Importing] 2649_playercreateinfo.sql
+mysql -h %server% --user=%user% --password=%pass% --port=%port% %wdb% --force < ..\world_updates\2649_playercreateinfo.sql
+ECHO [Importing] 2682_creature_spawns.sql
+mysql -h %server% --user=%user% --password=%pass% --port=%port% %wdb% --force < ..\world_updates\2682_creature_spawns.sql
 ECHO [Importing] ArcScript_full.sql
 mysql -h %server% --user=%user% --password=%pass% --port=%port% %wdb% --force < ..\ArcScripts\ArcScript_full.sql
 ECHO [Importing] spellfixes.sql
@@ -391,6 +408,10 @@ ECHO [Importing] 2084_character_achievement_progress.sql
 mysql -h %server% --user=%user% --password=%pass% --port=%port% %chr% < ..\character_updates\2084_character_achievement_progress.sql
 ECHO [Importing] 2310_guilds.sql
 mysql -h %server% --user=%user% --password=%pass% --port=%port% %chr% < ..\character_updates\2310_guilds.sql
+ECHO [Importing] 2642_characters.sql
+mysql -h %server% --user=%user% --password=%pass% --port=%port% %chr% < ..\character_updates\2642_characters.sql
+ECHO [Importing] 2742_guilds.sql
+mysql -h %server% --user=%user% --password=%pass% --port=%port% %chr% < ..\character_updates\2742_guilds.sql
 
 ECHO [Importing] Character Updates Finished
 ECHO.

@@ -607,10 +607,6 @@ bool Master::Run(int argc, char ** argv)
 	delete VoiceChatHandler::getSingletonPtr();
 #endif
 
-#ifdef GM_SCRIPT
-	Log.Notice("GM-scripting:", "Closing ScriptEngine...");
-	delete ScriptSystem;
-#endif
 
 #ifdef ENABLE_LUA_SCRIPTING
 	sLog.outString("Deleting Script Engine...");
