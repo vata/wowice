@@ -1701,7 +1701,7 @@ void AchievementMgr::SendAllAchievementData(Player* player)
 /**
 	Returns the number of achievement progresses that get sent to the player.
 */
-uint32 AchievementMgr::GetCriteriaProgressCount(void)
+uint32 AchievementMgr::GetCriteriaProgressCount()
 {
 	uint32 criteriapc = 0;
 	for(CriteriaProgressMap::iterator iter = m_criteriaProgress.begin(); iter!=m_criteriaProgress.end(); ++iter)

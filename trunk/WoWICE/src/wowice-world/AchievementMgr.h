@@ -261,7 +261,9 @@ class AchievementMgr
 public:
 	AchievementMgr(Player* pl);
 	~AchievementMgr();
-
+	// !IMPORTANT!
+	// Todo: Use QueryBuffer !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	// THIS IS WHY WE GET SO MUCH LAGGGGGGGGGGGG.
 	void LoadFromDB(QueryResult *achievementResult, QueryResult *criteriaResult);
 	void SaveToDB();
 	void CheckAllAchievementCriteria();
@@ -289,6 +291,7 @@ private:
 	bool IsCompletedCriteria(AchievementCriteriaEntry const* entry);
 	AchievementCompletionState GetAchievementCompletionState(AchievementEntry const* entry);
 
+	RWLock m_lock;
 	Player* m_player;
 	CriteriaProgressMap m_criteriaProgress;
 	CompletedAchievementMap m_completedAchievements;

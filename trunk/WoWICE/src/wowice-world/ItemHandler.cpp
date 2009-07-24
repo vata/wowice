@@ -1073,10 +1073,7 @@ void WorldSession::HandleBuyBackOpcode( WorldPacket & recv_data )
 
 			// delete the item
 			it->DeleteFromDB();
-
-			// free the pointer
-			it->DestroyForPlayer( _player );
-			it->Delete();
+			it->DeleteMe();
 		}
 
 		data.Initialize( SMSG_BUY_ITEM );

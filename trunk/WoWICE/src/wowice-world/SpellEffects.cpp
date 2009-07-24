@@ -567,6 +567,14 @@ void Spell::SpellEffectSchoolDMG(uint32 i) // dmg school
 				uint32 SPH = p_caster->GetUInt32Value(PLAYER_FIELD_MOD_DAMAGE_DONE_POS + SCHOOL_HOLY); // Holy Spell Damage
 				dmg = float2int32( MWS * ( 0.022f * float( AP ) + 0.044f * float( SPH ) ) );
 			}
+		case SPELL_HASH_SHIELD_OF_RIGHTEOUSNESS: // Shield of Righteousness - a bit like "shield slam", OK for both ranks 
+			{
+				if( p_caster != NULL )
+				{
+					dmg += float2int32(1.30f * float( p_caster->GetUInt32Value( PLAYER_RATING_MODIFIER_BLOCK ) ) + GetProto()->EffectBasePoints[0]);
+				}
+			}break;
+
 		case SPELL_HASH_SHIELD_SLAM:	// Shield Slam - damage is increased by block value
 			{
 				if( p_caster != NULL )
@@ -2174,6 +2182,25 @@ void Spell::SpellEffectApplyAura(uint32 i)  // Apply Aura
 
 }
 
+void Spell::SpellEffectEnvironmentalDamage(uint32 i)
+{
+	if(!playerTarget) return;
+
+	if(unitTarget->SchoolImmunityList[GetProto()->School])
+	{
+		SendCastResult(SPELL_FAILED_IMMUNE);
+		return;
+	}
+	//this is GO, not unit
+	m_caster->SpellNonMeleeDamageLog(unitTarget,GetProto()->Id,damage, pSpellId==0);
+
+	WorldPacket data(SMSG_ENVIRONMENTALDAMAGELOG, 13);
+	data << unitTarget->GetGUID();
+	data << uint8(DAMAGE_FIRE);
+	data << uint32(damage);
+	unitTarget->SendMessageToSet( &data, true );
+}
+
 void Spell::SpellEffectPowerDrain(uint32 i)  // Power Drain
 {
 	if(!unitTarget || !unitTarget->isAlive())
@@ -2415,6 +2442,60 @@ void Spell::SpellEffectWeapondamageNoschool(uint32 i) // Weapon damage + (no Sch
 	}
 	else
 		u_caster->Strike( unitTarget, ( GetType() == SPELL_DMG_TYPE_RANGED ? RANGED : MELEE ), GetProto(), damage, 0, 0, false, true );
+}
+
+void Spell::SpellEffectResurrect(uint32 i) // Resurrect (Flat)
+{
+	if(!playerTarget)
+	{
+		if(!corpseTarget)
+		{
+			// unit resurrection handler
+			if(unitTarget)
+			{
+				if(unitTarget->GetTypeId()==TYPEID_UNIT && unitTarget->IsPet() && unitTarget->IsDead())
+				{
+					uint32 hlth = ((uint32)GetProto()->EffectBasePoints[i] > unitTarget->GetUInt32Value(UNIT_FIELD_MAXHEALTH)) ? unitTarget->GetUInt32Value(UNIT_FIELD_MAXHEALTH) : (uint32)GetProto()->EffectBasePoints[i];
+					uint32 mana = ((uint32)GetProto()->EffectBasePoints[i] > unitTarget->GetUInt32Value(UNIT_FIELD_MAXPOWER1)) ? unitTarget->GetUInt32Value(UNIT_FIELD_MAXPOWER1) : (uint32)GetProto()->EffectBasePoints[i];
+
+					if(!unitTarget->IsPet())
+					{
+						sEventMgr.RemoveEvents(unitTarget, EVENT_CREATURE_REMOVE_CORPSE);
+					}
+					else
+					{
+						sEventMgr.RemoveEvents(unitTarget, EVENT_PET_DELAYED_REMOVE);
+						sEventMgr.RemoveEvents(unitTarget, EVENT_CREATURE_REMOVE_CORPSE);
+					}
+					unitTarget->SetUInt32Value(UNIT_FIELD_HEALTH, hlth);
+					unitTarget->SetUInt32Value(UNIT_FIELD_POWER1, mana);
+					unitTarget->SetUInt32Value(UNIT_DYNAMIC_FLAGS, 0);
+					unitTarget->setDeathState(ALIVE);
+					static_cast<Creature*>(unitTarget)->Tagged=false;
+					static_cast<Creature*>(unitTarget)->TaggerGuid=false;
+					static_cast<Creature*>(unitTarget)->loot.gold=0;
+					static_cast<Creature*>(unitTarget)->loot.looters.clear();
+					static_cast<Creature*>(unitTarget)->loot.items.clear();
+				}
+			}
+
+			return;
+		}
+		playerTarget = objmgr.GetPlayer(corpseTarget->GetUInt32Value(CORPSE_FIELD_OWNER));
+		if(!playerTarget) return;
+	}
+
+	if(playerTarget->isAlive() || !playerTarget->IsInWorld())
+		return;
+
+	uint32 health = GetProto()->EffectBasePoints[i];
+	uint32 mana = GetProto()->EffectMiscValue[i];
+
+	playerTarget->m_resurrectHealth = health;
+	playerTarget->m_resurrectMana = mana;
+
+	SendResurrectRequest(playerTarget);
+	playerTarget->SetMovement(MOVE_UNROOT, 1);
 }
 
 void Spell::SpellEffectAddExtraAttacks(uint32 i) // Add Extra Attacks
@@ -2715,34 +2796,6 @@ void Spell::SpellEffectCreateItem(uint32 i) // Create item
 					delete data;
 				}
 			}
-	}
-}
-
-void Spell::SpellEffectCreateItem2(uint32 i) // Create item
-{
-	//TODO: This spell effect has also a misc value - meaning is unknown yet
-	if( p_caster == NULL )
-		return;
-
-	uint32 new_item_id = GetProto()->EffectItemType[i];
-
-	if( new_item_id != NULL )
-	{
-		// create item
-		CreateItem( new_item_id );
-	}
-	else if( i_caster )
-	{
-		// provide player with item loot (clams)
-		// TODO: Finish this
-		/*if( !i_caster->loot )
-		{
-			i_caster->loot = new Loot;
-			lootmgr.FillItemLoot( i_caster->loot, i_caster->GetEntry() );
-		}
-		p_caster->SetLootGUID( i_caster->GetGUID() );
-		p_caster->SendLoot( i_caster->GetGUID(), LOOT_DISENCHANTING );
-		*/	
 	}
 }
 
@@ -3534,173 +3587,42 @@ void Spell::SpellEffectOpenLock(uint32 i) // Open Lock
 		static_cast< Player* >( m_caster )->SendLoot( gameObjTarget->GetGUID(), loottype );
 }
 
-void Spell::SpellEffectOpenLockItem(uint32 i)
+void Spell::SpellEffectTransformItem(uint32 i)
 {
-	Unit* caster = u_caster;
-	if(!caster && i_caster) caster = i_caster->GetOwner();
+	bool result;
+	AddItemResult result2;
 
-	if(!gameObjTarget || !gameObjTarget->IsInWorld()) return;
+	if(!i_caster) return;
+	uint32 itemid=GetProto()->EffectItemType[i];
+	if(!itemid) return;
 
-	if( caster && caster->IsPlayer() && sQuestMgr.OnGameObjectActivate( (static_cast<Player*>(caster)), gameObjTarget ) )
-		static_cast<Player*>(caster)->UpdateNearbyGameObjects();
+	//Save durability of the old item
+	Player * owner=i_caster->GetOwner();
+	uint32 dur= i_caster->GetUInt32Value(ITEM_FIELD_DURABILITY);
+	//	int8 slot=owner->GetItemInterface()->GetInventorySlotByGuid(i_caster->GetGUID());
+	//	uint32 invt=i_caster->GetProto()->InventoryType;
 
-	CALL_GO_SCRIPT_EVENT(gameObjTarget, OnActivate)(static_cast<Player*>(caster));
-	gameObjTarget->SetByte(GAMEOBJECT_BYTES_1, 0, 0);
-
-	if( gameObjTarget->GetEntry() == 183146)
+	result  = owner->GetItemInterface()->SafeFullRemoveItemByGuid(i_caster->GetGUID());
+	if(!result)
 	{
-		gameObjTarget->Despawn(0, 1);
+		//something went wrong if this happen, item doesn't exist, so it wasn't destroyed.
 		return;
 	}
 
-	if( gameObjTarget->GetByte( GAMEOBJECT_BYTES_1, 1 ) == GAMEOBJECT_TYPE_CHEST)
+	i_caster = NULL;
+
+	Item *it = objmgr.CreateItem(itemid,owner);
+	if (!it) return;
+
+	it->SetDurability(dur);
+	//additem
+
+	//additem
+	result2 = owner->GetItemInterface()->AddItemToFreeSlot(it);
+	if(!result2) //should never get here
 	{
-		lootmgr.FillGOLoot(&gameObjTarget->loot,gameObjTarget->GetEntry(), gameObjTarget->GetMapMgr() ? (gameObjTarget->GetMapMgr()->iInstanceMode ? true : false) : false);
-		if(gameObjTarget->loot.items.size() > 0)
-		{
-			static_cast<Player*>(caster)->SendLoot(gameObjTarget->GetGUID(),LOOT_CORPSE);
-		}
-	}
-
-	// cebernic: atm doors works fine.
-	if( gameObjTarget->GetByte( GAMEOBJECT_BYTES_1, 1 ) == GAMEOBJECT_TYPE_DOOR
-		|| gameObjTarget->GetByte( GAMEOBJECT_BYTES_1, 1 ) == GAMEOBJECT_TYPE_GOOBER )
-		gameObjTarget->SetUInt32Value(GAMEOBJECT_FLAGS, gameObjTarget->GetUInt32Value( GAMEOBJECT_FLAGS ) | 1);
-
-	if(gameObjTarget->GetMapMgr()->GetMapInfo()->type==INSTANCE_NULL)//don't close doors for instances
-		sEventMgr.AddEvent(gameObjTarget,&GameObject::EventCloseDoor, EVENT_GAMEOBJECT_DOOR_CLOSE,10000,1,0);
-
-	sEventMgr.AddEvent(gameObjTarget, &GameObject::Despawn, (uint32)0, (uint32)1, EVENT_GAMEOBJECT_ITEM_SPAWN, 6*60*1000, 1, 0);
-}
-
-void Spell::SpellEffectProficiency(uint32 i)
-{
-	uint32 skill = 0;
-	skilllinespell *skillability = objmgr.GetSpellSkill(GetProto()->Id);
-	if (skillability)
-		skill = skillability->skilline;
-	skilllineentry *sk = dbcSkillLine.LookupEntry(skill);
-	if(skill)
-	{
-		if(playerTarget)
-		{
-			if(playerTarget->_HasSkillLine(skill))
-			{
-				// Increase it by one
-				// playerTarget->AdvanceSkillLine(skill);
-			}
-			else
-			{
-				// Don't add skills to players logging in.
-				/*if((GetProto()->Attributes & 64) && playerTarget->m_TeleportState == 1)
-				return;*/
-
-				if(sk && sk->type == SKILL_TYPE_WEAPON)
-					playerTarget->_AddSkillLine(skill, 1, 5*playerTarget->getLevel());
-				else
-					playerTarget->_AddSkillLine(skill, 1, 1);
-			}
-		}
-	}
-}
-
-void Spell::SpellEffectSendEvent(uint32 i) //Send Event
-{
-	//This is mostly used to trigger events on quests or some places
-
-	uint32 spellId = GetProto()->Id;
-
-	// Try a dummy SpellHandler
-	if(sScriptMgr.CallScriptedDummySpell(spellId, i, this)) return;
-
-	switch(spellId)
-	{
-
-		// WSG Flags
-	case 23333:
-	case 23335:
-		{
-			if (p_caster && p_caster->m_bg) {
-
-				if( p_caster->GetTeam() == 1 )
-					p_caster->m_bg->SendChatMessage( CHAT_MSG_BG_EVENT_HORDE, p_caster->GetGUID(), "The Alliance flag was picked up by %s!", p_caster->GetName() );
-				else
-					p_caster->m_bg->SendChatMessage( CHAT_MSG_BG_EVENT_ALLIANCE, p_caster->GetGUID(), "The Horde flag was picked up by %s!", p_caster->GetName() );
-			}
-		}break;
-
-		// Place Loot
-	case 25720: // Places the Bag of Gold at the designated Drop-Off Point.
-		{
-
-		}break;
-
-		// Item - Cleansing Vial DND
-	case 29297: // Empty the vial near the Bones of Aggonar to cleanse the waters of their demonic taint.
-		{
-			QuestLogEntry *en=p_caster->GetQuestLogForEntry(9427);
-			if(!en) return;
-			en->SendQuestComplete();
-		}break;
-
-		//Warlock: Summon Succubus Quest
-	case 8674:
-	case 9223:
-	case 9224:
-		{
-			CreatureInfo * ci = CreatureNameStorage.LookupEntry(5677);
-			CreatureProto * cp = CreatureProtoStorage.LookupEntry(5677);
-			if( !ci || !cp )
-				return;
-
-			Creature * pCreature = p_caster->GetMapMgr()->CreateCreature(cp->Id);
-			pCreature->Load(cp, p_caster->GetPositionX(), p_caster->GetPositionY(), p_caster->GetPositionZ());
-			pCreature->_setFaction();
-			pCreature->GetAIInterface()->Init(pCreature, AITYPE_AGRO,MOVEMENTTYPE_NONE);
-			pCreature->GetAIInterface()->taunt(p_caster, true);
-			pCreature->_setFaction();
-			pCreature->PushToWorld(p_caster->GetMapMgr());
-			sEventMgr.AddEvent(pCreature, &Creature::SafeDelete, EVENT_CREATURE_REMOVE_CORPSE,60000, 1, 0);
-		}break;
-
-		//Warlock: Summon Voidwalker Quest
-	case 30208:
-	case 9221:
-	case 9222:
-	case 7728:
-		{
-			CreatureInfo * ci = CreatureNameStorage.LookupEntry(5676);
-			CreatureProto * cp = CreatureProtoStorage.LookupEntry(5676);
-			if( !ci || !cp ) return;
-
-			Creature * pCreature = p_caster->GetMapMgr()->CreateCreature(cp->Id);
-			pCreature->Load(cp, p_caster->GetPositionX(), p_caster->GetPositionY(), p_caster->GetPositionZ());
-			pCreature->_setFaction();
-			pCreature->GetAIInterface()->Init(pCreature, AITYPE_AGRO,MOVEMENTTYPE_NONE);
-			pCreature->GetAIInterface()->taunt(p_caster, true);
-			pCreature->_setFaction();
-			pCreature->PushToWorld(p_caster->GetMapMgr());
-			sEventMgr.AddEvent(pCreature, &Creature::SafeDelete, EVENT_CREATURE_REMOVE_CORPSE,60000, 1, 0);
-		}break;
-
-		//Warlock: Summon Felhunter Quest
-	case 8712:
-		{
-			CreatureInfo * ci = CreatureNameStorage.LookupEntry(6268);
-			CreatureProto * cp = CreatureProtoStorage.LookupEntry(6268);
-			if( !ci || !cp )
-				return;
-
-			Creature * pCreature = p_caster->GetMapMgr()->CreateCreature(cp->Id);
-			pCreature->Load(cp, p_caster->GetPositionX(), p_caster->GetPositionY(), p_caster->GetPositionZ());
-			pCreature->_setFaction();
-			pCreature->GetAIInterface()->Init(pCreature, AITYPE_AGRO,MOVEMENTTYPE_NONE);
-			pCreature->GetAIInterface()->taunt(p_caster, true);
-			pCreature->_setFaction();
-			pCreature->PushToWorld(p_caster->GetMapMgr());
-			sEventMgr.AddEvent(pCreature, &Creature::SafeDelete, EVENT_CREATURE_REMOVE_CORPSE,60000, 1, 0);
-		}break;
-
+		owner->GetItemInterface()->BuildInventoryChangeError(NULL, NULL, INV_ERR_BAG_FULL);
+		it->DeleteMe();
 	}
 }
 
@@ -3869,31 +3791,6 @@ void Spell::SpellEffectLearnSpell(uint32 i) // Learn Spell
 void Spell::SpellEffectSpellDefense(uint32 i)
 {
 	//used to enable this ability. We use it all the time ...
-}
-
-void Spell::SpellEffectLearnPetSpell(uint32 i)
-{
-	/*if(unitTarget && m_caster->GetTypeId() == TYPEID_PLAYER)
-	{
-	if(unitTarget->IsPet() && unitTarget->GetTypeId() == TYPEID_UNIT)
-	{
-	static_cast< Player* >(m_caster)->AddPetSpell(GetProto()->EffectTriggerSpell[i], unitTarget->GetEntry());
-	}
-	}*/
-
-	if(unitTarget && unitTarget->IsPet() && p_caster)
-	{
-		Pet * pPet = static_cast<Pet*>( unitTarget );
-		if(pPet->IsSummon())
-			p_caster->AddSummonSpell(unitTarget->GetEntry(), GetProto()->EffectTriggerSpell[i]);
-
-		pPet->AddSpell( dbcSpell.LookupEntry( GetProto()->EffectTriggerSpell[i] ), true );
-
-		// Send Packet
-		/*		WorldPacket data(SMSG_SET_EXTRA_AURA_INFO_OBSOLETE, 22);
-		data << pPet->GetGUID() << uint8(0) << uint32(GetProto()->EffectTriggerSpell[i]) << uint32(-1) << uint32(0);
-		p_caster->GetSession()->SendPacket(&data);*/
-	}
 }
 
 void Spell::SpellEffectDispel(uint32 i) // Dispel
@@ -4180,6 +4077,43 @@ void Spell::SpellEffectSkillStep(uint32 i) // Skill Step
 	}
 }
 
+void Spell::SpellEffectAddHonor(uint32 i)
+{
+	if( !playerTarget ) return;
+
+	uint32 val = GetProto()->EffectBasePoints[i];
+
+	if( GetProto()->AttributesExB & FLAGS3_UNK4 )val /= 10;
+
+	val += 1;
+
+	HonorHandler::AddHonorPointsToPlayer( playerTarget, val );
+
+	WorldPacket data(SMSG_PVP_CREDIT, 16);
+	data << val;
+	data << uint64(0);
+	data << uint32(5);
+	playerTarget->GetSession()->SendPacket(&data);
+}
+
+void Spell::SpellEffectSpawn(uint32 i)
+{
+	// this effect is mostly for custom teleporting
+	switch(GetProto()->Id)
+	{
+	case 10418: // Arugal spawn-in spell , teleports it to 3 locations randomly sneaking players (bastard ;P)
+		{
+			if(!u_caster || u_caster->IsPlayer())
+				return;
+
+			static float coord[3][3]= {{-108.9034f,2129.5678f,144.9210f},{-108.9034f,2155.5678f,155.678f},{-77.9034f,2155.5678f,155.678f}};
+
+			int i = (int)(rand()%3);
+			u_caster->GetAIInterface()->SendMoveToPacket(coord[i][0],coord[i][1],coord[i][2],0.0f,0,u_caster->GetAIInterface()->getMoveFlags());
+		}
+	}
+}
+
 void Spell::SpellEffectSummonObject(uint32 i)
 {
 	if( !u_caster ) return;
@@ -4439,6 +4373,31 @@ void Spell::SpellEffectSummonPet(uint32 i) //summon - pet
 	}
 }
 
+void Spell::SpellEffectLearnPetSpell(uint32 i)
+{
+	/*if(unitTarget && m_caster->GetTypeId() == TYPEID_PLAYER)
+	{
+	if(unitTarget->IsPet() && unitTarget->GetTypeId() == TYPEID_UNIT)
+	{
+	static_cast< Player* >(m_caster)->AddPetSpell(GetProto()->EffectTriggerSpell[i], unitTarget->GetEntry());
+	}
+	}*/
+
+	if(unitTarget && unitTarget->IsPet() && p_caster)
+	{
+		Pet * pPet = static_cast<Pet*>( unitTarget );
+		if(pPet->IsSummon())
+			p_caster->AddSummonSpell(unitTarget->GetEntry(), GetProto()->EffectTriggerSpell[i]);
+
+		pPet->AddSpell( dbcSpell.LookupEntry( GetProto()->EffectTriggerSpell[i] ), true );
+
+		// Send Packet
+		/*		WorldPacket data(SMSG_SET_EXTRA_AURA_INFO_OBSOLETE, 22);
+		data << pPet->GetGUID() << uint8(0) << uint32(GetProto()->EffectTriggerSpell[i]) << uint32(-1) << uint32(0);
+		p_caster->GetSession()->SendPacket(&data);*/
+	}
+}
+
 void Spell::SpellEffectWeapondamage( uint32 i ) // Weapon damage +
 {
 	if( !unitTarget || !u_caster ) return;
@@ -4465,6 +4424,176 @@ void Spell::SpellEffectWeapondamage( uint32 i ) // Weapon damage +
 			_type = MELEE;
 	}
 	u_caster->Strike( unitTarget, _type, GetProto(), damage, 0, 0, false, true );
+}
+
+void Spell::SpellEffectOpenLockItem(uint32 i)
+{
+	Unit* caster = u_caster;
+	if(!caster && i_caster) caster = i_caster->GetOwner();
+
+	if(!gameObjTarget || !gameObjTarget->IsInWorld()) return;
+
+	if( caster && caster->IsPlayer() && sQuestMgr.OnGameObjectActivate( (static_cast<Player*>(caster)), gameObjTarget ) )
+		static_cast<Player*>(caster)->UpdateNearbyGameObjects();
+
+	CALL_GO_SCRIPT_EVENT(gameObjTarget, OnActivate)(static_cast<Player*>(caster));
+	gameObjTarget->SetByte(GAMEOBJECT_BYTES_1, 0, 0);
+
+	if( gameObjTarget->GetEntry() == 183146)
+	{
+		gameObjTarget->Despawn(0, 1);
+		return;
+	}
+
+	if( gameObjTarget->GetByte( GAMEOBJECT_BYTES_1, 1 ) == GAMEOBJECT_TYPE_CHEST)
+	{
+		lootmgr.FillGOLoot(&gameObjTarget->loot,gameObjTarget->GetEntry(), gameObjTarget->GetMapMgr() ? (gameObjTarget->GetMapMgr()->iInstanceMode ? true : false) : false);
+		if(gameObjTarget->loot.items.size() > 0)
+		{
+			static_cast<Player*>(caster)->SendLoot(gameObjTarget->GetGUID(),LOOT_CORPSE);
+		}
+	}
+
+	// cebernic: atm doors works fine.
+	if( gameObjTarget->GetByte( GAMEOBJECT_BYTES_1, 1 ) == GAMEOBJECT_TYPE_DOOR
+		|| gameObjTarget->GetByte( GAMEOBJECT_BYTES_1, 1 ) == GAMEOBJECT_TYPE_GOOBER )
+		gameObjTarget->SetUInt32Value(GAMEOBJECT_FLAGS, gameObjTarget->GetUInt32Value( GAMEOBJECT_FLAGS ) | 1);
+
+	if(gameObjTarget->GetMapMgr()->GetMapInfo()->type==INSTANCE_NULL)//don't close doors for instances
+		sEventMgr.AddEvent(gameObjTarget,&GameObject::EventCloseDoor, EVENT_GAMEOBJECT_DOOR_CLOSE,10000,1,0);
+
+	sEventMgr.AddEvent(gameObjTarget, &GameObject::Despawn, (uint32)0, (uint32)1, EVENT_GAMEOBJECT_ITEM_SPAWN, 6*60*1000, 1, 0);
+}
+
+void Spell::SpellEffectProficiency(uint32 i)
+{
+	uint32 skill = 0;
+	skilllinespell *skillability = objmgr.GetSpellSkill(GetProto()->Id);
+	if (skillability)
+		skill = skillability->skilline;
+	skilllineentry *sk = dbcSkillLine.LookupEntry(skill);
+	if(skill)
+	{
+		if(playerTarget)
+		{
+			if(playerTarget->_HasSkillLine(skill))
+			{
+				// Increase it by one
+				// playerTarget->AdvanceSkillLine(skill);
+			}
+			else
+			{
+				// Don't add skills to players logging in.
+				/*if((GetProto()->Attributes & 64) && playerTarget->m_TeleportState == 1)
+				return;*/
+
+				if(sk && sk->type == SKILL_TYPE_WEAPON)
+					playerTarget->_AddSkillLine(skill, 1, 5*playerTarget->getLevel());
+				else
+					playerTarget->_AddSkillLine(skill, 1, 1);
+			}
+		}
+	}
+}
+
+void Spell::SpellEffectSendEvent(uint32 i) //Send Event
+{
+	//This is mostly used to trigger events on quests or some places
+
+	uint32 spellId = GetProto()->Id;
+
+	// Try a dummy SpellHandler
+	if(sScriptMgr.CallScriptedDummySpell(spellId, i, this)) return;
+
+	switch(spellId)
+	{
+
+		// WSG Flags
+	case 23333:
+	case 23335:
+		{
+			if (p_caster && p_caster->m_bg) {
+
+				if( p_caster->GetTeam() == 1 )
+					p_caster->m_bg->SendChatMessage( CHAT_MSG_BG_EVENT_HORDE, p_caster->GetGUID(), "The Alliance flag was picked up by %s!", p_caster->GetName() );
+				else
+					p_caster->m_bg->SendChatMessage( CHAT_MSG_BG_EVENT_ALLIANCE, p_caster->GetGUID(), "The Horde flag was picked up by %s!", p_caster->GetName() );
+			}
+		}break;
+
+		// Place Loot
+	case 25720: // Places the Bag of Gold at the designated Drop-Off Point.
+		{
+
+		}break;
+
+		// Item - Cleansing Vial DND
+	case 29297: // Empty the vial near the Bones of Aggonar to cleanse the waters of their demonic taint.
+		{
+			QuestLogEntry *en=p_caster->GetQuestLogForEntry(9427);
+			if(!en) return;
+			en->SendQuestComplete();
+		}break;
+
+		//Warlock: Summon Succubus Quest
+	case 8674:
+	case 9223:
+	case 9224:
+		{
+			CreatureInfo * ci = CreatureNameStorage.LookupEntry(5677);
+			CreatureProto * cp = CreatureProtoStorage.LookupEntry(5677);
+			if( !ci || !cp )
+				return;
+
+			Creature * pCreature = p_caster->GetMapMgr()->CreateCreature(cp->Id);
+			pCreature->Load(cp, p_caster->GetPositionX(), p_caster->GetPositionY(), p_caster->GetPositionZ());
+			pCreature->_setFaction();
+			pCreature->GetAIInterface()->Init(pCreature, AITYPE_AGRO,MOVEMENTTYPE_NONE);
+			pCreature->GetAIInterface()->taunt(p_caster, true);
+			pCreature->_setFaction();
+			pCreature->PushToWorld(p_caster->GetMapMgr());
+			sEventMgr.AddEvent(pCreature, &Creature::SafeDelete, EVENT_CREATURE_REMOVE_CORPSE,60000, 1, 0);
+		}break;
+
+		//Warlock: Summon Voidwalker Quest
+	case 30208:
+	case 9221:
+	case 9222:
+	case 7728:
+		{
+			CreatureInfo * ci = CreatureNameStorage.LookupEntry(5676);
+			CreatureProto * cp = CreatureProtoStorage.LookupEntry(5676);
+			if( !ci || !cp ) return;
+
+			Creature * pCreature = p_caster->GetMapMgr()->CreateCreature(cp->Id);
+			pCreature->Load(cp, p_caster->GetPositionX(), p_caster->GetPositionY(), p_caster->GetPositionZ());
+			pCreature->_setFaction();
+			pCreature->GetAIInterface()->Init(pCreature, AITYPE_AGRO,MOVEMENTTYPE_NONE);
+			pCreature->GetAIInterface()->taunt(p_caster, true);
+			pCreature->_setFaction();
+			pCreature->PushToWorld(p_caster->GetMapMgr());
+			sEventMgr.AddEvent(pCreature, &Creature::SafeDelete, EVENT_CREATURE_REMOVE_CORPSE,60000, 1, 0);
+		}break;
+
+		//Warlock: Summon Felhunter Quest
+	case 8712:
+		{
+			CreatureInfo * ci = CreatureNameStorage.LookupEntry(6268);
+			CreatureProto * cp = CreatureProtoStorage.LookupEntry(6268);
+			if( !ci || !cp )
+				return;
+
+			Creature * pCreature = p_caster->GetMapMgr()->CreateCreature(cp->Id);
+			pCreature->Load(cp, p_caster->GetPositionX(), p_caster->GetPositionY(), p_caster->GetPositionZ());
+			pCreature->_setFaction();
+			pCreature->GetAIInterface()->Init(pCreature, AITYPE_AGRO,MOVEMENTTYPE_NONE);
+			pCreature->GetAIInterface()->taunt(p_caster, true);
+			pCreature->_setFaction();
+			pCreature->PushToWorld(p_caster->GetMapMgr());
+			sEventMgr.AddEvent(pCreature, &Creature::SafeDelete, EVENT_CREATURE_REMOVE_CORPSE,60000, 1, 0);
+		}break;
+
+	}
 }
 
 void Spell::SpellEffectPowerBurn(uint32 i) // power burn
@@ -4762,11 +4891,6 @@ void Spell::SpellEffectUseGlyph(uint32 i)
 		p_caster->CastSpell( p_caster, gp_new->SpellID, true );
 	}
 
-}
-
-void Spell::SpellEffectCreateSummonTotem(uint32 i)
-{
-	//Atalai Skeleton Totem
 }
 
 void Spell::SpellEffectHealMechanical(uint32 i)
@@ -5791,6 +5915,40 @@ void Spell::SpellEffectSummonTotem(uint32 i) // Summon Totem
 	sEventMgr.AddEvent(pTotem, &Creature::TotemExpire, EVENT_TOTEM_EXPIRE, GetDuration(), 1,0);
 }
 
+void Spell::SpellEffectEnchantHeldItem( uint32 i )
+{
+	if( !playerTarget ) return;
+
+	Item * item = playerTarget->GetItemInterface()->GetInventoryItem( EQUIPMENT_SLOT_MAINHAND );
+	if( !item )
+		return;
+
+	uint32 Duration = 1800; // Needs to be found in dbc.. I guess?
+	switch( GetProto()->NameHash )
+	{
+	case SPELL_HASH_WINDFURY_WEAPON: // Windfury Weapon Effect
+		{
+			Duration = 10;
+		}
+	case SPELL_HASH_FLAMETONGUE_WEAPON: // Flametongue Weapon Effect
+		{
+			Duration = 10;
+		}
+	}
+	EnchantEntry * Enchantment = dbcEnchant.LookupEntry( GetProto()->EffectMiscValue[i] );
+
+	if( !Enchantment )
+		return;
+
+	/* Windfury Totem removed in 3.0.2
+	if (m_spellInfo->NameHash == SPELL_HASH_WINDFURY_TOTEM_EFFECT && item->HasEnchantmentOnSlot( 1 ) && item->GetEnchantment( 1 )->Enchantment != Enchantment) //dirty fix for Windfury totem not overwriting existing enchantments
+	return;
+	*/
+
+	item->RemoveEnchantment( 1 );
+	item->AddEnchantment( Enchantment, Duration, false, true, false, 1 );
+}
+
 void Spell::SpellEffectSelfResurrect(uint32 i)
 {
 	if(!p_caster || !unitTarget || playerTarget->isAlive()) return;
@@ -5936,37 +6094,6 @@ void Spell::SpellEffectCharge(uint32 i)
 		p_caster->SpeedCheatDelay( time + 1000 );
 		p_caster->z_axisposition = 0.0f;
 	}
-}
-
-void Spell::SpellEffectPlayerPull( uint32 i )
-{
-	if( !unitTarget || !unitTarget->isAlive() || !unitTarget->IsPlayer() )
-		return;
-
-	Player* p_target = static_cast< Player* >( unitTarget );
-
-	// calculate destination
-	float pullD = p_target->CalcDistance( m_caster ) - p_target->GetFloatValue( UNIT_FIELD_BOUNDINGRADIUS ) - m_caster->GetFloatValue( UNIT_FIELD_BOUNDINGRADIUS ) - 1.0f;
-	float pullO = p_target->calcRadAngle( p_target->GetPositionX(), p_target->GetPositionY(), m_caster->GetPositionX(), m_caster->GetPositionY() );
-	float pullX = p_target->GetPositionX() + pullD * cosf( pullO );
-	float pullY = p_target->GetPositionY() + pullD * sinf( pullO );
-	float pullZ = m_caster->GetPositionZ() + 0.3f;
-	uint32 time = uint32( pullD * 42.0f );
-
-	p_target->SetOrientation( pullO );
-
-	WorldPacket data( SMSG_MONSTER_MOVE, 60 );
-	data << p_target->GetNewGUID();
-	data << p_target->GetPositionX() << p_target->GetPositionY() << p_target->GetPositionZ();
-	data << getMSTime();
-	data << uint8( 4 );
-	data << pullO;
-	data << uint32( 0x00000100 );
-	data << time;
-	data << uint32( 1 );
-	data << pullX << pullY << pullZ;
-
-	p_target->SendMessageToSet( &data, true );
 }
 
 void Spell::SpellEffectSummonCritter(uint32 i)
@@ -6152,23 +6279,14 @@ void Spell::SpellEffectFeedPet(uint32 i)  // Feed Pet
 	}
 }
 
-void Spell::SpellEffectRedirectThreat(uint32 i)
+void Spell::SpellEffectDismissPet(uint32 i)
 {
-	if (!p_caster || !unitTarget)
-		return;
+	// remove pet.. but don't delete so it can be called later
+	if(!p_caster) return;
 
-	if ((unitTarget->GetTypeId() == TYPEID_PLAYER && p_caster->GetGroup() != static_cast<Player *>(unitTarget)->GetGroup()) || (unitTarget->GetTypeId() == TYPEID_UNIT && !unitTarget->IsPet()))
-		return;
-
-	p_caster->SetMisdirectionTarget(unitTarget->GetGUID());
-}
-
-void Spell::SpellEffectReduceThreatPercent(uint32 i)
-{
-	if (!unitTarget || !unitTarget->IsCreature() || !u_caster || unitTarget->GetAIInterface()->getThreatByPtr(u_caster) == 0)
-		return;
-
-	unitTarget->GetAIInterface()->modThreatByPtr(u_caster, (int32)unitTarget->GetAIInterface()->getThreatByPtr(u_caster) * damage / 100);
+	Pet *pPet = p_caster->GetSummon();
+	if(!pPet) return;
+	pPet->Remove( true, true );
 }
 
 void Spell::SpellEffectReputation(uint32 i)
@@ -6358,8 +6476,9 @@ void Spell::SpellEffectSummonDemon(uint32 i)
 	}
 }
 
-void Spell::SpellEffectResurrect(uint32 i) // Resurrect (Flat)
+void Spell::SpellEffectResurrectNew(uint32 i)
 {
+	//base p =hp,misc mana
 	if(!playerTarget)
 	{
 		if(!corpseTarget)
@@ -6401,15 +6520,15 @@ void Spell::SpellEffectResurrect(uint32 i) // Resurrect (Flat)
 
 	if(playerTarget->isAlive() || !playerTarget->IsInWorld())
 		return;
+	//resurrect
+	//playerTarget->resurrector = p_caster->GetLowGUID();
+	playerTarget->m_resurrectMapId = p_caster->GetMapId();
+	playerTarget->m_resurrectInstanceID = p_caster->GetInstanceID();
+	playerTarget->m_resurrectPosition = p_caster->GetPosition();
+	playerTarget->m_resurrectHealth = damage;
+	playerTarget->m_resurrectMana = GetProto()->EffectMiscValue[i];
 
-	uint32 health = GetProto()->EffectBasePoints[i];
-	uint32 mana = GetProto()->EffectMiscValue[i];
-
-	playerTarget->m_resurrectHealth = health;
-	playerTarget->m_resurrectMana = mana;
-
-	SendResurrectRequest(playerTarget);
-	playerTarget->SetMovement(MOVE_UNROOT, 1);
+	SendResurrectRequest( playerTarget );
 }
 
 void Spell::SpellEffectAttackMe(uint32 i)
@@ -6668,6 +6787,45 @@ void Spell::SpellEffectFilming( uint32 i )
 	playerTarget->TaxiStart( taxipath, modelid, 0 );
 }
 
+void Spell::SpellEffectPlayerPull( uint32 i )
+{
+	if( !unitTarget || !unitTarget->isAlive() || !unitTarget->IsPlayer() )
+		return;
+
+	Player* p_target = static_cast< Player* >( unitTarget );
+
+	// calculate destination
+	float pullD = p_target->CalcDistance( m_caster ) - p_target->GetFloatValue( UNIT_FIELD_BOUNDINGRADIUS ) - m_caster->GetFloatValue( UNIT_FIELD_BOUNDINGRADIUS ) - 1.0f;
+	float pullO = p_target->calcRadAngle( p_target->GetPositionX(), p_target->GetPositionY(), m_caster->GetPositionX(), m_caster->GetPositionY() );
+	float pullX = p_target->GetPositionX() + pullD * cosf( pullO );
+	float pullY = p_target->GetPositionY() + pullD * sinf( pullO );
+	float pullZ = m_caster->GetPositionZ() + 0.3f;
+	uint32 time = uint32( pullD * 42.0f );
+
+	p_target->SetOrientation( pullO );
+
+	WorldPacket data( SMSG_MONSTER_MOVE, 60 );
+	data << p_target->GetNewGUID();
+	data << p_target->GetPositionX() << p_target->GetPositionY() << p_target->GetPositionZ();
+	data << getMSTime();
+	data << uint8( 4 );
+	data << pullO;
+	data << uint32( 0x00000100 );
+	data << time;
+	data << uint32( 1 );
+	data << pullX << pullY << pullZ;
+
+	p_target->SendMessageToSet( &data, true );
+}
+
+void Spell::SpellEffectReduceThreatPercent(uint32 i)
+{
+	if (!unitTarget || !unitTarget->IsCreature() || !u_caster || unitTarget->GetAIInterface()->getThreatByPtr(u_caster) == 0)
+		return;
+
+	unitTarget->GetAIInterface()->modThreatByPtr(u_caster, (int32)unitTarget->GetAIInterface()->getThreatByPtr(u_caster) * damage / 100);
+}
+
 void Spell::SpellEffectSpellSteal( uint32 i )
 {
 	if (!unitTarget || !u_caster || !unitTarget->isAlive())
@@ -6780,234 +6938,31 @@ void Spell::SpellEffectProspecting(uint32 i)
 	}
 }
 
-void Spell::SpellEffectMilling(uint32 i)
-{
-	if(!p_caster) return;
-
-	if(!itemTarget) // this should never happen
-	{
-		SendCastResult(SPELL_FAILED_CANT_BE_PROSPECTED);
-		return;
-	}
-
-	//Fill Prospecting loot
-	p_caster->SetLootGUID(itemTarget->GetGUID());
-	if( !itemTarget->loot )
-	{
-		itemTarget->loot = new Loot;
-		lootmgr.FillMillingLoot( itemTarget->loot , itemTarget->GetEntry());
-	}
-
-	if ( itemTarget->loot->items.size() > 0 )
-	{
-		Log.Debug("SpellEffect","Successfully milled item %d", uint32(itemTarget->GetEntry()));
-		p_caster->SendLoot( itemTarget->GetGUID(), LOOT_MILLING );
-	}
-	else // this should never happen either
-	{
-		Log.Debug("SpellEffect","Milling failed, item %d has no loot", uint32(itemTarget->GetEntry()));
-		SendCastResult(SPELL_FAILED_CANT_BE_PROSPECTED);
-	}
-}
-
-void Spell::SpellEffectResurrectNew(uint32 i)
-{
-	//base p =hp,misc mana
-	if(!playerTarget)
-	{
-		if(!corpseTarget)
-		{
-			// unit resurrection handler
-			if(unitTarget)
-			{
-				if(unitTarget->GetTypeId()==TYPEID_UNIT && unitTarget->IsPet() && unitTarget->IsDead())
-				{
-					uint32 hlth = ((uint32)GetProto()->EffectBasePoints[i] > unitTarget->GetUInt32Value(UNIT_FIELD_MAXHEALTH)) ? unitTarget->GetUInt32Value(UNIT_FIELD_MAXHEALTH) : (uint32)GetProto()->EffectBasePoints[i];
-					uint32 mana = ((uint32)GetProto()->EffectBasePoints[i] > unitTarget->GetUInt32Value(UNIT_FIELD_MAXPOWER1)) ? unitTarget->GetUInt32Value(UNIT_FIELD_MAXPOWER1) : (uint32)GetProto()->EffectBasePoints[i];
-
-					if(!unitTarget->IsPet())
-					{
-						sEventMgr.RemoveEvents(unitTarget, EVENT_CREATURE_REMOVE_CORPSE);
-					}
-					else
-					{
-						sEventMgr.RemoveEvents(unitTarget, EVENT_PET_DELAYED_REMOVE);
-						sEventMgr.RemoveEvents(unitTarget, EVENT_CREATURE_REMOVE_CORPSE);
-					}
-					unitTarget->SetUInt32Value(UNIT_FIELD_HEALTH, hlth);
-					unitTarget->SetUInt32Value(UNIT_FIELD_POWER1, mana);
-					unitTarget->SetUInt32Value(UNIT_DYNAMIC_FLAGS, 0);
-					unitTarget->setDeathState(ALIVE);
-					static_cast<Creature*>(unitTarget)->Tagged=false;
-					static_cast<Creature*>(unitTarget)->TaggerGuid=false;
-					static_cast<Creature*>(unitTarget)->loot.gold=0;
-					static_cast<Creature*>(unitTarget)->loot.looters.clear();
-					static_cast<Creature*>(unitTarget)->loot.items.clear();
-				}
-			}
-
-			return;
-		}
-		playerTarget = objmgr.GetPlayer(corpseTarget->GetUInt32Value(CORPSE_FIELD_OWNER));
-		if(!playerTarget) return;
-	}
-
-	if(playerTarget->isAlive() || !playerTarget->IsInWorld())
-		return;
-	//resurrect
-	//playerTarget->resurrector = p_caster->GetLowGUID();
-	playerTarget->m_resurrectMapId = p_caster->GetMapId();
-	playerTarget->m_resurrectInstanceID = p_caster->GetInstanceID();
-	playerTarget->m_resurrectPosition = p_caster->GetPosition();
-	playerTarget->m_resurrectHealth = damage;
-	playerTarget->m_resurrectMana = GetProto()->EffectMiscValue[i];
-
-	SendResurrectRequest( playerTarget );
-}
-
-void Spell::SpellEffectTranformItem(uint32 i)
-{
-	bool result;
-	AddItemResult result2;
-
-	if(!i_caster) return;
-	uint32 itemid=GetProto()->EffectItemType[i];
-	if(!itemid) return;
-
-	//Save durability of the old item
-	Player * owner=i_caster->GetOwner();
-	uint32 dur= i_caster->GetUInt32Value(ITEM_FIELD_DURABILITY);
-	//	int8 slot=owner->GetItemInterface()->GetInventorySlotByGuid(i_caster->GetGUID());
-	//	uint32 invt=i_caster->GetProto()->InventoryType;
-
-	result  = owner->GetItemInterface()->SafeFullRemoveItemByGuid(i_caster->GetGUID());
-	if(!result)
-	{
-		//something went wrong if this happen, item doesn't exist, so it wasn't destroyed.
-		return;
-	}
-
-	i_caster = NULL;
-
-	Item *it = objmgr.CreateItem(itemid,owner);
-	if (!it) return;
-
-	it->SetDurability(dur);
-	//additem
-
-	//additem
-	result2 = owner->GetItemInterface()->AddItemToFreeSlot(it);
-	if(!result2) //should never get here
-	{
-		owner->GetItemInterface()->BuildInventoryChangeError(NULL, NULL, INV_ERR_BAG_FULL);
-		it->DeleteMe();
-	}
-}
-
-void Spell::SpellEffectEnvironmentalDamage(uint32 i)
-{
-	if(!playerTarget) return;
-
-	if(unitTarget->SchoolImmunityList[GetProto()->School])
-	{
-		SendCastResult(SPELL_FAILED_IMMUNE);
-		return;
-	}
-	//this is GO, not unit
-	m_caster->SpellNonMeleeDamageLog(unitTarget,GetProto()->Id,damage, pSpellId==0);
-
-	WorldPacket data(SMSG_ENVIRONMENTALDAMAGELOG, 13);
-	data << unitTarget->GetGUID();
-	data << uint8(DAMAGE_FIRE);
-	data << uint32(damage);
-	unitTarget->SendMessageToSet( &data, true );
-}
-
-void Spell::SpellEffectDismissPet(uint32 i)
-{
-	// remove pet.. but don't delete so it can be called later
-	if(!p_caster) return;
-
-	Pet *pPet = p_caster->GetSummon();
-	if(!pPet) return;
-	pPet->Remove( true, true );
-}
-
-void Spell::SpellEffectEnchantHeldItem( uint32 i )
-{
-	if( !playerTarget ) return;
-
-	Item * item = playerTarget->GetItemInterface()->GetInventoryItem( EQUIPMENT_SLOT_MAINHAND );
-	if( !item )
-		return;
-
-	uint32 Duration = 1800; // Needs to be found in dbc.. I guess?
-	switch( GetProto()->NameHash )
-	{
-	case SPELL_HASH_WINDFURY_WEAPON: // Windfury Weapon Effect
-		{
-			Duration = 10;
-		}
-	case SPELL_HASH_FLAMETONGUE_WEAPON: // Flametongue Weapon Effect
-		{
-			Duration = 10;
-		}
-	}
-	EnchantEntry * Enchantment = dbcEnchant.LookupEntry( GetProto()->EffectMiscValue[i] );
-
-	if( !Enchantment )
-		return;
-
-	/* Windfury Totem removed in 3.0.2
-	if (m_spellInfo->NameHash == SPELL_HASH_WINDFURY_TOTEM_EFFECT && item->HasEnchantmentOnSlot( 1 ) && item->GetEnchantment( 1 )->Enchantment != Enchantment) //dirty fix for Windfury totem not overwriting existing enchantments
-	return;
-	*/
-
-	item->RemoveEnchantment( 1 );
-	item->AddEnchantment( Enchantment, Duration, false, true, false, 1 );
-}
-
-void Spell::SpellEffectAddHonor(uint32 i)
-{
-	if( !playerTarget ) return;
-
-	uint32 val = GetProto()->EffectBasePoints[i];
-
-	if( GetProto()->AttributesExB & FLAGS3_UNK4 )val /= 10;
-
-	val += 1;
-
-	HonorHandler::AddHonorPointsToPlayer( playerTarget, val );
-
-	WorldPacket data(SMSG_PVP_CREDIT, 16);
-	data << val;
-	data << uint64(0);
-	data << uint32(5);
-	playerTarget->GetSession()->SendPacket(&data);
-}
-
-void Spell::SpellEffectSpawn(uint32 i)
-{
-	// this effect is mostly for custom teleporting
-	switch(GetProto()->Id)
-	{
-	case 10418: // Arugal spawn-in spell , teleports it to 3 locations randomly sneaking players (bastard ;P)
-		{
-			if(!u_caster || u_caster->IsPlayer())
-				return;
-
-			static float coord[3][3]= {{-108.9034f,2129.5678f,144.9210f},{-108.9034f,2155.5678f,155.678f},{-77.9034f,2155.5678f,155.678f}};
-
-			int i = (int)(rand()%3);
-			u_caster->GetAIInterface()->SendMoveToPacket(coord[i][0],coord[i][1],coord[i][2],0.0f,0,u_caster->GetAIInterface()->getMoveFlags());
-		}
-	}
-}
-
 void Spell::SpellEffectApplyAura128(uint32 i)
 {
 	if(GetProto()->EffectApplyAuraName[i] != 0)
 		SpellEffectApplyAura(i);
+}
+
+void Spell::SpellEffectRedirectThreat(uint32 i)
+{
+	if (!p_caster || !unitTarget)
+		return;
+
+	if ((unitTarget->GetTypeId() == TYPEID_PLAYER && p_caster->GetGroup() != static_cast<Player *>(unitTarget)->GetGroup()) || (unitTarget->GetTypeId() == TYPEID_UNIT && !unitTarget->IsPet()))
+		return;
+
+	p_caster->SetMisdirectionTarget(unitTarget->GetGUID());
+}
+
+void Spell::SpellEffectForgetSpecialization(uint32 i)
+{
+	if (!playerTarget) return;
+
+	uint32 spellid = GetProto()->EffectTriggerSpell[i];
+	playerTarget->removeSpell( spellid, false, false, 0);
+
+	sLog.outDebug("Player %u have forgot spell %u from spell %u ( caster: %u)", playerTarget->GetLowGUID(), spellid, GetProto()->Id, m_caster->GetLowGUID());
 }
 
 void Spell::SpellEffectRestoreManaPct(uint32 i)
@@ -7049,30 +7004,70 @@ void Spell::SpellEffectTriggerSpellWithValue(uint32 i)
 	sp->prepare(&tgt);
 }
 
-void Spell::SpellEffectSummonTarget(uint32 i) // ritual of summoning
-{
-	if ( !unitTarget )
-		return;
-
-	SpellEffectTriggerSpell( i );
-}
-
-void Spell::SpellEffectForgetSpecialization(uint32 i)
-{
-	if (!playerTarget) return;
-
-	uint32 spellid = GetProto()->EffectTriggerSpell[i];
-	playerTarget->removeSpell( spellid, false, false, 0);
-
-	sLog.outDebug("Player %u have forgot spell %u from spell %u ( caster: %u)", playerTarget->GetLowGUID(), spellid, GetProto()->Id, m_caster->GetLowGUID());
-}
-
 void Spell::SpellEffectDualWield2H( uint32 i )
 {
 	if( !playerTarget )
 		return;
 
 	playerTarget->DualWield2H = true;
+}
+
+void Spell::SpellEffectCreateItem2(uint32 i) // Create item
+{
+	//TODO: This spell effect has also a misc value - meaning is unknown yet
+	if( p_caster == NULL )
+		return;
+
+	uint32 new_item_id = GetProto()->EffectItemType[i];
+
+	if( new_item_id != NULL )
+	{
+		// create item
+		CreateItem( new_item_id );
+	}
+	else if( i_caster )
+	{
+		// provide player with item loot (clams)
+		// TODO: Finish this
+		/*if( !i_caster->loot )
+		{
+			i_caster->loot = new Loot;
+			lootmgr.FillItemLoot( i_caster->loot, i_caster->GetEntry() );
+		}
+		p_caster->SetLootGUID( i_caster->GetGUID() );
+		p_caster->SendLoot( i_caster->GetGUID(), LOOT_DISENCHANTING );
+		*/	
+	}
+}
+
+void Spell::SpellEffectMilling(uint32 i)
+{
+	if(!p_caster) return;
+
+	if(!itemTarget) // this should never happen
+	{
+		SendCastResult(SPELL_FAILED_CANT_BE_PROSPECTED);
+		return;
+	}
+
+	//Fill Prospecting loot
+	p_caster->SetLootGUID(itemTarget->GetGUID());
+	if( !itemTarget->loot )
+	{
+		itemTarget->loot = new Loot;
+		lootmgr.FillMillingLoot( itemTarget->loot , itemTarget->GetEntry());
+	}
+
+	if ( itemTarget->loot->items.size() > 0 )
+	{
+		Log.Debug("SpellEffect","Successfully milled item %d", uint32(itemTarget->GetEntry()));
+		p_caster->SendLoot( itemTarget->GetGUID(), LOOT_MILLING );
+	}
+	else // this should never happen either
+	{
+		Log.Debug("SpellEffect","Milling failed, item %d has no loot", uint32(itemTarget->GetEntry()));
+		SendCastResult(SPELL_FAILED_CANT_BE_PROSPECTED);
+	}
 }
 
 void Spell::SpellEffectRenamePet( uint32 i )

@@ -435,7 +435,7 @@ bool Guild::LoadFromDB(Field * f)
 	m_guildInfo = strlen(f[8].GetString()) ? strdup(f[8].GetString()) : NULL;
 	m_motd = strlen(f[9].GetString()) ? strdup(f[9].GetString()) : NULL;
 	m_creationTimeStamp = f[10].GetUInt32();
-	m_bankBalance = f[12].GetUInt64();
+	m_bankBalance = f[11].GetUInt64();
 
 	// load ranks
 	uint32 j;
@@ -1274,7 +1274,7 @@ void Guild::SendTurnInPetitionResult( WorldSession * pClient, uint32 result )
 
 void Guild::CreateInDB()
 {
-	CharacterDatabase.Execute("INSERT INTO guilds VALUES(%u, \"%s\", %u, %u, %u, %u, %u, %u, '', '', %u, 0, 0)",
+	CharacterDatabase.Execute("INSERT INTO guilds VALUES(%u, \"%s\", %u, %u, %u, %u, %u, %u, '', '', %u, 0)",
 		m_guildId, CharacterDatabase.EscapeString(string(m_guildName)).c_str(), m_guildLeader, m_emblemStyle, m_emblemColor, m_borderColor, m_borderStyle,
 		m_backgroundColor, m_creationTimeStamp);
 }
