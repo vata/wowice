@@ -176,7 +176,7 @@ void DynamicObject::UpdateTargets()
 			jtr2 = jtr;
 			++jtr;
 
-			if(GetDistanceSq(target) > radius)
+			if((target != NULL) && (GetDistanceSq(target) > radius))
 			{
 				target->RemoveAura(m_spellProto->Id);
 				targets.erase(jtr2);

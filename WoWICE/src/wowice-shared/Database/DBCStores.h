@@ -33,6 +33,7 @@ struct WorldMapOverlay
 // any of the four above indexes is enough to uncover the fragment
 };
 
+#ifdef ENABLE_ACHIEVEMENTS
 struct AchievementEntry
 {
 	uint32    ID;                                           // 0
@@ -465,6 +466,7 @@ struct AchievementCriteriaEntry
 	uint32  timeLimit;                                    // 29 time limit in seconds
 	uint32  index;                                        // 30
 };
+#endif
 
 struct BattlemasterListEntry
 {
@@ -499,6 +501,14 @@ struct CharTitlesEntry
 	char*   name2;                                        // 19-34, unused
 	char*   name2_flag;                                   // 35 string flag, unused
 	uint32  bit_index;                                    // 36 used in PLAYER_CHOSEN_TITLE and 1<<index in PLAYER__FIELD_KNOWN_TITLES
+};
+
+struct CurrencyTypesEntry
+{
+    //uint32    ID;                                       // 0 not used
+    uint32    ItemId;                                     // 1 used as real index
+    //uint32    Category;                                 // 2 may be category
+    uint32    BitIndex;                                   // 3 bit index in PLAYER_FIELD_KNOWN_CURRENCIES (1 << (index-1))
 };
 
 struct ItemSetEntry
@@ -738,7 +748,7 @@ struct SpellEntry
 	uint32 EffectRadiusIndex[3];            //96 - 98
 	uint32 EffectApplyAuraName[3];          //99 - 101
 	uint32 EffectAmplitude[3];              //102 - 104
-	float  Effectunknown[3];                //105 - 107     This value is the $ value from description
+	float  EffectMultipleValue[3];          //105 - 107     This value is the $ value from description
 	uint32 EffectChainTarget[3];            //108 - 110
 	uint32 EffectItemType[3];               //111 - 113     Not sure maybe we should rename it. its the relation to field: SpellGroupType
 	uint32 EffectMiscValue[3];              //114 - 116
@@ -983,7 +993,7 @@ struct TalentTabEntry
 //	uint32 unk19;
 //	uint32 unk20;
 	uint32 ClassMask;
-//	uint32 unk21;
+	uint32 PetTalentMask;
 	uint32 TabPage;
 //	char*  InternalName;
 };
@@ -1467,6 +1477,23 @@ class SERVER_DECL DBCStorage
 
 public:
 
+    class iterator{
+    private:
+        T *p;
+    public:
+        iterator(T* ip = 0) : p(ip){ }
+        iterator& operator++(){ ++p; return *this; }
+        bool operator!=(const iterator &i){ return (p != i.p); }
+        T* operator*(){ return p; }
+    };
+
+    iterator begin(){ 
+        return iterator(&m_heapBlock[0]);
+    }
+    iterator end(){ 
+        return iterator(&m_heapBlock[m_numrows]); 
+    }
+
 	DBCStorage()
 	{
 		m_heapBlock = NULL;
@@ -1750,11 +1777,14 @@ public:
 };
 
 extern SERVER_DECL DBCStorage<WorldMapOverlay> dbcWorldMapOverlayStore;
+#ifdef ENABLE_ACHIEVEMENTS
 extern SERVER_DECL DBCStorage<AchievementEntry> dbcAchievementStore;
 extern SERVER_DECL DBCStorage<AchievementCriteriaEntry> dbcAchievementCriteriaStore;
 extern SERVER_DECL DBCStorage<AchievementCategoryEntry> dbcAchievementCategoryStore;
+#endif
 extern SERVER_DECL DBCStorage<BattlemasterListEntry> dbcBattlemasterListStore;
 extern SERVER_DECL DBCStorage<CharTitlesEntry> dbcCharTitlesEntry;
+extern SERVER_DECL DBCStorage<CurrencyTypesEntry> dbcCurrencyTypesStore;
 extern SERVER_DECL DBCStorage<BarberShopStyleEntry> dbcBarberShopStyleStore;
 extern SERVER_DECL DBCStorage<GemPropertyEntry> dbcGemProperty;
 extern SERVER_DECL DBCStorage<GlyphPropertyEntry> dbcGlyphProperty;

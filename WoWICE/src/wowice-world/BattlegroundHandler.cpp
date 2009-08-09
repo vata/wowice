@@ -53,15 +53,20 @@ void WorldSession::HandleBattlefieldStatusOpcode(WorldPacket &recv_data)
 
 void WorldSession::HandleBattlefieldListOpcode(WorldPacket &recv_data)
 {
-	uint64 guid;
-	recv_data >> guid;
+//	uint64 guid;
+//	recv_data >> guid;
+	uint32 BGType;
+	recv_data >> BGType;
+	uint8 from;
+	recv_data >> from; // 0 - battlemaster, 1 - whatever
 
 	CHECK_INWORLD_RETURN;
-	Creature * pCreature = _player->GetMapMgr()->GetCreature( GET_LOWGUID_PART(guid) );
+	/*Creature * pCreature = _player->GetMapMgr()->GetCreature( GET_LOWGUID_PART(guid) );
 	if( pCreature == NULL )
 		return;
 
-	SendBattlegroundList( pCreature, 0 );
+	SendBattlegroundList( pCreature, 0, from );*/
+	BattlegroundManager.HandleBattlegroundListPacket(this, BGType, from);
 }
 
 void WorldSession::SendBattlegroundList(Creature* pCreature, uint32 mapid)
@@ -158,9 +163,60 @@ void WorldSession::HandleAreaSpiritHealerQueueOpcode(WorldPacket &recv_data)
 
 void WorldSession::HandleBattlegroundPlayerPositionsOpcode(WorldPacket &recv_data)
 {
-	/* This packet doesn't appear to be used anymore... 
-	 * - Burlex
-	 */
+	// empty opcode
+	CBattleground *bg = _player->m_bg;
+    if(!_player->IsInWorld() || !bg)
+        return;
+
+	if(bg->GetType() == BATTLEGROUND_WARSONG_GULCH)
+    {
+        uint32 count1 = 0;
+		uint32 count2 = 0;
+
+        Player *ap = objmgr.GetPlayer(((WarsongGulch*)bg)->GetAllianceFlagHolderGUID());
+        if(ap) ++count2;
+
+        Player *hp = objmgr.GetPlayer(((WarsongGulch*)bg)->GetHordeFlagHolderGUID());
+        if(hp) ++count2;
+
+        WorldPacket data(MSG_BATTLEGROUND_PLAYER_POSITIONS, (4+4+16*count1+16*count2));
+        data << count1;
+        data << count2;
+		if(ap)
+		{
+			data << (uint64)ap->GetGUID();
+			data << (float)ap->GetPositionX();
+			data << (float)ap->GetPositionY();
+		}
+		if(hp)
+		{
+			data << (uint64)hp->GetGUID();
+			data << (float)hp->GetPositionX();
+			data << (float)hp->GetPositionY();
+		}
+
+		SendPacket(&data);
+	}
+	else if(bg->GetType() == BATTLEGROUND_EYE_OF_THE_STORM)
+	{
+		uint32 count1 = 0;
+		uint32 count2 = 0;
+
+		Player *ap = objmgr.GetPlayer(((EyeOfTheStorm*)bg)->GetFlagHolderGUID());
+		if(ap) ++count2;
+
+		WorldPacket data(MSG_BATTLEGROUND_PLAYER_POSITIONS, (4+4+16*count1+16*count2));
+		data << count1;
+		data << count2;
+		if(ap)
+		{
+			data << (uint64)ap->GetGUID();
+			data << (float)ap->GetPositionX();
+			data << (float)ap->GetPositionY();
+		}
+
+		SendPacket(&data);
+	}
 }
 
 void WorldSession::HandleBattleMasterJoinOpcode(WorldPacket &recv_data)

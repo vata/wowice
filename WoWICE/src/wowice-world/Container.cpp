@@ -124,7 +124,7 @@ bool Container::HasItems()
 	return false;
 }
 
-bool Container::AddItem(int8 slot, Item *item)
+bool Container::AddItem(int16 slot, Item *item)
 {
 	if (slot < 0 || (uint32)slot >= GetProto()->ContainerSlots)
 		return false;
@@ -163,7 +163,9 @@ bool Container::AddItem(int8 slot, Item *item)
 		uint32 count = item->BuildCreateUpdateBlockForPlayer(&buf, m_owner);
 		m_owner->PushCreationData(&buf, count);
 	}
+#ifdef ENABLE_ACHIEVEMENTS
 	m_owner->GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_OWN_ITEM, item->GetProto()->ItemId, item->GetUInt32Value(ITEM_FIELD_STACK_COUNT), 0);
+#endif
 	return true;
 }
 
@@ -228,7 +230,7 @@ void Container::SwapItems(int8 SrcSlot, int8 DstSlot)
 	}
 }
 
-Item *Container::SafeRemoveAndRetreiveItemFromSlot(int8 slot, bool destroy)
+Item *Container::SafeRemoveAndRetreiveItemFromSlot(int16 slot, bool destroy)
 {
 	if (slot < 0 || (uint32)slot >= GetProto()->ContainerSlots)
 		return false;
@@ -258,7 +260,7 @@ Item *Container::SafeRemoveAndRetreiveItemFromSlot(int8 slot, bool destroy)
 	return pItem;
 }
 
-bool Container::SafeFullRemoveItemFromSlot(int8 slot)
+bool Container::SafeFullRemoveItemFromSlot(int16 slot)
 {
 	if (slot < 0 || (uint32)slot >= GetProto()->ContainerSlots)
 		return false;
@@ -305,7 +307,9 @@ bool Container::AddItemToFreeSlot(Item *pItem, uint32 * r_slot)
 			}
 			if(r_slot)
 				*r_slot = slot;
+#ifdef ENABLE_ACHIEVEMENTS
 			m_owner->GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_OWN_ITEM, pItem->GetProto()->ItemId, pItem->GetUInt32Value(ITEM_FIELD_STACK_COUNT), 0);
+#endif
 			return true;
 		}
 	}
@@ -321,7 +325,7 @@ void Container::SaveBagToDB(int8 slot, bool first, QueryBuffer * buf)
 	{
 		if (m_Slot[i] && !((m_Slot[i]->GetProto()->Flags)& 2) )
 		{
-			m_Slot[i]->SaveToDB(slot, i, first, buf);
+			m_Slot[i]->SaveToDB(slot, static_cast<int8>( i ), first, buf);
 		}
 	}
 }

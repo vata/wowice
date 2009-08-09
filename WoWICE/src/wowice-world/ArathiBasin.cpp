@@ -157,9 +157,10 @@ uint32 buffentrys[3] = {180380,180362,180146};
 		30,
 	};
 
-//								<10 <20 <30 <40 <50 <60 <70 70
-static int resHonorTable[8] = { 0,  0,  4,  7,  11, 19, 20, 20 };
-static int winHonorTable[8] = { 0,  0,  4,  7,  11, 19, 20, 20 };
+//								<10 <20 <30 <40 <50 <60 <70  70  <70 80 
+static int resHonorTable[10] = { 0,  0,  4,  7,  11, 19, 20, 20, 30, 30 };
+static int winHonorTable[10] = { 0,  0,  4,  7,  11, 19, 20, 20, 30, 30 };
+
 
 static uint32 resourcesToGainBH = 330;
 static uint32 resourcesToGainBR = 200;
@@ -219,7 +220,7 @@ void ArathiBasin::SpawnControlPoint(uint32 Id, uint32 Type)
 		m_controlPoints[Id]->SetFloatValue(GAMEOBJECT_PARENTROTATION_02, ControlPointRotations[Id][0]);
 		m_controlPoints[Id]->SetFloatValue(GAMEOBJECT_PARENTROTATION_03, ControlPointRotations[Id][1]);
 		m_controlPoints[Id]->SetByte(GAMEOBJECT_BYTES_1, 0, 1);
-		m_controlPoints[Id]->SetByte(GAMEOBJECT_BYTES_1, 1, gi->Type);
+		m_controlPoints[Id]->SetByte(GAMEOBJECT_BYTES_1, 1, static_cast<uint8>( gi->Type ));
 		m_controlPoints[Id]->SetByte(GAMEOBJECT_BYTES_1, 3, 100);
 		m_controlPoints[Id]->SetUInt32Value(GAMEOBJECT_DYNAMIC, 1);
 		m_controlPoints[Id]->SetUInt32Value(GAMEOBJECT_DISPLAYID, gi->DisplayID);
@@ -241,7 +242,7 @@ void ArathiBasin::SpawnControlPoint(uint32 Id, uint32 Type)
 			break;
 		}
 
-		m_controlPoints[Id]->bannerslot = Id;
+		m_controlPoints[Id]->bannerslot = static_cast<uint8>( Id );
 		m_controlPoints[Id]->PushToWorld(m_mapMgr);
 	}
 	else
@@ -253,7 +254,7 @@ void ArathiBasin::SpawnControlPoint(uint32 Id, uint32 Type)
 		m_controlPoints[Id]->SetNewGuid(m_mapMgr->GenerateGameobjectGuid());
 		m_controlPoints[Id]->SetUInt32Value(OBJECT_FIELD_ENTRY, gi->ID);
 		m_controlPoints[Id]->SetUInt32Value(GAMEOBJECT_DISPLAYID, gi->DisplayID);
-		m_controlPoints[Id]->SetByte(GAMEOBJECT_BYTES_1, 1, gi->Type);
+		m_controlPoints[Id]->SetByte(GAMEOBJECT_BYTES_1, 1, static_cast<uint8>( gi->Type ));
 
 		switch(Type)
 		{
@@ -295,7 +296,7 @@ void ArathiBasin::SpawnControlPoint(uint32 Id, uint32 Type)
 		m_controlPointAuras[Id]->SetByte(GAMEOBJECT_BYTES_1, 0, 1);
 		m_controlPointAuras[Id]->SetByte(GAMEOBJECT_BYTES_1, 1, 6);
 		m_controlPointAuras[Id]->SetByte(GAMEOBJECT_BYTES_1, 3, 100);
-		m_controlPointAuras[Id]->bannerauraslot = Id;
+		m_controlPointAuras[Id]->bannerauraslot = static_cast<uint8>( Id );
 		m_controlPointAuras[Id]->PushToWorld(m_mapMgr);
 	}
 	else
@@ -581,7 +582,7 @@ void ArathiBasin::EventUpdateResources(uint32 Team)
 	if(current_resources == RESOURCES_WINVAL)
 	{
 		m_ended = true;
-		m_winningteam = Team;
+		m_winningteam = static_cast<uint8>( Team );
 		m_nextPvPUpdateTime = 0;
 
 		sEventMgr.RemoveEvents(this);

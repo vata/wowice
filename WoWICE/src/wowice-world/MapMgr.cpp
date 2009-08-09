@@ -82,6 +82,8 @@ MapMgr::MapMgr(Map *map, uint32 mapId, uint32 instanceid) : CellHandler<MapCell>
 	_sqlids_gameobjects.clear();
 	_reusable_guids_gameobject.clear();
 	_reusable_guids_creature.clear();
+
+	mInstanceScript = NULL;
 }
 
 
@@ -148,6 +150,9 @@ MapMgr::~MapMgr()
 	for (WorldStateHandlerMap::iterator itr=m_worldStates.begin(); itr!= m_worldStates.end(); ++itr)
 		delete itr->second;
 	m_worldStates.clear();
+
+	if ( mInstanceScript != NULL ) 
+		mInstanceScript->Destroy(); 
 
 	activeCreatures.clear();
 	activeGameObjects.clear();
@@ -341,7 +346,7 @@ void MapMgr::PushObject(Object *obj)
 	else
 		plObj = NULL;
 
-	if(plObj)
+	if( plObj != NULL )
 	{
 		sLog.outDetail("Creating player "I64FMT" for himself.", obj->GetGUID());
 		ByteBuffer pbuf(10000);
@@ -370,7 +375,7 @@ void MapMgr::PushObject(Object *obj)
 
 	obj->SetMapCell(objCell);
 	 //Add to the mapmanager's object list
-	if(plObj)
+	if( plObj != NULL )
 	{
 	   m_PlayerStorage[plObj->GetLowGUID()] = plObj;
 	   UpdateCellActivity(x, y, 2);
@@ -413,7 +418,7 @@ void MapMgr::PushObject(Object *obj)
 		obj->Activate(this);
 
 	// Add the session to our set if it is a player.
-	if(plObj)
+	if( plObj != NULL )
 	{
 		Sessions.insert(plObj->GetSession());
 
@@ -437,7 +442,7 @@ void MapMgr::PushObject(Object *obj)
 	if(buf)
 		delete buf;
 
-	if(plObj && InactiveMoveTime && !forced_expire)
+	if( plObj != NULL && InactiveMoveTime && !forced_expire)
 		InactiveMoveTime = 0;
 }
 
@@ -749,7 +754,7 @@ void MapMgr::ChangeObjectLocation( Object *obj )
 		{
 			curObj = *iter;
 			iter2 = iter++;
-			if( curObj->IsPlayer() && obj->IsPlayer() && plObj->m_TransporterGUID && plObj->m_TransporterGUID == static_cast< Player* >( curObj )->m_TransporterGUID )
+			if( curObj->IsPlayer() && plObj != NULL && plObj->m_TransporterGUID && plObj->m_TransporterGUID == static_cast< Player* >( curObj )->m_TransporterGUID )
 				fRange = 0.0f; // unlimited distance for people on same boat
 			else if( curObj->GetTypeFromGUID() == HIGHGUID_TYPE_TRANSPORTER )
 				fRange = 0.0f; // unlimited distance for transporters (only up to 2 cells +/- anyway.)
@@ -793,21 +798,20 @@ void MapMgr::ChangeObjectLocation( Object *obj )
 	if(obj->GetPositionX() >= _maxX || obj->GetPositionX() <= _minX ||
 		obj->GetPositionY() >= _maxY || obj->GetPositionY() <= _minY)
 	{
-		if(obj->IsPlayer())
+		if( plObj != NULL )
 		{
-			Player* plr = static_cast< Player* >( obj );
-			if(plr->GetBindMapId() != GetMapId())
+			if( plObj->GetBindMapId() != GetMapId())
 			{
-				plr->SafeTeleport(plr->GetBindMapId(),0,plr->GetBindPositionX(),plr->GetBindPositionY(),plr->GetBindPositionZ(),0);
-				plr->GetSession()->SystemMessage("Teleported you to your hearthstone location as you were out of the map boundaries.");
+				plObj->SafeTeleport( plObj->GetBindMapId(), 0, plObj->GetBindPositionX(), plObj->GetBindPositionY(), plObj->GetBindPositionZ(), 0 );
+				plObj->GetSession()->SystemMessage("Teleported you to your hearthstone location as you were out of the map boundaries.");
 				return;
 			}
 			else
 			{
-				obj->GetPositionV()->ChangeCoords(plr->GetBindPositionX(),plr->GetBindPositionY(),plr->GetBindPositionZ(),0);
-				plr->GetSession()->SystemMessage("Teleported you to your hearthstone location as you were out of the map boundaries.");
-				WorldPacket * data = plr->BuildTeleportAckMsg(plr->GetPosition());
-				plr->GetSession()->SendPacket(data);
+				obj->GetPositionV()->ChangeCoords( plObj->GetBindPositionX(), plObj->GetBindPositionY(), plObj->GetBindPositionZ(), 0 );
+				plObj->GetSession()->SystemMessage("Teleported you to your hearthstone location as you were out of the map boundaries.");
+				WorldPacket * data = plObj->BuildTeleportAckMsg( plObj->GetPosition() );
+				plObj->GetSession()->SendPacket(data);
 				delete data;
 			}
 		}
@@ -927,7 +931,7 @@ void MapMgr::UpdateInRangeSet( Object *obj, Player *plObj, MapCell* cell, ByteBu
 		if( curObj == NULL )
 			continue;
 
-		if( curObj->IsPlayer() && obj->IsPlayer() && plObj->m_TransporterGUID && plObj->m_TransporterGUID == static_cast< Player* >( curObj )->m_TransporterGUID )
+		if( curObj->IsPlayer() && obj->IsPlayer() && plObj != NULL && plObj->m_TransporterGUID && plObj->m_TransporterGUID == static_cast< Player* >( curObj )->m_TransporterGUID )
 			fRange = 0.0f; // unlimited distance for people on same boat
 		else if( curObj->GetTypeFromGUID() == HIGHGUID_TYPE_TRANSPORTER )
 			fRange = 0.0f; // unlimited distance for transporters (only up to 2 cells +/- anyway.)
@@ -994,7 +998,7 @@ void MapMgr::UpdateInRangeSet( Object *obj, Player *plObj, MapCell* cell, ByteBu
 					}
 				}
 
-				if( plObj )
+				if( plObj != NULL )
 				{
 					cansee = plObj->CanSee( curObj );
 					isvisible = plObj->GetVisibility( curObj, &itr );
@@ -1562,6 +1566,9 @@ bool MapMgr::Do()
 	ObjectSet::iterator i;
 	uint32 last_exec=getMSTime();
 
+	// Create Instance script 
+	LoadInstanceScript(); 
+
 	/* create static objects */
 	for(GOSpawnList::iterator itr = _map->staticSpawns.GOSpawns.begin(); itr != _map->staticSpawns.GOSpawns.end(); ++itr)
 	{
@@ -1569,6 +1576,9 @@ bool MapMgr::Do()
 		obj->Load((*itr));
 		_mapWideStaticObjects.insert(obj);
 	}
+
+	// Call script OnLoad virtual procedure 
+ 	CALL_INSTANCE_SCRIPT_EVENT( this, OnLoad )(); 
 
 	for(CreatureSpawnList::iterator itr = _map->staticSpawns.CreatureSpawns.begin(); itr != _map->staticSpawns.CreatureSpawns.end(); ++itr)
 	{
@@ -2119,7 +2129,7 @@ GameObject * MapMgr::CreateAndSpawnGameObject(uint32 entryID, float x, float y, 
 	gs->faction = go->GetUInt32Value(GAMEOBJECT_FACTION);
 	gs->flags = go->GetUInt32Value(GAMEOBJECT_FLAGS);
 	gs->id = objmgr.GenerateGameObjectSpawnID();
-	gs->o = go->GetFloatValue(GAMEOBJECT_ROTATION);
+//	gs->o = go->GetFloatValue(GAMEOBJECT_ROTATION);
 	gs->o1 = go->GetFloatValue(GAMEOBJECT_PARENTROTATION);
 	gs->o2 = go->GetFloatValue(GAMEOBJECT_PARENTROTATION_02);
 	gs->o3 = go->GetFloatValue(GAMEOBJECT_PARENTROTATION_03);
@@ -2221,3 +2231,13 @@ void MapMgr::SendPvPCaptureMessage(int32 ZoneMask, uint32 ZoneId, const char * M
 		plr->GetSession()->SendPacket(&data);
 	}
 }
+
+void MapMgr::LoadInstanceScript() 
+{ 
+	mInstanceScript = sScriptMgr.CreateScriptClassForInstance( _mapId, this ); 
+}; 	 
+ void MapMgr::CallScriptUpdate() 
+{ 
+	ASSERT( mInstanceScript ); 
+		mInstanceScript->UpdateEvent(); 
+ };

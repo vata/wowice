@@ -552,7 +552,7 @@ bool Guild::LoadFromDB(Field * f)
 		{
 			GuildLogEvent * li = new GuildLogEvent;
 			li->iLogId = result->Fetch()[0].GetUInt32();
-			li->iEvent = result->Fetch()[3].GetUInt32();
+			li->iEvent = static_cast<uint8>( result->Fetch()[3].GetUInt32() );
 			li->iTimeStamp = result->Fetch()[2].GetUInt32();
 			li->iEventData[0] = result->Fetch()[4].GetUInt32();
 			li->iEventData[1] = result->Fetch()[5].GetUInt32();
@@ -1417,7 +1417,7 @@ void Guild::WithdrawMoney(WorldSession * pClient, uint32 uAmount)
 		}
 	}
 
-	if(pMember->pRank->iGoldLimitPerDay == 0)
+	if(pMember->pRank->iGoldLimitPerDay <= 0)
 	{
 		pClient->SystemMessage("You don't have permission to do that.");
 		return;

@@ -61,7 +61,7 @@ int32 HonorHandler::CalculateHonorPointsForKill( uint32 playerLevel, uint32 vict
 		return 0;
 
 	// Correct formula unknown. This one is correct for lvl 70 killing lvl 70 and scales down for lower levels
-	uint32 diff_level = v_level - k_level; // Should somehow affect the result
+	// uint32 diff_level = v_level - k_level; // Should somehow affect the result
 
 	float honor_points = 20.9f;
 	honor_points *= ((float)k_level) / PLAYER_LEVEL_CAP;
@@ -258,6 +258,10 @@ void HonorHandler::RecalculateHonorFields(Player *pPlayer)
 	pPlayer->SetUInt32Value(PLAYER_FIELD_LIFETIME_HONORBALE_KILLS, pPlayer->m_killsLifetime);
 	pPlayer->SetUInt32Value(PLAYER_FIELD_HONOR_CURRENCY, pPlayer->m_honorPoints);
 	pPlayer->SetUInt32Value(PLAYER_FIELD_ARENA_CURRENCY, pPlayer->m_arenaPoints);
+
+	// Currency tab - (Blizz Placeholders)
+	pPlayer->UpdateKnownCurrencies(43307, true); //Arena Points
+	pPlayer->UpdateKnownCurrencies(43308, true); //Honor Points
 }
 
 bool ChatHandler::HandleAddKillCommand(const char* args, WorldSession* m_session)

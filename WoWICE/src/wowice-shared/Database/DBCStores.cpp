@@ -16,10 +16,11 @@
 #include "DBCStores.h"
 #include "DataStore.h"
 #include "NGLog.h"
-
+#ifdef ENABLE_ACHIEVEMENTS
 SERVER_DECL DBCStorage<AchievementEntry> dbcAchievementStore;
 SERVER_DECL DBCStorage<AchievementCriteriaEntry> dbcAchievementCriteriaStore;
 SERVER_DECL DBCStorage<AchievementCategoryEntry> dbcAchievementCategoryStore;
+#endif
 SERVER_DECL DBCStorage<AreaGroup> dbcAreaGroup;
 SERVER_DECL DBCStorage<AreaTable> dbcArea;
 SERVER_DECL DBCStorage<AreaTriggerEntry> dbcAreaTrigger;
@@ -35,6 +36,7 @@ SERVER_DECL DBCStorage<ChatChannelDBC> dbcChatChannels;
 SERVER_DECL DBCStorage<CombatRatingDBC> dbcCombatRating;
 SERVER_DECL DBCStorage<CreatureSpellDataEntry> dbcCreatureSpellData;
 SERVER_DECL DBCStorage<CreatureFamilyEntry> dbcCreatureFamily;
+SERVER_DECL DBCStorage<CurrencyTypesEntry> dbcCurrencyTypesStore;
 SERVER_DECL DBCStorage<DBCTaxiNode> dbcTaxiNode;
 SERVER_DECL DBCStorage<DBCTaxiPath> dbcTaxiPath;
 SERVER_DECL DBCStorage<DBCTaxiPathNode> dbcTaxiPathNode;
@@ -84,13 +86,13 @@ const char* ItemSetFormat = "ulxxxxxxxxxxxxxxxxuuuuuuuuxxxxxxxxxuuuuuuuuuuuuuuuu
 const char* LockFormat = "uuuuuuxxxuuuuuxxxuuuuuxxxxxxxxxxx";
 const char* EmoteEntryFormat = "uxuuuuxuxuxxxxxxxxx";
 const char* skilllinespellFormat = "uuuxxxxuuuuuxx";
-const char* EnchantEntrYFormat = "uxuuuuuuuuuuuusxxxxxxxxxxxxxxxxuuuuxx";
+const char* EnchantEntrYFormat = "uxuuuuuuuuuuuusxxxxxxxxxxxxxxxxuuuuxxx";
 const char* GemPropertyEntryFormat = "uuuuu";
 const char* GlyphPropertyEntryFormat = "uuuu";
 const char* GlyphSlotEntryFormat = "uuu";
 const char* skilllineentrYFormat = "uuulxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
 
-const char* BattlemasterListEntryFormat = "uiiiiiiiiuuuuuiiiiiiiiiiiiiiiiiiuu";
+const char* BattlemasterListEntryFormat = "uiiiiiiiiuuuuuiiiiiiiiiiiiiiiiiiuux";
 
 const char* CharTitlesEntryfmt =
 	"u" // ID
@@ -102,6 +104,9 @@ const char* CharTitlesEntryfmt =
 	"u" // bit_index
 ;
 
+const char* CurrencyTypesEntryFormat = "xnxu";
+
+#ifdef ENABLE_ACHIEVEMENTS
 const char* AchievementStoreFormat=
 	"n" // ID
 	"i" // factionFlag
@@ -148,6 +153,7 @@ const char* AchievementCriteriaStoreFormat=
 	"i" // timeLimit
 	"u" // index
 ;
+#endif
 
 const char* spellentryFormat =
 	"u" // Id
@@ -253,12 +259,13 @@ const char* spellentryFormat =
 	"i" // RequiresAreaId
 	"u" // School
 	"ux"
+	"x" //Added in 3.1
 ;
 
 
 const char* itemextendedcostFormat = "uuuuuuuuuuuuuux";
 const char* talententryFormat = "uuuuuuuuuxxxxuxxuxxxxxx";
-const char* talenttabentryFormat = "uxxxxxxxxxxxxxxxxxxxuxux";
+const char* talenttabentryFormat = "uxxxxxxxxxxxxxxxxxxxuuux";
 const char* spellcasttimeFormat = "uuxx";
 const char* spellradiusFormat = "ufxf";
 const char* spellrangeFormat = "uffffxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
@@ -301,7 +308,7 @@ const char* mapentryFormat =
 	"u"					// 116 addon
 	"x";				// 117 unk
 
-const char* itemrandomsuffixformat = "uxxxxxxxxxxxxxxxxxxuuuuuuxxxx";
+const char* itemrandomsuffixformat = "uxxxxxxxxxxxxxxxxxxuuuxxuuuxx";//19, 20, 21, 24, 25, 26
 const char* chatchannelformat = "iixssssssssssssssslxxxxxxxxxxxxxxxxxx";
 const char* durabilityqualityFormat = "uf";
 const char* durabilitycostsFormat = "uuuuuuuuuuuuuuuuuuuuuuuuuuuuuu";
@@ -325,11 +332,14 @@ bool loader_stub(const char * filename, const char * format, bool ind, T& l, boo
 bool LoadDBCs()
 {
 	LOAD_DBC("DBC/WorldMapOverlay.dbc", WorldMapOverlayStoreFormat, true, dbcWorldMapOverlayStore, true);
+#ifdef ENABLE_ACHIEVEMENTS
 	LOAD_DBC("DBC/Achievement_Category.dbc", AchievementCategoryStoreFormat, true, dbcAchievementCategoryStore, true);
 	LOAD_DBC("DBC/Achievement_Criteria.dbc", AchievementCriteriaStoreFormat, true, dbcAchievementCriteriaStore, true);
 	LOAD_DBC("DBC/Achievement.dbc", AchievementStoreFormat, true, dbcAchievementStore, true);
+#endif
 	LOAD_DBC("DBC/BattlemasterList.dbc", BattlemasterListEntryFormat, true, dbcBattlemasterListStore, true);
 	LOAD_DBC("DBC/CharTitles.dbc", CharTitlesEntryfmt, true, dbcCharTitlesEntry, true);
+	LOAD_DBC("DBC/CurrencyTypes.dbc", CurrencyTypesEntryFormat, true, dbcCurrencyTypesStore, true);
 	LOAD_DBC("DBC/BarberShopStyle.dbc", BarberShopStyleEntryFormat, true, dbcBarberShopStyleStore, true);
 	LOAD_DBC("DBC/ItemSet.dbc", ItemSetFormat, true, dbcItemSet, true);
 	LOAD_DBC("DBC/Lock.dbc", LockFormat, true, dbcLock, false);
