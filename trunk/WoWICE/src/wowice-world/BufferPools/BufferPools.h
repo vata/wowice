@@ -57,6 +57,24 @@ public:
 		//? DestroyPool? :P
 	};
 
+	uint32 GetBufferLength()
+	{
+		ObjLock.Acquire();
+		uint32 val = max_avails;
+		ObjLock.Release();
+
+		return val;
+	};
+
+	uint32 GetFreeCount()
+	{
+		ObjLock.Acquire();
+		uint32 val = avail_indexes.size();
+		ObjLock.Release();
+
+		return val;		
+	};
+
 	//fetch from internal list a new Item object
 	T* PooledNew()
 	{
@@ -123,11 +141,8 @@ public:
 	{
 		for( uint32 i = 0; i < max_avails; i++ )
 			delete avail_list[i];
-
 		free( avail_list );
-		avail_list = NULL;
 		avail_indexes.clear();
-		delete this;
 	}
 private:
 	void InitPoolNewSection(uint32 from, uint32 to)

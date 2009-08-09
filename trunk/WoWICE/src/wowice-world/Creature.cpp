@@ -114,11 +114,18 @@ Creature::~Creature()
 	if(m_custom_waypoint_map != 0)
 	{
 		for(WayPointMap::iterator itr = m_custom_waypoint_map->begin(); itr != m_custom_waypoint_map->end(); ++itr)
-			delete (*itr);
-		delete m_custom_waypoint_map;
+		{
+			if( (*itr) )
+				delete (*itr);
+		}
+		//delete m_custom_waypoint_map;
+		m_custom_waypoint_map->clear();
 	}
-	if(m_respawnCell!=NULL)
+	if( m_respawnCell != NULL )
 		m_respawnCell->_respawnObjects.erase(this);
+
+	if (m_escorter != NULL)
+		m_escorter = NULL;
 }
 
 void Creature::Update( uint32 p_time )
@@ -369,7 +376,7 @@ void Creature::generateLoot()
 	else /* if(!loot.gold) */
 	{
 		CreatureInfo *info=GetCreatureInfo();
-		if (info && info->Type != BEAST)
+		if (info && info->Type != UNIT_TYPE_BEAST)
 		{
 			if(m_uint32Values[UNIT_FIELD_MAXHEALTH] <= 1667)
 				//generate copper
@@ -415,8 +422,8 @@ void Creature::SaveToDB()
 	ss << uint32(GetStandState()) << ","
 		<< m_uint32Values[UNIT_FIELD_MOUNTDISPLAYID] << ","
 		<< m_uint32Values[UNIT_VIRTUAL_ITEM_SLOT_ID] << ","
-		<< m_uint32Values[UNIT_VIRTUAL_ITEM_SLOT_ID_1] << ","
-		<< m_uint32Values[UNIT_VIRTUAL_ITEM_SLOT_ID_2] << ",";
+		<< m_uint32Values[UNIT_VIRTUAL_ITEM_SLOT_ID+1] << ","
+		<< m_uint32Values[UNIT_VIRTUAL_ITEM_SLOT_ID+2] << ",";
 
 	if(GetAIInterface()->m_moveFly)
 		ss << 1 << ")";
@@ -558,6 +565,10 @@ void Creature::setDeathState(DeathState s)
 		if ( m_currentSpell )
 			m_currentSpell->cancel();
 
+		if ( lootmgr.IsSkinnable(GetEntry()))
+			SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_SKINNABLE);
+
+
 	}
 	
 	else m_deathState = s;
@@ -662,7 +673,7 @@ void Creature::EnslaveExpire()
 
 	switch(GetCreatureInfo()->Type)
 	{
-	case DEMON:
+	case UNIT_TYPE_DEMON:
 		SetUInt32Value(UNIT_FIELD_FACTIONTEMPLATE, 90);
 		break;
 	default:
@@ -769,9 +780,9 @@ void Creature::CalcStat(uint32 type)
 	if( IsPet() )
 	{
 		Player* owner = static_cast< Pet* >( this )->GetPetOwner();
-		if( type == 2 && owner )
+		if( type == STAT_STAMINA && owner )
 			pos += int32( 0.45f * owner->GetUInt32Value( UNIT_FIELD_STAT2 ) );
-		else if( type == 3 && owner && GetUInt32Value( UNIT_CREATED_BY_SPELL ) )
+		else if( type == STAT_INTELLECT && owner && GetUInt32Value( UNIT_CREATED_BY_SPELL ) )
 			pos += int32( 0.30f * owner->GetUInt32Value( UNIT_FIELD_STAT3 ) );
 	}
 
@@ -1122,7 +1133,7 @@ bool Creature::isattackable(CreatureSpawn *spawn){
 }
 
 uint8 get_byte(uint32 buffer, uint32 index){
-	uint32 mask = ~0;
+	uint32 mask = ~0ul;
 	if(index > sizeof(uint32)-1)
 		return 0;
 
@@ -1156,6 +1167,12 @@ bool Creature::Load(CreatureSpawn *spawn, uint32 mode, MapInfo *info)
 	//SetUInt32Value(UNIT_FIELD_HEALTH, (mode ? long2int32(proto->Health * 1.5)  : proto->Health));
 	//SetUInt32Value(UNIT_FIELD_BASE_HEALTH, (mode ? long2int32(proto->Health * 1.5)  : proto->Health));
 	//SetUInt32Value(UNIT_FIELD_MAXHEALTH, (mode ? long2int32(proto->Health * 1.5)  : proto->Health));
+	if(proto && proto->MinHealth > proto->MaxHealth)
+	{
+		proto->MaxHealth = proto->MinHealth+1;
+		SaveToDB();
+	}
+
 	uint32 health = proto->MinHealth + RandomUInt(proto->MaxHealth - proto->MinHealth);
 	if(mode)
 		health = long2int32(double(health) * 1.5);
@@ -1200,8 +1217,8 @@ bool Creature::Load(CreatureSpawn *spawn, uint32 mode, MapInfo *info)
 	SetFloatValue(UNIT_FIELD_MAXRANGEDDAMAGE,proto->RangedMaxDamage);
 
 	SetUInt32Value(UNIT_VIRTUAL_ITEM_SLOT_ID, spawn->Item1SlotDisplay);
-	SetUInt32Value(UNIT_VIRTUAL_ITEM_SLOT_ID_1, spawn->Item2SlotDisplay);
-	SetUInt32Value(UNIT_VIRTUAL_ITEM_SLOT_ID_2, spawn->Item3SlotDisplay);
+	SetUInt32Value(UNIT_VIRTUAL_ITEM_SLOT_ID+1, spawn->Item2SlotDisplay);
+	SetUInt32Value(UNIT_VIRTUAL_ITEM_SLOT_ID+2, spawn->Item3SlotDisplay);
 
 	SetUInt32Value(UNIT_FIELD_FACTIONTEMPLATE, spawn->factionid);
 	SetUInt32Value(UNIT_FIELD_FLAGS, spawn->flags);
@@ -1291,10 +1308,12 @@ bool Creature::Load(CreatureSpawn *spawn, uint32 mode, MapInfo *info)
 	GetAIInterface()->setMoveType(0);
 	GetAIInterface()->setMoveRunFlag(0);
 
-	if(isattackable(spawn))
+	if(isattackable(spawn) && !(proto->isTrainingDummy) )
 	  GetAIInterface()->SetAllowedToEnterCombat(true);
 	  else GetAIInterface()->SetAllowedToEnterCombat(false);
 
+
+	 
 	// load formation data
 	if( spawn->form != NULL )
 	{
@@ -1355,7 +1374,7 @@ bool Creature::Load(CreatureSpawn *spawn, uint32 mode, MapInfo *info)
 		bInvincible = true;
 		SetUInt32Value(UNIT_NPC_EMOTESTATE, EMOTE_STATE_DEAD);
 	}
-	m_invisFlag = proto->invisibility_type;
+	m_invisFlag = static_cast<uint8>( proto->invisibility_type );
 	if( spawn->stand_state )
 		SetStandState( (uint8)spawn->stand_state );
 
@@ -1376,6 +1395,11 @@ void Creature::Load(CreatureProto * proto_, float x, float y, float z, float o)
 	creature_info = CreatureNameStorage.LookupEntry(proto->Id);
 	if(!creature_info)
 		return;
+
+	if( proto_->isTrainingDummy == 0)
+		GetAIInterface()->SetAllowedToEnterCombat( true );
+	else
+		GetAIInterface()->SetAllowedToEnterCombat( false );
 
 	m_walkSpeed = m_base_walkSpeed = proto->walk_speed; //set speeds
 	m_runSpeed = m_base_runSpeed = proto->run_speed; //set speeds
@@ -1544,7 +1568,7 @@ void Creature::Load(CreatureProto * proto_, float x, float y, float z, float o)
 		bInvincible = true;
 		SetUInt32Value(UNIT_NPC_EMOTESTATE, EMOTE_STATE_DEAD);
 	}
-	m_invisFlag = proto->invisibility_type;
+	m_invisFlag = static_cast<uint8>( proto->invisibility_type );
 }
 
 void Creature::OnPushToWorld()
@@ -1603,6 +1627,7 @@ void Creature::OnPushToWorld()
 		}
 
 	}
+	CALL_INSTANCE_SCRIPT_EVENT( m_mapMgr, OnCreaturePushToWorld )( this );
 }
 
 void Creature::AISpellUpdate()
@@ -1792,9 +1817,11 @@ void Creature::DestroyCustomWaypointMap()
 	{
 		for(WayPointMap::iterator itr = m_custom_waypoint_map->begin(); itr != m_custom_waypoint_map->end(); ++itr)
 		{
-			delete (*itr);
+			if( (*itr) )
+				delete (*itr);
 		}
-		delete m_custom_waypoint_map;
+		//delete m_custom_waypoint_map;
+		m_custom_waypoint_map->clear();
 		m_custom_waypoint_map = 0;
 		m_aiInterface->SetWaypointMap(0);
 	}
@@ -1910,3 +1937,13 @@ bool Creature::HasLootForPlayer(Player * plr)
 	}
 	return false;
 }
+
+uint32 Creature::GetRequiredLootSkill()
+{
+	if(GetCreatureInfo()->Flags1 & CREATURE_FLAG1_HERBLOOT)
+		return SKILL_HERBALISM;     // herbalism
+	else if(GetCreatureInfo()->Flags1 & CREATURE_FLAG1_MININGLOOT)
+		return SKILL_MINING;        // mining   
+	else
+		return SKILL_SKINNING;      // skinning
+};

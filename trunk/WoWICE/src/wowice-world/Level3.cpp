@@ -484,7 +484,9 @@ bool ChatHandler::HandleExploreCheatCommand(const char* args, WorldSession *m_se
 			chr->RemoveFlag(PLAYER_EXPLORED_ZONES_1+i,0xFFFFFFFF);
 		}
 	}
+#ifdef ENABLE_ACHIEVEMENTS
 	chr->GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_EXPLORE_AREA); // update
+#endif
 	return true;
 }
 
@@ -731,7 +733,7 @@ bool ChatHandler::HandleNpcInfoCommand(const char *args, WorldSession *m_session
 	SystemMessage(m_session, "Health (cur/max): %d/%d", crt->GetUInt32Value(UNIT_FIELD_HEALTH), crt->GetUInt32Value(UNIT_FIELD_MAXHEALTH));
 	SystemMessage(m_session, "Mana (cur/max): %d/%d", crt->GetUInt32Value(UNIT_FIELD_POWER1), crt->GetUInt32Value(UNIT_FIELD_MAXPOWER1));
 	SystemMessage(m_session, "Armor/Holy/Fire/Nature/Frost/Shadow/Arcane");
-	SystemMessage(m_session, "%d/%d/%d/%d/%d/%d/%d", crt->GetUInt32Value(UNIT_FIELD_RESISTANCES), crt->GetUInt32Value(UNIT_FIELD_RESISTANCES_01), crt->GetUInt32Value(UNIT_FIELD_RESISTANCES_02), crt->GetUInt32Value(UNIT_FIELD_RESISTANCES_03), crt->GetUInt32Value(UNIT_FIELD_RESISTANCES_04), crt->GetUInt32Value(UNIT_FIELD_RESISTANCES_05), crt->GetUInt32Value(UNIT_FIELD_RESISTANCES_06));
+	SystemMessage(m_session, "%d/%d/%d/%d/%d/%d/%d", crt->GetUInt32Value(UNIT_FIELD_RESISTANCES), crt->GetUInt32Value(UNIT_FIELD_RESISTANCES+1), crt->GetUInt32Value(UNIT_FIELD_RESISTANCES+2), crt->GetUInt32Value(UNIT_FIELD_RESISTANCES+3), crt->GetUInt32Value(UNIT_FIELD_RESISTANCES+4), crt->GetUInt32Value(UNIT_FIELD_RESISTANCES+5), crt->GetUInt32Value(UNIT_FIELD_RESISTANCES+6));
 
 	/*GreenSystemMessage(m_session, "Base Armor: %d", crt->GetUInt32Value(UNIT_FIELD_RESISTANCES));
 	GreenSystemMessage(m_session, "Base Mana: %d", crt->GetUInt32Value(UNIT_FIELD_MAXPOWER1));
@@ -1402,11 +1404,6 @@ bool ChatHandler::HandleDBReloadCommand(const char* args, WorldSession* m_sessio
 		objmgr.ReloadDisabledSpells();
 		ret = 1;
 	} else
-	if (0 == stricmp(args, "spellfixes"))
-	{
-		objmgr.LoadSpellFixes();
-		ret = 1;
-	} else
 	if (0 == stricmp(args, "vendors"))
 	{
 		objmgr.ReloadVendors();
@@ -1418,9 +1415,9 @@ bool ChatHandler::HandleDBReloadCommand(const char* args, WorldSession* m_sessio
 	}
 
 	if (ret == 0)
-		snprintf(str, 256, "%sDatabase reload failed.", MSG_COLOR_LIGHTRED);
+		snprintf(str, 200, "%sDatabase reload failed.", MSG_COLOR_LIGHTRED);
 	else
-		snprintf(str, 256, "%sDatabase reload completed in %u ms.", MSG_COLOR_LIGHTBLUE, (unsigned int)(getMSTime() - mstime));
+		snprintf(str, 200, "%sDatabase reload completed in %u ms.", MSG_COLOR_LIGHTBLUE, getMSTime() - mstime);
 	sWorld.SendWorldText(str, 0);
 	sGMLog.writefromsession(m_session, "reloaded table %s", args);
 	return true;
@@ -1969,7 +1966,7 @@ bool ChatHandler::HandleMassSummonCommand(const char* args, WorldSession* m_sess
 		{
 			//plr->SafeTeleport(summoner->GetMapId(), summoner->GetInstanceID(), summoner->GetPosition());
 			/* let's do this the blizz way */
-			if(faction>-1 && plr->GetTeam() == faction)
+			if(faction>-1 && plr->GetTeam() == static_cast<uint32>( faction ))
 			{
                 plr->SummonRequest(summoner->GetLowGUID(), summoner->GetZoneId(), summoner->GetMapId(), summoner->GetInstanceID(), summoner->GetPosition());
                 ++c;
@@ -3052,21 +3049,22 @@ bool ChatHandler::HandleGORotate(const char * args, WorldSession * m_session)
 		return true;
 	}
 
-	float rad = deg * (float(M_PI) / 180.0f);
+	// float rad = deg * (float(M_PI) / 180.0f);
 
 	switch(tolower(Axis))
 	{
 	case 'x':
-		go->ModFloatValue(GAMEOBJECT_ROTATION, rad);
+//		go->ModFloatValue(GAMEOBJECT_ROTATION, rad);
 		break;
 	case 'y':
-		go->ModFloatValue(GAMEOBJECT_ROTATION_01, rad);
+//		go->ModFloatValue(GAMEOBJECT_ROTATION_01, rad);
 		break;
 	case 'o':
 		if(m_session->GetPlayer()){
 			float ori = m_session->GetPlayer()->GetOrientation();
 			go->SetFloatValue(GAMEOBJECT_PARENTROTATION_02, sinf(ori / 2));
-			go->SetFloatValue(GAMEOBJECT_PARENTROTATION_03, cosf(ori / 2));}
+			go->SetFloatValue(GAMEOBJECT_PARENTROTATION_03, cosf(ori / 2));
+		}
 		break;
 	default:
 		RedSystemMessage(m_session, "Invalid Axis, Please use x, y, or o.");
@@ -3102,9 +3100,9 @@ bool ChatHandler::HandleGOMove(const char * args, WorldSession * m_session)
 
 	go->RemoveFromWorld(true);
 	go->SetPosition(x, y, z, o);
-	go->SetFloatValue(GAMEOBJECT_POS_X, x);
-	go->SetFloatValue(GAMEOBJECT_POS_Y, y);
-	go->SetFloatValue(GAMEOBJECT_POS_Z, z);
+//	go->SetFloatValue(GAMEOBJECT_POS_X, x);
+//	go->SetFloatValue(GAMEOBJECT_POS_Y, y);
+//	go->SetFloatValue(GAMEOBJECT_POS_Z, z);
 	uint32 NewGuid = m_session->GetPlayer()->GetMapMgr()->GenerateGameobjectGuid();
 	go->SetNewGuid(NewGuid);
 	go->SaveToDB();
@@ -3854,8 +3852,8 @@ bool ChatHandler::HandleSetTitle( const char *args, WorldSession *m_session )
 	}
 	if( title == 0 )
 	{
-		plr->SetUInt64Value( PLAYER_FIELD_KNOWN_TITLES, 0 );
-		plr->SetUInt64Value( PLAYER_FIELD_KNOWN_TITLES1, 0 );
+		plr->SetUInt64Value( PLAYER__FIELD_KNOWN_TITLES, 0 );
+		plr->SetUInt64Value( PLAYER__FIELD_KNOWN_TITLES1, 0 );
 	}
 	else if( title > 0 )
 		plr->SetKnownTitle( static_cast< RankTitles >( title ), true );

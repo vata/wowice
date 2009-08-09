@@ -101,9 +101,9 @@ bool ChatHandler::HandleRenameAllCharacter(const char * args, WorldSession * m_s
 void CapitalizeString(string& arg)
 {
 	if(arg.length() == 0) return;
-	arg[0] = toupper(arg[0]);
+	arg[0] = static_cast<char>( toupper(arg[0]) );
 	for(uint32 x = 1; x < arg.size(); ++x)
-		arg[x] = tolower(arg[x]);
+		arg[x] = static_cast<char>( tolower(arg[x]) );
 }
 
 void WorldSession::CharacterEnumProc(QueryResult * result)
@@ -235,7 +235,7 @@ void WorldSession::CharacterEnumProc(QueryResult * result)
 								!( slot == EQUIPMENT_SLOT_BACK && ( flags & ( uint32 )PLAYER_FLAG_NOCLOAK ) != 0 ) ) 
 							{
 								items[slot].displayid = proto->DisplayInfoID;
-								items[slot].invtype = proto->InventoryType;
+								items[slot].invtype = static_cast<uint8>( proto->InventoryType );
 								// weapon glows
 								if( slot == EQUIPMENT_SLOT_MAINHAND || slot == EQUIPMENT_SLOT_OFFHAND )
 								{
@@ -409,7 +409,7 @@ void WorldSession::HandleCharCreateOpcode( WorldPacket & recv_data )
 	}
 
 	//Check if player has a level 55 or higher character on this realm and allow him to create DK.
-	//This check can be turned off in wowice-optional.conf
+	//This check can be turned off in optional.conf
 	if( Config.OptionalConfig.GetBoolDefault( "ClassOptions" , "DeathKnightPreReq" , false ) && !has_level_55_char 
 		&& ( class_ == DEATHKNIGHT ))
 	{	
@@ -534,7 +534,7 @@ uint8 WorldSession::DeleteCharacter(uint32 guid)
 				CharacterDatabase.Execute("DELETE FROM corpses WHERE guid = %u", c->GetLowGUID());
 
 			CharacterDatabase.Execute("DELETE FROM playeritems WHERE ownerguid=%u",(uint32)guid);
-			CharacterDatabase.Execute("DELETE FROM gm_tickets WHERE guid = %u", (uint32)guid);
+			CharacterDatabase.Execute("DELETE FROM gm_tickets WHERE playerguid = %u", (uint32)guid);
 			CharacterDatabase.Execute("DELETE FROM playerpets WHERE ownerguid = %u", (uint32)guid);
 			CharacterDatabase.Execute("DELETE FROM playerpetspells WHERE ownerguid = %u", (uint32)guid);
 			CharacterDatabase.Execute("DELETE FROM tutorials WHERE playerId = %u", (uint32)guid);
@@ -652,7 +652,6 @@ void WorldSession::HandlePlayerLoginOpcode( WorldPacket & recv_data )
 
 void WorldSession::FullLogin(Player * plr)
 {
-	uint8 class_ = plr->getClass();
 	Log.Debug("WorldSession", "Fully loading player %u", plr->GetLowGUID());
 	SetPlayer(plr); 
 	m_MoverWoWGuid.Init(plr->GetGUID());
@@ -691,6 +690,18 @@ void WorldSession::FullLogin(Player * plr)
 	// copy to movement array
 	movement_packet[0] = m_MoverWoWGuid.GetNewGuidMask();
 	memcpy(&movement_packet[1], m_MoverWoWGuid.GetNewGuid(), m_MoverWoWGuid.GetNewGuidLen());
+
+//VLack: send dungeon difficulty and MOTD, as seen in the 3.1.1 packet dump
+        WorldPacket datadd(MSG_SET_DUNGEON_DIFFICULTY, 20);
+        datadd << plr->iInstanceType;
+        datadd << uint32(0x01);
+        datadd << uint32(0x00);
+        SendPacket(&datadd);
+
+        WorldPacket datamo(SMSG_MOTD, 50);
+        datamo << uint32(0x04);
+        datamo << sWorld.GetMotd();
+        SendPacket(&datamo);
 
 	/* world preload */
 	packetSMSG_LOGIN_VERIFY_WORLD vwpck;
@@ -744,7 +755,14 @@ void WorldSession::FullLogin(Player * plr)
 #else
 	datab.Initialize(SMSG_FEATURE_SYSTEM_STATUS);
 	datab << uint8(2) << uint8(0);
+	SendPacket(&datab); //VLack: send this f.ckin' packet, will ya'?
 #endif
+
+	//VLack: Mangos sends this packet on 3.1:
+        WorldPacket dataldm(SMSG_LEARNED_DANCE_MOVES, 4+4);
+        dataldm << uint32(0);
+        dataldm << uint32(0);
+        SendPacket(&dataldm);
 
 	plr->UpdateAttackSpeed();
 	/*if(plr->getLevel()>PLAYER_LEVEL_CAP_70)
@@ -932,11 +950,11 @@ void WorldSession::FullLogin(Player * plr)
 #ifdef WIN32
 	_player->BroadcastMessage("Powered by: %sWoWICE %s r/%s-Win-%s %s(Please report ALL bugs to http://code.google.com/p/wowice/)", MSG_COLOR_WHITE, BUILD_TAG,
 		CONFIG, ARCH, MSG_COLOR_LIGHTBLUE);		
-	_player->BroadcastMessage("Revision: %s%u" MSG_COLOR_RED, BUILD_REVISION); 
+	_player->BroadcastMessage("Revision: %s%u", MSG_COLOR_RED, BUILD_REVISION); 
 #else
 	_player->BroadcastMessage("Powered by: %WoWICE %s /%s-%s %s(Please report ALL bugs to http://code.google.com/p/wowice/)", MSG_COLOR_WHITE, BUILD_TAG,
 		PLATFORM_TEXT, ARCH, MSG_COLOR_LIGHTBLUE);
-	_player->BroadcastMessage("Revision: %s%u" MSG_COLOR_RED, BUILD_REVISION); 
+	_player->BroadcastMessage("Revision: %s%u", MSG_COLOR_RED, BUILD_REVISION); 
 #endif
 	// Ads
 	_player->BroadcastMessage("Visit our sponsor website: http://www.musicter.ro");

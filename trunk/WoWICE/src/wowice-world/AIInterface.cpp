@@ -419,6 +419,9 @@ void AIInterface::HandleEvent(uint32 event, Unit* pUnit, uint32 misc1)
 				if( static_cast< Creature* >( m_Unit )->has_combat_text )
 					objmgr.HandleMonsterSayEvent( static_cast< Creature* >( m_Unit ), MONSTER_SAY_EVENT_ON_DAMAGE_TAKEN );
 
+				if( pUnit->HasAura(24575) )
+					pUnit->RemoveAura(24575);
+
 				CALL_SCRIPT_EVENT(m_Unit, OnDamageTaken)(pUnit, float(misc1));
 				if(!modThreatByPtr(pUnit, misc1))
 				{
@@ -545,6 +548,9 @@ void AIInterface::HandleEvent(uint32 event, Unit* pUnit, uint32 misc1)
 				objmgr.HandleMonsterSayEvent( static_cast< Creature* >( m_Unit ), MONSTER_SAY_EVENT_ON_DIED );
 
 			CALL_SCRIPT_EVENT(m_Unit, OnDied)(pUnit);
+			if ( m_Unit->IsCreature() )
+				CALL_INSTANCE_SCRIPT_EVENT( m_Unit->GetMapMgr(), OnCreatureDeath )( TO_CREATURE( m_Unit ), pUnit );
+
 			m_AIState = STATE_IDLE;
 
 			StopMovement(0);
@@ -813,7 +819,7 @@ void AIInterface::Update(uint32 p_time)
 		{
 			if ( (*next_timed_emote)->type == 1) //standstate
 			{
-				m_Unit->SetStandState( (*next_timed_emote)->value );
+				m_Unit->SetStandState( static_cast<uint8>( (*next_timed_emote)->value  ));
 				m_Unit->SetUInt32Value ( UNIT_NPC_EMOTESTATE, 0 );
 			}
 			else if ( (*next_timed_emote)->type == 2) //emotestate
@@ -865,7 +871,7 @@ void AIInterface::_UpdateTargets()
 {
 	if( m_Unit->IsPlayer() || (m_AIType != AITYPE_PET && disable_targeting ))
 		return;
-	if( ( ( Creature* )m_Unit )->GetCreatureInfo() && ( ( Creature* )m_Unit )->GetCreatureInfo()->Type == CRITTER )
+	if( ( ( Creature* )m_Unit )->GetCreatureInfo() && ( ( Creature* )m_Unit )->GetCreatureInfo()->Type == UNIT_TYPE_CRITTER )
 		return;
 
 	if(  m_Unit->GetMapMgr() == NULL )
@@ -1018,7 +1024,7 @@ void AIInterface::_UpdateCombat(uint32 p_time)
 	if( GetNextTarget() == m_Unit )
 		SetNextTarget( GetMostHated() );
 
-	uint16 agent = m_aiCurrentAgent;
+	uint16 agent = static_cast<uint16>( m_aiCurrentAgent );
 
 	// If creature is very far from spawn point return to spawnpoint
 	// If at instance don't return -- this is wrong ... instance creatures always returns to spawnpoint, dunno how do you got this idea. 
@@ -1989,7 +1995,7 @@ bool AIInterface::FindFriends(float dist)
 	// check if we're a civilian, in which case summon guards on a despawn timer
 	uint8 civilian = (((Creature*)m_Unit)->GetCreatureInfo()) ? (((Creature*)m_Unit)->GetCreatureInfo()->Civilian) : 0;
 	uint32 family = (((Creature*)m_Unit)->GetCreatureInfo()) ? (((Creature*)m_Unit)->GetCreatureInfo()->Type) : 0;
-	if(family == HUMANOID && civilian && getMSTime() > m_guardTimer && !IS_INSTANCE(m_Unit->GetMapId()))
+	if(family == UNIT_TYPE_HUMANOID && civilian && getMSTime() > m_guardTimer && !IS_INSTANCE(m_Unit->GetMapId()))
 	{
 		m_guardTimer = getMSTime() + 15000;
 		uint16 AreaId = m_Unit->GetMapMgr()->GetAreaID(m_Unit->GetPositionX(),m_Unit->GetPositionY());
@@ -2083,60 +2089,87 @@ bool AIInterface::FindFriends(float dist)
 float AIInterface::_CalcAggroRange(Unit* target)
 {
 	//float baseAR = 15.0f; // Base Aggro Range
-					// -8	 -7	 -6	 -5	 -4	 -3	 -2	 -1	 0	  +1	 +2	 +3	 +4	 +5	 +6	 +7	+8
+	//                    -8     -7     -6      -5    -4      -3     -2     -1     0      +1     +2     +3    +4     +5     +6     +7    +8
 	//float baseAR[17] = {29.0f, 27.5f, 26.0f, 24.5f, 23.0f, 21.5f, 20.0f, 18.5f, 17.0f, 15.5f, 14.0f, 12.5f, 11.0f,  9.5f,  8.0f,  6.5f, 5.0f};
 	float baseAR[17] = {19.0f, 18.5f, 18.0f, 17.5f, 17.0f, 16.5f, 16.0f, 15.5f, 15.0f, 14.5f, 12.0f, 10.5f, 8.5f,  7.5f,  6.5f,  6.5f, 5.0f};
 	// Lvl Diff -8 -7 -6 -5 -4 -3 -2 -1 +0 +1 +2  +3  +4  +5  +6  +7  +8
 	// Arr Pos   0  1  2  3  4  5  6  7  8  9 10  11  12  13  14  15  16
 	int8 lvlDiff = static_cast<int8>(target->getLevel() - m_Unit->getLevel());
 	uint8 realLvlDiff = lvlDiff;
-	if(lvlDiff > 8)
+	if (lvlDiff > 8)
 	{
 		lvlDiff = 8;
 	}
-	if(lvlDiff < -8)
+	if (lvlDiff < -8)
 	{
 		lvlDiff = -8;
 	}
-	if(!((Creature*)m_Unit)->CanSee(target))
+	if (!((Creature*)m_Unit)->CanSee(target))
 		return 0;
-	
+
+	// Retrieve aggrorange from table
 	float AggroRange = baseAR[lvlDiff + 8];
-	if(realLvlDiff > 8)
+
+	// Check to see if the target is a player mining a node
+	bool isMining = false;
+	if (target->IsPlayer())
+	{
+		if (target->IsCasting())
+		{
+			// If nearby miners weren't spotted already we'll give them a little surprise.
+			Spell * sp = target->GetCurrentSpell();
+			if (sp->GetProto()->Effect[0] == SPELL_EFFECT_OPEN_LOCK && sp->GetProto()->EffectMiscValue[0] == LOCKTYPE_MINING)
+			{
+				isMining = true;
+			}
+		}
+	}
+
+	// If the target is of a much higher level the aggro range must be scaled down, unless the target is mining a nearby resource node
+	if (realLvlDiff > 8 && !isMining)
 	{
 		AggroRange += AggroRange * ((lvlDiff - 8) * 5 / 100);
 	}
 
 	// Multiply by elite value
-	if(m_Unit->IsCreature() && ((Creature*)m_Unit)->GetCreatureInfo() && ((Creature*)m_Unit)->GetCreatureInfo()->Rank > 0)
+	if (m_Unit->IsCreature() && ((Creature*)m_Unit)->GetCreatureInfo() && ((Creature*)m_Unit)->GetCreatureInfo()->Rank > 0)
+	{
 		AggroRange *= (((Creature*)m_Unit)->GetCreatureInfo()->Rank) * 1.50f;
+	}
 
-	if(AggroRange > 40.0f) // cap at 40.0f
+	// Cap Aggro range at 40.0f
+	if (AggroRange > 40.0f)
 	{
 		AggroRange = 40.0f;
 	}
-  /*  //printf("aggro range: %f , stealthlvl: %d , detectlvl: %d\n",AggroRange,target->GetStealthLevel(),m_Unit->m_stealthDetectBonus);
+
+/*  //printf("aggro range: %f , stealthlvl: %d , detectlvl: %d\n",AggroRange,target->GetStealthLevel(),m_Unit->m_stealthDetectBonus);
 	if(! ((Creature*)m_Unit)->CanSee(target))
 	{
 		AggroRange =0;
 	//	AggroRange *= ( 100.0f - (target->m_stealthLevel - m_Unit->m_stealthDetectBonus)* 20.0f ) / 100.0f;
 	}
 */
+
 	// SPELL_AURA_MOD_DETECT_RANGE
 	int32 modDetectRange = target->getDetectRangeMod(m_Unit->GetGUID());
 	AggroRange += modDetectRange;
-	if(target->IsPlayer())
-		AggroRange += static_cast< Player* >( target )->DetectedRange;
-	if(AggroRange < 3.0f)
+	if (target->IsPlayer())
+	{
+		AggroRange += static_cast< Player* >(target)->DetectedRange;
+	}
+
+	// Re-check if aggro range exceeds Minimum/Maximum caps
+	if (AggroRange < 3.0f)
 	{
 		AggroRange = 3.0f;
 	}
-	if(AggroRange > 40.0f) // cap at 40.0f
+	if (AggroRange > 40.0f)
 	{
 		AggroRange = 40.0f;
 	}
 
-	return (AggroRange*AggroRange);
+	return (AggroRange * AggroRange);
 }
 
 void AIInterface::_CalcDestinationAndMove(Unit *target, float dist)
@@ -2280,8 +2313,10 @@ Comments: Some comments on the SMSG_MONSTER_MOVE packet:
 	
 	the MoveFlags:
 		0x00000000 - Walk
-		0x00000100 - Run
-		0x00000200 - Fly
+		0x00000100 - Teleport
+		0x00001000 - Run
+		0x00000200 - Fly - OLD FLAG, IS THIS STILL VALID?
+		0x00003000 - Fly
 		some comments on that 0x00000300 - Fly = 0x00000100 | 0x00000200
 
 	waypoint's:
@@ -2295,11 +2330,12 @@ void AIInterface::SendMoveToPacket(float toX, float toY, float toZ, float toO, u
 	//use MoveTo()
 
 #ifndef USING_BIG_ENDIAN
-	StackWorldPacket<60> data(SMSG_MONSTER_MOVE);
+	StackWorldPacket<100> data(SMSG_MONSTER_MOVE);
 #else
-	WorldPacket data(SMSG_MONSTER_MOVE, 60);
+	WorldPacket data(SMSG_MONSTER_MOVE, 100);
 #endif
 	data << m_Unit->GetNewGUID();
+	data << uint8(0); //VLack: for 3.1.x support; I've discovered this in Mangos code while doing research on how to fix invisible mobs on 3.0.9
 	data << m_Unit->GetPositionX() << m_Unit->GetPositionY() << m_Unit->GetPositionZ();
 	data << getMSTime();
 	
@@ -2312,6 +2348,16 @@ void AIInterface::SendMoveToPacket(float toX, float toY, float toZ, float toO, u
 		data << uint8(0);
 	}
 	data << MoveFlags;
+/*	if(MoveFlags & 0x200000) //VLack: Aspire code for 3.1.x support - I don't know these flags, as the ones I knew are the 3 well known shown in the above comment and their combinations
+	{
+		data << uint8(0);
+		data << uint32(0);
+	}
+	if(MoveFlags & 0x800) //VLack: Aspire code for 3.1.x support
+	{
+		data << float(0);
+		data << uint32(0);
+	}*/
 	data << time;
 	data << uint32(1);	  // 1 waypoint
 	data << toX << toY << toZ;
@@ -2378,9 +2424,10 @@ bool AIInterface::StopMovement(uint32 time)
 	m_timeMoved = 0;
 	m_timeToMove = 0;
 
-	WorldPacket data(26);
+	WorldPacket data(27);
 	data.SetOpcode(SMSG_MONSTER_MOVE);
 	data << m_Unit->GetNewGUID();
+	data << uint8(0); //VLack: 3.1 SMSG_MONSTER_MOVE change...
 	data << m_Unit->GetPositionX() << m_Unit->GetPositionY() << m_Unit->GetPositionZ();
 	data << getMSTime();
 	data << uint8(1);   // "DontMove = 1"
@@ -2453,17 +2500,20 @@ uint32 AIInterface::getMoveFlags()
 	if(m_moveFly == true) //Fly
 	{
 		m_flySpeed = m_Unit->m_flySpeed*0.001f;
-		MoveFlags = 0x300;
+//		MoveFlags = 0x300;
+		MoveFlags = 0x3000; //VLack: flight flag changed on 3.1.1
 	}
 	else if(m_moveSprint == true) //Sprint
 	{
 		m_runSpeed = (m_Unit->m_runSpeed+5.0f)*0.001f;
-		MoveFlags = 0x100;
+//		MoveFlags = 0x100;
+		MoveFlags = 0x1000; //VLack: on 3.1.1 0x100 would teleport the NPC, and this is not what we want here!
 	}
 	else if(m_moveRun == true) //Run
 	{
 		m_runSpeed = m_Unit->m_runSpeed*0.001f;
-		MoveFlags = 0x100;
+//		MoveFlags = 0x100;
+		MoveFlags = 0x1000; //VLack: on 3.1.1 0x100 would teleport the NPC, and this is not what we want here!
 	}
 /*	else //Walk
 	{

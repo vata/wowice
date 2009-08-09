@@ -17,7 +17,7 @@
 
 bool CanBuyAt(Player *plr, VendorRestrictionEntry *vendor)
 {
-	uint8 plracemask = plr->getRaceMask();
+	uint8 plracemask = static_cast<uint8>( plr->getRaceMask() );
 	uint32 plrep = plr->GetStanding(vendor->reqrepfaction);
 
 	/* if either the player has the right race or has the right reputation, he/she can buy at the vendor */
@@ -198,7 +198,7 @@ void WorldSession::HandleSwapItemOpcode(WorldPacket& recv_data)
 				}
 			}
 
-			if(SrcSlot <  INVENTORY_KEYRING_END)
+			if(SrcSlot <  CURRENCYTOKEN_SLOT_END)
 			{
 				if((error=GetPlayer()->GetItemInterface()->CanEquipItemInSlot2(SrcInvSlot, SrcSlot, DstItem)) != 0)
 				{
@@ -242,7 +242,7 @@ void WorldSession::HandleSwapItemOpcode(WorldPacket& recv_data)
 				}
 			}
 
-			if(DstSlot <  INVENTORY_KEYRING_END)
+			if(DstSlot <  CURRENCYTOKEN_SLOT_END)
 			{
 				if((error=GetPlayer()->GetItemInterface()->CanEquipItemInSlot2(DstInvSlot, DstSlot, SrcItem)) != 0)
 				{
@@ -275,12 +275,14 @@ void WorldSession::HandleSwapItemOpcode(WorldPacket& recv_data)
 		GetPlayer()->GetItemInterface()->BuildInventoryChangeError(SrcItem, NULL, INV_ERR_CANT_DO_IN_COMBAT);
 		return;
 	}*/
-
+#ifdef ENABLE_ACHIEVEMENTS
 	if( SrcItem && DstSlot < INVENTORY_SLOT_BAG_END && DstInvSlot == INVENTORY_SLOT_NOT_SET ) //equip - bags can be soulbound too
 	{
 		if( SrcItem->GetProto()->Bonding == ITEM_BIND_ON_EQUIP )
 			SrcItem->SoulBind();
+
 		_player->GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_EQUIP_ITEM, SrcItem->GetProto()->ItemId, 0, 0);
+
 		if(DstSlot<INVENTORY_SLOT_BAG_START) // check Superior/Epic achievement
 		{
 			// Achievement ID:556 description Equip an epic item in every slot with a minimum item level of 213.
@@ -309,6 +311,7 @@ void WorldSession::HandleSwapItemOpcode(WorldPacket& recv_data)
 				_player->GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_EQUIP_EPIC_ITEM, SrcSlot, DstItem->GetProto()->Quality, 0);
 		}
 	}
+#endif
 
 	if( SrcInvSlot == DstInvSlot )//in 1 bag
 	{
@@ -406,6 +409,9 @@ void WorldSession::HandleSwapItemOpcode(WorldPacket& recv_data)
 			}
 		}
 	}
+
+	//Recalculate Expertise (for Weapon specs)
+	_player->CalcExpertise();
 }
 
 void WorldSession::HandleSwapInvItemOpcode( WorldPacket & recv_data )
@@ -459,7 +465,7 @@ void WorldSession::HandleSwapInvItemOpcode( WorldPacket & recv_data )
 	
 	if( ( error = _player->GetItemInterface()->CanEquipItemInSlot2( INVENTORY_SLOT_NOT_SET, dstslot, srcitem, skip_combat, false ) )  != 0)
 	{
-		if( dstslot < INVENTORY_KEYRING_END )
+		if( dstslot < CURRENCYTOKEN_SLOT_END )
 		{
 			_player->GetItemInterface()->BuildInventoryChangeError( srcitem, dstitem, error );
 			return;
@@ -470,7 +476,7 @@ void WorldSession::HandleSwapInvItemOpcode( WorldPacket & recv_data )
 	{
 		if((error=_player->GetItemInterface()->CanEquipItemInSlot2(INVENTORY_SLOT_NOT_SET, srcslot, dstitem, skip_combat)) != 0)
 		{
-			if(srcslot < INVENTORY_KEYRING_END)
+			if(srcslot < CURRENCYTOKEN_SLOT_END)
 			{
 				data.Initialize( SMSG_INVENTORY_CHANGE_FAILURE );
 				data << error;
@@ -531,6 +537,7 @@ void WorldSession::HandleSwapInvItemOpcode( WorldPacket & recv_data )
 	  return;
   }
 
+  #ifdef ENABLE_ACHIEVEMENTS
   if(dstitem && srcslot < INVENTORY_SLOT_BAG_END)
   {
 		_player->GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_EQUIP_ITEM, dstitem->GetProto()->ItemId, 0, 0);
@@ -559,6 +566,7 @@ void WorldSession::HandleSwapInvItemOpcode( WorldPacket & recv_data )
 				_player->GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_EQUIP_EPIC_ITEM, dstslot, srcitem->GetProto()->Quality, 0);
 		}
   }
+#endif
 	_player->GetItemInterface()->SwapItemSlots(srcslot, dstslot);
 }
 
@@ -671,26 +679,32 @@ void WorldSession::HandleAutoEquipItemOpcode( WorldPacket & recv_data )
 		return;
 	}
 
-	int8 Slot = _player->GetItemInterface()->GetItemSlotByType(eitem->GetProto()->InventoryType);
-	if(Slot == ITEM_NO_SLOT_AVAILABLE)
+    int8 Slot = _player->GetItemInterface()->GetItemSlotByType(eitem->GetProto()->InventoryType);
+    if(Slot == ITEM_NO_SLOT_AVAILABLE)
 	{
 		_player->GetItemInterface()->BuildInventoryChangeError(eitem,NULL,INV_ERR_ITEM_CANT_BE_EQUIPPED);
 		return;
 	}
 
 	// handle equipping of 2h when we have two items equipped! :) special case.
-	if ((Slot == EQUIPMENT_SLOT_MAINHAND || Slot == EQUIPMENT_SLOT_OFFHAND) && !_player->DualWield2H)
+  	if ((Slot == EQUIPMENT_SLOT_MAINHAND || Slot == EQUIPMENT_SLOT_OFFHAND) && !_player->DualWield2H)
 	{
 		Item *mainhandweapon = _player->GetItemInterface()->GetInventoryItem(INVENTORY_SLOT_NOT_SET, EQUIPMENT_SLOT_MAINHAND);
 		if( mainhandweapon != NULL && mainhandweapon->GetProto()->InventoryType == INVTYPE_2HWEAPON )
 		{
-			if( Slot == EQUIPMENT_SLOT_OFFHAND && eitem->GetProto()->InventoryType == INVTYPE_WEAPON )
+			if( Slot == EQUIPMENT_SLOT_OFFHAND && ( eitem->GetProto()->InventoryType == INVTYPE_WEAPON || eitem->GetProto()->InventoryType == INVTYPE_2HWEAPON ) )
 			{
 				Slot = EQUIPMENT_SLOT_MAINHAND;
 			}
-		}
+        }else{
+            if( Slot == EQUIPMENT_SLOT_OFFHAND && eitem->GetProto()->InventoryType == INVTYPE_2HWEAPON )
+			{
+				Slot = EQUIPMENT_SLOT_MAINHAND;
+			}
+        }
 
-		if( error = _player->GetItemInterface()->CanEquipItemInSlot(INVENTORY_SLOT_NOT_SET, Slot, eitem->GetProto(), true, true) )
+		error = _player->GetItemInterface()->CanEquipItemInSlot(INVENTORY_SLOT_NOT_SET, Slot, eitem->GetProto(), true, true);
+		if( error )
 		{
 			_player->GetItemInterface()->BuildInventoryChangeError(eitem,NULL, error);
 			return;
@@ -751,7 +765,8 @@ void WorldSession::HandleAutoEquipItemOpcode( WorldPacket & recv_data )
 	}
 	else
 	{
-		if( error = _player->GetItemInterface()->CanEquipItemInSlot( INVENTORY_SLOT_NOT_SET, Slot, eitem->GetProto(), false, false ) )
+		error = _player->GetItemInterface()->CanEquipItemInSlot( INVENTORY_SLOT_NOT_SET, Slot, eitem->GetProto(), false, false );
+		if( error  )
 		{
 			_player->GetItemInterface()->BuildInventoryChangeError( eitem, NULL, error );
 			return;
@@ -760,7 +775,8 @@ void WorldSession::HandleAutoEquipItemOpcode( WorldPacket & recv_data )
 
 	if( Slot <= INVENTORY_SLOT_BAG_END )
 	{
-		if( error = _player->GetItemInterface()->CanEquipItemInSlot( INVENTORY_SLOT_NOT_SET, Slot, eitem->GetProto(), false, false ) )
+		error = _player->GetItemInterface()->CanEquipItemInSlot( INVENTORY_SLOT_NOT_SET, Slot, eitem->GetProto(), false, false );
+		if( error )
 		{
 			_player->GetItemInterface()->BuildInventoryChangeError( eitem, NULL, error );
 			return;
@@ -800,6 +816,7 @@ void WorldSession::HandleAutoEquipItemOpcode( WorldPacket & recv_data )
 
 	if( eitem->GetProto()->Bonding==ITEM_BIND_ON_EQUIP )
 		eitem->SoulBind();
+	#ifdef ENABLE_ACHIEVEMENTS
 	_player->GetAchievementMgr().UpdateAchievementCriteria( ACHIEVEMENT_CRITERIA_TYPE_EQUIP_ITEM, eitem->GetProto()->ItemId, 0, 0 );
 	// Achievement ID:556 description Equip an epic item in every slot with a minimum item level of 213.
 	// "213" value not found in achievement or criteria entries, have to hard-code it here? :(
@@ -808,6 +825,9 @@ void WorldSession::HandleAutoEquipItemOpcode( WorldPacket & recv_data )
 	if( ( eitem->GetProto()->Quality == ITEM_QUALITY_RARE_BLUE && eitem->GetProto()->ItemLevel >= 187 ) ||
 		( eitem->GetProto()->Quality == ITEM_QUALITY_EPIC_PURPLE && eitem->GetProto()->ItemLevel >= 213 ) )
 		_player->GetAchievementMgr().UpdateAchievementCriteria( ACHIEVEMENT_CRITERIA_TYPE_EQUIP_EPIC_ITEM, Slot, eitem->GetProto()->Quality, 0 );
+#endif
+	//Recalculate Expertise (for Weapon specs)
+	_player->CalcExpertise();
 }
 
 void WorldSession::HandleAutoEquipItemSlotOpcode( WorldPacket& recvData )
@@ -816,10 +836,10 @@ void WorldSession::HandleAutoEquipItemSlotOpcode( WorldPacket& recvData )
 	CHECK_PACKET_SIZE( recvData, 8 + 1 );
 	uint64 itemguid;
 	int8 destSlot;
-	int8 error = 0;
+	//int8 error = 0; // useless?
 	recvData >> itemguid >> destSlot;
 
-	int8	srcSlot		= _player->GetItemInterface()->GetInventorySlotByGuid(itemguid);
+	int8	srcSlot		= (int8)_player->GetItemInterface()->GetInventorySlotByGuid(itemguid);
 	Item	*item		= _player->GetItemInterface()->GetItemByGUID(itemguid);
 	int8	slotType	= _player->GetItemInterface()->GetItemSlotByType(item->GetProto()->InventoryType);
 	bool	hasDualWield2H	= false;
@@ -941,7 +961,7 @@ void WorldSession::HandleItemQuerySingleOpcode( WorldPacket & recv_data )
 	}
 	data << itemProto->ScalingStatsEntry;
 	data << itemProto->ScalingStatsFlag;
-	for(i = 0; i < 5; i++)
+	for(i = 0; i < 2; i++) //VLack: seen this in Aspire code, originally this went up to 5, now only to 2
 	{
 		data << itemProto->Damage[i].Min;
 		data << itemProto->Damage[i].Max;
@@ -977,7 +997,7 @@ void WorldSession::HandleItemQuerySingleOpcode( WorldPacket & recv_data )
 	data << itemProto->QuestId;
 	data << itemProto->LockId;
 	data << itemProto->LockMaterial;
-	data << itemProto->Field108;
+	data << itemProto->SheathID;
 	data << itemProto->RandomPropId;
 	data << itemProto->RandomSuffixId;
 	data << itemProto->Block;
@@ -999,6 +1019,7 @@ void WorldSession::HandleItemQuerySingleOpcode( WorldPacket & recv_data )
 	data << itemProto->ArmorDamageModifier;
 	data << itemProto->ExistingDuration;								// 2.4.2 Item duration in seconds
 	data << itemProto->ItemLimitCategory;
+	data << itemProto->HolidayId; //MesoX: HolidayId - points to HolidayNames.dbc
 	SendPacket( &data );
 
 }
@@ -1078,6 +1099,7 @@ void WorldSession::HandleBuyBackOpcode( WorldPacket & recv_data )
 
 		data.Initialize( SMSG_BUY_ITEM );
 		data << uint64(guid);
+		data << getMSTime(); //VLack: seen is Aspire code
 		data << uint32(itemid) << uint32(amount);
 		SendPacket( &data );
 	}
@@ -1211,10 +1233,12 @@ void WorldSession::HandleBuyItemInSlotOpcode( WorldPacket & recv_data ) // drag 
 	uint8 amount = 0;
 	uint8 error;
 	int8 bagslot = INVENTORY_SLOT_NOT_SET;
+	int32 vendorslot; //VLack: 3.1.2
 
 	recv_data >> srcguid >> itemid;
-	recv_data >> bagguid; 
-	recv_data >> slot;
+	recv_data >> vendorslot; //VLack: 3.1.2 This is the slot's number on the vendor's panel, starts from 1
+	recv_data >> bagguid;
+	recv_data >> slot; //VLack: 3.1.2 the target slot the player selected - backpack 23-38, other bags 0-15 (Or how big is the biggest bag? 0-127?)
 	recv_data >> amount;
 
 	if(amount < 1)
@@ -1272,7 +1296,7 @@ void WorldSession::HandleBuyItemInSlotOpcode( WorldPacket & recv_data ) // drag 
 		{
 			c=(Container*)_player->GetItemInterface()->GetItemByGUID(bagguid);
 			if(!c)return;
-			bagslot = _player->GetItemInterface()->GetBagSlotByGuid(bagguid);
+			bagslot = (int8)_player->GetItemInterface()->GetBagSlotByGuid(bagguid);
 
 			if(bagslot == INVENTORY_SLOT_NOT_SET || (c->GetProto() && (uint32)slot > c->GetProto()->ContainerSlots))
 			{
@@ -1292,7 +1316,7 @@ void WorldSession::HandleBuyItemInSlotOpcode( WorldPacket & recv_data ) // drag 
 				return;//non empty
 			}
 
-			bagslot = _player->GetItemInterface()->GetBagSlotByGuid(bagguid);
+			bagslot = (int8)_player->GetItemInterface()->GetBagSlotByGuid(bagguid);
 			slot = c->FindFreeSlot();
 		}
 		else
@@ -1373,8 +1397,9 @@ void WorldSession::HandleBuyItemInSlotOpcode( WorldPacket & recv_data ) // drag 
 
 	SendItemPushResult(pItem, false, true, false, (pItem==oldItem) ? false : true, bagslot, slot, amount*ci.amount);
 
-	WorldPacket data(SMSG_BUY_ITEM, 12);
+	WorldPacket data(SMSG_BUY_ITEM, 22);
 	data << uint64(srcguid);
+	data << getMSTime();
 	data << uint32(itemid) << uint32(amount);
 
 	SendPacket( &data );
@@ -1399,7 +1424,7 @@ void WorldSession::HandleBuyItemOpcode( WorldPacket & recv_data ) // right-click
 	WorldPacket data(45);
 	uint64 srcguid=0;
 	uint32 itemid=0;
-	int8 slot=0;
+	int32 slot=0;
 	uint8 amount=0;
 //	int8 playerslot = 0;
 //	int8 bagslot = 0;
@@ -1409,7 +1434,7 @@ void WorldSession::HandleBuyItemOpcode( WorldPacket & recv_data ) // right-click
 	AddItemResult result;
 
 	recv_data >> srcguid >> itemid;
-	recv_data >> amount >> slot;
+	recv_data >> slot >> amount;
 
 
 	Creature *unit = _player->GetMapMgr()->GetCreature(GET_LOWGUID_PART(srcguid));
@@ -1511,11 +1536,12 @@ void WorldSession::HandleBuyItemOpcode( WorldPacket & recv_data ) // right-click
 	{
 		add->ModUnsigned32Value(ITEM_FIELD_STACK_COUNT, amount*item.amount);
 		add->m_isDirty = true;
-		SendItemPushResult(add, false, true, false, false, _player->GetItemInterface()->GetBagSlotByGuid(add->GetGUID()), 1, amount*item.amount);
+		SendItemPushResult(add, false, true, false, false, (uint8)_player->GetItemInterface()->GetBagSlotByGuid(add->GetGUID()), 1, amount*item.amount);
 	}
 
 	data.Initialize( SMSG_BUY_ITEM );
 	data << uint64(srcguid);
+	data << getMSTime();
 	data << uint32(itemid) << uint32(amount*item.amount);
 	SendPacket( &data );
 
@@ -1695,7 +1721,7 @@ void WorldSession::HandleAutoStoreBagItemOpcode( WorldPacket & recv_data )
 		{
 			if((error=_player->GetItemInterface()->CanEquipItemInSlot2(DstInv,  DstInv, srcitem)) != 0)
 			{
-				if(DstInv < INVENTORY_KEYRING_END)
+				if(DstInv < CURRENCYTOKEN_SLOT_END)
 				{
 					_player->GetItemInterface()->BuildInventoryChangeError(srcitem,dstitem, error);
 					return;
@@ -1841,7 +1867,7 @@ void WorldSession::HandleRepairItemOpcode(WorldPacket &recvPacket)
 	{
 		for( i = 0; i < MAX_INVENTORY_SLOT; i++ )
 		{
-			pItem = _player->GetItemInterface()->GetInventoryItem( i );
+			pItem = _player->GetItemInterface()->GetInventoryItem( static_cast<int16>( i ) );
 			if( pItem != NULL )
 			{
 				if( pItem->IsContainer() )
@@ -1849,7 +1875,7 @@ void WorldSession::HandleRepairItemOpcode(WorldPacket &recvPacket)
 					pContainer = static_cast<Container*>( pItem );
 					for( j = 0; j < pContainer->GetProto()->ContainerSlots; ++j )
 					{
-						pItem = pContainer->GetItem( j );
+						pItem = pContainer->GetItem( static_cast<int16>( j ) );
 						if( pItem != NULL )
 							RepairItem( _player, pItem );
 					}
@@ -1859,7 +1885,7 @@ void WorldSession::HandleRepairItemOpcode(WorldPacket &recvPacket)
 					if( i < INVENTORY_SLOT_BAG_END )
 					{
 						if( pItem->GetDurability() == 0 && RepairItem( _player, pItem ) )
-							_player->ApplyItemMods( pItem, i, true );
+							_player->ApplyItemMods( pItem, static_cast<int16>( i ), true );
 						else
 							RepairItem( _player, pItem );
 					}
@@ -1879,7 +1905,7 @@ void WorldSession::HandleRepairItemOpcode(WorldPacket &recvPacket)
 			{
                 uint32 cDurability = item->GetDurability();
 				//only apply item mods if they are on char equipped
-                if( RepairItem( _player, item ) && cDurability == 0 && searchres->ContainerSlot==INVALID_BACKPACK_SLOT && searchres->Slot<INVENTORY_SLOT_BAG_END)
+                if( RepairItem( _player, item ) && cDurability == 0 && searchres->ContainerSlot==INVALID_BACKPACK_SLOT && searchres->Slot < static_cast<int8>( INVENTORY_SLOT_BAG_END ))
                     _player->ApplyItemMods(item, searchres->Slot, true);
 			}
 		}
@@ -1906,7 +1932,9 @@ void WorldSession::HandleBuyBankSlotOpcode(WorldPacket& recvPacket)
 	{
 	   _player->SetUInt32Value(PLAYER_BYTES_2, (bytes&0xff00ffff) | ((slots+1) << 16) );
 	   _player->ModUnsigned32Value(PLAYER_FIELD_COINAGE, -price);
+#ifdef ENABLE_ACHIEVEMENTS
 		_player->GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_BUY_BANK_SLOT, 1, 0, 0);
+#endif
 	}
 }
 
@@ -2006,7 +2034,7 @@ void WorldSession::HandleCancelTemporaryEnchantmentOpcode(WorldPacket &recvPacke
 	uint32 inventory_slot;
 	recvPacket >> inventory_slot;
 
-	Item * item = _player->GetItemInterface()->GetInventoryItem(inventory_slot);
+	Item * item = _player->GetItemInterface()->GetInventoryItem( static_cast<int16>( inventory_slot ));
 	if(!item) return;
 
 	item->RemoveAllEnchantments(true);
@@ -2202,7 +2230,7 @@ void WorldSession::HandleWrapItemOpcode( WorldPacket& recv_data )
 		_player->GetItemInterface()->BuildInventoryChangeError( src, dst, INV_ERR_ITEM_LOCKED );
 		return;
 	}
-	if( destitem_bagslot == (int8)0xFF && ( destitem_slot >= EQUIPMENT_SLOT_START && destitem_slot <= INVENTORY_SLOT_BAG_END ) )
+	if( destitem_bagslot == -1 && ( destitem_slot >= int8( EQUIPMENT_SLOT_START ) && destitem_slot <= int8( INVENTORY_SLOT_BAG_END ) ) )
 	{
 		_player->GetItemInterface()->BuildInventoryChangeError( src, dst, INV_ERR_EQUIPPED_CANT_BE_WRAPPED );
 		return;

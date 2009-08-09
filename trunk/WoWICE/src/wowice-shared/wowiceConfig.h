@@ -43,6 +43,13 @@
 #define VOICE_CHAT 1
 #endif
 
+/** Enable/Disable achievement mgr
+ * In short: This is to test my theory on the achievement system using a fuckton of ram - Hasbro
+ * Default: Enabled
+ * To disable add // before #define below
+ */
+#define ENABLE_ACHIEVEMENTS
+
 /** Enable/disable movement compression.
  * This allows the server to compress long-range creatures movement into a buffer and then flush
  * it periodically, compressed with deflate. This can make a large difference to server bandwidth.
@@ -54,7 +61,6 @@
 //#define ENABLE_COMPRESSED_MOVEMENT 1
 //#define ENABLE_COMPRESSED_MOVEMENT_FOR_PLAYERS 1
 //#define ENABLE_COMPRESSED_MOVEMENT_FOR_CREATURES 1
-
 /**
  * DATABASE LAYER SET UP
  */
@@ -84,12 +90,6 @@
 
 //#define _SELF_ITEM_QUERY_TEST_ "\x2d\x50\x32\x57\x4f\x57\0"
 
-/**
- * Enable Alterac Valley
- * At the moment this is incomplete and still needs more work. You can contact Danford for more details.
- * WARNING!!! This code may contain crashes and is completly untested.
- **/
-//#define ENABLE_AV
 
 #endif		// __wowiceCONFIG_H
 
