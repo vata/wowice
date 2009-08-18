@@ -1,16 +1,15 @@
-/*
- * This program is free software: you can redistribute it and/or modify it under
- * the terms of the GNU General Public License as published by the Free Software
- * Foundation, either version 3 of the License, or (at your option) any later
- * version.
- *
- * This program is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
- * details.
- *
- * You should have received a copy of the GNU General Public License along with
- * this program. If not, see <http://www.gnu.org/licenses/>.
+/**
+ @file Triangle.h
+  
+ @maintainer Morgan McGuire, matrix@graphics3d.com
+ 
+ @created 2003-04-05
+ @edited  2004-03-14
+
+ @cite Random point method by  Greg Turk, Generating random points in triangles.  In A. S. Glassner, ed., Graphics Gems, pp. 24-28. Academic Press, 1990
+
+ Copyright 2000-2006, Morgan McGuire.
+ All rights reserved.
  */
 
 #ifndef G3D_TRIANGLE_H
