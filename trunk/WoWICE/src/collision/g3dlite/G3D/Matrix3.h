@@ -1,16 +1,14 @@
-/*
- * This program is free software: you can redistribute it and/or modify it under
- * the terms of the GNU General Public License as published by the Free Software
- * Foundation, either version 3 of the License, or (at your option) any later
- * version.
- *
- * This program is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
- * details.
- *
- * You should have received a copy of the GNU General Public License along with
- * this program. If not, see <http://www.gnu.org/licenses/>.
+/**
+  @file Matrix3.h
+ 
+  3x3 matrix class
+ 
+  @maintainer Morgan McGuire, matrix@graphics3d.com
+ 
+  @cite Portions based on Dave Eberly's Magic Software Library at <A HREF="http://www.magic-software.com">http://www.magic-software.com</A>
+ 
+  @created 2001-06-02
+  @edited  2006-04-05
  */
 
 #ifndef G3D_MATRIX3_H
