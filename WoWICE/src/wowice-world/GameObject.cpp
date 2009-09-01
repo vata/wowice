@@ -315,7 +315,8 @@ void GameObject::SaveToDB()
 		<< GetUInt32Value(GAMEOBJECT_FLAGS) << ","
 		<< GetUInt32Value(GAMEOBJECT_FACTION) << ","
 		<< GetFloatValue(OBJECT_FIELD_SCALE_X) << ","
-		<< "0)";
+		<< "0,"
+		<< m_phase << ")";
 	WorldDatabase.Execute(ss.str().c_str());
 
   /*  std::stringstream ss;
@@ -366,7 +367,8 @@ void GameObject::SaveToFile(std::stringstream & name)
 		<< GetUInt32Value(GAMEOBJECT_FLAGS) << ","
 		<< GetUInt32Value(GAMEOBJECT_FACTION) << ","
 		<< GetFloatValue(OBJECT_FIELD_SCALE_X) << ","
-		<< "0)";
+		<< "0,"
+		<< m_phase << ")";
 
 	FILE * OutFile;
 
@@ -493,6 +495,7 @@ bool GameObject::Load(GOSpawn *spawn)
 		return false;
 
 	m_spawn = spawn;
+	m_phase = spawn->phase;
 	//SetRotation(spawn->o);
 	SetUInt32Value(GAMEOBJECT_FLAGS,spawn->flags);
 //	SetUInt32Value(GAMEOBJECT_LEVEL,spawn->level);

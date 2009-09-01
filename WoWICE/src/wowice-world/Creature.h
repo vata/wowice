@@ -300,6 +300,22 @@ public:
 	WoWICE_INLINE bool HasItems() { return ((m_SellItems != NULL) ? true : false); }
 	WoWICE_INLINE CreatureProto* GetProto() { return proto; }
 
+    	//! Is PVP flagged?
+	WoWICE_INLINE bool IsPvPFlagged()
+	{
+		return HasByteFlag(UNIT_FIELD_BYTES_2, 1, U_FIELD_BYTES_FLAG_PVP);
+	}
+
+	WoWICE_INLINE void SetPvPFlag()
+	{
+		SetByteFlag(UNIT_FIELD_BYTES_2, 1, U_FIELD_BYTES_FLAG_PVP);
+	}
+
+	WoWICE_INLINE void RemovePvPFlag()
+	{
+		RemoveByteFlag(UNIT_FIELD_BYTES_2, 1, U_FIELD_BYTES_FLAG_PVP);
+	}
+
 	int32 GetSlotByItemId(uint32 itemid)
 	{
 		uint32 slot = 0;
@@ -636,6 +652,7 @@ protected:
 	uint32 m_enslaveSpell;
 
 	Player * totemOwner;
+    Unit * m_owner;
 	int32 totemSlot;
 
 	bool m_PickPocketed;

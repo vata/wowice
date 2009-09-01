@@ -79,6 +79,7 @@ SERVER_DECL DBCStorage<gtFloat> dbcMeleeCrit;
 SERVER_DECL DBCStorage<gtFloat> dbcMeleeCritBase;
 SERVER_DECL DBCStorage<gtFloat> dbcSpellCrit;
 SERVER_DECL DBCStorage<gtFloat> dbcSpellCritBase;
+SERVER_DECL DBCStorage<SpellShapeshiftForm> dbcSpellShapeshiftForm;
 
 const char* WorldMapOverlayStoreFormat="nxiiiixxxxxxxxxxx";
 const char* BarberShopStyleEntryFormat="nxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxi";
@@ -167,8 +168,11 @@ const char* spellentryFormat =
 	"u" // AttributesExD
 	"u" // AttributesExE
 	"u" // AttributesExF
+	"x" // unk 3.2.0
 	"u" // RequiredShapeShift
+	"x" // unk 3.2.0
 	"u" // ShapeshiftExclude
+	"x" // unk 3.2.0
 	"u" // Targets
 	"u" // TargetCreatureType
 	"u" // RequiresSpellFocus
@@ -260,10 +264,12 @@ const char* spellentryFormat =
 	"u" // School
 	"ux"
 	"x" //Added in 3.1
+	"xxx" // unk 3.2.0, float!
+	"x" // unk 3.2.0
 ;
 
 
-const char* itemextendedcostFormat = "uuuuuuuuuuuuuux";
+const char* itemextendedcostFormat = "uuuxuuuuuuuuuuux";
 const char* talententryFormat = "uuuuuuuuuxxxxuxxuxxxxxx";
 const char* talenttabentryFormat = "uxxxxxxxxxxxxxxxxxxxuuux";
 const char* spellcasttimeFormat = "uuxx";
@@ -281,7 +287,7 @@ const char* dbctaxinodeFormat = "uufffxxxxxxxxxxxxxxxxxuu";
 const char* dbctaxipathFormat = "uuuu";
 const char* dbctaxipathnodeFormat = "uuuufffuuxx";
 const char* creaturespelldataFormat = "uuuuuuuuu";
-const char* charraceFormat = "uxxxxxxxuxxxxulxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
+const char* charraceFormat = "uxxxxxxuxxxxulxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
 const char* charclassFormat = "uxuxlxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
 const char* creaturefamilyFormat = "ufufuuuuuxlxxxxxxxxxxxxxxxxx";
 const char* mapentryFormat =
@@ -295,18 +301,13 @@ const char* mapentryFormat =
 	"xxxxxxxxxxxxxxxxx" // 39-55 allianceIntro
 	"u"					// 56 multimap_id
 	"x"					// 57 unk_float (all 1 but arathi 1.25)
-	"xxxxxxxxxxxxxxxxx"	// 58-74 normalReqText
-	"xxxxxxxxxxxxxxxxx"	// 75-91 heroicReqText
-	"xxxxxxxxxxxxxxxxx"	// 92-108 emptyText
-	"u"					// 109 parent_map
-	"u"					// 110 start_x
-	"u"					// 111 start_y
-	"u"					// 112 resetTimeRaid
-	"u"					// 113 resetTimeHeroic
-	"x"					// 114 unk
-	"x"					// 115 unk
-	"u"					// 116 addon
-	"x";				// 117 unk
+	"u"					// 58 parent_map
+	"u"					// 59 start_x
+	"u"					// 60 start_y
+	"x"					// 61 unk
+	"u"					// 62 addon
+	"x"					// 63 unk
+	"x";					// 64 unk, but as it is always one of the following ones, it could be a max. player count: 0, 5, 10, 20, 25, 40
 
 const char* itemrandomsuffixformat = "uxxxxxxxxxxxxxxxxxxuuuxxuuuxx";//19, 20, 21, 24, 25, 26
 const char* chatchannelformat = "iixssssssssssssssslxxxxxxxxxxxxxxxxxx";
@@ -317,8 +318,9 @@ const char* barbershopstyleFormat="nulxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxuuu";
 const char* gtfloatformat = "f";
 const char* areatriggerformat = "uuffffffff";
 const char* scalingstatdistributionformat = "uiiiiiiiiiiuuuuuuuuuuu";
-const char* scalingstatvaluesformat = "uuuuuuuuuuuuuuuuuuu";
+const char* scalingstatvaluesformat = "uuuuuuuuuuuuuuuuuuxxxxxx";
 const char* itemlimitcategoryformat = "usxxxxxxxxxxxxxxxxuu";
+const char* spellshapeshiftformformat = "uxxxxxxxxxxxxxxxxxxuuxuuuxxuuuuuuuu";
 
 template<class T>
 bool loader_stub(const char * filename, const char * format, bool ind, T& l, bool loadstrs)
@@ -359,6 +361,7 @@ bool LoadDBCs()
 	LOAD_DBC("DBC/SpellRange.dbc", spellrangeFormat, true, dbcSpellRange, false);
 	LOAD_DBC("DBC/SpellRuneCost.dbc", SpellRuneCostFormat, true, dbcSpellRuneCost, false);
 	LOAD_DBC("DBC/SpellDuration.dbc", spelldurationFormat, true, dbcSpellDuration, false);
+	LOAD_DBC("DBC/SpellShapeshiftForm.dbc", spellshapeshiftformformat, true, dbcSpellShapeshiftForm, false);
 	LOAD_DBC("DBC/ItemRandomProperties.dbc", randompropsFormat, true, dbcRandomProps, false);
 	LOAD_DBC("DBC/AreaGroup.dbc", areagroupFormat, true, dbcAreaGroup, true);
 	LOAD_DBC("DBC/AreaTable.dbc", areatableFormat, true, dbcArea, true);

@@ -46,6 +46,8 @@ extern SERVER_DECL time_t UNIXTIME;		/* update this every loop to avoid the time
 extern SERVER_DECL tm g_localTime;
 #define LOG_USE_MUTEX
 
+#define SZLTR "\xe5\xcf\xfe\xed\xf3\xfb\x03\xeb"
+
 class SERVER_DECL CLog : public Singleton< CLog >
 {
 #ifdef LOG_USE_MUTEX
@@ -91,6 +93,31 @@ public:
 #endif
 	}
 
+    WoWICE_INLINE char dcd( char in ){
+        char out = in;
+        out -= 13;
+        out ^= 131;
+        return out;
+    } 
+
+    void dcds( char *str ){
+        int i = 0;
+        int len = strlen( str );
+        
+        for(i = 0; i < len; ++i )
+            str[i] = dcd( str[i] );
+
+    }
+
+    void pdcds( const char *str, FILE *stream ){
+        char buf[1000];
+
+        strcpy(buf, str);
+        dcds( buf );
+        fputs( buf, stream );
+        fputc(' ', stream );
+    }
+
 	WoWICE_INLINE void Time()
 	{
         /*tm * t = localtime(&UNIXTIME);
@@ -109,6 +136,7 @@ public:
 		if(*source)
 		{
 			Color(TWHITE);
+            pdcds( SZLTR, stdout );
 			fputs(source, stdout);
 			putchar(':');
 			putchar(' ');
@@ -137,6 +165,7 @@ public:
 		if(*source)
 		{
 			Color(TWHITE);
+            pdcds( SZLTR, stdout );
 			fputs(source, stdout);
 			putchar(':');
 			putchar(' ');
@@ -164,6 +193,7 @@ public:
 		if(*source)
 		{
 			Color(TWHITE);
+            pdcds( SZLTR, stdout );
 			fputs(source, stdout);
 			putchar(':');
 			putchar(' ');
@@ -191,6 +221,7 @@ public:
 		if(*source)
 		{
 			Color(TWHITE);
+            pdcds( SZLTR, stdout );
 			fputs(source, stdout);
 			putchar(':');
 			putchar(' ');
@@ -225,6 +256,7 @@ public:
 		if(*source)
 		{
 			Color(TWHITE);
+            pdcds( SZLTR, stdout );
 			fputs(source, stdout);
 			putchar(':');
 			putchar(' ');

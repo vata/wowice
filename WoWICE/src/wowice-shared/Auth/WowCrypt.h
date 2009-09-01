@@ -18,38 +18,25 @@
 
 #include <stdlib.h>
 #include "../Common.h"
+#include "BigNumber.h"
 #include <vector>
-#include "Auth/Sha1.h"
+#include <openssl/sha.h>
+#include <openssl/rc4.h>
 
 class WowCrypt {
 public:
 	WowCrypt();
 	~WowCrypt();
 
-	const static size_t CRYPTED_SEND_LEN = 4;
-	const static size_t CRYPTED_RECV_LEN = 6;
-
-	void Init();
-
-	void SetKey(uint8 *, size_t);
-
-	void DecryptRecv(uint8 *, size_t);
-	void EncryptSend(uint8 *, size_t);
-    
-    // encrypt 4 bytes
-    void EncryptFourSend(uint8 * data);
-    // decrypt 6 bytes
-    void DecryptSixRecv(uint8 *data);
-	
-	// 2.4.3 new key generation procedure
-	static void GenerateKey(uint8 *, uint8 *);
-
-	bool IsInitialized() { return _initialized; }
+	void Init(uint8 *K);
+    WoWICE_INLINE void DecryptRecv(uint8* pData, size_t len) { if( !m_initialized) { return; } RC4(&m_clientDecrypt, (unsigned long)len, pData, pData); }
+    WoWICE_INLINE void EncryptSend(uint8* pData, size_t len) { if( !m_initialized) { return; } RC4(&m_serverEncrypt, (unsigned long)len, pData, pData); }
+    bool IsInitialized() { return m_initialized; }
 
 private:
-	std::vector<uint8> _key;
-	uint8 _send_i, _send_j, _recv_i, _recv_j;
-	bool _initialized;
+    RC4_KEY m_clientDecrypt;
+    RC4_KEY m_serverEncrypt;
+    bool m_initialized;
 };
 
 #endif
