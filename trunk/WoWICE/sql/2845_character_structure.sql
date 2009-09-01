@@ -1,3 +1,4 @@
+*/
 /*!40101 SET NAMES utf8 */;
 
 /*!40101 SET SQL_MODE=''*/;
@@ -850,6 +851,9 @@ CREATE TABLE `playeritems` (
   `containerslot` int(11) default '-1',
   `slot` int(10) NOT NULL default '0',
   `enchantments` longtext NOT NULL,
+  `duration_expireson` int(10) unsigned NOT NULL default '0',
+  `refund_purchasedon` int(10) unsigned NOT NULL default '0',
+  `refund_costid` int(10) unsigned NOT NULL default '0',
   PRIMARY KEY  (`guid`),
   KEY `ownerguid` (`ownerguid`),
   KEY `itemtext` (`itemtext`)
@@ -909,6 +913,7 @@ CREATE TABLE `playerpets` (
   `reset_time` int(10) unsigned NOT NULL default '0',
   `reset_cost` int(10) NOT NULL default '0',
   `spellid` int(10) unsigned NOT NULL default '0',
+  `petstate` int(10) unsigned NOT NULL default '0',
   PRIMARY KEY  (`ownerguid`,`petnumber`)
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1;
 
