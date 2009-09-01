@@ -217,7 +217,8 @@ void WorldSession::HandleMessagechatOpcode( WorldPacket & recv_data )
 				SendChatPacket(data, 1, lang, this);
 				for(set<Player*>::iterator itr = _player->m_inRangePlayers.begin(); itr != _player->m_inRangePlayers.end(); ++itr)
 				{
-					(*itr)->GetSession()->SendChatPacket(data, 1, lang, this);
+					if ( _player->GetPhase() & (*itr)->GetPhase() )
+						(*itr)->GetSession()->SendChatPacket(data, 1, lang, this);
 				}
 			}
 			delete data;
@@ -609,7 +610,7 @@ void WorldSession::HandleTextEmoteOpcode( WorldPacket & recv_data )
 		GetPlayer()->SendMessageToSet(&data, true);
 #ifdef ENABLE_ACHIEVEMENTS
 		_player->GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_DO_EMOTE, text_emote, 0, 0);
-#endif
+#endif		
 		sQuestMgr.OnPlayerEmote(_player, text_emote, guid);
 	}
 }

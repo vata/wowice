@@ -691,17 +691,17 @@ void WorldSession::FullLogin(Player * plr)
 	movement_packet[0] = m_MoverWoWGuid.GetNewGuidMask();
 	memcpy(&movement_packet[1], m_MoverWoWGuid.GetNewGuid(), m_MoverWoWGuid.GetNewGuidLen());
 
-//VLack: send dungeon difficulty and MOTD, as seen in the 3.1.1 packet dump
-        WorldPacket datadd(MSG_SET_DUNGEON_DIFFICULTY, 20);
-        datadd << plr->iInstanceType;
-        datadd << uint32(0x01);
-        datadd << uint32(0x00);
-        SendPacket(&datadd);
+	//VLack: send dungeon difficulty and MOTD, as seen in the 3.1.1 packet dump
+	WorldPacket datadd(MSG_SET_DUNGEON_DIFFICULTY, 20);
+	datadd << plr->iInstanceType;
+	datadd << uint32(0x01);
+	datadd << uint32(0x00);
+	SendPacket(&datadd);
 
-        WorldPacket datamo(SMSG_MOTD, 50);
-        datamo << uint32(0x04);
-        datamo << sWorld.GetMotd();
-        SendPacket(&datamo);
+	WorldPacket datamo(SMSG_MOTD, 100);
+	datamo << uint32(0x04);
+	datamo << sWorld.GetMotd();
+	SendPacket(&datamo);
 
 	/* world preload */
 	packetSMSG_LOGIN_VERIFY_WORLD vwpck;
@@ -759,10 +759,10 @@ void WorldSession::FullLogin(Player * plr)
 #endif
 
 	//VLack: Mangos sends this packet on 3.1:
-        WorldPacket dataldm(SMSG_LEARNED_DANCE_MOVES, 4+4);
-        dataldm << uint32(0);
-        dataldm << uint32(0);
-        SendPacket(&dataldm);
+	WorldPacket dataldm(SMSG_LEARNED_DANCE_MOVES, 4+4);
+	dataldm << uint32(0);
+	dataldm << uint32(0);
+	SendPacket(&dataldm);
 
 	plr->UpdateAttackSpeed();
 	/*if(plr->getLevel()>PLAYER_LEVEL_CAP_70)
@@ -789,7 +789,7 @@ void WorldSession::FullLogin(Player * plr)
 		info->guildRank = NULL;
 		info->guildMember = NULL;
 		info->m_Group = NULL;
-		info->subGroup = NULL;
+		info->subGroup = 0;
 		objmgr.AddPlayerInfo(info);
 	}
 	plr->m_playerInfo = info;
@@ -941,9 +941,6 @@ void WorldSession::FullLogin(Player * plr)
 		}
 	}
 #endif
-
-	// Send MOTD
-	_player->BroadcastMessage(sWorld.GetMotd());
 
 
 	// Send revision (if enabled)

@@ -877,7 +877,7 @@ void AIInterface::_UpdateTargets()
 	if(  m_Unit->GetMapMgr() == NULL )
 		return; 
 
-	AssistTargetSet::iterator i, i2;
+    AssistTargetSet::iterator i, i2;
 	TargetMap::iterator itr, it2;
 
 	// Find new Assist Targets and remove old ones
@@ -911,7 +911,7 @@ void AIInterface::_UpdateTargets()
 		{
 			i2 = i++;
 			if((*i2) == NULL || (*i2)->event_GetCurrentInstanceId() != m_Unit->event_GetCurrentInstanceId() ||
-				!(*i2)->isAlive() || m_Unit->GetDistanceSq((*i2)) >= 2500.0f || !(*i2)->CombatStatus.IsInCombat() )
+				!(*i2)->isAlive() || m_Unit->GetDistanceSq((*i2)) >= 2500.0f || !(*i2)->CombatStatus.IsInCombat() || !((*i2)->m_phase & m_Unit->m_phase) )
 			{
 				m_assistTargets.erase( i2 );
 			}
@@ -958,7 +958,7 @@ void AIInterface::_UpdateTargets()
 					}
 				}
 
-				if( ai_t->event_GetCurrentInstanceId() != m_Unit->event_GetCurrentInstanceId() || !ai_t->isAlive() || (!instance && m_Unit->GetDistanceSq(ai_t) >= 6400.0f)) {
+				if( ai_t->event_GetCurrentInstanceId() != m_Unit->event_GetCurrentInstanceId() || !ai_t->isAlive() || (!instance && m_Unit->GetDistanceSq(ai_t) >= 6400.0f || !(ai_t->m_phase & m_Unit->m_phase))) {
 					m_aiTargets.erase( it2 );
 				}
 			}
@@ -1033,7 +1033,7 @@ void AIInterface::_UpdateCombat(uint32 p_time)
 		&& m_AIState != STATE_EVADE
 		&& m_AIState != STATE_SCRIPTMOVE
 		&& !m_is_in_instance
-		&& (m_outOfCombatRange && m_Unit->GetDistanceSq(m_returnX,m_returnY,m_returnZ) > m_outOfCombatRange) )
+		&& (m_outOfCombatRange && m_Unit->GetDistanceSq(m_returnX,m_returnY,m_returnZ) > m_outOfCombatRange)  )
 	{
 		HandleEvent( EVENT_LEAVECOMBAT, m_Unit, 0 );
 	}
@@ -1045,6 +1045,16 @@ void AIInterface::_UpdateCombat(uint32 p_time)
 		else 
 			SetNextTarget( GetMostHated() );
 
+		if( GetNextTarget() == NULL )
+		{
+			HandleEvent( EVENT_LEAVECOMBAT, m_Unit, 0 );
+		}
+	} else if( GetNextTarget() && !(GetNextTarget()->m_phase & m_Unit->m_phase) ) // the target or we changed phase, stop attacking
+	{
+		if( m_is_in_instance )
+			SetNextTarget( FindTarget() );
+		else 
+			SetNextTarget( GetMostHated() );
 		if( GetNextTarget() == NULL )
 		{
 			HandleEvent( EVENT_LEAVECOMBAT, m_Unit, 0 );
@@ -1651,6 +1661,9 @@ bool AIInterface::UnsafeCanOwnerAttackUnit(Unit *pUnit)
 	if( pUnit->bInvincible )
 		return false;
 
+	if( !(pUnit->m_phase & m_Unit->m_phase) ) //Not in the same phase
+		return false;
+
 	//do not agro units that are faking death. Should this be based on chance ?
 	if( pUnit->HasFlag( UNIT_FIELD_FLAGS, UNIT_FLAG_FEIGN_DEATH ) )
 		return false;
@@ -1703,6 +1716,14 @@ Unit* AIInterface::FindTarget()
 //	Object *pObj;
 	Unit *pUnit;
 	float dist;
+
+    // Don't remove this please! - dfighter
+    /*
+    if( m_AIType == AITYPE_PET ){
+        printf("I'm a pet and I'm looking for targets, RAWR!\n");
+    }
+    */
+    
 	
 	/* Commented due to no use
 	bool pvp=true;
@@ -1716,6 +1737,7 @@ Unit* AIInterface::FindTarget()
 		return 0;
 	}
 
+    // Start of neutralguard snippet
 	if (m_isNeutralGuard)
 	{
 		Player *tmpPlr;
@@ -1735,6 +1757,8 @@ Unit* AIInterface::FindTarget()
 			if (tmpPlr->m_invisible)
 				continue;
 			if( !tmpPlr->HasFlag( PLAYER_FLAGS, 0x100) )//PvP Guard Attackable.
+				continue;
+			if( !(tmpPlr->m_phase & m_Unit->m_phase) ) //Not in the same phase, skip this target
 				continue;
 
 			dist = m_Unit->GetDistanceSq(tmpPlr);
@@ -1768,6 +1792,7 @@ Unit* AIInterface::FindTarget()
 		}
 		distance = 999999.0f; //Reset Distance for normal check
 	}
+    // End of neutralguard snippet
 
 	//we have a high chance that we will agro a player
 	//this is slower then oppfaction list BUT it has a lower chance that contains invalid pointers
@@ -1777,8 +1802,8 @@ Unit* AIInterface::FindTarget()
 		++pitr2;
 
 		pUnit = *pitr;
-
-		if( UnsafeCanOwnerAttackUnit( pUnit ) == false )
+        
+        if( UnsafeCanOwnerAttackUnit( pUnit ) == false )
 			continue;
 
 		//on blizz there is no Z limit check 
@@ -1786,6 +1811,22 @@ Unit* AIInterface::FindTarget()
 
 		if(dist > distance)	 // we want to find the CLOSEST target
 			continue;
+
+        if( m_Unit->IsCreature() ){
+            Creature *pCreature = static_cast< Creature* >( m_Unit );
+
+            // We are only interested in pets, totems, and summons
+            if( pCreature->IsPet() || pCreature->IsTotem()  || pCreature->GetOwner() != NULL ){
+                
+                // We don't want to attack unflagged players
+                if( pUnit->IsPlayer() && !pUnit->IsPvPFlagged())
+                    continue;     
+        
+                // We don't want to accidentally flag ourselves
+                if( pUnit->IsPlayer() && !m_Unit->IsPvPFlagged() )
+                    continue;
+            }
+        }        
 	
 		if(dist <= _CalcAggroRange(pUnit) )
 		{
@@ -1815,10 +1856,48 @@ Unit* AIInterface::FindTarget()
 			if( !(*itr)->IsUnit() )
 				continue;
 
+            // We checked for player targets before, so this shouldn't happen
+            // [14:45] <+burlex> but andy
+            // [14:45] <+burlex> dey have dead pointerz
+            if( (*itr)->IsPlayer() )
+                continue;
+
 			pUnit = static_cast< Unit* >( (*itr) );
+
+            if( pUnit->IsCreature() )
+			{
+                Creature *pCreature = static_cast<Creature*>( pUnit );
+
+                // We are only interested in pets, totems, and summons
+                if( pCreature->IsPet() || pCreature->IsTotem() || pCreature->GetOwner() != NULL ){
+                    
+                    // We don't want to attack unflagged pets
+                    if( pUnit->IsPet() && !pUnit->IsPvPFlagged() )
+                        continue;
+
+                    // We don't want to accidentally flag ourselves
+                    if( pUnit->IsPet() && !m_Unit->IsPvPFlagged() )
+                        continue;
+
+                    // if the target is not attackable we are not going to attack it and find a new target, if possible
+				    if( pCreature->m_spawn && !pCreature->isattackable( pCreature->m_spawn ) )
+					    continue;
+
+                    // We don't attack non-flagged totems
+                    if( m_Unit->IsPet() && pCreature->IsTotem() && !pCreature->IsPvPFlagged() )
+                      continue;
+
+                    // it's a summon and the owner is a player
+                    if(pCreature->GetOwner() != NULL && pCreature->GetOwner()->IsPlayer()){
+                      if( !pCreature->IsPvPFlagged() )
+                        continue;
+                    }
+			    }
+            }
 
 			if( UnsafeCanOwnerAttackUnit( pUnit ) == false )
 				continue;
+
 
 			//on blizz there is no Z limit check 
 			dist = m_Unit->GetDistance2dSq(pUnit);
@@ -1966,6 +2045,9 @@ bool AIInterface::FindFriends(float dist)
 		{
 			continue;
 		}
+
+		if( !(pUnit->m_phase & m_Unit->m_phase) ) //We can't help a friendly unit if it is not in our phase
+			continue;
 
 		if( isCombatSupport( m_Unit, pUnit ) && ( pUnit->GetAIInterface()->getAIState() == STATE_IDLE || pUnit->GetAIInterface()->getAIState() == STATE_SCRIPTIDLE ) )//Not sure
 		{
@@ -4178,15 +4260,23 @@ void AIInterface::Event_Summon_EE_totem(uint32 summon_duration)
 	m_totemspelltimer = 0xEFFFFFFF;
 	//creatures do not support PETs and the spell uses that effect so we force a summon guardian thing
 	Unit *ourslave=m_Unit->create_guardian(15352,summon_duration,float(-M_PI*2), new_level );
-	if(ourslave)
+
+    if(ourslave)
 	{
+        m_Unit->summonPet = static_cast<Creature*>( ourslave );
 		static_cast<Creature*>(ourslave)->ResistanceModPct[NATURE_DAMAGE]=100;//we should be immune to nature dmg. This can be also set in db
 		static_cast<Creature*>(ourslave)->m_noRespawn = true;
-		/*
-		- Earth Stun (37982)
-		- taunt
-		*/
-	}
+
+        // we want the elemental to have the same pvp flag as the shaman who popped the totem
+        if( caster->IsPvPFlagged() )
+            ourslave->SetPvPFlag();
+        else
+            ourslave->RemovePvPFlag();
+
+        static_cast< Creature* >(ourslave)->SetOwner( caster );
+
+        ourslave->SetUInt32Value(UNIT_FIELD_FLAGS, UNIT_FLAG_PLAYER_CONTROLLED | UNIT_FLAG_SELF_RES);
+    }
 }
 
 //we only cast once a spell and we will set his health and resistances. Note that this can be made with db too !
@@ -4203,13 +4293,19 @@ void AIInterface::Event_Summon_FE_totem(uint32 summon_duration)
 	Unit *ourslave=m_Unit->create_guardian(15438,summon_duration,float(-M_PI*2), new_level);
 	if(ourslave)
 	{
-		//m_Unit->summonPet = ourslave;
+		m_Unit->summonPet = static_cast<Creature*>( ourslave );
 		static_cast<Creature*>(ourslave)->ResistanceModPct[FIRE_DAMAGE]=100;//we should be immune to fire dmg. This can be also set in db
 		static_cast<Creature*>(ourslave)->m_noRespawn = true;
-		/*
-		- also : select * from dbc_spell where name like "%fire blast%"
-		- also : select * from dbc_spell where name like "%fire nova"
-		*/
+        
+        // we want the elemental to have the same pvp flag as the shaman who popped the totem
+        if( caster->IsPvPFlagged() )
+            ourslave->SetPvPFlag();
+        else
+            ourslave->RemovePvPFlag();
+
+        static_cast< Creature* >(ourslave)->SetOwner( caster );
+
+        ourslave->SetUInt32Value(UNIT_FIELD_FLAGS, UNIT_FLAG_PLAYER_CONTROLLED | UNIT_FLAG_SELF_RES);
 	}
 }
 /*

@@ -23,8 +23,12 @@ SERVER_DECL bool isAttackable(Object* objA, Object* objB, bool CheckStealth = tr
 SERVER_DECL bool isCombatSupport(Object* objA, Object* objB); // B combat supports A?;
 SERVER_DECL bool isAlliance(Object* objA); // A is alliance?
 
+Player* GetPlayerOwner( Object *A );
+
 WoWICE_INLINE bool isFriendly(Object* objA, Object* objB)// B is friendly to A if its not hostile
 {
+	if( !(objA->m_phase & objB->m_phase) )	//We have to return prematurely, because isHostile would return false (phase difference!!!), and it would result in a true return value here.
+		return false;			//We must do this, as it affects AoE spell targets, thus required for them to function properly (so you won't heal out of phase friends...).
 	return !isHostile(objA, objB);
 }
 

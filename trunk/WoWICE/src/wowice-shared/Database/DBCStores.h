@@ -774,8 +774,8 @@ struct SpellEntry
 //	char*  BuffDescription[15];             //192-206 not used
 //	uint32 buffdescflags;                   //207 not used
 	uint32 ManaCostPercentage;              //208
-	uint32 StartRecoveryTime;               //209
-	uint32 StartRecoveryCategory;           //210
+	uint32 StartRecoveryCategory;           //209
+	uint32 StartRecoveryTime;				//210
 	uint32 MaxTargetLevel;                  //211
 	uint32 SpellFamilyName;                 //212
 	uint32 SpellGroupType[3];               //213-215
@@ -1296,8 +1296,8 @@ struct MapEntry
 	int32  parent_map;   // map_id of parent map
 	float  start_x;      // enter x coordinate (if exist single entry)
 	float  start_y;      // enter y coordinate (if exist single entry)
-	uint32 resetTimeRaid;
-	uint32 resetTimeHeroic;
+	//uint32 resetTimeRaid;   // REMOVED IN 3.2.0
+	//uint32 resetTimeHeroic; // REMOVED IN 3.2.0
 	uint32 addon;        // 0-original maps, 1-tbc addon, 2-wotlk addon
 };
 
@@ -1350,6 +1350,17 @@ struct DurabilityCostsEntry
 {
 	uint32 itemlevel;
 	uint32 modifier[29];
+};
+
+struct SpellShapeshiftForm
+{
+	uint32 id;
+	uint32 Flags;
+	uint32 unit_type;
+	uint32 AttackSpeed;
+	uint32 modelId;
+	uint32 modelId2;
+	uint32 spells[8];
 };
 
 struct AreaTriggerEntry
@@ -1430,7 +1441,7 @@ struct ScalingStatDistributionEntry{
 struct ScalingStatValuesEntry{
 	uint32 id;
 	uint32 level;
-	uint32 multiplier[17];
+	uint32 multiplier[16];
 };
 
 #pragma pack(pop)
@@ -1794,6 +1805,7 @@ extern SERVER_DECL DBCStorage<Lock> dbcLock;
 extern SERVER_DECL DBCStorage<SpellEntry> dbcSpell;
 extern SERVER_DECL DBCStorage<SpellDuration> dbcSpellDuration;
 extern SERVER_DECL DBCStorage<SpellRange> dbcSpellRange;
+extern SERVER_DECL DBCStorage<SpellShapeshiftForm> dbcSpellShapeshiftForm;
 extern SERVER_DECL DBCStorage<emoteentry> dbcEmoteEntry;
 extern SERVER_DECL DBCStorage<SpellRadius> dbcSpellRadius;
 extern SERVER_DECL DBCStorage<SpellCastTime> dbcSpellCastTime;

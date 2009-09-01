@@ -19,6 +19,37 @@
 #define HACKY_CRASH_FIXES 1		// SEH stuff
 #endif
 
+
+Player* GetPlayerOwner( Object *A ){
+
+    Player *pAttacker = NULL;
+
+    if( A->IsPlayer() ){
+        pAttacker = static_cast< Player* >( A );
+	}
+    else
+	if( A->IsPet() ){
+        pAttacker = static_cast< Pet* >( A )->GetPetOwner();
+
+        // Pet must have an owner
+        assert( pAttacker != NULL );                
+	}
+    else // Player totem
+    if( A->IsCreature() && static_cast< Creature* >( A )->IsTotem() ){
+        pAttacker = static_cast< Creature* >( A )->GetTotemOwner();
+
+        // Totem must have an owner
+        assert( pAttacker != NULL );
+
+    }
+    else // Player summon
+    if( A->IsCreature() && static_cast< Creature* >( A )->GetOwner() != NULL && static_cast< Creature* >( A )->GetOwner()->IsPlayer() ){
+        pAttacker = static_cast< Player*>( static_cast< Creature* >( A )->GetOwner() );
+    }
+
+    return pAttacker;
+}
+
 int isBgEnemy(Object* objA, Object* objB)
 {
 	// if objA is in battleground check objB hostile based on teams
@@ -65,7 +96,10 @@ bool isHostile(Object* objA, Object* objB)// B is hostile for A?
 
 	if(objB->GetTypeId() == TYPEID_CORPSE)
 		return false;
-	
+
+	if( !(objA->m_phase & objB->m_phase) ) //What you can't see, can't be hostile!
+		return false;
+
 	if( objA->IsPlayer() && objA->HasFlag( PLAYER_FLAGS, 0x100) && objB->IsCreature() && static_cast<Unit*>(objB)->GetAIInterface()->m_isNeutralGuard )
 		return true;
 	if( objB->IsPlayer() && objB->HasFlag( PLAYER_FLAGS, 0x100) && objA->IsCreature() && static_cast<Unit*>(objA)->GetAIInterface()->m_isNeutralGuard )
@@ -121,40 +155,22 @@ bool isHostile(Object* objA, Object* objB)// B is hostile for A?
 	// PvP Flag System Checks
 	// We check this after the normal isHostile test, that way if we're
 	// on the opposite team we'll already know :p
+    
 
-	if( hostile && ( objA->IsPlayer() || objA->IsPet() || ( objA->IsUnit() && !objA->IsPlayer() && static_cast< Creature* >( objA )->IsTotem() && static_cast< Creature* >( objA )->GetTotemOwner()->IsPvPFlagged() ) ) )
-	{
-		if( objB->IsPlayer() )
-		{
-			// Check PvP Flags.
-			if( static_cast< Player* >( objB )->IsPvPFlagged() )
-				return true;
-			else
-				return false;
-		}
-		if( objB->IsPet() )
-		{
-#if defined(WIN32) && defined(HACKY_CRASH_FIXES)
-			__try {
-				// Check PvP Flags.
-				if( static_cast< Pet* >( objB )->GetPetOwner() != NULL && static_cast< Pet* >( objB )->GetPetOwner()->GetMapMgr() == objB->GetMapMgr() && static_cast< Pet* >( objB )->GetPetOwner()->IsPvPFlagged() )
-					return true;
-				else
-					return false;
-			} __except(EXCEPTION_EXECUTE_HANDLER)
-			{
-				static_cast<Pet*>(objB)->ClearPetOwner();
-				static_cast<Pet*>(objB)->SafeDelete();
-			}
-#else
-			// Check PvP Flags.
-			if( static_cast< Pet* >( objB )->GetPetOwner() != NULL && static_cast< Pet* >( objB )->GetPetOwner()->GetMapMgr() == objB->GetMapMgr() && static_cast< Pet* >( objB )->GetPetOwner()->IsPvPFlagged() )
-				return true;
-			else
-				return false;
-#endif
-		}
-	}
+//////////////////////////////////////////// PvP checks /////////////////////////////////
+    {
+        Player *A = GetPlayerOwner( objA );
+        Player *B = GetPlayerOwner( objB );
+
+        if( hostile && A && B ){
+            if( B->IsPvPFlagged() )
+                return true;
+            else
+                return false;
+        }
+
+    }
+/////////////////////////////////////////////////////////////////////////////////////////
 
 	// Reputation System Checks
 	if(objA->IsPlayer() && !objB->IsPlayer())	   // PvE
@@ -185,11 +201,14 @@ bool isAttackable(Object* objA, Object* objB, bool CheckStealth)// A can attack 
 	if(!objA || !objB )
 		return false;
 
-  if ( !objA->IsInWorld() || !objB->IsInWorld() )  // pending or ...?
-    return false;
+	if ( !objA->IsInWorld() || !objB->IsInWorld() )  // pending or ...?
+		return false;
 
 	if(objA == objB)
 		return false;   // can't attack self.. this causes problems with buffs if we don't have it :p
+
+	if( !(objA->m_phase & objB->m_phase) ) //What you can't see, you can't attack either...
+		return false;
 
 	if(objA->GetTypeId() == TYPEID_CORPSE)
 		return false;
@@ -470,6 +489,9 @@ bool isCombatSupport(Object* objA, Object* objB)// B combat supports A?
 	// also if it's not a unit, it shouldn't support combat anyways.
 
 	if( objA->IsPet() || objB->IsPet() ) // fixes an issue where horde pets would chain aggro horde guards and vice versa for alliance.
+		return false;
+
+	if( !(objA->m_phase & objB->m_phase) ) //What you can't see, you can't support either...
 		return false;
 
 	bool combatSupport = false;
