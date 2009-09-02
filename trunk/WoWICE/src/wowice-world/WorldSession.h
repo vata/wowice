@@ -104,7 +104,9 @@ enum ObjectUpdateFlags
     UPDATEFLAG_HIGHGUID     = 0x10,
     UPDATEFLAG_LIVING       = 0x20,
     UPDATEFLAG_HAS_POSITION = 0x40,
-    UPDATEFLAG_VEHICLE      = 0x80
+    UPDATEFLAG_VEHICLE      = 0x80,
+    UPDATEFLAG_POSITION   = 0x0100,
+    UPDATEFLAG_ROTATION   = 0x0200
 };
 
 enum SessionStatus
@@ -140,7 +142,7 @@ public:
 	float x, y, z, orientation;
 	uint32 flags;
 	uint32 FallTime;
-	uint64 transGuid;
+	WoWGuid transGuid;
 	float transX, transY, transZ, transO, transUnk;
 	uint8 transUnk_2;
 
@@ -279,6 +281,8 @@ public:
 	void SendNotification(const char *message, ...);
 	void SendAuctionPlaceBidResultPacket(uint32 itemId, uint32 error);
 
+    void SendRefundInfo( uint64 GUID );
+
 	WoWICE_INLINE void SetInstance(uint32 Instance) { instanceId = Instance; }
 	WoWICE_INLINE uint32 GetLatency() { return _latency; }
 	WoWICE_INLINE string GetAccountName() { return _accountName; }
@@ -391,7 +395,7 @@ protected:
 	void HandleGroupAcceptOpcode(WorldPacket& recvPacket);
 	void HandleGroupDeclineOpcode(WorldPacket& recvPacket);
 	void HandleGroupUninviteOpcode(WorldPacket& recvPacket);
-	void HandleGroupUninviteGuildOpcode(WorldPacket& recvPacket);
+	void HandleGroupUninviteGuidOpcode(WorldPacket& recvPacket);
 	void HandleGroupSetLeaderOpcode(WorldPacket& recvPacket);
 	void HandleGroupDisbandOpcode(WorldPacket& recvPacket);
 	void HandleLootMethodOpcode(WorldPacket& recvPacket);
@@ -482,6 +486,8 @@ protected:
 	void HandleAutoStoreBankItemOpcode(WorldPacket &recvPacket);
 	void HandleCancelTemporaryEnchantmentOpcode(WorldPacket &recvPacket);
 	void HandleInsertGemOpcode(WorldPacket &recvPacket);
+	void HandleItemRefundInfoOpcode( WorldPacket& recvPacket );
+	void HandleItemRefundRequestOpcode( WorldPacket& recvPacket );
 
 	/// Combat opcodes (CombatHandler.cpp)
 	void HandleAttackSwingOpcode(WorldPacket& recvPacket);
@@ -668,7 +674,8 @@ protected:
 
 	//instances
 	void HandleResetInstanceOpcode(WorldPacket& recv_data);
-    void HandleDungeonDifficultyOpcode(WorldPacket& recv_data);
+	void HandleDungeonDifficultyOpcode(WorldPacket& recv_data);
+	void HandleRaidDifficultyOpcode(WorldPacket& recv_data);
 
 	uint8 TrainerGetSpellStatus(TrainerSpell* pSpell);
 	void SendMailError(uint32 error);
@@ -706,6 +713,9 @@ protected:
 	void HandleRemoveGlyph(WorldPacket & recv_data);
 
 	void HandleSetFactionInactiveOpcode( WorldPacket & recv_data );
+
+	//MISC
+	void HandleWorldStateUITimerUpdate( WorldPacket & recv_data );
 
 public:
 

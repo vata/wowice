@@ -28,6 +28,7 @@ void WorldSession::HandleUseItemOpcode(WorldPacket& recvPacket)
 	uint8 cn;
 	uint32 spellId = 0;
 	uint32 glyphIndex;
+    bool found = false;
 
 	recvPacket >> tmp1 >> slot >> cn >> spellId >> item_guid >> glyphIndex >> unk;
 	Item* tmpItem = NULL;
@@ -68,6 +69,29 @@ void WorldSession::HandleUseItemOpcode(WorldPacket& recvPacket)
 		sQuestMgr.BuildQuestDetails(&data, qst, tmpItem, 0, language, _player);
 		SendPacket(&data);
 	}
+
+    // Let's check if the item even has that spell
+    for( int i = 0; i < 5; ++i ){
+        if( itemProto->Spells[i].Trigger == USE && itemProto->Spells[i].Id == spellId )
+            found = true;
+    }
+
+    // We didn't find the spell, so the player is probably trying to cheat
+    // with an edited itemcache.wdb
+    //
+    // Altough this could also happen after a DB update 
+    // if he/she didn't delete his/her cache.
+    if( found == false ){
+        
+        this->Disconnect();
+        Anticheat_Log->writefromsession( this, "Player tried to use an item with a spell that didn't match the spell in the database." );
+        Anticheat_Log->writefromsession( this, "Possibly corrupted or intentionally altered itemcache.wdb" );
+        Anticheat_Log->writefromsession( this, "Itemid: %lu", itemProto->ItemId );
+        Anticheat_Log->writefromsession( this, "Spellid: %lu", spellId );
+        Anticheat_Log->writefromsession( this, "Player was disconnected" );
+
+        return;
+    }
 
 	SpellCastTargets targets(recvPacket, _player->GetGUID());
 	uint32 x;
@@ -197,7 +221,10 @@ void WorldSession::HandleUseItemOpcode(WorldPacket& recvPacket)
 			}
 		}
 	}
+#ifdef ENABLE_ACHIEVEMENTS
 	_player->GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_USE_ITEM,itemProto->ItemId,0,0);
+#endif
+
 }
 
 void WorldSession::HandleSpellClick(WorldPacket& recvPacket)
@@ -319,7 +346,7 @@ void WorldSession::HandleCastSpellOpcode(WorldPacket& recvPacket)
 	if (GetPlayer()->GetOnMeleeSpell() != spellId)
 	{
 		//autoshot 75
-		if((spellInfo->AttributesExB & FLAGS3_ACTIVATE_AUTO_SHOT) /*spellInfo->Attributes == 327698*/)	// auto shot..
+		if((spellInfo->AttributesExB & ATTRIBUTESEXB_ACTIVATE_AUTO_SHOT) /*spellInfo->Attributes == 327698*/)	// auto shot..
 		{
 			//sLog.outString( "HandleSpellCast: Auto Shot-type spell cast (id %u, name %s)" , spellInfo->Id , spellInfo->Name );
 			Item *weapon = GetPlayer()->GetItemInterface()->GetInventoryItem(EQUIPMENT_SLOT_RANGED);
@@ -431,7 +458,7 @@ void WorldSession::HandleCancelAuraOpcode( WorldPacket& recvPacket )
 	{
 		SpellEntry *info = dbcSpell.LookupEntryForced( spellId );
 
-		if(info != NULL && !(info->Attributes & static_cast<uint32>(ATTRIBUTES_UNK33)))
+		if(info != NULL && !(info->Attributes & static_cast<uint32>(ATTRIBUTES_CANT_CANCEL)))
 		{
 			_player->RemoveAura( spellId );
 			sLog.outDebug("removing aura %u",spellId);
@@ -484,7 +511,7 @@ void WorldSession::HandlePetCastSpell(WorldPacket & recvPacket)
 
 	/* burlex: this is.. strange */
 	SpellCastTargets targets;
-	targets.m_targetMask = flags;
+	targets.m_targetMask = static_cast<uint16>( flags );
 
 	if(flags == 0)
 		targets.m_unitTarget = guid;
@@ -547,6 +574,6 @@ void WorldSession::HandleCancelTotem(WorldPacket & recv_data)
 	uint8 slot;
 	recv_data >> slot;
 
-	if( slot < 4 && _player->m_TotemSlots[slot] )
+   	if( slot < 4 && _player->m_TotemSlots[slot] )
 		_player->m_TotemSlots[slot]->TotemExpire();
 }

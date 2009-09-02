@@ -35,6 +35,8 @@ bool Transporter::CreateAsTransporter(uint32 EntryID, const char* Name, int32 Ti
 	else
 		sLog.outString("Transporter id[%i] name[%s] - can't set GAMEOBJECT_TYPE - it will behave badly!",EntryID,Name);
 
+	m_overrides = GAMEOBJECT_INFVIS | GAMEOBJECT_ONMOVEWIDE; //Make it forever visible on the same map
+
 	// Set period
 	m_period = Time;
 
@@ -514,6 +516,7 @@ void Transporter::AddNPC(uint32 Entry, float offsetX, float offsetY, float offse
 	pCreature->Load(proto, m_position.x, m_position.y, m_position.z);
 	pCreature->m_transportPosition = new LocationVector(offsetX, offsetY, offsetZ, offsetO);
 	pCreature->m_transportGuid = GetUIdFromGUID();
+	pCreature->m_transportNewGuid = GetNewGUID();
 	m_npcs.insert(make_pair(guid,pCreature));
 }
 

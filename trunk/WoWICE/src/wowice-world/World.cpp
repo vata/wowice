@@ -70,6 +70,12 @@ World::World()
 	m_limitedNames=false;
 	m_banTable = NULL;
 	DKStartTalentPoints = 0;
+
+    TotalTrafficInKB = 0.0;
+    TotalTrafficOutKB = 0.0;
+    LastTotalTrafficInKB = 0.0;
+    LastTotalTrafficOutKB = 0.0;
+    LastTrafficQuery = 0;
 }
 
 void CleanupRandomNumberGenerators();
@@ -410,7 +416,6 @@ bool World::SetInitialWorldSettings()
 	MAKE_TASK(ObjectMgr,  LoadSpellOverride);
 	MAKE_TASK(ObjectMgr,  LoadVendors);
 	MAKE_TASK(ObjectMgr,  LoadAIThreatToSpellId);
-	MAKE_TASK(ObjectMgr,  LoadSpellFixes);
 	MAKE_TASK(ObjectMgr,  LoadSpellProcs);
 	MAKE_TASK(ObjectMgr,  LoadSpellEffectsOverride);
 	MAKE_TASK(ObjectMgr,  LoadDefaultPetSpells);
@@ -479,9 +484,10 @@ bool World::SetInitialWorldSettings()
 	objmgr.LoadTransporters();
 
 	//Start the Achievement system :D
+#ifdef ENABLE_ACHIEVEMENTS
 	Log.Notice("World","Starting Achievement System..");
 	objmgr.LoadAchievementCriteriaList();
-	
+#endif
 	// start mail system
 	MailSystem::getSingleton().StartMailSystem();
 
@@ -1148,11 +1154,11 @@ void World::Rehash(bool load)
 	if(load)
 	{
 		#ifdef WIN32
-		Config.MainConfig.SetSource("configs/wowice-world.conf", true);
-		Config.OptionalConfig.SetSource("configs/wowice-optional.conf", true);
+		Config.MainConfig.SetSource("configs/world.conf", true);
+		Config.OptionalConfig.SetSource("configs/optional.conf", true);
 		#else
-		Config.MainConfig.SetSource((char*)CONFDIR "/wowice-world.conf", true);
-		Config.OptionalConfig.SetSource((char*)CONFDIR "/wowice-optional.conf", true);
+		Config.MainConfig.SetSource((char*)CONFDIR "/world.conf", true);
+		Config.OptionalConfig.SetSource((char*)CONFDIR "/optional.conf", true);
 		#endif
 	}
 	if(!ChannelMgr::getSingletonPtr())
@@ -2162,4 +2168,37 @@ void World::SendLocalizedWorldText(bool wide,const char * format, ...) // May no
 		}
 	}
 	m_sessionlock.ReleaseReadLock();
+}
+
+void World::UpdateTotalTraffic(){
+
+    unsigned long sent = 0;
+    unsigned long recieved = 0;
+    double TrafficIn = 0;
+    double TrafficOut = 0;
+
+    LastTrafficQuery = UNIXTIME;
+    LastTotalTrafficInKB = TotalTrafficInKB;
+    LastTotalTrafficOutKB = TotalTrafficOutKB;
+    WorldSocket *s = NULL;
+
+    objmgr._playerslock.AcquireReadLock();
+    HM_NAMESPACE::hash_map<uint32, Player*>::const_iterator itr;
+
+    for (itr = objmgr._players.begin(); itr != objmgr._players.end(); ++itr){
+	s = itr->second->GetSession()->GetSocket();
+	
+	if(!s || !s->IsConnected() || s->IsDeleted())
+	  continue;
+	
+        s->PollTraffic(&sent,&recieved);
+
+        TrafficIn += ( static_cast<double>(recieved) ); 
+        TrafficOut += ( static_cast<double>(sent) );
+    }
+
+    TotalTrafficInKB += (TrafficIn / 1024.0);
+    TotalTrafficOutKB += (TrafficOut / 1024.0);
+
+    objmgr._playerslock.ReleaseReadLock();
 }

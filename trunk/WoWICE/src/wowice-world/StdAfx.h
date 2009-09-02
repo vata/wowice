@@ -24,7 +24,12 @@
 #undef max
 #endif
 
-#define _GAME
+#define TO_CREATURE(ptr) static_cast<Creature*>(ptr) 
+#define TO_PLAYER(ptr) static_cast<Player*>(ptr)
+#define TO_OBJECT(ptr) static_cast<Object*>(ptr)
+#define TO_UNIT(ptr) static_cast<Unit*>(ptr)
+#define TO_PET(ptr) static_cast<Pet*>(ptr)
+
 
 #include "Definitions.h"
 
@@ -87,7 +92,9 @@
 #include "LootMgr.h"
 #include "Unit.h"
 
+#ifdef ENABLE_ACHIEVEMENTS
 #include "AchievementMgr.h"
+#endif
 #include "AddonMgr.h"
 #include "AIInterface.h"
 #include "AreaTrigger.h"
@@ -178,4 +185,11 @@
 //#define PVP_REALM_MEANS_CONSTANT_PVP
 #include "BufferPools/BufferPools.h"
 #include "ProcCondHandler.h"
+#endif
+
+#define RECRUITING "Info: |cff00FF7FWoWICE is recruiting developers."
+#define BUGTRACKER "http://code.google.com/p/wowice/"
+
+#ifndef WIN32
+#include "UnixMetric.h"
 #endif
