@@ -57,8 +57,12 @@ m_fullAccountName(NULL)
 WorldSocket::~WorldSocket()
 {
 	WorldPacket * pck;
-	while((pck = _queue.Pop()) != 0)
+	queueLock.Acquire();
+	while( (pck = _queue.Pop()) != NULL )
+	{
 		delete pck;
+	}
+	queueLock.Release();
 
 	if(pAuthenticationPacket)
 		delete pAuthenticationPacket;
@@ -131,7 +135,7 @@ void WorldSocket::UpdateQueuedPackets()
 	}
 
 	WorldPacket * pck;
-	while((pck = _queue.front()) != 0)
+	while( (pck = _queue.front()) != NULL )
 	{
 		/* try to push out as many as you can */
 		switch(_OutPacket(pck->GetOpcode(), pck->size(), pck->size() ? pck->contents() : NULL))
@@ -152,8 +156,10 @@ void WorldSocket::UpdateQueuedPackets()
 		default:
 			{
 				/* kill everything in the buffer */
-				while((pck == _queue.Pop()))
+				while( (pck == _queue.Pop()) != NULL )
+				{
 					delete pck;
+				}
 				queueLock.Release();
 				return;
 			}break;
@@ -177,7 +183,7 @@ OUTPACKET_RESULT WorldSocket::_OutPacket(uint16 opcode, size_t len, const void* 
 	}
 
 	// Packet logger :)
-	sWorldLog.LogPacket((uint32)len, opcode, (const uint8*)data, 1);
+	sWorldLog.LogPacket((uint32)len, opcode, (const uint8*)data, 1, (mSession ? mSession->GetAccountId() : 0) );
 
 	// Encrypt the packet
 	// First, create the header.
@@ -189,7 +195,7 @@ OUTPACKET_RESULT WorldSocket::_OutPacket(uint16 opcode, size_t len, const void* 
 	Header.cmd = opcode;
 	Header.size = ntohs((uint16)len + 2);
 #endif
-    _crypt.EncryptFourSend((uint8*)&Header);
+	_crypt.EncryptSend((uint8*)&Header, sizeof (ServerPktHeader));
 
 	// Pass the header to our send buffer
 	rv = BurstSend((const uint8*)&Header, 4);
@@ -289,19 +295,21 @@ void WorldSocket::InformationRetreiveCallback(WorldPacket & recvData, uint32 req
 
 	mRequestID = 0;
 	// Pull the session key.
-	uint8 K[40];
+//	uint8 K[40];
 	recvData.read(K, 40);
+	
+	_crypt.Init(K);
 	
 	BigNumber BNK;
 	BNK.SetBinary(K, 40);
 	
-	uint8 *key = new uint8[20];
+/*	uint8 *key = new uint8[20];
 	WowCrypt::GenerateKey(key, K);
 	
 	// Initialize crypto.
 	_crypt.SetKey(key, 20);
 	_crypt.Init();
-	delete [] key;
+	delete [] key;*/
 
 	//checking if player is already connected
 	//disconnect current player and login this one(blizzlike)
@@ -415,9 +423,10 @@ void WorldSocket::InformationRetreiveCallback(WorldPacket & recvData, uint32 req
 #endif
 
 	// Check for queue.
-	if( (sWorld.GetSessionCount() < sWorld.GetPlayerLimit()) || pSession->HasGMPermissions() ) {
+	uint32 playerLimit = sWorld.GetPlayerLimit();
+	if( (sWorld.GetSessionCount() < playerLimit) || pSession->HasGMPermissions() ) {
 		Authenticate();
-	} else {
+	} else if( playerLimit > 0 ){
 		// Queued, sucker.
 		uint32 Position = sWorld.AddQueuedSocket(this);
 		mQueued = true;
@@ -425,6 +434,9 @@ void WorldSocket::InformationRetreiveCallback(WorldPacket & recvData, uint32 req
 
 		// Send packet so we know what we're doing
 		UpdateQueuePosition(Position);
+	} else {
+		OutPacket(SMSG_AUTH_RESPONSE, 1, "\x0E"); // AUTH_REJECT = 14
+		Disconnect();
 	}
 
 	pSession->deleteMutex.Release();
@@ -472,9 +484,9 @@ void WorldSocket::UpdateQueuePosition(uint32 Position)
 // cebernic: Displays re-correctly until 2.4.3,there will not be always 0
 	WorldPacket QueuePacket(SMSG_AUTH_RESPONSE, 16);
 	QueuePacket << uint8(0x1B) << uint8(0x2C) << uint8(0x73) << uint8(0) << uint8(0);
-	QueuePacket << uint32(0) << uint8(0) << uint8(0);
+	QueuePacket << uint32(0) << uint8(0);// << uint8(0);
 	QueuePacket << Position;
-	QueuePacket << uint8(1);
+//	QueuePacket << uint8(1);
 	SendPacket(&QueuePacket);
 }
 
@@ -549,7 +561,7 @@ void WorldSocket::OnRead()
 			GetReadBuffer().Read((uint8*)&Header, 6);
 
 			// Decrypt the header
-            _crypt.DecryptSixRecv((uint8*)&Header);
+			_crypt.DecryptRecv((uint8*)&Header, sizeof (ClientPktHeader));
 #ifdef USING_BIG_ENDIAN
 			mRemaining = mSize = Header.size - 4;
 			mOpcode = swap32(Header.cmd);
@@ -570,7 +582,7 @@ void WorldSocket::OnRead()
 			}
 		}
 
-		Packet = new WorldPacket(mOpcode, mSize);
+		Packet = new WorldPacket( static_cast<uint16>( mOpcode ), mSize);
 		Packet->resize(mSize);
 
 		if(mRemaining > 0)
@@ -580,7 +592,7 @@ void WorldSocket::OnRead()
 			GetReadBuffer().Read((uint8*)Packet->contents(), mRemaining);
 		}
 
-		sWorldLog.LogPacket(mSize, mOpcode, mSize ? Packet->contents() : NULL, 0);
+		sWorldLog.LogPacket(mSize, static_cast<uint16>( mOpcode ), mSize ? Packet->contents() : NULL, 0, (mSession ? mSession->GetAccountId() : 0) );
 		mRemaining = mSize = mOpcode = 0;
 
 		// Check for packets that we handle
@@ -606,7 +618,7 @@ void WorldSocket::OnRead()
 
 
 
-void WorldLog::LogPacket(uint32 len, uint16 opcode, const uint8* data, uint8 direction)
+void WorldLog::LogPacket(uint32 len, uint16 opcode, const uint8* data, uint8 direction, uint32 accountid)
 {
 #ifdef ECHO_PACKET_LOG_TO_CONSOLE
 	sLog.outString("[%s]: %s %s (0x%03X) of %u bytes.", direction ? "SERVER" : "CLIENT", direction ? "sent" : "received",
@@ -618,11 +630,11 @@ void WorldLog::LogPacket(uint32 len, uint16 opcode, const uint8* data, uint8 dir
 		mutex.Acquire();
 		unsigned int line = 1;
 		unsigned int countpos = 0;
-		uint16 lenght = len;
+		uint16 lenght = static_cast<uint16>( len );
 		unsigned int count = 0;
 
-		fprintf(m_file, "{%s} Packet: (0x%04X) %s PacketSize = %u stamp = %u\n", (direction ? "SERVER" : "CLIENT"), opcode,
-			LookupName(opcode, g_worldOpcodeNames), lenght, getMSTime() );
+		fprintf(m_file, "{%s} Packet: (0x%04X) %s PacketSize = %u stamp = %u accountid = %u\n", (direction ? "SERVER" : "CLIENT"), opcode,
+			LookupName(opcode, g_worldOpcodeNames), lenght, getMSTime(), accountid );
 		fprintf(m_file, "|------------------------------------------------|----------------|\n");
 		fprintf(m_file, "|00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F |0123456789ABCDEF|\n");
 		fprintf(m_file, "|------------------------------------------------|----------------|\n");

@@ -78,7 +78,7 @@ uint32 CalculateXpToGive(Unit *pVictim, Unit *pAttacker)
 	victimI = ((Creature*)pVictim)->GetCreatureInfo();
 
 	if(victimI)
-		if(victimI->Type == CRITTER)
+		if(victimI->Type == UNIT_TYPE_CRITTER)
 			return 0;
 	uint32 VictimLvl = pVictim->getLevel();
 	uint32 AttackerLvl = pAttacker->getLevel();
@@ -115,58 +115,76 @@ uint32 CalculateXpToGive(Unit *pVictim, Unit *pAttacker)
 
 	// get zero diff
 	if(AttackerLvl >= PLAYER_LEVEL_CAP_70)
-		zd = 19;
-	else if(AttackerLvl >= 65)
-		zd = 18;
-	else if(AttackerLvl >= 60)
-		zd = 17;
-	else if(AttackerLvl >= 55)
-		zd = 16;
-	else if(AttackerLvl >= 50)
-		zd = 15;
-	else if(AttackerLvl >= 45)
-		zd = 14;
-	else if(AttackerLvl >= 40)
-		zd = 13;
-	else if(AttackerLvl >= 30)
-		zd = 12;
-	else if(AttackerLvl >= 20)
-		zd = 11;
-	else if(AttackerLvl >= 16)
-		zd = 9;
-	else if(AttackerLvl >= 12)
-		zd = 8;
-	else if(AttackerLvl >= 10)
-		zd = 7;
-	else if(AttackerLvl >= 8)
-		zd = 6;
-	else
-		zd = 5;
-
-	// get grey diff
-
-	if(AttackerLvl >= PLAYER_LEVEL_CAP_70)
+	{
 		g = 15;
+		zd = 19;
+	}
 	else if(AttackerLvl >= 65)
+	{
+		zd = 18;
 		g = 14;
+	}
 	else if(AttackerLvl >= 60)
+	{
+		zd = 17;
 		g = 13;
+	}
 	else if(AttackerLvl >= 55)
+	{
+		zd = 16;
 		g = 12;
+	}
 	else if(AttackerLvl >= 50)
+	{
+		zd = 15;
 		g = 11;
+	}
 	else if(AttackerLvl >= 45)
+	{
+		zd = 14;
 		g = 10;
+	}
 	else if(AttackerLvl >= 40)
+	{
+		zd = 13;
 		g = 9;
+	}
 	else if(AttackerLvl >= 30)
+	{
+		zd = 12;
 		g = 8;
+	}
 	else if(AttackerLvl >= 20)
+	{
+		zd = 11;
 		g = 7;
-	else if(AttackerLvl >= 10)
+	}
+	else if(AttackerLvl >= 16)
+	{
+		zd = 9;
 		g = 6;
-	else
+	}
+	else if(AttackerLvl >= 12)
+	{
+		zd = 8;
+		g = 6;
+	}
+	else if(AttackerLvl >= 10)
+	{
+		zd = 7;
+		g = 6;
+	}
+	else if(AttackerLvl >= 8)
+	{
+		zd = 6;
 		g = 5;
+	}
+	else
+	{
+		zd = 5;
+		g = 5;
+	}
+	// get grey diff
 
 	float xp = 0.0f;
 	float fVictim = float(VictimLvl);
@@ -586,18 +604,6 @@ uint32 CalculateDamage( Unit* pAttacker, Unit* pVictim, uint32 weapon_damage_typ
 			}
 			else
 				wspeed = (float)pAttacker->GetUInt32Value(UNIT_FIELD_BASEATTACKTIME);
-
-			if(spellgroup)
-			{
-				int32 apall = pAttacker->GetAP();
-				int32 apb=0;
-				SM_FIValue(pAttacker->SM_PAPBonus,&apb,spellgroup);
-
-				if(apb)
-					ap += apall*((float)apb/100);
-				else
-					ap = float(apall);
-			}
 		}
 		else
 		{
@@ -640,7 +646,7 @@ uint32 CalculateDamage( Unit* pAttacker, Unit* pVictim, uint32 weapon_damage_typ
 		if (offset == UNIT_FIELD_MINDAMAGE)
 			bonus = (wspeed-pAttacker->GetUInt32Value(UNIT_FIELD_BASEATTACKTIME))/14000.0f*ap;
 		else
-			bonus = (wspeed-pAttacker->GetUInt32Value(UNIT_FIELD_BASEATTACKTIME_01))/14000.0f*ap;
+			bonus = (wspeed-pAttacker->GetUInt32Value(UNIT_FIELD_BASEATTACKTIME+1))/14000.0f*ap;
 		min_damage += bonus;
 		max_damage += bonus;
 	}

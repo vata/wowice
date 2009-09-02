@@ -43,7 +43,7 @@ bool SERVER_DECL Rand(float);
 #define SPELL_GROUPS	96//This is actually on 64 bits !
 #define DIMINISHING_GROUP_COUNT 15
 
-#define UNIT_TYPE_HUMANOID_BIT (1 << (HUMANOID-1)) //should get computed by precompiler ;)
+#define UNIT_TYPE_HUMANOID_BIT (1 << (UNIT_TYPE_HUMANOID-1)) //should get computed by precompiler ;)
 
 class Aura;
 class Spell;
@@ -62,6 +62,7 @@ struct ReflectSpellSchool
 	int32 school;
 	int32 chance;
 	int32 require_aura_hash;
+	bool infront;
 };
 
 typedef struct
@@ -655,6 +656,7 @@ enum UnitFieldBytes2
 {
 	U_FIELD_BYTES_FLAG_PVP     = 0x01,
 	U_FIELD_BYTES_FLAG_FFA_PVP = 0x04,
+	U_FIELD_BYTES_FLAG_SANCTUARY  = 0x08,
 	U_FIELD_BYTES_FLAG_AURAS   = 0x10,
 };
 
@@ -880,6 +882,19 @@ public:
 	virtual bool IsPlayer() { return false; }
 	virtual bool IsCreature() { return false; }
 
+    virtual bool IsPvPFlagged() = 0;
+	virtual void SetPvPFlag() = 0;
+	virtual void RemovePvPFlag() = 0;
+
+    virtual bool IsFFAPvPFlagged() = 0;
+    virtual void SetFFAPvPFlag() = 0;
+    virtual void RemoveFFAPvPFlag() = 0;
+
+	virtual bool IsSanctuaryFlagged() = 0;
+	virtual void SetSanctuaryFlag() = 0;
+	virtual void RemoveSancturayFlag() = 0;
+
+
     void setAttackTimer(int32 time, bool offhand);
 	bool isAttackReady(bool offhand);
 
@@ -929,7 +944,6 @@ public:
 
 	uint8 CastSpell(Unit* Target, uint32 SpellID, bool triggered);
 	uint8 CastSpell(Unit* Target, SpellEntry* Sp, bool triggered);
-	uint8 CastTrainerSpell(Unit* Target, SpellEntry* Sp, bool triggered);
 	uint8 CastSpell(uint64 targetGuid, uint32 SpellID, bool triggered);
 	uint8 CastSpell(uint64 targetGuid, SpellEntry* Sp, bool triggered);
 	void CastSpellAoF(float x,float y,float z,SpellEntry* Sp, bool triggered);
@@ -937,7 +951,7 @@ public:
 
 	bool IsCasting();
 	bool IsInInstance();
-    void CalculateResistanceReduction(Unit *pVictim,dealdamage *dmg,SpellEntry* ability) ;
+    void CalculateResistanceReduction(Unit *pVictim,dealdamage *dmg,SpellEntry* ability, float ArmorPctReduce) ;
 	void RegenerateHealth();
 	void RegeneratePower(bool isinterrupted);
 	WoWICE_INLINE void setHRegenTimer(uint32 time) {m_H_regenTimer = time; }
@@ -969,10 +983,14 @@ public:
 	int32 m_invisDetect[INVIS_FLAG_TOTAL];
 
 	bool HasAura(uint32 spellid); //this checks passive auras too
+	uint16 GetAuraStackCount(uint32 spellid);
 	bool HasAuraVisual(uint32 visualid);//not spell id!!!
 	bool HasBuff(uint32 spelllid); //this does not check passive auras & it was visible auras
 	bool HasBuff(uint32 spelllid, uint64 guid);//this does not check passive auras & it was visible auras
 	bool HasVisialPosAurasOfNameHashWithCaster(uint32 namehash, Unit * caster);
+	bool HasAuraWithMechanics(uint32 mechanic); //this checks passive auras too
+
+	uint32 FindAuraCountByHash(uint32 HashName, uint32 maxcount = 0);
 	
 	void GiveGroupXP(Unit *pVictim, Player *PlayerInGroup);
 
@@ -1005,10 +1023,12 @@ public:
 
 	//! Remove all auras
 	void RemoveAllAuras();
+    void RemoveAllNonPersistantAuras();
 	bool RemoveAllAuras(uint32 spellId,uint64 guid); //remove stacked auras but only if they come from the same caster. Shaman purge If GUID = 0 then removes all auras with this spellid
     void RemoveAllAuraType(uint32 auratype);//ex:to remove morph spells
     void RemoveAllAuraFromSelfType2(uint32 auratype, uint32 butskip_hash);//ex:to remove morph spells
 	uint32 RemoveAllAuraByNameHash(uint32 namehash);//required to remove weaker instances of a spell
+	uint32 RemoveAllAuraById(uint32 Id); // DuKJIoHuyC: Remove an aura by it's id
 	bool RemoveAllAurasByMechanic( uint32 MechanicType , uint32 MaxDispel , bool HostileOnly ); // Removes all (de)buffs on unit of a specific mechanic type.
 	void RemoveAllMovementImpairing();
 
@@ -1118,46 +1138,84 @@ public:
 	uint32 MechanicsDispels[32];
 	float MechanicsResistancesPCT[32];
 	float ModDamageTakenByMechPCT[32];
+	int32 DoTPctIncrease[7];
+	float AOEDmgMod;
 	//int32 RangedDamageTakenPct; 
+	float m_ignoreArmorPctMaceSpec;
+	float m_ignoreArmorPct;
 
 	//SM
-	int32 * SM_CriticalChance;//flat
-	int32 * SM_FDur;//flat
-	int32 * SM_PDur;//pct
-	int32 * SM_PRadius;//pct
-	int32 * SM_FRadius;//flat
-	int32 * SM_PRange;//pct
-	int32 * SM_FRange;//flat
-	int32 * SM_PCastTime;//pct
-	int32 * SM_FCastTime;//flat
-	int32 * SM_PCriticalDamage;
-	int32 * SM_PDOT;//pct
-	int32 * SM_FDOT;//flat
-	int32 * SM_FEffectBonus;//flat
-	int32 * SM_PEffectBonus;//pct
 	int32 * SM_FDamageBonus;//flat
 	int32 * SM_PDamageBonus;//pct
-	int32 * SM_PMiscEffect;//pct
+
+	int32 * SM_FDur;//flat
+	int32 * SM_PDur;//pct
+
+	int32 * SM_FThreat;//flat
+	int32 * SM_PThreat;//Pct
+
+	int32 * SM_FEffect1_Bonus;//flat
+	int32 * SM_PEffect1_Bonus;//Pct
+
+	int32 * SM_FCharges;//flat
+	int32 * SM_PCharges;//Pct
+
+	int32 * SM_FRange;//flat
+	int32 * SM_PRange;//pct
+
+	int32 * SM_FRadius;//flat
+	int32 * SM_PRadius;//pct
+	
+	int32 * SM_CriticalChance;//flat
+
 	int32 * SM_FMiscEffect;//flat
+	int32 * SM_PMiscEffect;//pct
+	
+	int32 * SM_PNonInterrupt;//Pct
+
+	int32 * SM_FCastTime;//flat
+	int32 * SM_PCastTime;//pct
+	
+	int32 * SM_FCooldownTime;//flat
+	int32 * SM_PCooldownTime;//Pct
+	
+	int32 * SM_FEffect2_Bonus;//flat
+	int32 * SM_PEffect2_Bonus;//Pct
+
+	int32 * SM_FCost;//flat
+	int32 * SM_PCost;//Pct
+	
+	int32 * SM_PCriticalDamage;//Pct
+
 	int32 * SM_FHitchance;//flat
-	int32 * SM_PAPBonus;//pct
-	int32 * SM_PCost;
-	int32 * SM_FCost;
-	int32 * SM_PNonInterrupt;
-	int32 * SM_PJumpReduce;
-	int32 * SM_FSpeedMod;
-	int32 * SM_FAdditionalTargets;
+
+	int32 * SM_FAdditionalTargets;//flat
+
+	int32 * SM_FChanceOfSuccess;//flat
+
+	int32 * SM_FAmptitude;//flat
+	int32 * SM_PAmptitude;//Pct
+
+	int32 * SM_PJumpReduce;//Pct
+
+	int32 * SM_FGlobalCooldown;//flat
+	int32 * SM_PGlobalCooldown;//pct
+
+	int32 * SM_FDOT;//flat
+	int32 * SM_PDOT;//pct
+	
+	int32 * SM_FEffect3_Bonus;//flat
+	int32 * SM_PEffect3_Bonus;//Pct
+
 	int32 * SM_FPenalty;//flat
 	int32 * SM_PPenalty;//Pct
-	int32 * SM_PCooldownTime;
-	int32 * SM_FCooldownTime;
-	int32 * SM_FChanceOfSuccess;
-	int32 * SM_FRezist_dispell;
-	int32 * SM_PRezist_dispell;
-	int32 * SM_FCharges;
-	int32 * SM_PCharges;
-	int32 * SM_FThreat;
-	int32 * SM_PThreat;
+
+	int32 * SM_FEffectBonus;//flat
+	int32 * SM_PEffectBonus;//pct	
+	
+	int32 * SM_FRezist_dispell;//flat
+	int32 * SM_PRezist_dispell;//Pct	
+
 	void InheritSMMods(Unit *inherit_from);
 
 	//Events
@@ -1273,7 +1331,7 @@ public:
 	uint32 BaseResistance[7]; //there are resistances for silence, fear, mechanics ....
 	uint32 BaseStats[5];
 	int32 HealDoneMod[7];
-	int32 HealDonePctMod[7];
+	float HealDonePctMod[7];
 	int32 HealTakenMod[7];
 	float HealTakenPctMod[7];
 	uint32 SchoolImmunityList[7];
@@ -1307,6 +1365,10 @@ public:
 	int64 m_magnetcaster; // Unit who acts as a magnet for this unit
 	//std::set<SpellEntry*> m_onStrikeSpells;
 	
+	//Combat Mod Results:
+	int32 m_CombatResult_Dodge;
+	int32 m_CombatResult_Parry; //is not implented yet
+
 	// aurastate counters
 	int8 asc_frozen;
 	int8 asc_enraged;
@@ -1399,6 +1461,8 @@ public:
 		case 13116: // Alliance Spirit Guide
 		case 13117: // Horde Spirit Guide
 		case 9299:  // Gaeriyan (Qnpc)
+		case 8888:  // Franclorn Forgewright (Qnpc)
+		case 29259: // Scarlet Enclave
 			{
 				return true;
 			}break;
@@ -1420,7 +1484,7 @@ public:
 //	uint32 CountNegativeAura(uint32 spell_id); //just to reduce search range in some cases
 	bool IsPoisoned();
 
-	AuraCheckResponse AuraCheck(uint32 name_hash, uint32 rank, Object *caster=NULL);
+	AuraCheckResponse AuraCheck(SpellEntry *proto, Object *caster=NULL);
 	AuraCheckResponse AuraCheck(uint32 name_hash, uint32 rank, Aura* aur, Object *caster=NULL);
 
 	uint16 m_diminishCount[DIMINISHING_GROUP_COUNT];
@@ -1449,7 +1513,6 @@ public:
 	SpellEntry * pLastSpell;
 	bool bProcInUse;
 	bool bInvincible;
-	bool bUnbeatable; // can take damage, but cannot be killed. Example: training dummies
 	Player * m_redirectSpellPackets;
 	void UpdateVisibility();
 
@@ -1494,6 +1557,7 @@ public:
 	
 	void AggroPvPGuards();
 
+	void CastSpellOnCasterOnCritHit();
 
 protected:
 	Unit ();
@@ -1549,6 +1613,7 @@ protected:
 	float m_blockfromspell;
 	float m_dodgefromspell;
 	float m_parryfromspell;
+	uint32 m_BlockModPct; // is % but does not need float and does not need /100!
 
 };
 

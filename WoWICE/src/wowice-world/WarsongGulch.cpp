@@ -264,10 +264,10 @@ void WarsongGulch::HookOnFlagDrop(Player * plr)
 
 	/* drop the flag! */
 	m_dropFlags[plr->GetTeam()]->SetPosition(plr->GetPosition());
-	m_dropFlags[plr->GetTeam()]->SetFloatValue(GAMEOBJECT_POS_X, plr->GetPositionX());
-	m_dropFlags[plr->GetTeam()]->SetFloatValue(GAMEOBJECT_POS_Y, plr->GetPositionY());
-	m_dropFlags[plr->GetTeam()]->SetFloatValue(GAMEOBJECT_POS_Z, plr->GetPositionZ());
-	m_dropFlags[plr->GetTeam()]->SetFloatValue(GAMEOBJECT_FACING, plr->GetOrientation());
+//	m_dropFlags[plr->GetTeam()]->SetFloatValue(GAMEOBJECT_POS_X, plr->GetPositionX());
+//	m_dropFlags[plr->GetTeam()]->SetFloatValue(GAMEOBJECT_POS_Y, plr->GetPositionY());
+//	m_dropFlags[plr->GetTeam()]->SetFloatValue(GAMEOBJECT_POS_Z, plr->GetPositionZ());
+//	m_dropFlags[plr->GetTeam()]->SetFloatValue(GAMEOBJECT_FACING, plr->GetOrientation());
 	m_dropFlags[plr->GetTeam()]->PushToWorld(m_mapMgr);
 
 	m_flagHolders[plr->GetTeam()] = 0;
@@ -381,7 +381,7 @@ void WarsongGulch::HookFlagStand(Player * plr, GameObject * obj)
 		return;
 	}
 #endif
-	if(m_flagHolders[plr->GetTeam()] || m_homeFlags[plr->GetTeam()] != obj || m_flagHolders[plr->GetTeam() ? 0 : 1] != 0 || m_dropFlags[plr->GetTeam() ? 0 : 1]->IsInWorld())
+	if(m_flagHolders[plr->GetTeam()] || m_homeFlags[plr->GetTeam()] != obj || m_flagHolders[plr->GetTeam() ? 1 : 0] != 0 || m_dropFlags[plr->GetTeam() ? 1 : 0]->IsInWorld())
 	{
 		// cheater!
 		return;

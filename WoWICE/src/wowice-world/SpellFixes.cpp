@@ -6215,6 +6215,58 @@ void ApplyNormalFixes()
 		if( sp != NULL )
 			sp->RequiredShapeShift = mm;
 
+		/**********************************************************
+		 *	Restoration
+		 **********************************************************/
+		
+		// Druid - Tree Form Aura
+		sp = dbcSpell.LookupEntryForced( 34123 );
+		if( sp != NULL )
+			sp->NameHash = 0;
+
+		// Druid - Omen of Clarity
+		sp = dbcSpell.LookupEntryForced( 16864 );
+		if( sp != NULL )
+		{
+			sp->procChance = 6; //procchance dynamic. 3ppm
+			sp->procFlags = PROC_ON_MELEE_ATTACK | PROC_ON_CAST_SPELL;
+		}
+
+		// Druid - Natural Perfection
+		sp = dbcSpell.LookupEntryForced( 33881 );
+		if ( sp != NULL )
+			sp->procFlags = PROC_ON_CRIT_HIT_VICTIM | PROC_ON_SPELL_CRIT_HIT_VICTIM | PROC_ON_RANGED_CRIT_ATTACK_VICTIM;
+		sp = dbcSpell.LookupEntryForced( 33882 );
+		if ( sp != NULL )
+			sp->procFlags = PROC_ON_CRIT_HIT_VICTIM | PROC_ON_SPELL_CRIT_HIT_VICTIM | PROC_ON_RANGED_CRIT_ATTACK_VICTIM;
+		sp = dbcSpell.LookupEntryForced( 33883 );
+		if ( sp != NULL )
+			sp->procFlags = PROC_ON_CRIT_HIT_VICTIM | PROC_ON_SPELL_CRIT_HIT_VICTIM | PROC_ON_RANGED_CRIT_ATTACK_VICTIM;
+
+		// Druid - Intensity
+		sp = dbcSpell.LookupEntryForced( 17106 );
+		if( sp != NULL )
+		   sp->procFlags = PROC_ON_CAST_SPELL;
+
+		sp = dbcSpell.LookupEntryForced( 17107 );
+		if( sp != NULL )
+			 sp->procFlags = PROC_ON_CAST_SPELL;
+
+		sp = dbcSpell.LookupEntryForced( 17108 );
+		if( sp != NULL )
+			sp->procFlags = PROC_ON_CAST_SPELL;
+
+		// Druid - Natural Shapeshifter
+		sp = dbcSpell.LookupEntryForced( 16833 );
+		if( sp != NULL )
+			sp->DurationIndex = 0;
+		sp = dbcSpell.LookupEntryForced( 16834 );
+		if( sp != NULL )
+			sp->DurationIndex = 0;
+		sp = dbcSpell.LookupEntryForced( 16835 );
+		if( sp != NULL )
+			sp->DurationIndex = 0;
+
 	//////////////////////////////////////////
 	// ITEMS								//
 	//////////////////////////////////////////
@@ -6341,6 +6393,225 @@ void ApplyNormalFixes()
 			sp->EffectSpellGroupRelation[0]=4096;
 		//Idol of the Claw
 		sp = dbcSpell.LookupEntryForced( 34323 );
+		if( sp != NULL )
+		{
+			sp->Flags5 = FLAGS5_PROCCHANCE_COMBOBASED;
+			sp->EffectSpellGroupRelation[0]=8388608;
+			sp->EffectSpellGroupRelation_high[0]=128;
+		}
+
+	#endif
+		//Compact Harvest Reaper
+		sp = dbcSpell.LookupEntryForced( 4078 );
+		if( sp != NULL )
+		{
+			sp->DurationIndex = 6;
+		}
+
+		//Graccu's Mince Meat Fruitcake
+		sp = dbcSpell.LookupEntryForced(25990);
+		if( sp != NULL )
+		{
+			sp->EffectAmplitude[1] = 1000;
+		}
+
+		//Extract Gas
+		sp = dbcSpell.LookupEntryForced( 30427 );
+		if( sp != NULL )
+		{
+			sp->Effect[0] = SPELL_EFFECT_DUMMY;
+		}
+
+		//Relic - Idol of the Unseen Moon
+		sp = dbcSpell.LookupEntryForced( 43739 );
+		if( sp != NULL )
+		{
+			sp->procFlags = PROC_ON_CAST_SPELL;
+			sp->EffectApplyAuraName[0] = SPELL_AURA_PROC_TRIGGER_SPELL;
+			sp->EffectTriggerSpell[0] = 43740;
+		}
+
+		//Lunar Grace - Idol of the Unseen Moon proc
+		sp = dbcSpell.LookupEntryForced( 43740 );
+		if( sp != NULL )
+		{
+			sp->ProcOnNameHash[0] = SPELL_HASH_MOONFIRE;
+		}
+
+		//Relic - Idol of Terror
+		sp = dbcSpell.LookupEntryForced( 43737 );
+		if( sp != NULL )
+		{
+			sp->proc_interval = 10001; //block proc when is already active.. (Primal Instinct duration = 10 sec)
+			sp->procFlags = PROC_ON_CAST_SPELL | static_cast<uint32>(PROC_TARGET_SELF);
+			sp->EffectApplyAuraName[0] = SPELL_AURA_PROC_TRIGGER_SPELL;
+			sp->EffectTriggerSpell[0] = 43738;
+			sp->procChance=85;
+		}
+
+		//Primal Instinct - Idol of Terror proc
+		sp = dbcSpell.LookupEntryForced( 43738 );
+		if( sp != NULL )
+		{
+			sp->self_cast_only = true;
+			sp->ProcOnNameHash[0] = SPELL_HASH_MANGLE___CAT;
+			sp->ProcOnNameHash[1] = SPELL_HASH_MANGLE___BEAR;
+		}
+
+		//Tome of Fiery Redemption
+		sp = dbcSpell.LookupEntryForced( 37197 );
+		if( sp != NULL )
+		{
+			sp->procFlags = PROC_ON_CAST_SPELL;
+			sp->EffectApplyAuraName[0] = SPELL_AURA_PROC_TRIGGER_SPELL;
+			sp->EffectTriggerSpell[0] = 37198;
+			sp->procChance = 15;
+		}
+
+		//Thunderfury
+		sp = dbcSpell.LookupEntryForced( 21992 );
+		if( sp != NULL )
+		{
+			sp->Effect[2] = SPELL_EFFECT_TRIGGER_SPELL;
+			sp->EffectTriggerSpell[2] = 27648;
+			sp->EffectImplicitTargetA[2] = EFF_TARGET_ALL_ENEMIES_AROUND_CASTER; // cebernic: for enemies not self
+		}
+
+		//Energized
+		sp = dbcSpell.LookupEntryForced( 43750 );
+		if( sp != NULL )
+			sp->procFlags = PROC_ON_CAST_SPELL;
+
+		//Spell Haste Trinket
+		sp = dbcSpell.LookupEntryForced( 33297 );
+		if( sp != NULL )
+			sp->procFlags = PROC_ON_CAST_SPELL | static_cast<uint32>(PROC_TARGET_SELF);
+
+		//Enchant Weapon - Deathfrost
+		sp = dbcSpell.LookupEntryForced( 46662 );
+		if( sp != NULL )
+		{
+			sp->procFlags = PROC_ON_MELEE_ATTACK;
+		}
+
+		// Sigil of the Unfaltering Knight
+		sp = dbcSpell.LookupEntryForced( 62147 );
+		if( sp != NULL )
+		{
+			sp->procFlags = PROC_ON_CAST_SPECIFIC_SPELL;
+			sp->ProcOnNameHash[0] = SPELL_HASH_ICY_TOUCH;
+			sp->procChance = 100;
+			sp->proc_interval = 45000;
+		}
+
+		// Deadly Gladiator's Death Knight Relic
+		sp = dbcSpell.LookupEntryForced( 60686 );
+		if( sp != NULL )
+		{
+			sp->procFlags = PROC_ON_CAST_SPECIFIC_SPELL;
+			sp->ProcOnNameHash[0] = SPELL_HASH_PLAGUE_STRIKE;
+			sp->procChance = 100;
+			sp->EffectApplyAuraName[0] = SPELL_AURA_PROC_TRIGGER_SPELL;
+			sp->EffectTriggerSpell[0] = 60549;
+		}
+		// Deadly Gladiator's Idol of Resolve
+		sp = dbcSpell.LookupEntryForced( 60696 );
+		if( sp != NULL )
+		{
+			sp->procFlags = PROC_ON_CAST_SPECIFIC_SPELL;
+			sp->ProcOnNameHash[0] = SPELL_HASH_PLAGUE_STRIKE;
+			sp->procChance = 100;
+			sp->EffectApplyAuraName[0] = SPELL_AURA_PROC_TRIGGER_SPELL;
+			sp->EffectTriggerSpell[0] = 60549;
+		}
+		// Deadly Gladiator's Libram of Fortitude
+		sp = dbcSpell.LookupEntryForced( 60633 );
+		if( sp != NULL )
+		{
+			sp->procFlags = PROC_ON_CAST_SPECIFIC_SPELL;
+			sp->ProcOnNameHash[0] = SPELL_HASH_PLAGUE_STRIKE;
+			sp->procChance = 100;
+			sp->EffectApplyAuraName[0] = SPELL_AURA_PROC_TRIGGER_SPELL;
+			sp->EffectTriggerSpell[0] = 60549;
+		}
+		// Deadly Totem of Indomitability
+		sp = dbcSpell.LookupEntryForced( 60548 );
+		if( sp != NULL )
+		{
+			sp->procFlags = PROC_ON_CAST_SPECIFIC_SPELL;
+			sp->ProcOnNameHash[0] = SPELL_HASH_PLAGUE_STRIKE;
+			sp->procChance = 100;
+			sp->EffectApplyAuraName[0] = SPELL_AURA_PROC_TRIGGER_SPELL;
+			sp->EffectTriggerSpell[0] = 60549;
+		}
+		sp = dbcSpell.LookupEntryForced( 60549 );
+		if( sp != NULL )
+		{
+			// it have 2 same effects dunno why
+			sp->EffectApplyAuraName[1] = 0;
+			sp->EffectBasePoints[1] = 0;
+		}
+
+		// Sigil of Haunted Dreams
+		sp = dbcSpell.LookupEntryForced( 60826 );
+		if( sp != NULL )
+		{
+			sp->procFlags = PROC_ON_CAST_SPECIFIC_SPELL;
+			sp->ProcOnNameHash[0] = SPELL_HASH_BLOOD_STRIKE;
+			sp->ProcOnNameHash[1] = SPELL_HASH_HEART_STRIKE;
+			sp->procChance = 15;
+			sp->proc_interval = 45000;
+		}
+
+		// Vestige of Haldor
+		sp = dbcSpell.LookupEntryForced( 60306 );
+		if( sp != NULL )
+		{
+				sp->proc_interval = 45000;
+				sp->procFlags = PROC_ON_MELEE_ATTACK | PROC_ON_RANGED_ATTACK;
+		}
+
+		// Forge Ember
+		sp = dbcSpell.LookupEntryForced( 60473 );
+		if( sp != NULL )
+		{
+				sp->proc_interval = 45000;
+				sp->procFlags = PROC_ON_CAST_SPELL;
+		}
+
+		// Mirror of Truth
+		sp = dbcSpell.LookupEntryForced( 33648 );
+		if( sp != NULL )
+		{
+				sp->proc_interval = 45000;
+				sp->procFlags = PROC_ON_CRIT_ATTACK;
+		}
+
+		// Majestic Dragon Figurine
+		sp = dbcSpell.LookupEntryForced( 60524 );
+		if( sp != NULL )
+		{
+				sp->procFlags = PROC_ON_CAST_SPELL;
+		}
+
+		// Flow of Knowledge
+		sp = dbcSpell.LookupEntryForced( 62114 );
+		if( sp != NULL )
+		{
+				sp->proc_interval = 45000;
+				sp->procFlags = PROC_ON_CAST_SPELL;
+		}
+
+		// Embrace of the Spider
+		sp = dbcSpell.LookupEntryForced( 60490 );
+		if( sp != NULL )
+		{
+				sp->proc_interval = 45000;
+				sp->procFlags = PROC_ON_CAST_SPELL;
+		}
+
+		// Anvil of Titans
+		sp = dbcSpell.LookupEntryForced( 62115 );
 		if( sp != NULL )
 		{
 			sp->Flags5 = FLAGS5_PROCCHANCE_COMBOBASED;
@@ -7074,18 +7345,7 @@ void ApplyNormalFixes()
 		//Vial of the Sunwell
 		sp = dbcSpell.LookupEntryForced( 45059 );
 		if( sp != NULL )
-		{	
-			sp->procFlags = PROC_ON_CAST_SPELL | static_cast<uint32>(PROC_TARGET_SELF);
-			sp->EffectApplyAuraName[0] = SPELL_AURA_PROC_TRIGGER_SPELL;
-			sp->EffectTriggerSpell[0] = 45062;	
-			sp->procChance = 100;		
-		}	
-		sp = dbcSpell.LookupEntryForced( 45062 ); 
-		if( sp != NULL )
-		{	
-			sp->self_cast_only = true;	
-			sp->procChance = 100;	
-		}
+			sp->procFlags = PROC_ON_CAST_SPELL;
 
 		//Pendant of the Violet Eye
 		sp = dbcSpell.LookupEntryForced( 29601 );

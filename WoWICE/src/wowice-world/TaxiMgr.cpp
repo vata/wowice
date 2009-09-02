@@ -219,10 +219,12 @@ void TaxiPath::SendMoveForTime(Player *riding, Player *to, uint32 time)
 	size_t pos;
 
 	*data << riding->GetNewGUID();
+	*data << uint8(0); //VLack: usual uint8 after new style guid
 	*data << riding->GetPositionX( ) << riding->GetPositionY( ) << riding->GetPositionZ( );
 	*data << getMSTime();
 	*data << uint8( 0 );
-	*data << uint32( 0x00000300 );
+//	*data << uint32( 0x00000300 );
+	*data << uint32( 0x00003000 );
 	*data << uint32( uint32((length * TAXI_TRAVEL_SPEED) - time));
 	*data << uint32( nodecounter );
 	pos = data->wpos();
@@ -449,6 +451,7 @@ bool TaxiMgr::GetGlobalTaxiNodeMask( uint32 curloc, uint32 *Mask )
 		/*if( itr->second->from == curloc )
 		{*/
 			field = (uint8)((itr->second->to - 1) / 32);
+			if ( field>=12 ) continue; //The DBC can contain negative TO values??? That'll be 255 here (because we store everything unsigned), skip them!
 			Mask[field] |= 1 << ( (itr->second->to - 1 ) % 32 );
 		//}
 	}
