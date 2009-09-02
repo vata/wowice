@@ -38,7 +38,7 @@ Item::Item()//this is called when constructing as container
 	m_inQueue = false;
 	m_extensions = NULL;
 	m_loadedFromDB = false;
-
+    ItemExpiresOn = 0;
 	Enchantments.clear();
 }
 
@@ -82,7 +82,7 @@ void Item::Virtual_Constructor()
 
 Item::~Item()
 {
-	if( loot != NULL )
+    if( loot != NULL )
 	{
 		delete loot;
 		loot = NULL;
@@ -253,8 +253,23 @@ void Item::LoadFromDB(Field* fields, Player* plr, bool light )
 				*/
 			}
 		}
-	}	
+	}
 
+    ItemExpiresOn = fields[16].GetUInt32();
+    
+///////////////////////////////////////////////////// Refund stuff ////////////////////////
+    std::pair< time_t, uint32 > refundentry;
+
+    refundentry.first = fields[17].GetUInt32();
+    refundentry.second = fields[18].GetUInt32();
+
+    if( refundentry.first != 0 && refundentry.second != 0 ){
+        if( UNIXTIME < ( refundentry.first + 60*60*2 ) )
+            this->GetOwner()->GetItemInterface()->AddRefundable( this, refundentry.second, refundentry.first );
+    }
+
+///////////////////////////////////////////////////////////////////////////////////////////
+    
 	ApplyRandomProperties( false );
 
 	// Charter stuff
@@ -401,7 +416,26 @@ void Item::SaveToDB( int8 containerslot, int8 slot, bool firstsave, QueryBuffer*
 			}
 		}
 	}
-	ss << "')";
+    ss << "','";
+    ss << ItemExpiresOn << "','";
+
+////////////////////////////////////////////////// Refund stuff /////////////////////////////////
+
+    // Check if the owner is instantiated. When sending mail he/she obviously will not be :P
+    if( this->GetOwner() != NULL ){
+        std::pair< time_t, uint32 > refundentry;
+        
+        refundentry = this->GetOwner()->GetItemInterface()->LookupRefundable( this->GetGUID() );
+        
+        ss << uint32( refundentry.first ) << "','";
+        ss << uint32( refundentry.second ); 
+    }else{
+        ss << uint32( 0 ) << "','";
+        ss << uint32( 0 );
+    }
+
+/////////////////////////////////////////////////////////////////////////////////////////////////
+    ss << "')";
 
 	if( firstsave )
 		CharacterDatabase.WaitExecute( ss.str().c_str() );
@@ -437,6 +471,11 @@ void Item::DeleteFromDB()
 void Item::DeleteMe()
 {
 	//Don't inline me!
+
+    // check to see if our owner is instantiated
+    if( this->m_owner != NULL )
+        this->m_owner->GetItemInterface()->RemoveRefundable( this->GetGUID() );
+
 	if( IsContainer() ) {
 		delete static_cast<Container*>(this);
 	} else {
@@ -1266,5 +1305,67 @@ uint32 Item::CountGemsWithLimitId(uint32 LimitId)
 				result++;
 		}
 	}
-	return result;
+    return result;
+}
+
+void Item::EventRemoveItem(){
+    assert( this->GetOwner() != NULL );
+
+    this->GetOwner()->GetItemInterface()->SafeFullRemoveItemByGuid( this->GetGUID() );
+}
+
+void Item::SendDurationUpdate(){
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////
+    //  As of 3.1.3 the server sends this to set the actual durationtime ( the time the item exists for)
+    //  of the item
+    //
+    //  {SERVER} Packet: (0x01EA) SMSG_ITEM_TIME_UPDATE PacketSize = 12 TimeStamp = 37339296
+    //  05 76 83 E7 01 00 00 42 10 0E 00 00 
+    //
+    //  Structure:
+    //
+    //  uint64 GUID                      - the identifier of the item (not the itemid)
+    //  uint32 remainingtime             - remaining duration
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    WorldPacket durationupdate( SMSG_ITEM_TIME_UPDATE, 12 );
+    durationupdate << uint64( GetGUID() );
+    durationupdate << uint32( GetItemExpireTime() - UNIXTIME );
+    this->GetOwner()->GetSession()->SendPacket( &durationupdate );
+
+}
+
+
+
+// "Stackable items (such as Frozen Orbs and gems) and 
+// charged items that can be purchased with an alternate currency are not eligible. "
+bool Item::IsEligibleForRefund(){
+    ItemPrototype *proto = this->GetProto();
+
+    if( proto == NULL)
+        return false;
+
+    if( proto->MaxCount > 1 )
+        return false;
+
+    for( int i = 0; i < 5; ++i ){
+        ItemSpell spell = proto->Spells[i];
+
+        if( spell.Charges != -1  && spell.Charges != 0)
+            return false;
+    }
+
+    return true;
+}
+
+
+void Item::RemoveFromRefundableMap(){
+    Player *owner = NULL;
+    uint64 GUID = 0;
+
+    owner = this->GetOwner();
+    GUID = this->GetGUID();
+
+    if( owner != NULL && GUID != 0 )
+        owner->GetItemInterface()->RemoveRefundable( GUID );
 }

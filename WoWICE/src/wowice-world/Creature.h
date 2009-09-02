@@ -25,6 +25,12 @@ class GossipScript;
 #define VENDOR_ITEMS_UPDATE_TIME 3600000
 #include "Map.h"
 
+enum creatureguardtype{
+    GUARDTYPE_NONE,
+    GUARDTYPE_CITY,
+    GUARDTYPE_NEUTRAL
+};
+
 struct CreatureItem
 {
 	uint32 itemid;
@@ -53,6 +59,7 @@ struct CreatureInfo
 	char * Name;
 	char * SubName;
 	char * info_str;
+	uint32 QuestItems[6];
 	uint32 Flags1;
 	uint32 Type;
 	uint32 Family;
@@ -128,6 +135,7 @@ struct CreatureProto
 	uint32 AISpellsFlags;
 	uint32 modImmunities;
 	uint32 isTrainingDummy;
+    uint32 guardtype;
 
 	/* AI Stuff */
 	bool m_canRangedAttack;
@@ -300,21 +308,18 @@ public:
 	WoWICE_INLINE bool HasItems() { return ((m_SellItems != NULL) ? true : false); }
 	WoWICE_INLINE CreatureProto* GetProto() { return proto; }
 
-    	//! Is PVP flagged?
-	WoWICE_INLINE bool IsPvPFlagged()
-	{
-		return HasByteFlag(UNIT_FIELD_BYTES_2, 1, U_FIELD_BYTES_FLAG_PVP);
-	}
+	bool IsPvPFlagged();
+	void SetPvPFlag();
+	void RemovePvPFlag();
 
-	WoWICE_INLINE void SetPvPFlag()
-	{
-		SetByteFlag(UNIT_FIELD_BYTES_2, 1, U_FIELD_BYTES_FLAG_PVP);
-	}
+	bool IsFFAPvPFlagged();
+	void SetFFAPvPFlag();
+	void RemoveFFAPvPFlag();
 
-	WoWICE_INLINE void RemovePvPFlag()
-	{
-		RemoveByteFlag(UNIT_FIELD_BYTES_2, 1, U_FIELD_BYTES_FLAG_PVP);
-	}
+	bool IsSanctuaryFlagged();
+	void SetSanctuaryFlag();
+	void RemoveSancturayFlag();
+
 
 	int32 GetSlotByItemId(uint32 itemid)
 	{
@@ -549,9 +554,12 @@ public:
 	bool RemoveEnslave();
 
 	WoWICE_INLINE Player *GetTotemOwner() { return totemOwner; }
+    // Owner unit (the one that summoned it)
+    WoWICE_INLINE Unit *GetOwner(){ return m_owner; }
 	WoWICE_INLINE void SetTotemOwner(Player *owner) { totemOwner = owner; }
 	WoWICE_INLINE uint32 GetTotemSlot() { return totemSlot; }
 	WoWICE_INLINE void SetTotemSlot(uint32 slot) { totemSlot = slot; }
+    WoWICE_INLINE void SetOwner( Unit *pUnitOwner ){ m_owner = pUnitOwner; }
 
 	virtual Group *GetGroup();
 

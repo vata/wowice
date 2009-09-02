@@ -212,6 +212,8 @@ enum EventTypes
 	EVENT_BEACON_REMOVE,
 	EVENT_UNPOSSESS,
 	EVENT_PLAYER_AVENGING_WRATH,
+    EVENT_REMOVE_ITEM,
+    EVENT_REMOVE_ITEM_FROM_REFUNDABLE_MAP
 };
 
 enum EventFlags
@@ -279,7 +281,7 @@ class SERVER_DECL EventMgr : public Singleton < EventMgr >
 	friend class MiniEventMgr;
 public:
 	template <class Class>
-		void AddEvent(Class *obj, void (Class::*method)(), uint32 type, uint32 time, uint32 repeats, uint32 flags)
+		void AddEvent(Class *obj, void (Class::*method)(), uint32 type, time_t time, uint32 repeats, uint32 flags)
 	{
 		// create a timed event
 		TimedEvent * event = new TimedEvent(obj, new CallbackP0<Class>(obj, method), type, time, repeats, flags);
@@ -289,7 +291,7 @@ public:
 	}
 
 	template <class Class, typename P1>
-		void AddEvent(Class *obj, void (Class::*method)(P1), P1 p1, uint32 type, uint32 time, uint32 repeats, uint32 flags)
+		void AddEvent(Class *obj, void (Class::*method)(P1), P1 p1, uint32 type, time_t time, uint32 repeats, uint32 flags)
 	{
 		// create a timed event
 		TimedEvent * event = new TimedEvent(obj, new CallbackP1<Class, P1>(obj, method, p1), type, time, repeats, flags);
@@ -299,7 +301,7 @@ public:
 	}
 
 	template <class Class, typename P1, typename P2>
-		void AddEvent(Class *obj, void (Class::*method)(P1,P2), P1 p1, P2 p2, uint32 type, uint32 time, uint32 repeats, uint32 flags)
+		void AddEvent(Class *obj, void (Class::*method)(P1,P2), P1 p1, P2 p2, uint32 type, time_t time, uint32 repeats, uint32 flags)
 	{
 		// create a timed event
 		TimedEvent * event = new TimedEvent(obj, new CallbackP2<Class, P1, P2>(obj, method, p1, p2), type, time, repeats, flags);
@@ -309,7 +311,7 @@ public:
 	}
 
 	template <class Class, typename P1, typename P2, typename P3>
-		void AddEvent(Class *obj,void (Class::*method)(P1,P2,P3), P1 p1, P2 p2, P3 p3, uint32 type, uint32 time, uint32 repeats, uint32 flags)
+		void AddEvent(Class *obj,void (Class::*method)(P1,P2,P3), P1 p1, P2 p2, P3 p3, uint32 type, time_t time, uint32 repeats, uint32 flags)
 	{
 		// create a timed event
 		TimedEvent * event = new TimedEvent(obj, new CallbackP3<Class, P1, P2, P3>(obj, method, p1, p2, p3), type, time, repeats, flags);
@@ -319,7 +321,7 @@ public:
 	}
 
 	template <class Class, typename P1, typename P2, typename P3, typename P4>
-		void AddEvent(Class *obj, void (Class::*method)(P1,P2,P3,P4), P1 p1, P2 p2, P3 p3, P4 p4, uint32 type, uint32 time, uint32 repeats, uint32 flags)
+		void AddEvent(Class *obj, void (Class::*method)(P1,P2,P3,P4), P1 p1, P2 p2, P3 p3, P4 p4, uint32 type, time_t time, uint32 repeats, uint32 flags)
 	{
 		// create a timed event
 		TimedEvent * event = new TimedEvent(obj, new CallbackP4<Class, P1, P2, P3, P4>(obj, method, p1, p2, p3, p4), type, time, repeats, flags);
@@ -339,17 +341,17 @@ public:
 		obj->event_RemoveEvents(type);
 	}
 
-	template <class Class> void ModifyEventTimeLeft(Class *obj, uint32 type, uint32 time,bool unconditioned=true)
+	template <class Class> void ModifyEventTimeLeft(Class *obj, uint32 type, time_t time,bool unconditioned=true)
 	{
 		obj->event_ModifyTimeLeft(type, time,unconditioned);
 	}
 
-	template <class Class> void ModifyEventTimeAndTimeLeft(Class *obj, uint32 type, uint32 time)
+	template <class Class> void ModifyEventTimeAndTimeLeft(Class *obj, uint32 type, time_t time)
 	{
 		obj->event_ModifyTimeAndTimeLeft(type, time);
 	}
 
-	template <class Class> void ModifyEventTime(Class *obj, uint32 type, uint32 time)
+	template <class Class> void ModifyEventTime(Class *obj, uint32 type, time_t time)
 	{
 		obj->event_ModifyTime(type, time);
 	}

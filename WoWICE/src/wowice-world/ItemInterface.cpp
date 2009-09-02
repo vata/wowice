@@ -25,6 +25,8 @@ ItemInterface::ItemInterface( Player *pPlayer )
 	m_pOwner = pPlayer;
 	memset(m_pItems, 0, sizeof(Item*)*MAX_INVENTORY_SLOT);
 	memset(m_pBuyBack, 0, sizeof(Item*)*MAX_BUYBACK_SLOT);
+    this->m_refundableitems.clear();
+    
 }
 
 //-------------------------------------------------------------------//
@@ -37,6 +39,7 @@ ItemInterface::~ItemInterface()
 			m_pItems[i]->DeleteMe();
 		}
 	}
+    this->m_refundableitems.clear();
 }
 
 //-------------------------------------------------------------------// 100%
@@ -123,7 +126,7 @@ void ItemInterface::m_DestroyForPlayer()
 //-------------------------------------------------------------------//
 //Description: Creates and adds a item that can be manipulated after		  
 //-------------------------------------------------------------------//
-Item *ItemInterface::SafeAddItem(uint32 ItemId, int16 ContainerSlot, int16 slot)
+Item *ItemInterface::SafeAddItem(uint32 ItemId, int8 ContainerSlot, int16 slot)
 {
 	Item *pItem;
 	ItemPrototype *pProto = ItemPrototypeStorage.LookupEntry(ItemId);
@@ -165,7 +168,7 @@ Item *ItemInterface::SafeAddItem(uint32 ItemId, int16 ContainerSlot, int16 slot)
 //-------------------------------------------------------------------//
 //Description: Creates and adds a item that can be manipulated after		  
 //-------------------------------------------------------------------//
-AddItemResult ItemInterface::SafeAddItem(Item *pItem, int16 ContainerSlot, int16 slot)
+AddItemResult ItemInterface::SafeAddItem(Item *pItem, int8 ContainerSlot, int16 slot)
 {
 	return m_AddItem( pItem, ContainerSlot, slot );
 }
@@ -173,7 +176,7 @@ AddItemResult ItemInterface::SafeAddItem(Item *pItem, int16 ContainerSlot, int16
 //-------------------------------------------------------------------//
 //Description: adds items to player inventory, this includes all types of slots.		  
 //-------------------------------------------------------------------//
-AddItemResult ItemInterface::m_AddItem(Item *item, int16 ContainerSlot, int16 slot)
+AddItemResult ItemInterface::m_AddItem(Item *item, int8 ContainerSlot, int16 slot)
 {
 	ASSERT( slot < MAX_INVENTORY_SLOT );
 	ASSERT( ContainerSlot < MAX_INVENTORY_SLOT );
@@ -341,6 +344,22 @@ AddItemResult ItemInterface::m_AddItem(Item *item, int16 ContainerSlot, int16 sl
 #ifdef ENABLE_ACHIEVEMENTS
 	m_pOwner->GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_OWN_ITEM, item->GetEntry(), 1, 0);
 #endif
+////////////////////////////////////////////////////// existingduration stuff ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    if( item->GetProto()->ExistingDuration != 0 ){
+        if( item->GetItemExpireTime() == 0 ){
+            sEventMgr.AddEvent( item, &Item::EventRemoveItem, EVENT_REMOVE_ITEM, item->GetProto()->ExistingDuration * 1000 , 1, EVENT_FLAG_DO_NOT_EXECUTE_IN_WORLD_CONTEXT | EVENT_FLAG_DELETES_OBJECT);
+            item->SetItemExpireTime( UNIXTIME + item->GetProto()->ExistingDuration );
+        }else{
+            sEventMgr.AddEvent( item, &Item::EventRemoveItem, EVENT_REMOVE_ITEM,  ( item->GetItemExpireTime() - UNIXTIME ) * 1000 , 1, EVENT_FLAG_DO_NOT_EXECUTE_IN_WORLD_CONTEXT | EVENT_FLAG_DELETES_OBJECT);
+        }
+        
+        // if we are already in the world we will send the durationupdate now, so we can see the remaining duration in the client
+        // otherwise we will send the updates in Player::Onpushtoworld anyways
+        if( this->m_pOwner->IsInWorld() )
+            sEventMgr.AddEvent( item, &Item::SendDurationUpdate, EVENT_SEND_PACKET_TO_PLAYER_AFTER_LOGIN, 0, 1, EVENT_FLAG_DO_NOT_EXECUTE_IN_WORLD_CONTEXT );
+    }
+
 	return ADD_ITEM_RESULT_OK;
 }
 
@@ -359,7 +378,7 @@ bool ItemInterface::IsBagSlot(int16 slot)
 //-------------------------------------------------------------------//
 //Description: removes the item safely and returns it back for usage
 //-------------------------------------------------------------------//
-Item *ItemInterface::SafeRemoveAndRetreiveItemFromSlot(int16 ContainerSlot, int16 slot, bool destroy)
+Item *ItemInterface::SafeRemoveAndRetreiveItemFromSlot(int8 ContainerSlot, int16 slot, bool destroy)
 {
 	ASSERT(slot < MAX_INVENTORY_SLOT);
 	ASSERT(ContainerSlot < MAX_INVENTORY_SLOT);
@@ -389,7 +408,7 @@ Item *ItemInterface::SafeRemoveAndRetreiveItemFromSlot(int16 ContainerSlot, int1
 			{
 				m_pOwner->ApplyItemMods( pItem, slot, false );
 				int VisibleBase = PLAYER_VISIBLE_ITEM_1_ENTRYID + (slot * PLAYER_VISIBLE_ITEM_LENGTH);
-				for (int i = VisibleBase; i < VisibleBase + 17; ++i)
+				for (int i = VisibleBase; i < VisibleBase + PLAYER_VISIBLE_ITEM_LENGTH; ++i)
 				{
 					m_pOwner->SetUInt32Value(i, 0);
 				}
@@ -530,7 +549,7 @@ Item *ItemInterface::SafeRemoveAndRetreiveItemByGuid(uint64 guid, bool destroy)
 //Description: completely removes item from player
 //Result: true if item removal was succefull
 //-------------------------------------------------------------------//
-bool ItemInterface::SafeFullRemoveItemFromSlot(int16 ContainerSlot, int16 slot)
+bool ItemInterface::SafeFullRemoveItemFromSlot(int8 ContainerSlot, int16 slot)
 {
 	ASSERT(slot < MAX_INVENTORY_SLOT);
 	ASSERT(ContainerSlot < MAX_INVENTORY_SLOT);
@@ -560,7 +579,7 @@ bool ItemInterface::SafeFullRemoveItemFromSlot(int16 ContainerSlot, int16 slot)
 			{
 				m_pOwner->ApplyItemMods(pItem, slot, false );
 				int VisibleBase = PLAYER_VISIBLE_ITEM_1_ENTRYID + (slot * PLAYER_VISIBLE_ITEM_LENGTH);
-				for (int i = VisibleBase; i < VisibleBase + 17; ++i)
+				for (int i = VisibleBase; i < VisibleBase + PLAYER_VISIBLE_ITEM_LENGTH; ++i)
 				{
 					m_pOwner->SetUInt32Value(i, 0);
 				}
@@ -706,7 +725,7 @@ Item *ItemInterface::GetInventoryItem(int16 slot)
 //-------------------------------------------------------------------//
 //Description: Gets a Item from inventory or container
 //-------------------------------------------------------------------//
-Item *ItemInterface::GetInventoryItem( int16 ContainerSlot, int16 slot )
+Item *ItemInterface::GetInventoryItem( int8 ContainerSlot, int16 slot )
 {
 	if( ContainerSlot <= INVENTORY_SLOT_NOT_SET )
 	{
@@ -1014,7 +1033,7 @@ uint32 ItemInterface::RemoveItemAmt(uint32 id, uint32 amt)
 						}
 						else if (item2->GetUInt32Value(ITEM_FIELD_STACK_COUNT)== amt)
 						{
-							bool result = SafeFullRemoveItemFromSlot(static_cast<int16>( i ), static_cast<int16>( j ));
+							bool result = SafeFullRemoveItemFromSlot(static_cast<int8>( i ), static_cast<int16>( j ));
 							if(result)
 							{
 								return amt;
@@ -1027,7 +1046,7 @@ uint32 ItemInterface::RemoveItemAmt(uint32 id, uint32 amt)
 						else
 						{
 							amt -= item2->GetUInt32Value(ITEM_FIELD_STACK_COUNT);
-							SafeFullRemoveItemFromSlot(static_cast<int16>( i ), static_cast<int16>( j ));
+							SafeFullRemoveItemFromSlot(static_cast<int8>( i ), static_cast<int16>( j ));
 					  
 						}
 					}
@@ -1182,7 +1201,7 @@ uint32 ItemInterface::RemoveItemAmt_ProtectPointer(uint32 id, uint32 amt, Item**
 						}
 						else if (item2->GetUInt32Value(ITEM_FIELD_STACK_COUNT)== amt)
 						{
-							bool result = SafeFullRemoveItemFromSlot(static_cast<int16>( i ), static_cast<int16>( j ));
+							bool result = SafeFullRemoveItemFromSlot(static_cast<int8>( i ), static_cast<int16>( j ));
 							if( pointer != NULL && *pointer != NULL && *pointer == item2 )
 								*pointer = NULL;
 
@@ -1198,7 +1217,7 @@ uint32 ItemInterface::RemoveItemAmt_ProtectPointer(uint32 id, uint32 amt, Item**
 						else
 						{
 							amt -= item2->GetUInt32Value(ITEM_FIELD_STACK_COUNT);
-							SafeFullRemoveItemFromSlot(static_cast<int16>( i ), static_cast<int16>( j ));
+							SafeFullRemoveItemFromSlot(static_cast<int8>( i ), static_cast<int16>( j ));
 
 							if( pointer != NULL && *pointer != NULL && *pointer == item2 )
 								*pointer = NULL;
@@ -1358,7 +1377,7 @@ uint32 ItemInterface::RemoveItemAmtByGuid(uint64 guid, uint32 amt)
 						}
 						else if (item2->GetUInt32Value(ITEM_FIELD_STACK_COUNT)== amt)
 						{
-							bool result = SafeFullRemoveItemFromSlot(static_cast<int16>( i ), static_cast<int16>( j ));
+							bool result = SafeFullRemoveItemFromSlot(static_cast<int8>( i ), static_cast<int16>( j ));
 							if(result)
 							{
 								return amt;
@@ -1371,7 +1390,7 @@ uint32 ItemInterface::RemoveItemAmtByGuid(uint64 guid, uint32 amt)
 						else
 						{
 							amt -= item2->GetUInt32Value(ITEM_FIELD_STACK_COUNT);
-							SafeFullRemoveItemFromSlot(static_cast<int16>( i ), static_cast<int16>( j ));
+							SafeFullRemoveItemFromSlot(static_cast<int8>( i ), static_cast<int16>( j ));
 							return amt;
 						}
 					}
@@ -1732,7 +1751,7 @@ AddItemResult ItemInterface::AddItemToFreeSlot(Item *item)
 					itemMaxStack = (p->ItemStackCheat) ? 0x7fffffff : item2->GetProto()->MaxCount;
 				if( item2 == NULL )
 				{
-					result3 = SafeAddItem(item, static_cast<int16>( i ), static_cast<int16>( j ));
+					result3 = SafeAddItem(item, static_cast<int8>( i ), static_cast<int16>( j ));
 					if(result3) {
 						result.ContainerSlot = static_cast<int8>( i );
 						result.Slot = static_cast<int8>( j );
@@ -1932,27 +1951,31 @@ int8 ItemInterface::CanEquipItemInSlot2( int8 DstInvSlot, int8 slot, Item* item,
 
 				if (
 					ip //maybe gem got removed from db due to update ?
-					&& ip->Flags & ITEM_FLAG_UNIQUE_EQUIP 
-					&& IsEquipped(ip->ItemId)
 					)
 				{
-					return INV_ERR_CANT_CARRY_MORE_OF_THIS;
-				}
+                    if(
+                        ip->Flags & ITEM_FLAG_UNIQUE_EQUIP 
+                    &&  IsEquipped( ip->ItemId )
+                    )
+                    {
+                       return INV_ERR_CANT_CARRY_MORE_OF_THIS;
+                    }
 
-				if( ip->ItemLimitCategory > 0 )
-				{
-					uint32 LimitId = ip->ItemLimitCategory;
-					ItemLimitCategoryEntry * ile = dbcItemLimitCategory.LookupEntry( LimitId );
-					if( ile )
-					{
-						uint32 gemCount = 0;
-						if(		( ile->equippedFlag & ILFLAG_EQUIP_ONLY && slot < EQUIPMENT_SLOT_END ) 
-							||	( !(ile->equippedFlag & ILFLAG_EQUIP_ONLY) && slot > EQUIPMENT_SLOT_END ) )
-							gemCount = item->CountGemsWithLimitId( ile->Id );
+                    if( ip->ItemLimitCategory > 0 )
+                    {
+                       uint32 LimitId = ip->ItemLimitCategory;
+                       ItemLimitCategoryEntry * ile = dbcItemLimitCategory.LookupEntry( LimitId );
+                       if( ile )
+                       {
+                          uint32 gemCount = 0;
+                          if(       ( ile->equippedFlag & ILFLAG_EQUIP_ONLY  && slot < EQUIPMENT_SLOT_END ) 
+                             ||   ( !(ile->equippedFlag & ILFLAG_EQUIP_ONLY) && slot > EQUIPMENT_SLOT_END ) )
+                             gemCount = item->CountGemsWithLimitId( ile->Id );
 
-						uint32 gCount = GetEquippedCountByItemLimit( ile->Id );
-						if( ( gCount + gemCount ) > ile->maxAmount )
-							return INV_ERR_CANT_CARRY_MORE_OF_THIS;
+                          uint32 gCount = GetEquippedCountByItemLimit( ile->Id );
+                          if( ( gCount + gemCount ) > ile->maxAmount )
+                             return INV_ERR_CANT_CARRY_MORE_OF_THIS;
+                       }
 					}
 				}
 			}
@@ -2454,7 +2477,7 @@ int8 ItemInterface::CanReceiveItem(ItemPrototype * item, uint32 amount)
 {
 	if(!item)
 	{
-		return (int8)NULL;
+		return 0;
 	}
 
 	if(item->Unique)
@@ -2475,7 +2498,7 @@ int8 ItemInterface::CanReceiveItem(ItemPrototype * item, uint32 amount)
 				return INV_ERR_CANT_CARRY_MORE_OF_THIS;
 		}
 	}
-	return (int8)NULL;
+	return 0;
 }
 
 void ItemInterface::BuyItem(ItemPrototype *item, uint32 total_amount, Creature * pVendor)
@@ -2960,7 +2983,7 @@ void ItemInterface::RemoveBuyBackItem(uint32 index)
 //-------------------------------------------------------------------//
 //Description: swap inventory slots
 //-------------------------------------------------------------------//
-void ItemInterface::SwapItemSlots(int16 srcslot, int16 dstslot)
+void ItemInterface::SwapItemSlots(int8 srcslot, int8 dstslot)
 {
 	// srcslot and dstslot are int... NULL might not be an int depending on arch where it is compiled
 	if( srcslot >= MAX_INVENTORY_SLOT || srcslot < 0 )
@@ -2982,8 +3005,39 @@ void ItemInterface::SwapItemSlots(int16 srcslot, int16 dstslot)
 	//else
 	//	sLog.outDebug( "Destination: Empty" );
 
-	uint32 srcItemMaxStack = (SrcItem) ? ((SrcItem->GetOwner()->ItemStackCheat) ? 0x7fffffff : SrcItem->GetProto()->MaxCount) : 0;
-	uint32 dstItemMaxStack = (DstItem) ? ((DstItem->GetOwner()->ItemStackCheat) ? 0x7fffffff : DstItem->GetProto()->MaxCount) : 0;
+	// don't stack equipped items (even with ItemStackCheat), just swap them
+	uint32 srcItemMaxStack, dstItemMaxStack;
+	if( SrcItem != NULL )
+	{
+		if( srcslot < INVENTORY_SLOT_BAG_END || !(SrcItem->GetOwner()->ItemStackCheat) )
+		{
+			srcItemMaxStack = SrcItem->GetProto()->MaxCount;
+		}
+		else
+		{
+			srcItemMaxStack = 0x7fffffff;
+		}
+	}
+	else
+	{
+		srcItemMaxStack = 0;
+	}
+	if( DstItem != NULL )
+	{
+		if( dstslot < INVENTORY_SLOT_BAG_END || !(DstItem->GetOwner()->ItemStackCheat) )
+		{
+			dstItemMaxStack = DstItem->GetProto()->MaxCount;
+		}
+		else
+		{
+			dstItemMaxStack = 0x7fffffff;
+		}
+	}
+	else
+	{
+		dstItemMaxStack = 0;
+	}
+	
 	if( SrcItem != NULL && DstItem != NULL && SrcItem->GetEntry()==DstItem->GetEntry() && srcItemMaxStack > 1 && SrcItem->wrapped_item_id == 0 && DstItem->wrapped_item_id == 0 )
 	{
 		uint32 total = SrcItem->GetUInt32Value( ITEM_FIELD_STACK_COUNT ) + DstItem->GetUInt32Value( ITEM_FIELD_STACK_COUNT );
@@ -3242,7 +3296,7 @@ void ItemInterface::mLoadItemsFromDatabase(QueryResult * result)
 		{
 			Field* fields = result->Fetch();
 
-			containerslot = fields[13].GetInt8();
+            containerslot = fields[13].GetInt8();
 			slot = fields[14].GetInt8();
 			proto = ItemPrototypeStorage.LookupEntry(fields[2].GetUInt32());
 
@@ -3263,6 +3317,14 @@ void ItemInterface::mLoadItemsFromDatabase(QueryResult * result)
 					item->LoadFromDB( fields, m_pOwner, false);
 
 				}
+
+                // if we encounter an item that expired, we remove it from db
+                if( item->GetItemExpireTime() > 0 && UNIXTIME > item->GetItemExpireTime() ){
+                    item->DeleteFromDB();
+                    item->DeleteMe();
+                    continue;
+                }
+                
 				if( SafeAddItem( item, containerslot, slot ) )
 				    item->m_isDirty = false;
 				else
@@ -3338,7 +3400,7 @@ AddItemResult ItemInterface::AddItemToFreeBankSlot(Item *item)
 				Item *item2 = static_cast< Container* >( m_pItems[i] )->GetItem( static_cast<int16>( j ));
 				if( item2 == NULL )
 				{
-					return SafeAddItem( item, static_cast<int16>( i ), static_cast<int16>( j ) );
+					return SafeAddItem( item, static_cast<int8>( i ), static_cast<int16>( j ) );
 				}
 			}
 		}
@@ -3780,4 +3842,240 @@ uint32 ItemInterface::GetItemCountByLimitId(uint32 LimitId, bool IncBank)
 	cnt += GetEquippedCountByItemLimit( LimitId );
 
 	return cnt;
+}
+
+///////////////////////////////////////////////////////////////////////////////////
+//
+// Look for items with limited duration and send the remaining time to the client
+//
+///////////////////////////////////////////////////////////////////////////////////
+void ItemInterface::HandleItemDurations(){
+    
+    for( uint32 i = EQUIPMENT_SLOT_START; i <= CURRENCYTOKEN_SLOT_END; ++i ){
+        Item *item1 = this->GetInventoryItem( static_cast< int16 >( i ) );
+        Item *realitem = NULL;
+
+        if( item1 != NULL && item1->IsContainer() ){
+            
+            for( uint32 j = 0; j < item1->GetProto()->ContainerSlots; ++j ){
+                Item *item2 = static_cast< Container* >( item1 )->GetItem( static_cast< int16 >( j ));
+                
+                if( item2 != NULL && item2->GetProto() && item2->GetProto()->ExistingDuration > 0 )
+                    realitem = item2;
+            }
+
+        }else{
+            if( item1 != NULL && item1->GetProto())
+                realitem = item1;
+        }
+
+        if( realitem != NULL )
+            sEventMgr.AddEvent( realitem, &Item::SendDurationUpdate, EVENT_SEND_PACKET_TO_PLAYER_AFTER_LOGIN, 0, 1, EVENT_FLAG_DO_NOT_EXECUTE_IN_WORLD_CONTEXT );
+    }
+}
+
+//////////////////////////////////////////////////////////////////////////
+//
+// Inserts a new entry into the RefundableMap
+// 
+// This should be called when purchasing the item
+//////////////////////////////////////////////////////////////////////////
+void ItemInterface::AddRefundable( uint64 GUID,  uint32 extendedcost ){
+    std::pair< time_t, uint32 > RefundableEntry;
+    std::pair< uint64, std::pair< time_t, uint32 > > insertpair;
+    
+    Item *item = this->GetItemByGUID( GUID );
+
+    if( item == NULL )
+        return;
+
+    RefundableEntry.first = UNIXTIME;               // time of purchase in Unixtime
+    RefundableEntry.second = extendedcost;          // extendedcost
+
+    insertpair.first = GUID;
+    insertpair.second = RefundableEntry;
+
+    this->m_refundableitems.insert( insertpair );
+
+    sEventMgr.AddEvent( item, &Item::RemoveFromRefundableMap, EVENT_REMOVE_ITEM_FROM_REFUNDABLE_MAP, ( UNIXTIME + 60*60*2 ), 1, EVENT_FLAG_DO_NOT_EXECUTE_IN_WORLD_CONTEXT );
+}
+
+void ItemInterface::AddRefundable( uint64 GUID, uint32 extendedcost, time_t buytime ){
+    std::pair< time_t, uint32 > RefundableEntry;
+    std::pair< uint64, std::pair< time_t, uint32 > > insertpair;
+    
+    Item *item = this->GetItemByGUID( GUID );
+
+    if( item == NULL )
+        return;
+
+    RefundableEntry.first = buytime;            // time of purchase in Unixtime
+    RefundableEntry.second = extendedcost;      // extendedcost
+
+    insertpair.first = GUID;
+    insertpair.second = RefundableEntry;
+
+    this->m_refundableitems.insert( insertpair );
+
+    sEventMgr.AddEvent( item, &Item::RemoveFromRefundableMap, EVENT_REMOVE_ITEM_FROM_REFUNDABLE_MAP, buytime, 1, EVENT_FLAG_DO_NOT_EXECUTE_IN_WORLD_CONTEXT );
+}
+
+void ItemInterface::AddRefundable( Item *item, uint32 extendedcost, time_t buytime ){
+    std::pair< time_t, uint32 > RefundableEntry;
+    std::pair< uint64, std::pair< time_t, uint32 > > insertpair;
+    
+    if( item == NULL )
+        return;
+
+    RefundableEntry.first = buytime;       // time of purchase in Unixtime
+    RefundableEntry.second = extendedcost; // extendedcost
+
+    insertpair.first = item->GetGUID();
+    insertpair.second = RefundableEntry;
+
+    this->m_refundableitems.insert( insertpair );
+
+    sEventMgr.AddEvent( item, &Item::RemoveFromRefundableMap, EVENT_REMOVE_ITEM_FROM_REFUNDABLE_MAP, ( buytime + 60*60*2 ), 1, EVENT_FLAG_DO_NOT_EXECUTE_IN_WORLD_CONTEXT );
+}
+
+
+//////////////////////////////////////////////////////////////////////////
+//
+//  Removes an entry from the RefundableMap
+//
+//////////////////////////////////////////////////////////////////////////
+void ItemInterface::RemoveRefundable(uint64 GUID){
+
+    this->m_refundableitems.erase( GUID );
+}
+
+
+//////////////////////////////////////////////////////////////////////////
+//
+//  Looks up an item in the RefundableMap, and returns the data
+//
+//////////////////////////////////////////////////////////////////////////
+std::pair< time_t, uint32 > ItemInterface::LookupRefundable(uint64 GUID){
+    std::pair< time_t, uint32 > RefundableEntry;
+    RefundableMap::iterator itr;
+
+    RefundableEntry.first = 0;   // time of purchase in Unixtime
+    RefundableEntry.second = 0;  // extendedcost
+
+    itr = this->m_refundableitems.find( GUID );
+    if( itr != this->m_refundableitems.end() ){
+        RefundableEntry.first = itr->second.first;
+        RefundableEntry.second = itr->second.second;
+    }
+
+    return RefundableEntry;
+}
+
+/////////////////////////////////////////////////////////////////////////////
+//
+//  Adds an item to the Player by itemid
+//  refactored from Level1.cpp
+//
+/////////////////////////////////////////////////////////////////////////////
+bool ItemInterface::AddItemById(uint32 itemid, uint32 count, int32 randomprop)
+{
+	uint32 numadded = 0;
+    Player *chr = this->GetOwner();
+
+    // checking if the iteminterface has owner, impossible to not have one
+    if(chr == NULL)
+        return false;
+
+	ItemPrototype* it = ItemPrototypeStorage.LookupEntry(itemid);
+	if(it)
+	{
+		uint32 maxStack = (chr->ItemStackCheat) ? 0x7fffffff : it->MaxCount;
+		bool freeslots = true;
+		// more than one stack
+		while( (count > maxStack) && freeslots )
+		{
+			Item *item;
+			item = objmgr.CreateItem( itemid, chr);
+			if (item == NULL)
+				return false;
+
+			if(it->Bonding==ITEM_BIND_ON_PICKUP)
+				if(it->Flags & ITEM_FLAG_ACCOUNTBOUND) // don't "Soulbind" account-bound items
+					item->AccountBind();
+				else
+					item->SoulBind();
+			if(randomprop!=0)
+			{
+				if(randomprop<0)
+					item->SetRandomSuffix(abs(int(randomprop)));
+				else
+					item->SetRandomProperty(randomprop);
+
+				item->ApplyRandomProperties(false);
+			}
+			item->SetUInt32Value(ITEM_FIELD_STACK_COUNT, maxStack);
+			if(this->AddItemToFreeSlot(item))
+			{
+				SlotResult *lr = this->LastSearchResult();
+                
+                chr->GetSession()->SendItemPushResult(item,false,true,false,true,lr->ContainerSlot,lr->Slot,maxStack);
+#ifdef ENABLE_ACHIEVEMENTS
+                chr->GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_LOOT_ITEM, itemid, 1, 0);
+#endif
+				count -= maxStack;
+				numadded += maxStack;
+			}
+			else
+			{
+				freeslots = false;
+                chr->GetSession()->SendNotification("No free slots were found in your inventory!");
+				item->DeleteMe();
+			}
+		}
+		// last stack
+		if(freeslots)
+		{
+			Item *item;
+			item = objmgr.CreateItem( itemid, chr);
+			if (item == NULL)
+				return false;
+
+			if(it->Bonding==ITEM_BIND_ON_PICKUP)
+				if(it->Flags & ITEM_FLAG_ACCOUNTBOUND) // don't "Soulbind" account-bound items
+					item->AccountBind();
+				else
+					item->SoulBind();
+			if(randomprop!=0)
+			{
+				if(randomprop<0)
+					item->SetRandomSuffix(abs(int(randomprop)));
+				else
+					item->SetRandomProperty(randomprop);
+
+				item->ApplyRandomProperties(false);
+			}
+			item->SetUInt32Value(ITEM_FIELD_STACK_COUNT, count);
+
+			if(this->AddItemToFreeSlot(item))
+			{
+				SlotResult *lr = this->LastSearchResult();
+				chr->GetSession()->SendItemPushResult(item,false,true,false,true,lr->ContainerSlot,lr->Slot,count);
+#ifdef ENABLE_ACHIEVEMENTS
+				chr->GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_LOOT_ITEM, itemid, 1, 0);
+#endif
+				numadded += count;
+				count = 0;
+			}
+			else
+			{
+                item->DeleteMe();
+                return false;
+			}
+		}
+
+		return true;
+
+	} else {
+		return false;
+	}
 }
