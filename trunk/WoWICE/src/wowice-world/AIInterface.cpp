@@ -1020,7 +1020,8 @@ void AIInterface::_UpdateCombat(uint32 p_time)
 	if( m_AIType != AITYPE_PET && disable_combat )
 		return;
 
-	//just make sure we are not hitting self. This was reported as an exploit.Should never occur anyway
+	//just make sure we are not hitting self. 
+	// This was reported as an exploit.Should never occur anyway
 	if( GetNextTarget() == m_Unit )
 		SetNextTarget( GetMostHated() );
 
@@ -1723,6 +1724,7 @@ Unit* AIInterface::FindTarget()
         printf("I'm a pet and I'm looking for targets, RAWR!\n");
     }
     */
+
     
 	
 	/* Commented due to no use
@@ -1812,22 +1814,6 @@ Unit* AIInterface::FindTarget()
 		if(dist > distance)	 // we want to find the CLOSEST target
 			continue;
 
-        if( m_Unit->IsCreature() ){
-            Creature *pCreature = static_cast< Creature* >( m_Unit );
-
-            // We are only interested in pets, totems, and summons
-            if( pCreature->IsPet() || pCreature->IsTotem()  || pCreature->GetOwner() != NULL ){
-                
-                // We don't want to attack unflagged players
-                if( pUnit->IsPlayer() && !pUnit->IsPvPFlagged())
-                    continue;     
-        
-                // We don't want to accidentally flag ourselves
-                if( pUnit->IsPlayer() && !m_Unit->IsPvPFlagged() )
-                    continue;
-            }
-        }        
-	
 		if(dist <= _CalcAggroRange(pUnit) )
 		{
 			if (sWorld.Collision) {
@@ -1864,40 +1850,8 @@ Unit* AIInterface::FindTarget()
 
 			pUnit = static_cast< Unit* >( (*itr) );
 
-            if( pUnit->IsCreature() )
-			{
-                Creature *pCreature = static_cast<Creature*>( pUnit );
-
-                // We are only interested in pets, totems, and summons
-                if( pCreature->IsPet() || pCreature->IsTotem() || pCreature->GetOwner() != NULL ){
-                    
-                    // We don't want to attack unflagged pets
-                    if( pUnit->IsPet() && !pUnit->IsPvPFlagged() )
-                        continue;
-
-                    // We don't want to accidentally flag ourselves
-                    if( pUnit->IsPet() && !m_Unit->IsPvPFlagged() )
-                        continue;
-
-                    // if the target is not attackable we are not going to attack it and find a new target, if possible
-				    if( pCreature->m_spawn && !pCreature->isattackable( pCreature->m_spawn ) )
-					    continue;
-
-                    // We don't attack non-flagged totems
-                    if( m_Unit->IsPet() && pCreature->IsTotem() && !pCreature->IsPvPFlagged() )
-                      continue;
-
-                    // it's a summon and the owner is a player
-                    if(pCreature->GetOwner() != NULL && pCreature->GetOwner()->IsPlayer()){
-                      if( !pCreature->IsPvPFlagged() )
-                        continue;
-                    }
-			    }
-            }
-
 			if( UnsafeCanOwnerAttackUnit( pUnit ) == false )
 				continue;
-
 
 			//on blizz there is no Z limit check 
 			dist = m_Unit->GetDistance2dSq(pUnit);
@@ -4273,6 +4227,11 @@ void AIInterface::Event_Summon_EE_totem(uint32 summon_duration)
         else
             ourslave->RemovePvPFlag();
 
+        if( caster->IsFFAPvPFlagged() )
+            ourslave->SetFFAPvPFlag();
+        else
+            ourslave->RemoveFFAPvPFlag();
+
         static_cast< Creature* >(ourslave)->SetOwner( caster );
 
         ourslave->SetUInt32Value(UNIT_FIELD_FLAGS, UNIT_FLAG_PLAYER_CONTROLLED | UNIT_FLAG_SELF_RES);
@@ -4302,6 +4261,11 @@ void AIInterface::Event_Summon_FE_totem(uint32 summon_duration)
             ourslave->SetPvPFlag();
         else
             ourslave->RemovePvPFlag();
+
+        if( caster->IsFFAPvPFlagged() )
+            ourslave->SetFFAPvPFlag();
+        else
+            ourslave->RemoveFFAPvPFlag();
 
         static_cast< Creature* >(ourslave)->SetOwner( caster );
 
@@ -4353,97 +4317,6 @@ void AIInterface::EventChangeFaction( Unit *ForceAttackersToHateThisInstead )
 		modThreatByPtr( ForceAttackersToHateThisInstead, 1 );
 		SetNextTarget( ForceAttackersToHateThisInstead );
 	}
-}
-
-bool isGuard(uint32 id)
-{
-	switch(id)
-	{
-		/* stormwind guards */
-	case 68:
-	case 1423:
-	case 1756:
-	case 15858:
-	case 15859:
-	case 16864:
-	case 20556:
-	case 18948:
-	case 18949:
-	case 1642:
-		/* ogrimmar guards */
-	case 3296:
-	case 15852:
-	case 15853:
-	case 15854:
-	case 18950:
-		/* undercity guards */
-	case 5624:
-	case 18971:
-	case 16432:
-		/* exodar */
-	case 16733:
-	case 18815:
-		/* thunder bluff */
-	case 3084:
-		/* silvermoon */
-	case 16221:
-	case 17029:
-	case 16222:
-		/* ironforge */
-	case 727:
-	case 5595:
-	case 12996:
-		/* darnassus? */
-		{
-			return true;
-		}break;
-	}
-	return false;
-}
-
-bool isNeutralGuard(uint32 id)
-{
-	switch(id)
-	{
-		// Ratchet
-	case 3502:
-		// Booty Bay
-	case 4624:
-	case 15088:
-		// Gadgetzan
-	case 9460:
-		// Argent Dawn
-	case 11102:
-	case 16378:
-		// Cenarion Hold
-	case 15184:
-		// Moonglade
-	case 11822:
-		// Everlook
-	case 11190:
-		// Cenarion Refuge
-	case 17855:
-		// Throne of the elements
-	case 18099:
-	case 18101:
-	case 18102:
-		// Area 52
-	case 20484:
-	case 20485:
-		// Cosmowrench
-	case 22494:
-		// Mudsprocket
-	case 23636:
-		// Concert Bruiser
-	case 23721:
-		// Shattered Sun
-	case 26253:
-	case 24994:
-			return true;
-		break;
-	}
-
-	return false;
 }
 
 void AIInterface::WipeCurrentTarget()

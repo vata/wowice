@@ -42,6 +42,21 @@ enum AddItemResult
 	ADD_ITEM_RESULT_DUPLICATED		= 2,
 };
 
+/////////////////////////////////////////////////////////////////
+//
+//RefundableMap
+//
+//Contains refundable item data.
+//
+//Key:
+// uint64 GUID       - GUID of the item
+//
+//Value:
+// time_t buytime    - time of purchase in Unixtime
+// uint32 costid     - extendedcostID of the cost
+/////////////////////////////////////////////////////////////////
+typedef std::map< uint64, pair< time_t, uint32 > > RefundableMap;
+
 class SERVER_DECL ItemInterface
 {
 private:
@@ -50,7 +65,9 @@ private:
 	Item* m_pItems[MAX_INVENTORY_SLOT];
 	Item* m_pBuyBack[MAX_BUYBACK_SLOT];
 
-	AddItemResult m_AddItem(Item *item, int16 ContainerSlot, int16 slot);
+    RefundableMap m_refundableitems;
+
+	AddItemResult m_AddItem(Item *item, int8 ContainerSlot, int16 slot);
 
 public:
 	friend class ItemIterator;
@@ -67,16 +84,16 @@ public:
 	void mSaveItemsToDatabase(bool first, QueryBuffer * buf);
 
 	Item *GetInventoryItem(int16 slot);
-	Item *GetInventoryItem(int16 ContainerSlot, int16 slot);
+	Item *GetInventoryItem(int8 ContainerSlot, int16 slot);
 	int16 GetInventorySlotById(uint32 ID);
 	int16 GetInventorySlotByGuid(uint64 guid);
 	int16 GetBagSlotByGuid(uint64 guid);
 
-	Item *SafeAddItem(uint32 ItemId, int16 ContainerSlot, int16 slot);
-	AddItemResult SafeAddItem(Item *pItem, int16 ContainerSlot, int16 slot);
-	Item *SafeRemoveAndRetreiveItemFromSlot(int16 ContainerSlot, int16 slot, bool destroy); //doesn't destroy item from memory
+	Item *SafeAddItem(uint32 ItemId, int8 ContainerSlot, int16 slot);
+	AddItemResult SafeAddItem(Item *pItem, int8 ContainerSlot, int16 slot);
+	Item *SafeRemoveAndRetreiveItemFromSlot(int8 ContainerSlot, int16 slot, bool destroy); //doesn't destroy item from memory
 	Item *SafeRemoveAndRetreiveItemByGuid(uint64 guid, bool destroy);
-	bool SafeFullRemoveItemFromSlot(int16 ContainerSlot, int16 slot); //destroys item fully
+	bool SafeFullRemoveItemFromSlot(int8 ContainerSlot, int16 slot); //destroys item fully
 	bool SafeFullRemoveItemByGuid(uint64 guid); //destroys item fully
 	AddItemResult AddItemToFreeSlot(Item *item);
 	AddItemResult AddItemToFreeBankSlot(Item *item);
@@ -116,7 +133,7 @@ public:
 
 
 	void BuildInventoryChangeError(Item *SrcItem, Item *DstItem, uint8 Error);
-	void SwapItemSlots(int16 srcslot, int16 dstslot);
+	void SwapItemSlots(int8 srcslot, int8 dstslot);
 
 	int8 GetInternalBankSlotFromPlayer(int8 islot); //converts inventory slots into 0-x numbers
 
@@ -138,6 +155,16 @@ public:
 	uint32 GetItemCountByLimitId(uint32 LimitId, bool IncBank);
 	uint32 GetEquippedCountByItemLimit(uint32 LimitId);
 
+    void HandleItemDurations();
+
+/////////////////////////////////////////////// Refundable item stuff ////////////////////////////////////
+    void AddRefundable( uint64 GUID,  uint32 extendedcost );
+    void AddRefundable( uint64 GUID,  uint32 extendedcost, time_t buytime );
+    void AddRefundable( Item* item, uint32 extendedcost, time_t buytime );
+    void RemoveRefundable( uint64 GUID );
+    std::pair< time_t, uint32 > LookupRefundable( uint64 GUID );
+/////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 public:
 	WoWICE_INLINE bool VerifyBagSlots(int8 ContainerSlot, int8 Slot)
 	{
@@ -152,6 +179,8 @@ public:
 			
 		return true;
 	}
+
+    bool AddItemById(uint32 itemid, uint32 count, int32 randomprop);
 };
 class ItemIterator
 {

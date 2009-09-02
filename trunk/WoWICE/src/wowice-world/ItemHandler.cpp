@@ -423,7 +423,7 @@ void WorldSession::HandleSwapInvItemOpcode( WorldPacket & recv_data )
 	int8 srcslot=0, dstslot=0;
 	int8 error=0;
 
-	recv_data >> srcslot >> dstslot;
+	recv_data >> dstslot >> srcslot;
 
 	sLog.outDetail("ITEM: swap, src slot: %u dst slot: %u", (uint32)srcslot, (uint32)dstslot);
 
@@ -937,6 +937,7 @@ void WorldSession::HandleItemQuerySingleOpcode( WorldPacket & recv_data )
 	data << itemProto->Quality;
 	data << itemProto->Flags;
 	data << itemProto->BuyPrice;
+	data << itemProto->Faction;
 	data << itemProto->SellPrice;
 	data << itemProto->InventoryType;
 	data << itemProto->AllowableClass;
@@ -1441,6 +1442,8 @@ void WorldSession::HandleBuyItemOpcode( WorldPacket & recv_data ) // right-click
 	if (unit == NULL || !unit->HasItems())
 		return;
 
+    ItemExtendedCostEntry * ex = unit->GetItemExtendedCostByItemId( itemid );
+
 	if(amount < 1)
 		amount = 1;
 
@@ -1494,7 +1497,7 @@ void WorldSession::HandleBuyItemOpcode( WorldPacket & recv_data ) // right-click
 	}
 	if ((!slotresult.Result) && (!add))
 	{
-		//Our User doesn't have a free Slot in there bag
+		//Player doesn't have a free slot in his/her bag(s)
 		_player->GetItemInterface()->BuildInventoryChangeError(0, 0, INV_ERR_INVENTORY_FULL);
 		return;
 	}
@@ -1510,7 +1513,7 @@ void WorldSession::HandleBuyItemOpcode( WorldPacket & recv_data ) // right-click
 
 		itm->m_isDirty=true;
 		itm->SetUInt32Value(ITEM_FIELD_STACK_COUNT, amount*item.amount);
-
+        
 		if(slotresult.ContainerSlot == ITEM_NO_SLOT_AVAILABLE)
 		{
 			result = _player->GetItemInterface()->SafeAddItem(itm, INVENTORY_SLOT_NOT_SET, slotresult.Slot);
@@ -1518,8 +1521,13 @@ void WorldSession::HandleBuyItemOpcode( WorldPacket & recv_data ) // right-click
 			{
 				itm->DeleteMe();
 			}
-			else
-				SendItemPushResult(itm, false, true, false, true, static_cast<uint8>(INVENTORY_SLOT_NOT_SET), slotresult.Result, amount*item.amount);
+            else{
+                if( itm->IsEligibleForRefund() && ex != NULL ){
+                    itm->GetOwner()->GetItemInterface()->AddRefundable( itm->GetGUID(), ex->costid );
+                    this->SendRefundInfo( itm->GetGUID() );
+                }
+                SendItemPushResult(itm, false, true, false, true, static_cast<uint8>(INVENTORY_SLOT_NOT_SET), slotresult.Result, amount*item.amount);
+            }
 		}
 		else
 		{
@@ -1527,8 +1535,13 @@ void WorldSession::HandleBuyItemOpcode( WorldPacket & recv_data ) // right-click
 			{
 				if( !((Container*)bag)->AddItem(slotresult.Slot, itm) )
 					itm->DeleteMe();
-				else
+                else{
+                    if( itm->IsEligibleForRefund() && ex != NULL ){
+                        itm->GetOwner()->GetItemInterface()->AddRefundable( itm->GetGUID(), ex->costid );
+                        this->SendRefundInfo( itm->GetGUID() );
+                    }
 					SendItemPushResult(itm, false, true, false, true, slotresult.ContainerSlot, slotresult.Result, 1);
+                }
 			}
 		}
 	}
@@ -1536,8 +1549,12 @@ void WorldSession::HandleBuyItemOpcode( WorldPacket & recv_data ) // right-click
 	{
 		add->ModUnsigned32Value(ITEM_FIELD_STACK_COUNT, amount*item.amount);
 		add->m_isDirty = true;
-		SendItemPushResult(add, false, true, false, false, (uint8)_player->GetItemInterface()->GetBagSlotByGuid(add->GetGUID()), 1, amount*item.amount);
+        SendItemPushResult(add, false, true, false, false, (uint8)_player->GetItemInterface()->GetBagSlotByGuid(add->GetGUID()), 1, amount*item.amount);
 	}
+
+
+
+    _player->GetItemInterface()->BuyItem(it,amount,unit);
 
 	data.Initialize( SMSG_BUY_ITEM );
 	data << uint64(srcguid);
@@ -1545,7 +1562,6 @@ void WorldSession::HandleBuyItemOpcode( WorldPacket & recv_data ) // right-click
 	data << uint32(itemid) << uint32(amount*item.amount);
 	SendPacket( &data );
 
-	_player->GetItemInterface()->BuyItem(it,amount,unit);
 	if(item.max_amount)
 	{
 		unit->ModAvItemAmount(item.itemid,item.amount*amount);
@@ -2300,4 +2316,144 @@ void WorldSession::HandleWrapItemOpcode( WorldPacket& recv_data )
 	dst->SaveToDB( destitem_bagslot, destitem_slot, false, NULL );
 }
 
+void WorldSession::HandleItemRefundInfoOpcode( WorldPacket& recvPacket ){
+    if( !_player || !_player->IsInWorld() )
+        return;
 
+    sLog.outDebug("Recieved CMSG_ITEMREFUNDINFO.");
+
+    //////////////////////////////////////////////////////////////////////////////////////////
+    //  As of 3.1.3 the client sends this packet to request refund info on an item
+    //
+    //	{CLIENT} Packet: (0x04B3) UNKNOWN PacketSize = 8 TimeStamp = 265984125
+    //	E6 EE 09 18 02 00 00 42 
+    //
+    //  
+    //
+    //  Structure:
+    //  uint64 GUID
+    //////////////////////////////////////////////////////////////////////////////////////////
+
+    uint64 GUID;
+    recvPacket >> GUID;
+
+    this->SendRefundInfo( GUID );
+
+}
+
+void WorldSession::HandleItemRefundRequestOpcode( WorldPacket& recvPacket ){
+    if( !_player || !_player->IsInWorld() )
+        return;
+
+    sLog.outDebug("Recieved CMSG_ITEMREFUNDREQUEST.");
+
+    //////////////////////////////////////////////////////////////////////////////////////////
+    //  As of 3.1.3 the client sends this packet to initiate refund of an item
+    //
+    //	{CLIENT} Packet: (0x04B4) UNKNOWN PacketSize = 8 TimeStamp = 266021296
+    //	E6 EE 09 18 02 00 00 42 
+    //
+    //  
+    //
+    //  Structure:
+    //  uint64 GUID
+    //////////////////////////////////////////////////////////////////////////////////////////
+
+    uint64 GUID;
+    uint32 error = 1;
+    Item* itm = NULL;
+    std::pair< time_t, uint32 > RefundEntry;
+    ItemExtendedCostEntry *ex = NULL;
+    ItemPrototype *proto = NULL;
+    
+    
+    recvPacket >> GUID;
+
+    itm = _player->GetItemInterface()->GetItemByGUID( GUID );
+
+    if( itm != NULL ){
+        if( itm->IsEligibleForRefund() ){
+            RefundEntry.first = 0;
+            RefundEntry.second = 0;
+            
+            RefundEntry = _player->GetItemInterface()->LookupRefundable( GUID );
+            
+            ex = dbcItemExtendedCost.LookupEntry( RefundEntry.second );
+
+            if( ex != NULL ){
+                proto = itm->GetProto();
+
+                if( proto != NULL ){
+                    
+////////////////////////////////// We remove the refunded item and refund the cost //////////////////////////////////
+                    
+                    for( int i = 0; i < 5; ++i ){
+                        _player->GetItemInterface()->AddItemById( ex->item[i], ex->count[i], 0 );
+                    }
+
+                    _player->GetItemInterface()->AddItemById( 43308, ex->honor, 0 );   // honor points
+                    _player->GetItemInterface()->AddItemById( 43307, ex->arena, 0 );  // arena points
+                    _player->AddCoins( proto->BuyPrice );
+
+                    _player->GetItemInterface()->RemoveItemAmtByGuid( GUID, 1 );
+
+                    _player->GetItemInterface()->RemoveRefundable( GUID );
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+                }
+            }
+        }
+    }
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    //  As of 3.1.3 the client sends this packet to provide refunded cost info to the client
+    //
+    //	{SERVER} Packet: (0x04B5) UNKNOWN PacketSize = 64 TimeStamp = 266021531
+    //	E6 EE 09 18 02 00 00 42 00 00 00 00 00 00 00 00 4B 25 00 00 00 00 00 00 50 50 00 00 0A 00 00 00 00
+    //  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+    //
+    //
+    //  Structure (on success):
+    //  uint64 GUID
+    //  uint32 errorcode
+    //  
+    //
+    //  Structure (on failure):
+    //  uint64 GUID
+    //  uint32 price (in copper)
+    //  uint32 honor
+    //  uint32 arena
+    //  uint32 item1
+    //  uint32 item1cnt
+    //  uint32 item2
+    //  uint32 item2cnt
+    //  uint32 item3
+    //  uint32 item3cnt
+    //  uint32 item4
+    //  uint32 item4cnt
+    //  uint32 item5
+    //  uint32 item5cnt
+    //  
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+        WorldPacket packet( SMSG_UNKNOWN_1205, 52 );
+        packet << uint64( GUID );
+
+        if( error == 0 ){
+            packet << uint32( proto->BuyPrice );
+            packet << uint32( ex->honor );
+            packet << uint32( ex->arena );
+            
+            for( int i = 0; i < 5; ++i ){
+                packet << uint32( ex->item[i] );
+                packet << uint32( ex->count[i] );
+            }
+
+        }else{
+            packet << uint32( 1 );
+        }
+
+        this->SendPacket( &packet );
+
+        sLog.outDebug("Recieved CMSG_ITEMREFUNDREQUEST.");
+}

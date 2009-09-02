@@ -1372,8 +1372,16 @@ bool Creature::Load(CreatureSpawn *spawn, uint32 mode, MapInfo *info)
 
 	has_combat_text = objmgr.HasMonsterSay(GetEntry(), MONSTER_SAY_EVENT_ENTER_COMBAT);
 	has_waypoint_text = objmgr.HasMonsterSay(GetEntry(), MONSTER_SAY_EVENT_RANDOM_WAYPOINT);
-	m_aiInterface->m_isGuard = isGuard(GetEntry());
-	m_aiInterface->m_isNeutralGuard = isNeutralGuard(GetEntry());
+
+    if( proto->guardtype == GUARDTYPE_CITY )
+        m_aiInterface->m_isGuard = true;
+    else
+        m_aiInterface->m_isGuard = false;
+
+    if( proto->guardtype == GUARDTYPE_NEUTRAL )
+        m_aiInterface->m_isNeutralGuard = true;
+    else
+        m_aiInterface->m_isNeutralGuard = false;
 
 	m_aiInterface->getMoveFlags();
 
@@ -1566,8 +1574,16 @@ void Creature::Load(CreatureProto * proto_, float x, float y, float z, float o)
 
 	has_combat_text = objmgr.HasMonsterSay(GetEntry(), MONSTER_SAY_EVENT_ENTER_COMBAT);
 	has_waypoint_text = objmgr.HasMonsterSay(GetEntry(), MONSTER_SAY_EVENT_RANDOM_WAYPOINT);
-	m_aiInterface->m_isGuard = isGuard(GetEntry());
-	m_aiInterface->m_isNeutralGuard = isNeutralGuard(GetEntry());
+	
+    if( proto->guardtype == GUARDTYPE_CITY )
+        m_aiInterface->m_isGuard = true;
+    else
+        m_aiInterface->m_isGuard = false;
+
+    if( proto->guardtype == GUARDTYPE_NEUTRAL )
+        m_aiInterface->m_isNeutralGuard = true;
+    else
+        m_aiInterface->m_isNeutralGuard = false;
 
 	m_aiInterface->getMoveFlags();
 
@@ -1961,3 +1977,44 @@ uint32 Creature::GetRequiredLootSkill()
 	else
 		return SKILL_SKINNING;      // skinning
 };
+
+//! Is PVP flagged?
+bool Creature::IsPvPFlagged()
+{
+	return HasByteFlag(UNIT_FIELD_BYTES_2, 1, U_FIELD_BYTES_FLAG_PVP);
+}
+
+void Creature::SetPvPFlag()
+{
+	SetByteFlag(UNIT_FIELD_BYTES_2, 1, U_FIELD_BYTES_FLAG_PVP);
+}
+
+void Creature::RemovePvPFlag()
+{
+	RemoveByteFlag(UNIT_FIELD_BYTES_2, 1, U_FIELD_BYTES_FLAG_PVP);
+}
+
+bool Creature::IsFFAPvPFlagged()
+{
+	return HasByteFlag(UNIT_FIELD_BYTES_2, 1, U_FIELD_BYTES_FLAG_FFA_PVP);
+}
+
+void Creature::SetFFAPvPFlag()
+{
+	SetByteFlag(UNIT_FIELD_BYTES_2, 1, U_FIELD_BYTES_FLAG_FFA_PVP);
+}
+
+void Creature::RemoveFFAPvPFlag()
+{
+	RemoveByteFlag(UNIT_FIELD_BYTES_2, 1, U_FIELD_BYTES_FLAG_FFA_PVP);
+}
+
+bool Creature::IsSanctuaryFlagged(){ 
+	return HasByteFlag( UNIT_FIELD_BYTES_2, 1, U_FIELD_BYTES_FLAG_SANCTUARY); 
+}
+void Creature::SetSanctuaryFlag(){ 
+	SetByteFlag( UNIT_FIELD_BYTES_2, 1, U_FIELD_BYTES_FLAG_SANCTUARY ); 
+}
+void Creature::RemoveSancturayFlag(){ 
+	RemoveByteFlag( UNIT_FIELD_BYTES_2, 1, U_FIELD_BYTES_FLAG_SANCTUARY ); 
+}

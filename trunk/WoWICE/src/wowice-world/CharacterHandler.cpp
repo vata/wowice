@@ -191,9 +191,12 @@ void WorldSession::CharacterEnumProc(QueryResult * result)
 			else
 				data << uint32(1);		// alive
 			}
-				data << uint32(0); //Added in 3.0.2
-			
+
+			data << uint32(0); //Added in 3.0.2 - if 1, faction change at logon...
+
 			data << fields[14].GetUInt8();		// Rest State
+
+			data << uint8(0); //3.2.0
 
 			if( Class == WARLOCK || Class == HUNTER )
 			{
@@ -362,7 +365,7 @@ void WorldSession::HandleCharCreateOpcode( WorldPacket & recv_data )
 	if( Config.OptionalConfig.GetBoolDefault( "ClassOptions" , "DeathKnightLimit" , true ) && has_dk 
 		&& ( class_ == DEATHKNIGHT ) )
 	{
-		OutPacket(SMSG_CHAR_CREATE, 1, CHAR_CREATE_ERROR_HERO_CLASS_LIMIT);
+		OutPacket(SMSG_CHAR_CREATE, 1, CHAR_CREATE_UNIQUE_CLASS_LIMIT);
 		return;
 	}
 
@@ -421,7 +424,7 @@ void WorldSession::HandleCharCreateOpcode( WorldPacket & recv_data )
 		data << (uint8)56 + 1; // This errorcode is not the actual one. Need to find a real error code.
 		SendPacket( &data );
 		*/
-		OutPacket( SMSG_CHAR_CREATE, 1, CHAR_CREATE_ERROR_NEED_LVL_55_CHAR);
+		OutPacket( SMSG_CHAR_CREATE, 1, CHAR_CREATE_LEVEL_REQUIREMENT);
 		return;
 	}
 
@@ -943,26 +946,25 @@ void WorldSession::FullLogin(Player * plr)
 #endif
 
 
-	// Send revision (if enabled)
 #ifdef WIN32
-	_player->BroadcastMessage("Powered by: %sWoWICE %s r/%s-Win-%s %s(Please report ALL bugs to http://code.google.com/p/wowice/)", MSG_COLOR_WHITE, BUILD_TAG,
-		CONFIG, ARCH, MSG_COLOR_LIGHTBLUE);		
-	_player->BroadcastMessage("Revision: %s%u", MSG_COLOR_RED, BUILD_REVISION); 
+	_player->BroadcastMessage("Server: %sWoWICE %s - %s-Windows-%s", MSG_COLOR_WHITE, BUILD_TAG, CONFIG, ARCH);
 #else
-	_player->BroadcastMessage("Powered by: %WoWICE %s /%s-%s %s(Please report ALL bugs to http://code.google.com/p/wowice/)", MSG_COLOR_WHITE, BUILD_TAG,
-		PLATFORM_TEXT, ARCH, MSG_COLOR_LIGHTBLUE);
-	_player->BroadcastMessage("Revision: %s%u", MSG_COLOR_RED, BUILD_REVISION); 
+	_player->BroadcastMessage("Server: %sWoWICE %s - %s-%s", MSG_COLOR_WHITE, BUILD_TAG, PLATFORM_TEXT, ARCH);
 #endif
-	// Ads
-	_player->BroadcastMessage("Visit our sponsor website: http://www.musicter.ro");
-	if(sWorld.SendStatsOnJoin || HasGMPermissions() )
-	{
-		_player->BroadcastMessage("Online Players: %s%u |rPeak: %s%u|r Accepted Connections: %s%u",
-			MSG_COLOR_WHITE, sWorld.GetSessionCount(), MSG_COLOR_WHITE, sWorld.PeakSessionCount, MSG_COLOR_WHITE, sWorld.mAcceptedConnections);
-	}
+
+	// Revision
+	_player->BroadcastMessage("Revision: %s%u", MSG_COLOR_CYAN, BUILD_REVISION); 
+	// Bugs
+	_player->BroadcastMessage("Bugs: %s%s", MSG_COLOR_SEXHOTPINK, BUGTRACKER);
+	// Recruiting message
+	_player->BroadcastMessage(RECRUITING);
+	// Shows Online players, and connection peak
+	_player->BroadcastMessage("Online Players: %s%u |rPeak: %s%u|r Accepted Connections: %s%u",
+		MSG_COLOR_SEXGREEN, sWorld.GetSessionCount(), MSG_COLOR_SEXBLUE, sWorld.PeakSessionCount, MSG_COLOR_SEXBLUE, sWorld.mAcceptedConnections);
 
 	//Set current RestState
-	if( plr->m_isResting) 		// We are resting at an inn , turn on Zzz
+	if( plr->m_isResting)
+		// We are resting at an inn , turn on Zzz
 		plr->ApplyPlayerRestState(true);
 
 	//Calculate rest bonus if there is time between lastlogoff and now
@@ -982,9 +984,7 @@ void WorldSession::FullLogin(Player * plr)
 		info->m_Group->Update();
 
 	if(enter_world && !_player->GetMapMgr())
-	{
 		plr->AddToWorld();
-	}
 
 	objmgr.AddPlayer(_player);
 
