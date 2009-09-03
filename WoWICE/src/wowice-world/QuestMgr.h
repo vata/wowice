@@ -100,7 +100,7 @@ public:
 	WoWICE_INLINE int32 QuestHasMob(Quest* qst, uint32 mob)
 	{
 		for(uint32 i = 0; i < 4; ++i)
-			if(qst->required_mob[i] == mob)
+			if(qst->required_mob[i] == (int32)mob)
 				return qst->required_mobcount[i];
 		return -1;
 	}
@@ -108,7 +108,7 @@ public:
 	WoWICE_INLINE int32 GetOffsetForMob(Quest *qst, uint32 mob)
 	{
 		for(uint32 i = 0; i < 4; ++i)
-			if(qst->required_mob[i] == mob)
+			if(qst->required_mob[i] == (int32)mob)
 				return i;
 
 		return -1;

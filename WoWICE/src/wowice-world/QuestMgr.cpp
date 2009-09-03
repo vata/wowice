@@ -390,6 +390,7 @@ void QuestMgr::BuildQuestDetails(WorldPacket *data, Quest* qst, Object* qst_give
 	*data << uint32(1);						// Activate accept
 	*data << qst->suggestedplayers;			// "Suggested players"
 	*data << uint8(0);						// Added in 3.0.2, name or text(?)
+	*data << uint8(0); //VLack: some 3.1.x thing
 
 
 	ItemPrototype *ip;
@@ -403,7 +404,7 @@ void QuestMgr::BuildQuestDetails(WorldPacket *data, Quest* qst, Object* qst_give
 
 		*data << qst->reward_choiceitem[i];
 		*data << qst->reward_choiceitemcount[i];
-		ip = ItemPrototypeStorage.LookupEntry(qst->reward_item[i]);
+		ip = ItemPrototypeStorage.LookupEntry(qst->reward_choiceitem[i]);
 		*data << ( ip ? ip->DisplayInfoID : uint32(0) );
 
 	}
@@ -670,7 +671,7 @@ bool QuestMgr::OnGameObjectActivate(Player *plr, GameObject *go)
 
 			for( j = 0; j < 4; ++j )
 			{
-				if( qst->required_mob[j] == entry &&
+				if( qst->required_mob[j] == static_cast<int32>( entry ) &&
 					qst->required_mobtype[j] == QUEST_MOB_TYPE_GAMEOBJECT &&
 					qle->m_mobcount[j] < qst->required_mobcount[j] )
 				{
@@ -717,7 +718,7 @@ void QuestMgr::OnPlayerKill(Player* plr, Creature* victim)
 						if( qst->required_mob[j] == 0 )
 							continue;
 
-						if( qst->required_mob[j] == entry &&
+						if( qst->required_mob[j] ==static_cast<int32>( entry ) &&
 							qst->required_mobtype[j] == QUEST_MOB_TYPE_CREATURE &&
 							qle->m_mobcount[j] < qst->required_mobcount[j] )
 						{
@@ -767,7 +768,7 @@ void QuestMgr::OnPlayerKill(Player* plr, Creature* victim)
 										if( qst->required_mob[j] == 0 )
 											continue;
 
-										if( qst->required_mob[j] == entry &&
+										if( qst->required_mob[j] == static_cast<int32>( entry ) &&
 											qst->required_mobtype[j] == QUEST_MOB_TYPE_CREATURE &&
 											qle->m_mobcount[j] < qst->required_mobcount[j] )
 										{
@@ -817,7 +818,7 @@ void QuestMgr::OnPlayerCast(Player* plr, uint32 spellid, uint64& victimguid)
 			{
 				if( qst->required_mob[j] )
 				{
-					if( victim && qst->required_mob[j] == entry && qst->required_spell[j] == spellid && (qle->m_mobcount[j] < qst->required_mobcount[j] || qle->m_mobcount[j] == 0) && !qle->IsUnitAffected(victim) )
+					if( victim && qst->required_mob[j] == static_cast<int32>( entry ) && qst->required_spell[j] == spellid && (qle->m_mobcount[j] < qst->required_mobcount[j] || qle->m_mobcount[j] == 0) && !qle->IsUnitAffected(victim) )
 					{
 						qle->AddAffectedUnit(victim);
 						qle->IncrementMobCount( j );
@@ -1139,7 +1140,7 @@ void QuestMgr::OnQuestFinished(Player* plr, Quest* qst, Object *qst_giver, uint3
 				Spell * spe = SpellPool.PooledNew();
 				if (!spe)
 					return;
-				spe->Init(qst_giver,inf,true,NULL);
+				spe->Init(plr,inf,true,NULL);
 				SpellCastTargets tgt;
 				tgt.m_unitTarget = plr->GetGUID();
 				spe->prepare(&tgt);
@@ -1290,7 +1291,7 @@ void QuestMgr::OnQuestFinished(Player* plr, Quest* qst, Object *qst_giver, uint3
 				Spell * spe = SpellPool.PooledNew();
 				if (!spe)
 					return;
-				spe->Init(qst_giver,inf,true,NULL);
+				spe->Init(plr,inf,true,NULL);
 				SpellCastTargets tgt;
 				tgt.m_unitTarget = plr->GetGUID();
 				spe->prepare(&tgt);
@@ -1299,12 +1300,13 @@ void QuestMgr::OnQuestFinished(Player* plr, Quest* qst, Object *qst_giver, uint3
 
 		//Add to finished quests
 		plr->AddToFinishedQuests(qst->id);
+#ifdef ENABLE_ACHIEVEMENTS
 		plr->GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_COMPLETE_QUEST_COUNT, 1, 0, 0);
 		if(qst->reward_money)
 			plr->GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_QUEST_REWARD_GOLD, qst->reward_money, 0, 0);
 		plr->GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_COMPLETE_QUESTS_IN_ZONE, qst->zone_id, 0, 0);
 		plr->GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_COMPLETE_QUEST, qst->id, 0, 0);
-
+#endif
 		// Remove quests that are listed to be removed on quest complete.
 		set<uint32>::iterator iter = qst->remove_quest_list.begin();
 		for(; iter != qst->remove_quest_list.end(); ++iter)
@@ -1577,7 +1579,7 @@ bool QuestMgr::OnActivateQuestGiver(Object *qst_giver, Player *plr)
 		return false;
 
 	uint32 questCount = sQuestMgr.ActiveQuestsCount(qst_giver, plr);
-	WorldPacket data(1004);	
+	WorldPacket data(1004);
 
 	if (questCount == 0) 
 	{
@@ -2094,7 +2096,7 @@ void QuestMgr::OnPlayerEmote(Player* plr, uint32 emoteid, uint64& victimguid)
 			{
 				if( qst->required_mob[j] )
 				{
-					if( victim && qst->required_mob[j] == entry && qst->required_emote[j] == emoteid && (qle->m_mobcount[j] < qst->required_mobcount[j] || qle->m_mobcount[j] == 0) && !qle->IsUnitAffected(victim) )
+					if( victim && qst->required_mob[j] == static_cast<int32>( entry ) && qst->required_emote[j] == emoteid && (qle->m_mobcount[j] < qst->required_mobcount[j] || qle->m_mobcount[j] == 0) && !qle->IsUnitAffected(victim) )
 					{
 						qle->AddAffectedUnit(victim);
 						qle->IncrementMobCount( j );

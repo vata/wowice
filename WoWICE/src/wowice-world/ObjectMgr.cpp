@@ -491,21 +491,22 @@ PlayerInfo* ObjectMgr::GetPlayerInfoByName(const char * name)
 	playernamelock.ReleaseReadLock();
 	return rv;
 }
-
+#ifdef ENABLE_ACHIEVEMENTS
 void ObjectMgr::LoadCompletedAchievements()
 {
 	QueryResult *result = WorldDatabase.Query("SELECT achievement FROM character_achievement GROUP BY achievement");
 
 	if(!result)
-	return;
- do
+		return;
+
+	do
 	{
 		Field *fields = result->Fetch();
 		allCompletedAchievements.insert(fields[0].GetUInt32());
 	} while(result->NextRow());
- delete result;
+	delete result;
 }
-
+#endif
 void ObjectMgr::LoadPlayerCreateInfo()
 {
 	QueryResult *result = WorldDatabase.Query( "SELECT * FROM playercreateinfo" );
@@ -515,18 +516,18 @@ void ObjectMgr::LoadPlayerCreateInfo()
 		Log.Error("MySQL","Query failed: SELECT * FROM playercreateinfo");
 		return;
 	}
+	if( result->GetFieldCount() != 25 )
+	{
+		Log.Error("MySQL", "Wrong field count in table playercreateinfo (got %lu, need 25)", result->GetFieldCount());
+		delete result;
+		return;
+	}
 
 	PlayerCreateInfo *pPlayerCreateInfo;
 
 	do
 	{
 		Field *fields = result->Fetch();
-		if(result->GetFieldCount() != 25)
-		{
-			Log.Error("MySQL","Wrong field count in table playercreateinfo (got %lu, need 25).  You may need to update your database.", result->GetFieldCount());
-			delete result;
-			return;
-		}
 		pPlayerCreateInfo = new PlayerCreateInfo;
 
 		pPlayerCreateInfo->index = fields[0].GetUInt8();
@@ -1133,7 +1134,7 @@ Player* ObjectMgr::GetPlayer(uint32 guid)
 
 	_playerslock.AcquireReadLock();
 	PlayerStorageMap::const_iterator itr = _players.find(guid);
-	rv = (itr != _players.end()) ? itr->second : 0;
+	rv = (itr != _players.end()) ? itr->second : NULL;
 	_playerslock.ReleaseReadLock();
 
 	return rv;
@@ -1333,6 +1334,7 @@ void ObjectMgr::LoadVendors()
 		if( result->GetFieldCount() < 6 )
 		{
 			Log.Notice("ObjectMgr", "Invalid format in vendors (%u/6) columns, not enough data to proceed.\n", result->GetFieldCount() );
+			delete result;
 			return;
 		}
 		else if( result->GetFieldCount() > 6 )
@@ -1452,70 +1454,6 @@ void ObjectMgr::LoadAIThreatToSpellId()
 	delete result;
 }
 
-void ObjectMgr::LoadSpellFixes()
-{
-	SpellEntry* sp;
-	QueryResult * result = WorldDatabase.Query("SELECT * FROM spellfixes");
-	if(result)
-	{
-		if( result->GetFieldCount() != 8 )
-		{
-			Log.LargeErrorMessage(LARGERRORMESSAGE_WARNING, "Incorrect column count at spellfixes, skipping, please fix it.",
-				"wowice has skipped loading this table in order to avoid crashing.", NULL);
-			return;
-		}
-		sLog.outDetail("Loading %u spell fixes from database...",result->GetRowCount());
-		do
-		{
-			Field * f = result->Fetch();
-			uint32 sf_spellId = f[0].GetUInt32();
-			uint32 sf_procFlags = f[1].GetUInt32();
-			uint32 sf_SpellGroupType = f[2].GetUInt32();
-			uint32 sf_procChance = f[3].GetUInt32();
-			uint32 sf_procCharges = f[4].GetUInt32();
-			uint64 sf_groupRelation0 = f[5].GetUInt64();
-			uint64 sf_groupRelation1 = f[6].GetUInt64();
-			uint64 sf_groupRelation2 = f[7].GetUInt64();
-
-			if( sf_spellId )
-			{
-				sp = dbcSpell.LookupEntryForced( sf_spellId );
-				if( sp != NULL )
-				{
-					if( sf_procFlags )
-						sp->procFlags = sf_procFlags;
-
-//					if( sf_SpellGroupType )
-//						sp->SpellGroupType = sf_SpellGroupType;
-
-					if( sf_procChance )
-						sp->procChance = sf_procChance;
-
-					if ( sf_procCharges )
-						sp->procCharges = sf_procCharges;
-
-/*					if ( sf_groupRelation0)
-					{
-						sp->EffectSpellGroupRelation[0] = (uint32)sf_groupRelation0;
-						sp->EffectSpellGroupRelation_high[0] = (uint32)(sf_groupRelation0>>32);
-					}
-					if ( sf_groupRelation1)
-					{
-						sp->EffectSpellGroupRelation[1] = (uint32)sf_groupRelation1;
-						sp->EffectSpellGroupRelation_high[1] = (uint32)(sf_groupRelation1>>32);
-					}
-					if ( sf_groupRelation2)
-					{
-						sp->EffectSpellGroupRelation[2] = (uint32)sf_groupRelation2;
-						sp->EffectSpellGroupRelation_high[2] = (uint32)(sf_groupRelation2>>32);
-					}*/
-				}
-			}
-		}while(result->NextRow());
-		delete result;
-	}
-}
-
 void ObjectMgr::LoadSpellProcs()
 {
 	SpellEntry* sp;
@@ -1543,7 +1481,25 @@ void ObjectMgr::LoadSpellProcs()
 						sp->ProcOnNameHash[x] = spe_NameHash;
 					}
 					else
-						sLog.outError("Wrong ProcOnNameHash for Spell: %u!",spe_spellId);
+						sLog.outError( "Wrong ProcOnNameHash for Spell: %u!", spe_spellId );
+
+					sp->procFlags = f[2].GetUInt32();
+
+					if( f[3].GetUInt32() == 1 )
+						sp->procFlags |= PROC_TARGET_SELF;
+					if( f[4].GetInt32() >= 0 )
+						sp->procChance = f[4].GetUInt32();
+					if( f[5].GetInt32() >= 0 )
+						sp->procCharges = f[5].GetInt32();
+
+					sp->proc_interval = f[6].GetUInt32();
+
+					if( f[7].GetInt32() >= 0 )
+						sp->EffectTriggerSpell[0] = f[7].GetUInt32();
+					if( f[8].GetInt32() >= 0 )
+						sp->EffectTriggerSpell[1] = f[8].GetUInt32();
+					if( f[9].GetInt32() >= 0 )
+						sp->EffectTriggerSpell[2] = f[9].GetUInt32();
 				}
 			}
 
@@ -1730,6 +1686,7 @@ void ObjectMgr::LoadCorpses(MapMgr * mgr)
 	}
 }
 
+#ifdef ENABLE_ACHIEVEMENTS
 AchievementCriteriaEntryList const& ObjectMgr::GetAchievementCriteriaByType(AchievementCriteriaTypes type)
 {
     return m_AchievementCriteriasByType[type];
@@ -1746,7 +1703,7 @@ void ObjectMgr::LoadAchievementCriteriaList()
 		m_AchievementCriteriasByType[criteria->requiredType].push_back(criteria);
 	}
 }
-
+#endif
 std::list<ItemPrototype*>* ObjectMgr::GetListForItemSet(uint32 setid)
 {
 	return mItemSets[setid];
@@ -1933,6 +1890,7 @@ void ObjectMgr::LoadTrainers()
 			Log.Error("LoadTrainers", "Trainer with no spells, entry %u.", entry);
 			if(tr->UIMessage != NormalTalkMessage)
 				delete [] tr->UIMessage;
+
 			delete tr;
 			continue;
 		}
@@ -1940,6 +1898,8 @@ void ObjectMgr::LoadTrainers()
 		{
 			Log.LargeErrorMessage(LARGERRORMESSAGE_WARNING, "Trainers table format is invalid. Please update your database.");
 			delete tr;
+			delete result;
+			delete result2;
 			return;
 		}
 		else
@@ -2047,7 +2007,7 @@ void ObjectMgr::GenerateLevelUpInfo()
 		// Search for a playercreateinfo.
 		for(uint32 Race = RACE_HUMAN; Race <= RACE_DRAENEI; ++Race )
 		{
-			PCI = GetPlayerCreateInfo(Race, Class);
+			PCI = GetPlayerCreateInfo(static_cast<uint8>( Race ), static_cast<uint8>( Class ));
 
 			if(PCI == 0)
 				continue;   // Class not valid for this race.
@@ -2080,7 +2040,7 @@ void ObjectMgr::GenerateLevelUpInfo()
 				// Calculate Stats
 				for(uint32 s = 0; s < 5; ++s)
 				{
-					val = GainStat(Level, Class, s);
+					val = GainStat(static_cast<uint16>( Level ), static_cast<uint8>( Class ), static_cast<uint8>( s ));
 					lvl->Stat[s] = lastlvl.Stat[s] + val;
 				}
 
@@ -2429,8 +2389,8 @@ void ObjectMgr::LoadCreatureTimedEmotes()
 			memcpy ( te->msg, str, len+1 );
 		}
 		else te->msg = NULL;
-		te->msg_type = fields[5].GetUInt32();
-		te->msg_lang = fields[6].GetUInt32();
+		te->msg_type = static_cast<uint8>( fields[5].GetUInt32() );
+		te->msg_lang = static_cast<uint8>( fields[6].GetUInt32() );
 		te->expire_after = fields[7].GetUInt32();
 
 		HM_NAMESPACE::hash_map<uint32,TimedEmoteList*>::const_iterator i;
@@ -3053,7 +3013,7 @@ void ObjectMgr::HandleMonsterSayEvent(Creature * pCreature, MONSTER_SAY_EVENTS E
 			}
 		}
 
-		pCreature->SendChatMessage(ms->Type, ms->Language, newText.c_str());
+		pCreature->SendChatMessage(static_cast<uint8>( ms->Type ), ms->Language, newText.c_str());
 	}
 }
 
@@ -3171,7 +3131,7 @@ void ObjectMgr::LoadGroups()
 	QueryResult * result = CharacterDatabase.Query("SELECT * FROM groups");
 	if(result)
 	{
-		if(result->GetFieldCount() != 51)
+		if(result->GetFieldCount() != 52)
 		{
 			Log.LargeErrorMessage(LARGERRORMESSAGE_WARNING, "groups table format is invalid. Please update your database.");
 			return;

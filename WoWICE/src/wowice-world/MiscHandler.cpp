@@ -153,7 +153,7 @@ void WorldSession::HandleAutostoreLootItemOpcode( WorldPacket & recv_data )
 			_player->GetSession()->SendItemPushResult(item,false,true,true,true,slotresult.ContainerSlot,slotresult.Slot,1);
 #ifdef ENABLE_ACHIEVEMENTS
 			_player->GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_LOOT_ITEM, item->GetEntry(), 1, 0);
-#endif
+#endif		
 		}
 		else
 			item->DeleteMe();
@@ -167,7 +167,7 @@ void WorldSession::HandleAutostoreLootItemOpcode( WorldPacket & recv_data )
 		_player->GetSession()->SendItemPushResult(add, false, false, true, false, (uint8)_player->GetItemInterface()->GetBagSlotByGuid(add->GetGUID()), 0xFFFFFFFF,amt);
 #ifdef ENABLE_ACHIEVEMENTS		
 		_player->GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_LOOT_ITEM, add->GetEntry(), 1, 0);
-#endif
+#endif	
 	}
 
 	//in case of ffa_loot update only the player who receives it.
@@ -300,7 +300,9 @@ void WorldSession::HandleLootMoneyOpcode( WorldPacket & recv_data )
 			else
 			{
 				GetPlayer()->ModUnsigned32Value( PLAYER_FIELD_COINAGE , money);
+#ifdef ENABLE_ACHIEVEMENTS
 				GetPlayer()->GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_LOOT_MONEY, money, 0, 0);
+#endif
 			}
 			sHookInterface.OnLoot(_player, pt, money, 0);
 		}
@@ -348,7 +350,9 @@ void WorldSession::HandleLootMoneyOpcode( WorldPacket & recv_data )
 				{
 					(*itr)->ModUnsigned32Value(PLAYER_FIELD_COINAGE, share);
 					(*itr)->GetSession()->SendPacket(&pkt);
+#ifdef ENABLE_ACHIEVEMENTS
 					(*itr)->GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_LOOT_MONEY, share, 0, 0);
+#endif
 				}
 			}
 		}
@@ -405,7 +409,7 @@ void WorldSession::HandleLootOpcode( WorldPacket & recv_data )
 					}
 				}
 				party->Unlock();
-				*(uint8*)&data.contents()[0] = real_count;
+				*(uint8*)&data.contents()[0] = static_cast<uint8>( real_count );
 
 				party->SendPacketToAll(&data);
 			}
@@ -1070,6 +1074,10 @@ void WorldSession::HandleUpdateAccountData(WorldPacket &recv_data)
 	if(uiDecompressedSize == 0)
 	{
 		SetAccountData(uiID, NULL, false,0);
+		WorldPacket rdata(SMSG_UPDATE_ACCOUNT_DATA_COMPLETE, 4+4); //VLack: seen this in a 3.1.1 packet dump as response
+		rdata << uint32(uiID);
+		rdata << uint32(0);
+		SendPacket(&rdata);
 		return;
 	}
 
@@ -1125,6 +1133,10 @@ void WorldSession::HandleUpdateAccountData(WorldPacket &recv_data)
 		memcpy(data,recv_data.contents() + 8,uiDecompressedSize);
 		SetAccountData(uiID, data, false,uiDecompressedSize);
 	}
+	WorldPacket rdata(SMSG_UPDATE_ACCOUNT_DATA_COMPLETE, 4+4); //VLack: seen this in a 3.1.1 packet dump as response
+	rdata << uint32(uiID);
+	rdata << uint32(0);
+	SendPacket(&rdata);
 }
 
 void WorldSession::HandleRequestAccountData(WorldPacket& recv_data)
@@ -1363,14 +1375,16 @@ void WorldSession::HandleBarberShopResult(WorldPacket & recv_data)
 	data << uint32(0);                                  // ok
 	SendPacket(&data);
 
-	_player->SetByte( PLAYER_BYTES, 2, newhair);
-	_player->SetByte( PLAYER_BYTES, 3, newhaircolor);
-	_player->SetByte( PLAYER_BYTES_2, 0, newfacial);
+	_player->SetByte( PLAYER_BYTES, 2, static_cast<uint8>( newhair ));
+	_player->SetByte( PLAYER_BYTES, 3, static_cast<uint8>( newhaircolor ));
+	_player->SetByte( PLAYER_BYTES_2, 0, static_cast<uint8>( newfacial ));
 	_player->ModUnsigned32Value( PLAYER_FIELD_COINAGE, 0-cost );
 
 	_player->SetStandState(0);                              // stand up
+#ifdef ENABLE_ACHIEVEMENTS
 	_player->GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_VISIT_BARBER_SHOP, 1, 0, 0);
 	_player->GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_GOLD_SPENT_AT_BARBER, cost, 0, 0);
+#endif
 }
 
 void WorldSession::HandleGameObjectUse(WorldPacket & recv_data)
@@ -1391,6 +1405,7 @@ void WorldSession::HandleGameObjectUse(WorldPacket & recv_data)
 	Player *plyr = GetPlayer();
 
 	CALL_GO_SCRIPT_EVENT(obj, OnActivate)(_player);
+	CALL_INSTANCE_SCRIPT_EVENT( _player->GetMapMgr(), OnGameObjectActivate )( obj, _player ); 
 
   _player->RemoveStealth(); // cebernic:RemoveStealth due to GO was using. Blizzlike
 
@@ -1726,9 +1741,10 @@ void WorldSession::HandlePlayedTimeOpcode( WorldPacket & recv_data )
 		_player->m_playedtime[2] += playedt;
 	}
 
-	WorldPacket data(SMSG_PLAYED_TIME, 8);
+	WorldPacket data(SMSG_PLAYED_TIME, 9); //VLack: again, an Aspire trick, with an uint8(0) -- I hate packet structure changes...
 	data << (uint32)_player->m_playedtime[1];
 	data << (uint32)_player->m_playedtime[0];
+	data << uint8(0);
 	SendPacket(&data);
 }
 
@@ -1757,7 +1773,8 @@ void WorldSession::HandleInspectOpcode( WorldPacket & recv_data )
 	if(_player->m_comboPoints)
 		_player->UpdateComboPoints();
 
-	WorldPacket data( SMSG_INSPECT_TALENT, 4 + talent_points );
+//	WorldPacket data( SMSG_INSPECT_TALENT, 4 + talent_points );
+	WorldPacket data( SMSG_INSPECT_TALENT, 1000 );
 
 	m_Packed_GUID.appendPackGUID( player->GetGUID());
 	uint32 guid_size;
@@ -1766,93 +1783,112 @@ void WorldSession::HandleInspectOpcode( WorldPacket & recv_data )
 	data.append(m_Packed_GUID);
 	data << uint32( talent_points );
 
-	uint32 talent_tab_pos = 0;
-	uint32 talent_max_rank;
-	uint32 talent_tab_id;
-	uint32 talent_index;
-	uint32 rank_index,rank_index2;
-	uint32 rank_slot,rank_slot7;
-	uint32 rank_offset,rank_offset7;
-	uint32 mask;
-
-	for( uint32 i = 0; i < talent_points; ++i )
-		data << uint8( 0 );
-
-	for( uint32 i = 0; i < 3; ++i )
+	data << uint8(player->m_talentSpecsCount);
+	data << uint8(player->m_talentActiveSpec);
+	for(uint8 s = 0; s < player->m_talentSpecsCount; s++)
 	{
-		talent_tab_id = sWorld.InspectTalentTabPages[player->getClass()][i];
+		Player::PlayerSpec spec = player->m_specs[s];
 
-		for( uint32 j = 0; j < dbcTalent.GetNumRows(); ++j )
+		int32 talent_max_rank;
+		uint32 talent_tab_id;
+
+		uint8 talent_count = 0;
+		size_t pos = data.wpos();
+		data << uint8(talent_count); //fake value, will be overwritten at the end
+
+		for( uint32 i = 0; i < 3; ++i )
 		{
-			TalentEntry const* talent_info = dbcTalent.LookupRow( j );
+			talent_tab_id = sWorld.InspectTalentTabPages[player->getClass()][i];
 
-			//sLog.outDebug( "HandleInspectOpcode: i(%i) j(%i)", i, j );
-
-			if( talent_info == NULL )
-				continue;
-
-			//sLog.outDebug( "HandleInspectOpcode: talent_info->TalentTree(%i) talent_tab_id(%i)", talent_info->TalentTree, talent_tab_id );
-
-			if( talent_info->TalentTree != talent_tab_id )
-				continue;
-
-			talent_max_rank = 0;
-			for( uint32 k = 5; k > 0; --k )
+			for( uint32 j = 0; j < dbcTalent.GetNumRows(); ++j )
 			{
-				//sLog.outDebug( "HandleInspectOpcode: k(%i) RankID(%i) HasSpell(%i) TalentTree(%i) Tab(%i)", k, talent_info->RankID[k - 1], player->HasSpell( talent_info->RankID[k - 1] ), talent_info->TalentTree, talent_tab_id );
-				if( talent_info->RankID[k - 1] != 0 && player->HasSpell( talent_info->RankID[k - 1] ) )
+				TalentEntry const* talent_info = dbcTalent.LookupRow( j );
+
+				//sLog.outDebug( "HandleInspectOpcode: i(%i) j(%i)", i, j );
+
+				if( talent_info == NULL )
+					continue;
+
+				//sLog.outDebug( "HandleInspectOpcode: talent_info->TalentTree(%i) talent_tab_id(%i)", talent_info->TalentTree, talent_tab_id );
+
+				if( talent_info->TalentTree != talent_tab_id )
+					continue;
+
+				talent_max_rank = -1;
+				for( int32 k = 4; k > -1; --k )
 				{
-					talent_max_rank = k;
-					break;
+					//sLog.outDebug( "HandleInspectOpcode: k(%i) RankID(%i) HasSpell(%i) TalentTree(%i) Tab(%i)", k, talent_info->RankID[k - 1], player->HasSpell( talent_info->RankID[k - 1] ), talent_info->TalentTree, talent_tab_id );
+					if( talent_info->RankID[k] != 0 && player->HasSpell( talent_info->RankID[k] ) )
+					{
+						talent_max_rank = k;
+						break;
+					}
 				}
+
+				//sLog.outDebug( "HandleInspectOpcode: RankID(%i) talent_max_rank(%i)", talent_info->RankID[talent_max_rank-1], talent_max_rank );
+
+				if( talent_max_rank < 0 )
+					continue;
+
+				data << uint32(talent_info->TalentID);
+				data << uint8(talent_max_rank);
+
+				++talent_count;
+
+				//sLog.outDebug( "HandleInspectOpcode: talent(%i) talent_max_rank(%i) rank_id(%i) talent_index(%i) talent_tab_pos(%i) rank_index(%i) rank_slot(%i) rank_offset(%i) mask(%i)", talent_info->TalentID, talent_max_rank, talent_info->RankID[talent_max_rank-1], talent_index, talent_tab_pos, rank_index, rank_slot, rank_offset , mask);
 			}
-
-			//sLog.outDebug( "HandleInspectOpcode: RankID(%i) talent_max_rank(%i)", talent_info->RankID[talent_max_rank-1], talent_max_rank );
-
-			if( talent_max_rank <= 0 )
-				continue;
-
-			talent_index = talent_tab_pos;
-
-			std::map< uint32, uint32 >::iterator itr = sWorld.InspectTalentTabPos.find( talent_info->TalentID );
-
-			if( itr != sWorld.InspectTalentTabPos.end() )
-				talent_index += itr->second;
-			//else
-				//sLog.outDebug( "HandleInspectOpcode: talent(%i) rank_id(%i) talent_index(%i) talent_tab_pos(%i) rank_index(%i) rank_slot(%i) rank_offset(%i)", talent_info->TalentID, talent_info->RankID[talent_max_rank-1], talent_index, talent_tab_pos, rank_index, rank_slot, rank_offset );
-
-			// not learned talent
-                if(!talent_max_rank)
-                    continue;
-
-
-            rank_index = talent_index + talent_max_rank - 1;
-
-            // slot/offset in 7-bit bytes
-            rank_slot7   = rank_index / 7;
-            rank_offset7 = rank_index % 7;
-
-            // rank pos with skipped 8 bit
-            rank_index2 = rank_slot7 * 8 + rank_offset7;
-
-            // slot/offset in 8-bit bytes with skipped high bit
-            rank_slot = rank_index2 / 8;
-            rank_offset =  rank_index2 % 8;
-
-            // apply mask
-            mask = data.read<uint8>(guid_size + 4 + rank_slot);
-            mask |= (1 << rank_offset);
-            data.put<uint8>(guid_size + 4 + rank_slot, mask & 0xFF);
-
-			sLog.outDebug( "HandleInspectOpcode: talent(%i) talent_max_rank(%i) rank_id(%i) talent_index(%i) talent_tab_pos(%i) rank_index(%i) rank_slot(%i) rank_offset(%i) mask(%i)", talent_info->TalentID, talent_max_rank, talent_info->RankID[talent_max_rank-1], talent_index, talent_tab_pos, rank_index, rank_slot, rank_offset , mask);
 		}
 
-		std::map< uint32, uint32 >::iterator itr = sWorld.InspectTalentTabSize.find( talent_tab_id );
+		data.put<uint8>(pos, talent_count);
 
-		if( itr != sWorld.InspectTalentTabSize.end() )
-			talent_tab_pos += itr->second;
-
+		// Send Glyph info
+		data << uint8(GLYPHS_COUNT);
+		for(uint8 i = 0; i < GLYPHS_COUNT; i++)
+		{
+			data << uint16(spec.glyphs[i]);
+		}
 	}
+
+	// ----[ Build the item list with their enchantments ]----
+	uint32 slot_mask = 0;
+	size_t slot_mask_pos = data.wpos();
+	data << uint32(slot_mask); // VLack: 3.1, this is a mask field, if we send 0 we can skip implementing this for now; here should come the player's enchantments from its items (the ones you would see on the character sheet).
+
+	ItemInterface *iif = player->GetItemInterface();
+
+	for( uint32 i = EQUIPMENT_SLOT_START; i < EQUIPMENT_SLOT_END; ++i ) // Ideally this goes from 0 to 18 (EQUIPMENT_SLOT_END is 19 at the moment)
+	{
+		Item *item = iif->GetInventoryItem( static_cast<uint16>( i ) );
+
+		if( !item )
+			continue;
+
+		slot_mask |= (1 << i);
+
+		data << uint32(item->GetEntry());
+
+		uint16 enchant_mask = 0;
+		size_t enchant_mask_pos = data.wpos();
+		data << uint16(enchant_mask);
+
+		for(uint32 Slot = 0; Slot < 12; ++Slot) // In UpdateFields.h we have ITEM_FIELD_ENCHANTMENT_1_1 to ITEM_FIELD_ENCHANTMENT_12_1, iterate on them...
+		{
+			uint32 enchantId = item->GetUInt32Value(Slot * 3 + ITEM_FIELD_ENCHANTMENT_1_1); // This calculation has to be in sync with Item.cpp line ~614, at the moment it is:    uint32 EnchantBase = Slot * 3 + ITEM_FIELD_ENCHANTMENT_1_1;
+
+			if(!enchantId)
+				continue;
+
+			enchant_mask |= (1 << Slot);
+			data << uint16(enchantId);
+		}
+
+		data.put<uint16>(enchant_mask_pos, enchant_mask);
+
+		data << uint16(0); // UNKNOWN
+		FastGUIDPack(data, item->GetUInt32Value(ITEM_FIELD_CREATOR)); // Usually 0 will do, but if your friend created that item for you, then it is nice to display it when you get inspected.
+		data << uint32(0); // UNKNOWN
+	}
+	data.put<uint32>(slot_mask_pos, slot_mask);
 
 	SendPacket( &data );
 }
@@ -1881,6 +1917,8 @@ void WorldSession::HandleAcknowledgementOpcodes( WorldPacket & recv_data )
 		_player->FlyCheat = _player->m_setflycheat;
 		break;
 	}
+
+//NOTE: VLack: since 3.2.0, the first field of this packet is a _packed_ GUID, so keep this in mind if you plan to read data (just use WoWGuid, it'll read it correctly).
 
    /* uint16 opcode = recv_data.GetOpcode();
 	std::stringstream ss;
@@ -2135,7 +2173,9 @@ void WorldSession::HandleLootMasterGiveOpcode(WorldPacket& recv_data)
 	{
 		player->GetSession()->SendItemPushResult(item,false,true,true,true,slotresult.ContainerSlot,slotresult.Slot,1);
 		sQuestMgr.OnPlayerItemPickup(player,item);
+#ifdef ENABLE_ACHIEVEMENTS
 		_player->GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_LOOT_ITEM, item->GetEntry(), 1, 0);
+#endif
 	}
 	else
 		item->DeleteMe();
@@ -2285,7 +2325,7 @@ void WorldSession::HandleOpenItemOpcode(WorldPacket &recv_data)
 		{
 			if(lock->locktype[i] == 1 && lock->lockmisc[i] > 0)
 			{
-				int8 slot = _player->GetItemInterface()->GetInventorySlotById(lock->lockmisc[i]);
+				int16 slot = _player->GetItemInterface()->GetInventorySlotById(lock->lockmisc[i]);
 				if(slot != ITEM_NO_SLOT_AVAILABLE && slot >= INVENTORY_SLOT_ITEM_START && slot < INVENTORY_SLOT_ITEM_END)
 				{
 					removeLockItems[i] = lock->lockmisc[i];
@@ -2389,11 +2429,9 @@ void WorldSession::HandleDungeonDifficultyOpcode(WorldPacket& recv_data)
 
     if(m_Group && _player->IsGroupLeader())
     {
-		m_Group->m_difficulty = data;
+		m_Group->m_difficulty = static_cast<uint8>( data );
         _player->iInstanceType = data;
         sInstanceMgr.ResetSavedInstances(_player);
-
-
 
         m_Group->Lock();
 		for(uint32 i = 0; i < m_Group->GetSubGroupCount(); ++i)
@@ -2414,6 +2452,44 @@ void WorldSession::HandleDungeonDifficultyOpcode(WorldPacket& recv_data)
         _player->iInstanceType = data;
         sInstanceMgr.ResetSavedInstances(_player);
     }
+
+#ifdef OPTIMIZED_PLAYER_SAVING
+	_player->save_InstanceType();
+#endif
+}
+
+void WorldSession::HandleRaidDifficultyOpcode(WorldPacket& recv_data)
+{
+	uint32 data;
+	recv_data >> data;
+
+	Group * m_Group = _player->GetGroup();
+
+	if(m_Group && _player->IsGroupLeader())
+	{
+		m_Group->m_raiddifficulty = static_cast< uint8 >( data );
+		_player->iInstanceType = data;
+		sInstanceMgr.ResetSavedInstances(_player);
+
+		m_Group->Lock();
+		for(uint32 i = 0; i < m_Group->GetSubGroupCount(); ++i)
+		{
+			for(GroupMembersSet::iterator itr = m_Group->GetSubGroup(i)->GetGroupMembersBegin(); itr != m_Group->GetSubGroup(i)->GetGroupMembersEnd(); ++itr)
+			{
+				if((*itr)->m_loggedInPlayer)
+				{
+					(*itr)->m_loggedInPlayer->iInstanceType = data;
+					(*itr)->m_loggedInPlayer->SendRaidDifficulty();
+				}
+			}
+		}
+		m_Group->Unlock();
+	}
+	else if(!_player->GetGroup())
+	{
+		_player->iInstanceType = data;
+		sInstanceMgr.ResetSavedInstances(_player);
+	}
 
 #ifdef OPTIMIZED_PLAYER_SAVING
 	_player->save_InstanceType();
@@ -2481,6 +2557,8 @@ void WorldSession::HandleRemoveGlyph(WorldPacket & recv_data)
 		return;
 	_player->SetUInt32Value(PLAYER_FIELD_GLYPHS_1 + glyphNum, 0);
 	_player->RemoveAllAuras(glyph->SpellID, 0);
+	_player->m_specs[0].glyphs[glyphNum] = 0; //VLack: TempFIX till dual spec...
+	_player->smsg_TalentsInfo(false, 0, 0);
 }
 
 void WorldSession::HandleGameobjReportUseOpCode( WorldPacket& recv_data )   // CMSG_GAMEOBJ_REPORT_USE
@@ -2494,7 +2572,16 @@ void WorldSession::HandleGameobjReportUseOpCode( WorldPacket& recv_data )   // C
 	if( gameobj->CanActivate() )
 	{
 		sQuestMgr.OnGameObjectActivate(_player, gameobj);
+#ifdef ENABLE_ACHIEVEMENTS	
 		_player->GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_USE_GAMEOBJECT,gameobj->GetEntry(),0,0);
+#endif	
 	}
 	return;
+}
+
+void WorldSession::HandleWorldStateUITimerUpdate(WorldPacket& recv_data)
+{
+	WorldPacket data(SMSG_WORLD_STATE_UI_TIMER_UPDATE, 4);
+	data << (uint32)UNIXTIME;;
+	SendPacket(&data);
 }

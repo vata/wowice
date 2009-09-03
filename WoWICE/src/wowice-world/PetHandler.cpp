@@ -156,7 +156,7 @@ void WorldSession::HandlePetAction(WorldPacket & recv_data)
 					if( sp->spellType != STYPE_BUFF )
 					{
 						// make sure the target is attackable
-						if( pTarget == pPet || !isAttackable( pPet, pTarget ) )
+                        if( pTarget == pPet || !isAttackable( pPet, pTarget ) )
 						{
 							pPet->SendActionFeedback( PET_FEEDBACK_CANT_ATTACK_TARGET );
 							return;
@@ -184,7 +184,15 @@ void WorldSession::HandlePetAction(WorldPacket & recv_data)
 		}break;
 	case PET_ACTION_STATE:
 		{
+             if( misc == PET_STATE_PASSIVE ){
+                // stop attacking and run to owner
+                pPet->GetAIInterface()->WipeTargetList();
+				pPet->GetAIInterface()->WipeHateList();
+                pPet->GetAIInterface()->SetUnitToFollow(_player);
+				pPet->GetAIInterface()->HandleEvent(EVENT_FOLLOWOWNER, pPet, 0);
+            }
 			pPet->SetPetState(misc);
+
 		}break;
 	default:
 		{
@@ -309,11 +317,20 @@ void WorldSession::HandleStableSwapPet(WorldPacket & recv_data)
 void WorldSession::HandleStabledPetList(WorldPacket & recv_data)
 {
 	if(!_player->IsInWorld()) return;
+
+    uint64 npcguid = 0;
+	recv_data >> npcguid;
+
+    if( _player->getClass() != HUNTER ){
+        GossipMenu * pMenu;
+		objmgr.CreateGossipMenuForPlayer(&pMenu,npcguid,13584,_player);
+		pMenu->SendTo(_player);
+		return;
+    }
+
 	WorldPacket data(10 + (_player->m_Pets.size() * 25));
 	data.SetOpcode(MSG_LIST_STABLED_PETS);
 
-	uint64 npcguid = 0;
-	recv_data >> npcguid;
 	data << npcguid;
 
 	data << uint8(_player->m_Pets.size());
@@ -412,7 +429,24 @@ void WorldSession::HandlePetRename(WorldPacket & recv_data)
 	pet->Rename(name);
 
 	// Disable pet rename.
-	pet->SetUInt32Value(UNIT_FIELD_BYTES_2, 1 | (0x28 << 8) | (0x2 << 16));
+	pet->SetUInt32Value(UNIT_FIELD_BYTES_2, 1 | /* (0x28 << 8) | */ (PET_RENAME_NOT_ALLOWED << 16) );
+
+    assert( pet->GetPetOwner() != NULL );
+    
+    if( pet->GetPetOwner()->IsPvPFlagged() )
+        pet->SetPvPFlag();
+    else
+        pet->RemovePvPFlag();
+
+    if( pet->GetPetOwner()->IsFFAPvPFlagged() )
+        pet->SetFFAPvPFlag();
+    else
+        pet->RemoveFFAPvPFlag();
+
+	if( pet->GetOwner()->IsSanctuaryFlagged() )
+		pet->SetSanctuaryFlag();
+	else
+		pet->RemoveSancturayFlag();
 }
 
 void WorldSession::HandlePetAbandon(WorldPacket & recv_data)
@@ -452,6 +486,7 @@ void WorldSession::HandlePetUnlearn( WorldPacket & recv_data )
 	
 	pPet->WipeTalents();
 	pPet->SetTPs( pPet->GetTPsForLevel( pPet->getLevel() ) );
+	pPet->SendTalentsToOwner();
 }
 
 void WorldSession::HandlePetSpellAutocast( WorldPacket& recvPacket )
@@ -560,7 +595,10 @@ void WorldSession::HandlePetLearnTalent( WorldPacket & recvPacket )
 	{
 		pPet->AddSpell( sp, true );
 		pPet->SetTPs( pPet->GetTPs() - 1 );
-		OutPacket( SMSG_PET_LEARNED_SPELL, 2, &sp->Id );
+		OutPacket( SMSG_PET_LEARNED_SPELL, 4, &sp->Id );
 	}
+	
+	// send talent update
+	pPet->SendTalentsToOwner();
 }
 

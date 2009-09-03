@@ -61,6 +61,12 @@ enum PetActionFeedback
 	PET_FEEDBACK_CANT_ATTACK_TARGET
 };
 
+enum PET_RENAME
+{
+	PET_RENAME_NOT_ALLOWED	= 0x02,
+	PET_RENAME_ALLOWED		= 0x03
+};
+
 enum PET_SPELL
 {
 	PET_SPELL_PASSIVE = 0x06000000,
@@ -92,6 +98,9 @@ enum AutoCastEvents
 	AUTOCAST_EVENT_LEAVE_COMBAT			= 4,
 	AUTOCAST_EVENT_COUNT				= 5,
 };
+
+#define PET_TALENT_TREE_START	409	// Tenacity
+#define PET_TALENT_TREE_END		411	// Cunning
 
 #define PET_DELAYED_REMOVAL_TIME 60000  // 1 min
 
@@ -215,6 +224,7 @@ public:
 	void UpdateSpellList( bool showLearnSpells = true );
 
 	// talents
+	void SendTalentsToOwner();		// Send talentpoints and talent spells to owner
 	WoWICE_INLINE uint8 GetTPsForLevel( uint32 level ) { return ( level >= 20 ) ? uint8( level - 16 ) >> 2 : 0; }	// pet gain first talent point at lvl 20, then every 4 lvls another point
 	WoWICE_INLINE void SetTPs( uint8 TP ) { SetByte( UNIT_FIELD_BYTES_1, 1, TP ); }			// sets talent points
 	WoWICE_INLINE uint8 GetTPs() { return GetByte( UNIT_FIELD_BYTES_1, 1 ); }				// returns available talent points
