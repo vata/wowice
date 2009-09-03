@@ -91,13 +91,13 @@ struct Addr
 #define DEF_VALUE_NOT_SET 0xDEADBEEF
 
 #ifdef WIN32
-        static const char* default_config_file = "configs/wowice-world.conf";
-		static const char* default_optional_config_file = "configs/wowice-optional.conf";
-        static const char* default_realm_config_file = "configs/wowice-realms.conf";
+        static const char* default_config_file = "configs/world.conf";
+		static const char* default_optional_config_file = "configs/optional.conf";
+        static const char* default_realm_config_file = "configs/realms.conf";
 #else
-        static const char* default_config_file = CONFDIR "/wowice-world.conf";
-		static const char* default_optional_config_file = CONFDIR "/wowice-optional.conf";
-        static const char* default_realm_config_file = CONFDIR "/wowice-realms.conf";
+        static const char* default_config_file = CONFDIR "/world.conf";
+		static const char* default_optional_config_file = CONFDIR "/optional.conf";
+        static const char* default_realm_config_file = CONFDIR "/realms.conf";
 #endif
 
 bool bServerShutdown = false;
@@ -439,7 +439,7 @@ bool Master::Run(int argc, char ** argv)
 			FILE * f = fopen( "wowice.uptime", "w" );
 			if( f )
 			{
-				fprintf(f, "%u", sWorld.GetUptime());
+				fprintf(f, "%u %u %u %u", sWorld.GetUptime(), sWorld.GetSessionCount(), sWorld.PeakSessionCount, sWorld.mAcceptedConnections);
 				fclose(f);
 			}
 #endif

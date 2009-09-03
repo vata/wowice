@@ -92,6 +92,13 @@ enum OBJECT_UPDATE_TYPE {
 
 };
 
+enum PHASECOMMANDS {
+	PHASE_SET = 0, //overwrites the phase value with the supplied one
+	PHASE_ADD = 1, //adds the new bits to the current phase value
+	PHASE_DEL = 2, //removes the given bits from the current phase value
+	PHASE_RESET = 3 //sets the default phase of 1, same as PHASE_SET with 1 as the new value
+};
+
 typedef struct
 {
 	uint32 school_type;
@@ -160,6 +167,7 @@ public:
 	virtual bool IsPlayer() { return m_objectTypeId == TYPEID_PLAYER; }
 	virtual bool IsCreature() { return m_objectTypeId == TYPEID_UNIT; }
 	virtual bool IsPet();
+	virtual bool IsGameObject() { return m_objectTypeId == TYPEID_GAMEOBJECT; }
 
 	//! This includes any nested objects we have, inventory for example.
 	virtual uint32 __fastcall BuildCreateUpdateBlockForPlayer( ByteBuffer *data, Player *target );
@@ -504,6 +512,11 @@ public:
 	float m_base_runSpeed;
 	float m_base_walkSpeed;
 
+	uint32 m_phase; //This stores the phase, if two objects have the same bit set, then they can see each other. The default phase is 0x1.
+
+	WoWICE_INLINE const uint32 GetPhase() { return m_phase; }
+	void Phase(uint8 command=PHASE_SET, uint32 newphase=1);
+
 	void EventSpellDamage(uint64 Victim, uint32 SpellID, uint32 Damage);
 	void SpellNonMeleeDamageLog(Unit *pVictim, uint32 spellID, uint32 damage, bool allowProc, bool static_damage = false, bool no_remove_auras = false);
 
@@ -568,7 +581,7 @@ protected:
 	//! Mark values that player should get when he/she/it sees object for first time.
 	virtual void _SetCreateBits(UpdateMask *updateMask, Player *target) const;
 	//! Create updates that player will see
-	void _BuildMovementUpdate( ByteBuffer *data, uint8 flags, uint32 flags2, Player* target );
+	void _BuildMovementUpdate( ByteBuffer *data, uint16 flags, uint32 flags2, Player* target );
 	void _BuildValuesUpdate( ByteBuffer *data, UpdateMask *updateMask, Player* target );
 
 	//! WoWGuid class
@@ -623,7 +636,9 @@ protected:
 	int32 m_instanceId;
 
 	ExtensionSet * m_extensions;
-	void _SetExtension(const string& name, void* ptr);		// so we can set from scripts. :)
+
+	// so we can set from scripts. :)
+	void _SetExtension(const string& name, void* ptr);
 
 public:
 

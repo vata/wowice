@@ -837,7 +837,7 @@ bool Player::Create(WorldPacket& data )
 	// Add actionbars
 	for(std::list<CreateInfo_ActionBarStruct>::iterator itr = info->actionbars.begin();itr!=info->actionbars.end();++itr)
 	{
-		setAction(itr->button, itr->action, itr->type, itr->misc);
+		setAction(static_cast<uint8>( itr->button ), static_cast<uint16>( itr->action ), static_cast<uint8>( itr->type), static_cast<uint8>( itr->misc ));
 	}
 
 	for(std::list<CreateInfo_ItemStruct>::iterator is = info->items.begin(); is!=info->items.end(); is++)
@@ -1181,12 +1181,12 @@ void Player::_EventCharmAttack()
 	Unit *pVictim = NULL;
 	if(!IsInWorld())
 	{
-		m_CurrentCharm = NULL;
+		m_CurrentCharm = 0;
 		sEventMgr.RemoveEvents(this,EVENT_PLAYER_CHARM_ATTACK);
 		return;
 	}
 
-	if(m_curSelection == NULL)
+	if(m_curSelection == 0)
 	{
 		sEventMgr.RemoveEvents(this, EVENT_PLAYER_CHARM_ATTACK);
 		return;
@@ -8760,8 +8760,12 @@ void Player::ApplyLevelInfo(LevelInfo* Info, uint32 Level)
 	//UpdateChances();
 	UpdateGlyphs();
 	m_playerInfo->lastLevel = Level;
-
+#ifdef ENABLE_ACHIEVEMENTS
 	GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_REACH_LEVEL);
+#endif
+	//VLack: 3.1.3, as a final step, send the player's talents, this will set the talent points right too...
+	smsg_TalentsInfo(false, 0, 0);
+
 	sLog.outDetail("Player %s set parameters to level %u", GetName(), Level);
 }
 
@@ -11169,7 +11173,7 @@ void Player::save_Misc()
 void Player::save_PVP()
 {
 	CharacterDatabase.Execute("UPDATE characters SET pvprank = %u, selected_pvp_title = %u, available_pvp_title = %u WHERE guid = %u",
-		uint32(GetPVPRank()), m_uint32Values[PLAYER_CHOSEN_TITLE], GetUInt64Value( PLAYER_FIELD_KNOWN_TITLES ), m_uint32Values[OBJECT_FIELD_GUID]);
+		uint32(GetPVPRank()), m_uint32Values[PLAYER_CHOSEN_TITLE], GetUInt64Value( PLAYER__FIELD_KNOWN_TITLES ), m_uint32Values[OBJECT_FIELD_GUID]);
 }
 
 void Player::save_Auras()
@@ -12654,11 +12658,11 @@ void Player::SetKnownTitle( RankTitles title, bool set )
 	if( !HasTitle( title ) ^ set )
 		return;
 
-	uint64 current = GetUInt64Value( PLAYER_FIELD_KNOWN_TITLES + ( ( title >> 6 ) << 1 ) );
+	uint64 current = GetUInt64Value( PLAYER__FIELD_KNOWN_TITLES + ( ( title >> 6 ) << 1 ) );
 	if( set )
-		SetUInt64Value( PLAYER_FIELD_KNOWN_TITLES + ( ( title >> 6 ) << 1 ), current | uint64(1) << ( title % 64) );
+		SetUInt64Value( PLAYER__FIELD_KNOWN_TITLES + ( ( title >> 6 ) << 1 ), current | uint64(1) << ( title % 64) );
 	else
-		SetUInt64Value( PLAYER_FIELD_KNOWN_TITLES + ( ( title >> 6 ) << 1 ), current & ~uint64(1) << ( title % 64) );
+		SetUInt64Value( PLAYER__FIELD_KNOWN_TITLES + ( ( title >> 6 ) << 1 ), current & ~uint64(1) << ( title % 64) );
 
 	WorldPacket data( SMSG_TITLE_EARNED, 8 );
 	data << uint32( title ) << uint32( set ? 1 : 0 );
@@ -12680,3 +12684,241 @@ uint32 Player::GetInitialFactionId()
 	else 
 		return 35;
 }
+
+void Player::CalcExpertise()
+{
+	int32 modifier = 0;
+	int32 val = 0;
+	SpellEntry *entry = NULL;
+	Item* itMH = NULL;
+	Item* itOH = NULL;
+
+	SetUInt32Value( PLAYER_EXPERTISE, 0 );
+	SetUInt32Value( PLAYER_OFFHAND_EXPERTISE, 0 );
+
+	for( uint32 x = MAX_TOTAL_AURAS_START; x < MAX_TOTAL_AURAS_END; ++x )
+	{
+		if( m_auras[x] != NULL && m_auras[x]->HasModType( SPELL_AURA_EXPERTISE ) )
+		{
+			entry = m_auras[x]->m_spellProto;
+			val = m_auras[x]->GetModAmountByMod();
+
+			if( GetItemInterface() && entry->EquippedItemSubClass != 0)
+			{
+				itMH = GetItemInterface()->GetInventoryItem( EQUIPMENT_SLOT_MAINHAND );
+				itOH = GetItemInterface()->GetInventoryItem( EQUIPMENT_SLOT_OFFHAND );
+				uint32 reqskillMH = 0;
+				uint32 reqskillOH = 0;
+
+				if( itMH != NULL && itMH->GetProto() ) 
+					reqskillMH = entry->EquippedItemSubClass & ( ( ( uint32 )1 ) << itMH->GetProto()->SubClass );
+				if( itOH != NULL && itOH->GetProto() )
+					reqskillOH = entry->EquippedItemSubClass & ( ( ( uint32 )1 ) << itOH->GetProto()->SubClass );
+
+				if( reqskillMH != 0 || reqskillOH != 0 )
+					modifier = +val;
+			}
+			else
+				modifier += val;
+		}
+	}
+		
+	ModUnsigned32Value( PLAYER_EXPERTISE, (int32)CalcRating( PLAYER_RATING_MODIFIER_EXPERTISE ) + modifier );
+	ModUnsigned32Value( PLAYER_OFFHAND_EXPERTISE, (int32)CalcRating( PLAYER_RATING_MODIFIER_EXPERTISE ) + modifier );
+	UpdateStats();
+}
+
+void Player::UpdateKnownCurrencies(uint32 itemId, bool apply)
+{
+    if(CurrencyTypesEntry const* ctEntry = dbcCurrencyTypesStore.LookupEntry(itemId))
+    {
+        if(apply)
+		{
+            uint64 oldval = GetUInt64Value( PLAYER_FIELD_KNOWN_CURRENCIES );
+            uint64 newval = oldval | (uint64)( (( uint32 )1) << (ctEntry->BitIndex-1) );
+            SetUInt64Value( PLAYER_FIELD_KNOWN_CURRENCIES, newval );
+		}
+        else
+		{
+			uint64 oldval = GetUInt64Value( PLAYER_FIELD_KNOWN_CURRENCIES );
+            uint64 newval = oldval & ~( (( uint32 )1) << (ctEntry->BitIndex-1) );
+            SetUInt64Value( PLAYER_FIELD_KNOWN_CURRENCIES, newval );
+		}
+    }
+}
+
+void Player::RemoveItemByGuid( uint64 GUID ){
+    this->GetItemInterface()->SafeFullRemoveItemByGuid( GUID );
+}
+
+void Player::SendAvailSpells(SpellShapeshiftForm* ssf, bool active)
+{
+	if(active)
+	{
+		if(!ssf)
+			return;
+
+		WorldPacket data(SMSG_PET_SPELLS, 8 * 4 + 20);
+		data << GetGUID();
+		data << uint32(0) << uint32(0);
+		data << uint8(0) << uint8(0) << uint16(0);
+
+		// Send the spells
+		for(uint32 i = 0; i < 8; i++)
+		{
+			data << uint16(ssf->spells[i]) << uint16(DEFAULT_SPELL_STATE);
+		}
+
+		data << uint8(1);
+		data << uint8(0);
+		GetSession()->SendPacket(&data);
+	}else{
+		WorldPacket data(SMSG_PET_SPELLS,10);
+		data << uint64(0);
+		data << uint32(0);
+		GetSession()->SendPacket(&data);
+	}
+}
+
+bool Player::IsPvPFlagged()
+{
+	return HasByteFlag(UNIT_FIELD_BYTES_2, 1, U_FIELD_BYTES_FLAG_PVP);
+}
+
+void Player::SetPvPFlag()
+{
+	StopPvPTimer();
+
+	SetByteFlag(UNIT_FIELD_BYTES_2, 1, U_FIELD_BYTES_FLAG_PVP);
+	SetFlag(PLAYER_FLAGS, PLAYER_FLAG_PVP);
+       
+    // Adjusting the totems' PVP flag
+    for(int i = 0; i < 4; ++i){
+		if( m_TotemSlots[i] != NULL ){
+			m_TotemSlots[i]->SetPvPFlag();
+			
+			// Adjusting the totems' summons' PVP flag
+			if( static_cast<Unit*>( m_TotemSlots[i] )->summonPet != NULL)
+				static_cast<Unit*>( m_TotemSlots[i] )->summonPet->SetPvPFlag();
+            }
+        }
+	
+	// flagging the pet too for PvP, if we have one
+	if( m_Summon != NULL )
+		m_Summon->SetPvPFlag();
+	
+	if( CombatStatus.IsInCombat() )
+		SetFlag(PLAYER_FLAGS, 0x100);
+}
+
+void Player::RemovePvPFlag()
+{
+	StopPvPTimer();
+	RemoveByteFlag(UNIT_FIELD_BYTES_2, 1, U_FIELD_BYTES_FLAG_PVP);
+	RemoveFlag(PLAYER_FLAGS, PLAYER_FLAG_PVP);
+	
+	// Adjusting the totems' PVP flag
+	for(int i = 0; i < 4; ++i){
+		if( m_TotemSlots[i] != NULL ){
+			m_TotemSlots[i]->RemovePvPFlag();
+			
+			// Adjusting the totems' summons' PVP flag
+			if( static_cast<Unit*>( m_TotemSlots[i] )->summonPet != NULL )
+				static_cast<Unit*>( m_TotemSlots[i] )->summonPet->RemovePvPFlag();
+		}
+	}
+	
+	// If we have a pet we will remove the pvp flag from that too
+	if( m_Summon != NULL )
+		m_Summon->RemovePvPFlag();
+}
+
+bool Player::IsFFAPvPFlagged()
+{
+	return HasByteFlag(UNIT_FIELD_BYTES_2, 1, U_FIELD_BYTES_FLAG_FFA_PVP);
+}
+
+void Player::SetFFAPvPFlag()
+{
+	StopPvPTimer();
+	SetByteFlag(UNIT_FIELD_BYTES_2, 1, U_FIELD_BYTES_FLAG_FFA_PVP);
+	SetFlag(PLAYER_FLAGS, PLAYER_FLAG_FREE_FOR_ALL_PVP);
+	
+	for(int i = 0; i < 4; ++i){
+		if( m_TotemSlots[i] != NULL ){
+			m_TotemSlots[i]->SetFFAPvPFlag();
+			
+			// Adjusting the totems' summons' FFAPVP flag
+			if( static_cast<Unit*>( m_TotemSlots[i] )->summonPet != NULL)
+				static_cast<Unit*>( m_TotemSlots[i] )->summonPet->SetFFAPvPFlag();
+		}
+	}
+	
+	// flagging the pet too for FFAPvP, if we have one
+	if( m_Summon != NULL )
+		m_Summon->SetFFAPvPFlag();
+}
+
+void Player::RemoveFFAPvPFlag()
+{
+	StopPvPTimer();
+	RemoveByteFlag(UNIT_FIELD_BYTES_2, 1, U_FIELD_BYTES_FLAG_FFA_PVP);
+	RemoveFlag(PLAYER_FLAGS, PLAYER_FLAG_FREE_FOR_ALL_PVP);
+	
+	// Adjusting the totems' FFAPVP flag	
+	for(int i = 0; i < 4; ++i){
+		if( m_TotemSlots[i] != NULL ){
+			m_TotemSlots[i]->RemoveFFAPvPFlag();
+			
+			// Adjusting the totems' summons' FFAPVP flag
+			if( static_cast<Unit*>( m_TotemSlots[i] )->summonPet != NULL)
+				static_cast<Unit*>( m_TotemSlots[i] )->summonPet->RemoveFFAPvPFlag();
+		}
+	}
+	
+	// If we have a pet we will remove the FFA pvp flag from that too
+	if( m_Summon != NULL )
+		m_Summon->RemoveFFAPvPFlag();
+}
+
+bool Player::IsSanctuaryFlagged(){
+	return HasByteFlag( UNIT_FIELD_BYTES_2, 1 , U_FIELD_BYTES_FLAG_SANCTUARY );
+}
+
+void Player::SetSanctuaryFlag(){
+	SetByteFlag( UNIT_FIELD_BYTES_2, 1, U_FIELD_BYTES_FLAG_SANCTUARY );
+
+	for(int i = 0; i < 4; ++i){
+		if( m_TotemSlots[i] != NULL ){
+			m_TotemSlots[i]->SetSanctuaryFlag();
+			
+			// Adjusting the totems' summons' sanctuary flag
+			if( static_cast<Unit*>( m_TotemSlots[i] )->summonPet != NULL)
+				static_cast<Unit*>( m_TotemSlots[i] )->summonPet->SetSanctuaryFlag();
+		}
+	}
+	
+	// flagging the pet too for sanctuary, if we have one
+	if( m_Summon != NULL )
+		m_Summon->SetSanctuaryFlag();
+}
+
+void Player::RemoveSancturayFlag(){
+	RemoveByteFlag( UNIT_FIELD_BYTES_2, 1, U_FIELD_BYTES_FLAG_SANCTUARY );
+
+	// Adjusting the totems' sanctuary flag	
+	for(int i = 0; i < 4; ++i){
+		if( m_TotemSlots[i] != NULL ){
+			m_TotemSlots[i]->RemoveSancturayFlag();
+			
+			// Adjusting the totems' summons' sanctuary flag
+			if( static_cast<Unit*>( m_TotemSlots[i] )->summonPet != NULL)
+				static_cast<Unit*>( m_TotemSlots[i] )->summonPet->RemoveSancturayFlag();
+		}
+	}
+	
+	// If we have a pet we will remove the sanctuary flag from that too
+	if( m_Summon != NULL )
+		m_Summon->RemoveSancturayFlag();
+}
+

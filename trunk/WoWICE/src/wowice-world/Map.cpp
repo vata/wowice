@@ -19,8 +19,8 @@
 
 #include "StdAfx.h"
 
-#define CREATURESPAWNSFIELDCOUNT 25
-#define GOSPAWNSFIELDCOUNT		 16
+#define CREATURESPAWNSFIELDCOUNT 26
+#define GOSPAWNSFIELDCOUNT		 18
 
 Map::Map(uint32 mapid, MapInfo * inf)
 {
@@ -187,6 +187,8 @@ void Map::LoadSpawns(bool reload)
 					cspawn->Item2SlotDisplay = fields[22].GetUInt32();
 					cspawn->Item3SlotDisplay = fields[23].GetUInt32();
 					cspawn->CanFly = fields[24].GetUInt32();
+					cspawn->phase = fields[25].GetUInt32();
+					if( cspawn->phase == 0 ) cspawn->phase=0xFFFFFFFF;
 
 					spawns[cellx][celly]->CreatureSpawns.push_back(cspawn);
 					++CreatureSpawnCount;
@@ -229,6 +231,9 @@ void Map::LoadSpawns(bool reload)
 				cspawn->Item1SlotDisplay = fields[21].GetUInt32();
 				cspawn->Item2SlotDisplay = fields[22].GetUInt32();
 				cspawn->Item3SlotDisplay = fields[23].GetUInt32();
+				cspawn->CanFly = fields[24].GetUInt32();
+				cspawn->phase = fields[25].GetUInt32();
+				if( cspawn->phase == 0 ) cspawn->phase=0xFFFFFFFF;
 				staticSpawns.CreatureSpawns.push_back(cspawn);
 				++CreatureSpawnCount;
 			}while(result->NextRow());
@@ -261,6 +266,9 @@ void Map::LoadSpawns(bool reload)
 				gspawn->faction=fields[13].GetUInt32();
 				gspawn->scale = fields[14].GetFloat();
 				//gspawn->stateNpcLink = fields[15].GetUInt32();
+				gspawn->phase = fields[16].GetUInt32();
+				if( gspawn->phase == 0 ) gspawn->phase=0xFFFFFFFF;
+				gspawn->overrides = fields[17].GetUInt32();
 				staticSpawns.GOSpawns.push_back(gspawn);
 				++GameObjectSpawnCount;
 			}while(result->NextRow());
@@ -294,22 +302,33 @@ void Map::LoadSpawns(bool reload)
 					gspawn->faction=fields[13].GetUInt32();
 					gspawn->scale = fields[14].GetFloat();
 					//gspawn->stateNpcLink = fields[15].GetUInt32();
+					gspawn->phase = fields[16].GetUInt32();
+					if( gspawn->phase == 0 ) gspawn->phase=0xFFFFFFFF;
+					gspawn->overrides = fields[17].GetUInt32();
 
-					//uint32 cellx=float2int32(((_maxX-gspawn->x)/_cellSize));
-					//uint32 celly=float2int32(((_maxY-gspawn->y)/_cellSize));
-					uint32 cellx=CellHandler<MapMgr>::GetPosX(gspawn->x);
-					uint32 celly=CellHandler<MapMgr>::GetPosY(gspawn->y);
-					if(spawns[cellx]==NULL)
+					if( gspawn->overrides & GAMEOBJECT_MAPWIDE )
 					{
-						spawns[cellx]=new CellSpawns*[_sizeY];
-						memset(spawns[cellx],0,sizeof(CellSpawns*)*_sizeY);
+						staticSpawns.GOSpawns.push_back(gspawn); //We already have a staticSpawns in the Map class, and it does just the right thing
+						++GameObjectSpawnCount;
 					}
+					else
+					{
+						//uint32 cellx=float2int32(((_maxX-gspawn->x)/_cellSize));
+						//uint32 celly=float2int32(((_maxY-gspawn->y)/_cellSize));
+						uint32 cellx=CellHandler<MapMgr>::GetPosX(gspawn->x);
+						uint32 celly=CellHandler<MapMgr>::GetPosY(gspawn->y);
+						if(spawns[cellx]==NULL)
+						{
+							spawns[cellx]=new CellSpawns*[_sizeY];
+							memset(spawns[cellx],0,sizeof(CellSpawns*)*_sizeY);
+						}
 
-					if(!spawns[cellx][celly])
-						spawns[cellx][celly]=new CellSpawns;
+						if(!spawns[cellx][celly])
+							spawns[cellx][celly]=new CellSpawns;
 
-					spawns[cellx][celly]->GOSpawns.push_back(gspawn);
-					++GameObjectSpawnCount;
+						spawns[cellx][celly]->GOSpawns.push_back(gspawn);
+						++GameObjectSpawnCount;
+					}
 				}while(result->NextRow());
 			}
 

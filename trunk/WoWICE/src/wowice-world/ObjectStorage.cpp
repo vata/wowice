@@ -17,11 +17,11 @@
 
 /** Table formats converted to strings
  */
-const char * gItemPrototypeFormat						= "uuuussssuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuffuffuffuffuffuuuuuuuuuufuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuusuuuuuuuuuuuuuuuuuuuuuuuuuuuu";
+const char * gItemPrototypeFormat						= "uuuusuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuffuffuuuuuuuuuufuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuusuuuuuuuuuuuuuuuuuuuuuuuuuuuuu";
 const char * gItemNameFormat							= "usu";
-const char * gCreatureNameFormat						= "usssuuuuuuuuuuffcc";
-const char * gGameObjectNameFormat						= "uuusssssssuuuuuuuuuuuuuuuuuuuuuuuu";
-const char * gCreatureProtoFormat						= "uuuuuuufuuuffuuffuuuuuuuuffsuuuufffuuuuuuu";
+const char * gCreatureNameFormat						= "usssuuuuuuuuuuuuuuuuffcc";
+const char * gGameObjectNameFormat						= "uuusssssssfuuuuuuuuuuuuuuuuuuuuuuuuuuuuuu";
+const char * gCreatureProtoFormat						= "uuuuuuufuuuffuuffuuuuuuuuffsuuuufffuuuuuuuuu";
 const char * gVendorRestrictionEntryFormat				= "uuuuuu";
 const char * gAreaTriggerFormat							= "ucuusffffuu";
 const char * gItemPageFormat							= "usu";
@@ -34,7 +34,7 @@ const char * gPvPAreaFormat								= "ush";
 const char * gFishingFormat								= "uuu";
 const char * gWorldMapInfoFormat						= "uuuuuufffusuuuuuuufu";
 const char * gZoneGuardsFormat							= "uuu";
-const char * gUnitModelSizeFormat						= "uf";
+const char * gUnitModelSizeFormat						= "ufu";
 const char * gWorldStringTableFormat					= "us"; // p2wow added [for worldserver common message storage]
 const char * gWorldBroadCastFormat						= "usu";// announce message
 
@@ -131,7 +131,7 @@ void ObjectMgr::LoadExtraCreatureProtoStuff()
 
 			ci->lowercase_name = string(ci->Name);
 			for(uint32 j = 0; j < ci->lowercase_name.length(); ++j)
-				ci->lowercase_name[j] = tolower(ci->lowercase_name[j]); // Darvaleo 2008/08/15 - Copied lowercase conversion logic from ItemPrototype task
+				ci->lowercase_name[j] = static_cast<char>( tolower(ci->lowercase_name[j]) ); // Darvaleo 2008/08/15 - Copied lowercase conversion logic from ItemPrototype task
 
 			ci->gossip_script = sScriptMgr.GetDefaultGossipScript();
 
@@ -187,12 +187,12 @@ void ObjectMgr::LoadExtraCreatureProtoStuff()
 				sp->procChance = fields[3].GetUInt32();
 				sp->procCount = fields[4].GetUInt32();
 				sp->spell = spe;
-				sp->spellType = fields[6].GetUInt32();
+				sp->spellType = static_cast<uint8>( fields[6].GetUInt32() );
 
 				int32  targettype = fields[7].GetInt32();
 				if( targettype == -1 )
-					sp->spelltargetType = GetAiTargetType( spe );
-				else sp->spelltargetType = targettype;
+					sp->spelltargetType = static_cast<uint8>( GetAiTargetType( spe ) );
+				else sp->spelltargetType = static_cast<uint8>( targettype );
 
 				sp->cooldown = fields[8].GetInt32();
 				sp->floatMisc1 = fields[9].GetFloat();
@@ -340,7 +340,7 @@ void ObjectMgr::LoadExtraItemStuff()
 		// lowercase name, used for searches
 		pItemPrototype->lowercase_name = pItemPrototype->Name1;
 		for(uint32 j = 0; j < pItemPrototype->lowercase_name.length(); ++j)
-			pItemPrototype->lowercase_name[j] = tolower(pItemPrototype->lowercase_name[j]);
+			pItemPrototype->lowercase_name[j] = static_cast<char>( tolower(pItemPrototype->lowercase_name[j]) );
 
 		//load item_pet_food_type from extra table
 		uint32 ft = 0;

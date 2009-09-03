@@ -176,6 +176,8 @@ wowice_world_SOURCES = \
     TransporterHandler.h \
     Unit.cpp \
     Unit.h \
+    UnixMetric.cpp \
+    UnixMetric.h \
     UpdateFields.h \
     UpdateMask.h \
     Vehicle.cpp \

@@ -193,7 +193,7 @@ void QuestLogEntry::Init(Quest* quest, Player* plr, uint32 slot)
 	memset(m_explored_areas, 0, 4*4);
 
 	if(m_quest->time)
-		m_time_left = m_quest->time * 1000;
+		m_time_left = m_quest->time;
 	else
 		m_time_left = 0;
 
@@ -370,8 +370,8 @@ void QuestLogEntry::Finish()
 	// clear from player log
 	m_plr->SetQuestLogSlot(NULL, m_slot);
 	m_plr->PushToRemovedQuests(m_quest->id);
+	m_plr->UpdateNearbyGameObjects();
 	// delete ourselves
-
 
 	delete this;
 }
@@ -468,7 +468,7 @@ void QuestLogEntry::UpdatePlayerFields()
 
 	m_plr->SetUInt32Value(base + 1, field0);
 	m_plr->SetUInt32Value(base + 2, field1);
-	m_plr->SetUInt32Value(base + 3, m_time_left);
+	m_plr->SetUInt32Value(base + 3, ( m_time_left ? (uint32)(UNIXTIME+m_time_left/1000) : 0 ) );
 }
 
 void QuestLogEntry::SendQuestComplete()
@@ -477,6 +477,7 @@ void QuestLogEntry::SendQuestComplete()
 	data.SetOpcode(SMSG_QUESTUPDATE_COMPLETE);
 	data << m_quest->id;
 	m_plr->GetSession()->SendPacket(&data);
+	m_plr->UpdateNearbyGameObjects();
 	CALL_QUESTSCRIPT_EVENT(this, OnQuestComplete)(m_plr, this);
 }
 

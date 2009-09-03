@@ -31,12 +31,15 @@ void WorldSession::HandleNameQueryOpcode( WorldPacket & recv_data )
 
 	sLog.outDebug( "Received CMSG_NAME_QUERY for: %s", pn->name );
 
+	WoWGuid pguid((uint64)pn->guid); //VLack: The usual new style guid handling on 3.1.2
 	WorldPacket data(SMSG_NAME_QUERY_RESPONSE, strlen(pn->name) + 35);
-	data << pn->guid << uint32(0);	//highguid
+//	data << pn->guid << uint32(0);	//highguid
+	data << pguid << uint8(0); //VLack: usual, new-style guid with an uint8
 	data << pn->name;
 	data << uint8(0);	   // this is a string showed besides players name (eg. in combat log), a custom title ?
-	data << pn->race << pn->gender << pn->cl;
+	data << uint8(pn->race) << uint8(pn->gender) << uint8(pn->cl);
 //	data << uint8(0);			// 2.4.0, why do i get the feeling blizz is adding custom classes or custom titles? (same thing in who list)
+	data << uint8(0); //VLack: tell the server this name is not declined... (3.1 fix?)
 	SendPacket( &data );
 }
 
@@ -45,11 +48,16 @@ void WorldSession::HandleNameQueryOpcode( WorldPacket & recv_data )
 //////////////////////////////////////////////////////////////
 void WorldSession::HandleQueryTimeOpcode( WorldPacket & recv_data )
 {
-	uint32 t = (uint32)UNIXTIME;
-#ifdef USING_BIG_ENDIAN
-	swap32(&t);
-#endif
-	OutPacket(SMSG_QUERY_TIME_RESPONSE, 4, &t);
+//	uint32 t = (uint32)UNIXTIME;
+//#ifdef USING_BIG_ENDIAN
+//	swap32(&t);
+//#endif
+//	OutPacket(SMSG_QUERY_TIME_RESPONSE, 4, &t);
+	WorldPacket data( SMSG_QUERY_TIME_RESPONSE, 4+4 );
+	data << (uint32)UNIXTIME;
+	data << (uint32)0; //VLack: 3.1; thanks Stewart for reminding me to have the correct structure even if it seems the old one still works.
+	SendPacket( &data );
+
 }
 
 //////////////////////////////////////////////////////////////
@@ -58,7 +66,9 @@ void WorldSession::HandleQueryTimeOpcode( WorldPacket & recv_data )
 void WorldSession::HandleCreatureQueryOpcode( WorldPacket & recv_data )
 {
 	CHECK_PACKET_SIZE(recv_data, 12);
-	WorldPacket data(SMSG_CREATURE_QUERY_RESPONSE, 146);
+	WorldPacket data(SMSG_CREATURE_QUERY_RESPONSE, 250); //VLack: thanks Aspire, this was 146 before
+//	uint8 databuffer[10000];
+//	StackPacket data(SMSG_CREATURE_QUERY_RESPONSE, databuffer, 10000);
 	uint32 entry;
 	uint64 guid;
 	CreatureInfo *ci;
@@ -110,7 +120,9 @@ void WorldSession::HandleCreatureQueryOpcode( WorldPacket & recv_data )
 		/* removed in 3.0.x
 		data << ci->Unknown1;
 		*/
-		data << ci->SpellDataID;
+		data << ci->Unknown1; //VLack: seen in 3.1.2 packet dumps 2 uint32(0)s here, this field in the DB is also null (at least on NCDB101).
+		//data << ci->SpellDataID; //VLack: I think this is not valid anymore in 3.1, so it's better to send 0 or Unknown1 again.
+		data << ci->Unknown1; //VLack: the pair of Unknown1 on 3.1.2, but as we don't have a separate database field for this yet, I'll just repeat the first one and it'll send a nice 0.
 		data << ci->Male_DisplayID;
 		data << ci->Female_DisplayID;
 		data << ci->Male_DisplayID2;
@@ -118,6 +130,11 @@ void WorldSession::HandleCreatureQueryOpcode( WorldPacket & recv_data )
 		data << ci->unkfloat1;
 		data << ci->unkfloat2;
 		data << ci->Leader;
+		for(uint32 i = 0; i < 6; ++i)
+		{
+			data << uint32(ci->QuestItems[i]);
+		}
+		data << uint32(0);
 	}
 
 	SendPacket( &data );
@@ -140,6 +157,12 @@ void WorldSession::HandleGameObjectQueryOpcode( WorldPacket & recv_data )
 	recv_data >> guid;
 
 	sLog.outDetail("WORLD: CMSG_GAMEOBJECT_QUERY '%u'", entryID);
+
+/*	if (entryID==192683) { //VLack: f.ckin' gameobject which makes my client go boom...
+		data << uint32(entryID | 0x80000000);
+		SendPacket( &data );
+		return;
+	}*/
 
 	goinfo = GameObjectNameStorage.LookupEntry(entryID);
 	if(goinfo == NULL)
@@ -185,6 +208,12 @@ void WorldSession::HandleGameObjectQueryOpcode( WorldPacket & recv_data )
 	data << goinfo->Unknown12;
 	data << goinfo->Unknown13;
 	data << goinfo->Unknown14;
+
+	data << float(goinfo->Size);
+	for(uint32 i = 0; i < 6; ++i)
+	{
+		data << uint32(goinfo->QuestItems[i]);
+	}
 
 	SendPacket( &data );
 }
@@ -342,5 +371,7 @@ void WorldSession::HandleAchievmentQueryOpcode( WorldPacket & recv_data )
 	{
 		return;
 	}
+#ifdef ENABLE_ACHIEVEMENTS
 	pTarget->GetAchievementMgr().SendAllAchievementData(GetPlayer());
+#endif
 }

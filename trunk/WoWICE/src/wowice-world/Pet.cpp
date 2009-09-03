@@ -139,6 +139,7 @@ void Pet::CreateAsSummon( uint32 entry, CreatureInfo *ci, Creature* created_from
 
 	m_Owner = owner;
 	m_OwnerGuid = m_Owner->GetGUID();
+	m_phase = m_Owner->GetPhase();
 	m_PetNumber = m_Owner->GeneratePetNumber();
 	creature_info = ci;
 	myFamily = dbcCreatureFamily.LookupEntry( ci->Family );
@@ -174,7 +175,7 @@ void Pet::CreateAsSummon( uint32 entry, CreatureInfo *ci, Creature* created_from
 	SetUInt64Value( UNIT_FIELD_CREATEDBY, owner->GetGUID() );
 	SetUInt32Value( UNIT_FIELD_BYTES_0, 2048 | (0 << 24) );
 	SetUInt32Value( UNIT_FIELD_BASEATTACKTIME, 2000 );
-	SetUInt32Value( UNIT_FIELD_BASEATTACKTIME_01, 2000 );
+	SetUInt32Value( UNIT_FIELD_BASEATTACKTIME+1, 2000 );
 	SetUInt32Value( UNIT_FIELD_FACTIONTEMPLATE, owner->GetUInt32Value( UNIT_FIELD_FACTIONTEMPLATE ) );
 	SetFloatValue( UNIT_MOD_CAST_SPEED, 1.0f );	// better set this one
 
@@ -208,11 +209,27 @@ void Pet::CreateAsSummon( uint32 entry, CreatureInfo *ci, Creature* created_from
 		SetUInt32Value( UNIT_FIELD_PETNEXTLEVELEXP, GetNextLevelXP( level ) );
 		SetUInt32Value( UNIT_FIELD_POWER3, 100 );// Focus
 		SetUInt32Value( UNIT_FIELD_MAXPOWER3, 100 );
-		SetUInt32Value( UNIT_FIELD_BYTES_2, 1 | (0x28 << 8) | (0x3 << 16) );// 0x3 -> Enable pet rename.
+		SetUInt32Value( UNIT_FIELD_BYTES_2, 1  /* | (0x28 << 8) */ | (PET_RENAME_ALLOWED << 16) );// 0x3 -> Enable pet rename.
 		SetPowerType( POWER_TYPE_FOCUS);
 	}
+    SetUInt32Value( UNIT_FIELD_FACTIONTEMPLATE, owner->GetUInt32Value( UNIT_FIELD_FACTIONTEMPLATE ) );
 
-	BaseDamage[0] = 0;
+    if( owner->IsPvPFlagged() )
+        this->SetPvPFlag();
+    else
+        this->RemovePvPFlag();
+
+    if( owner->IsFFAPvPFlagged() )
+        this->SetFFAPvPFlag();
+    else
+        this->RemoveFFAPvPFlag();
+
+	if( owner->IsSanctuaryFlagged() )
+		this->SetSanctuaryFlag();
+	else
+		this->RemoveSancturayFlag();
+
+    BaseDamage[0] = 0;
 	BaseDamage[1] = 0;
 	BaseOffhandDamage[0] = 0;
 	BaseOffhandDamage[1] = 0;
@@ -323,10 +340,10 @@ void Pet::SendSpellsToOwner()
 	if( m_Owner == NULL )
 		return;
 
-	uint16 packetsize = ( GetEntry() != WATER_ELEMENTAL && GetEntry() != SPIRITWOLF ) ? ( ( uint16 )mSpells.size() * 4 + 61 ) : 64;
+	uint16 packetsize = ( GetEntry() != WATER_ELEMENTAL && GetEntry() != SPIRITWOLF ) ? ( ( uint16 )mSpells.size() * 4 + 59 ) : 62;
 	WorldPacket * data = new WorldPacket( SMSG_PET_SPELLS, packetsize );
 	*data << GetGUID();
-	*data << uint32( myFamily != NULL ? myFamily->ID : 0 );	// pet family to determine talent tree
+	*data << uint16( myFamily != NULL ? myFamily->ID : 0 );	// pet family to determine talent tree
 	*data << m_ExpireTime;
 	*data << uint8( GetPetState() );	// 0x0 = passive, 0x1 = defensive, 0x2 = aggressive
 	*data << uint8( GetPetAction() );	// 0x0 = stay, 0x1 = follow, 0x2 = attack
@@ -363,13 +380,69 @@ void Pet::SendSpellsToOwner()
 
 void Pet::SendNullSpellsToOwner()
 {
-	if( m_Owner == NULL || m_Owner->GetSession() == NULL)
+	if( m_Owner == NULL || m_Owner->GetSession() == NULL )
 		return;
 
 	WorldPacket data(8);
 	data.SetOpcode( SMSG_PET_SPELLS );
 	data << uint64(0);
 	m_Owner->GetSession()->SendPacket( &data );
+}
+void Pet::SendTalentsToOwner()
+{
+	if( m_Owner == NULL )
+		return;
+
+	WorldPacket data( SMSG_TALENTS_INFO, 50 );
+	data << uint8( 1 );				// Pet talent packet identificator
+	data << uint32( GetTPs() );		// Unspent talent points
+	
+	uint8 count = 0;
+	size_t pos = data.wpos();
+	data << uint8( 0 );				// Amount of known talents (will be filled later)
+	
+	CreatureFamilyEntry* cfe = dbcCreatureFamily.LookupEntry( GetCreatureInfo()->Family );
+	if( !cfe || cfe->talenttree < 0 )
+		return;
+
+	// go through talent trees
+	for( uint32 tte_id = PET_TALENT_TREE_START; tte_id <= PET_TALENT_TREE_END; tte_id++ )
+    {
+        TalentTabEntry * tte = dbcTalentTab.LookupEntry( tte_id );
+        if( tte == NULL )
+            continue;
+
+		// check if we match talent tab
+		if( !( tte->PetTalentMask & ( 1 << cfe->talenttree ) ) )
+			continue;
+		
+		TalentEntry* te; 
+		for( uint32 t_id = 1; t_id < dbcTalent.GetNumRows(); t_id++  )
+		{
+			// get talent entries for our talent tree
+			te = dbcTalent.LookupRow( t_id );
+			if( te == NULL || te->TalentTree != tte_id )
+				continue;
+			
+			// check our spells
+			for( uint8 j = 0; j < 5; j++ )
+				if( te->RankID[ j ] > 0 && HasSpell( te->RankID[ j ] ) )
+				{
+					// if we have the spell, include it in packet
+					data << te->TalentID;	// Talent ID
+					data << j;				// Rank
+					++count;
+				}
+		}
+		// tab loaded, we can exit
+		break;
+	}
+	// fill count of talents
+	data.put< uint8 >( pos, count );
+
+	// send the packet to owner
+	if( m_Owner->GetSession() != NULL )
+		m_Owner->GetSession()->SendPacket( &data );
 }
 
 void Pet::SendCastFailed( uint32 spellid, uint8 fail )
@@ -448,12 +521,12 @@ AI_Spell * Pet::CreateAISpell(SpellEntry * info)
 		sp->cooldown = PET_SPELL_SPAM_COOLDOWN; //omg, avoid spamming at least
 	sp->cooldowntime = 0;
 
-	if( info->Effect[0] == SPELL_EFFECT_APPLY_AURA || info->Effect[0] == SPELL_EFFECT_APPLY_AREA_AURA || info->Effect[0] == SPELL_EFFECT_APPLY_AREA_AURA2 )
+	if( /* info->Effect[0] == SPELL_EFFECT_APPLY_AURA || */ info->Effect[0] == SPELL_EFFECT_APPLY_AREA_AURA || info->Effect[0] == SPELL_EFFECT_APPLY_AREA_AURA2 )
 		sp->spellType = STYPE_BUFF;
 	else
 		sp->spellType = STYPE_DAMAGE;
 
-	sp->spelltargetType = info->ai_target_type;
+	sp->spelltargetType = static_cast<uint8>( info->ai_target_type );
 	sp->autocast_type = GetAutoCastTypeForSpell( info );
 	sp->procCount = 0;
 	m_AISpellStore[ info->Id ] = sp;
@@ -464,6 +537,7 @@ void Pet::LoadFromDB( Player* owner, PlayerPet * pi )
 {
 	m_Owner = owner;
 	m_OwnerGuid = m_Owner->GetGUID();
+	m_phase = m_Owner->GetPhase();
 	mPi = pi;
 	creature_info = CreatureNameStorage.LookupEntry( mPi->entry );
 
@@ -478,6 +552,7 @@ void Pet::LoadFromDB( Player* owner, PlayerPet * pi )
 	m_HappinessTimer = mPi->happinessupdate;
 	reset_time = mPi->reset_time;
 	reset_cost = mPi->reset_cost;
+    m_State = mPi->petstate;
 
 	bExpires = false;
 
@@ -501,7 +576,7 @@ void Pet::LoadFromDB( Player* owner, PlayerPet * pi )
 			ActionBar[i] = spellid;
 			//SetSpellState(dbcSpell.LookupEntry(spellid), spstate);
 			if( !( ActionBar[i] & 0x4000000 ) && spellid )
-				mSpells[ dbcSpell.LookupEntry( spellid ) ] = spstate;
+				mSpells[ dbcSpell.LookupEntry( spellid ) ] = static_cast<unsigned short>( spstate );
 
 			i++;
 
@@ -635,6 +710,8 @@ void Pet::InitializeMe( bool first )
 
 	UpdateSpellList( false );
 	SendSpellsToOwner();
+	if( !Summon )
+		SendTalentsToOwner();
 
 	// set to active
 	if( !bExpires )
@@ -683,6 +760,7 @@ void Pet::UpdatePetInfo( bool bSetToOffline )
 	pi->summon = Summon;
 	pi->reset_cost = reset_cost;
 	pi->reset_time = reset_time;
+    pi->petstate = m_State;
 }
 
 void Pet::Dismiss() //Abandon pet
@@ -836,7 +914,6 @@ void Pet::UpdateSpellList( bool showLearnSpells )
 	{
 		skilllinespell* sls;
 		uint32 rowcount = dbcSkillLineSpell.GetNumRows();
-		uint32 current = 0;
 		SpellEntry* sp;
 		for( uint32 idx = 0; idx < rowcount; ++idx )
 		{
@@ -1041,10 +1118,10 @@ void Pet::WipeTalents()
 	for( i = 0; i < rows; i++ )
 	{
 		TalentEntry *te = dbcTalent.LookupRow( i );
-		if( te == NULL || te->TalentTree < 409 || te->TalentTree > 411 ) // 409-Tenacity, 410-Ferocity, 411-Cunning
+		if( te == NULL || te->TalentTree < PET_TALENT_TREE_START || te->TalentTree > PET_TALENT_TREE_END ) // 409-Tenacity, 410-Ferocity, 411-Cunning
 			continue;
 		for( j = 0; j < 5; j++ )
-			if( te->RankID[ j ] != NULL && HasSpell( te->RankID[ j ] ) )
+			if( te->RankID[ j ] != 0 && HasSpell( te->RankID[ j ] ) )
 				RemoveSpell( te->RankID[ j ] );
 	}
 	SendSpellsToOwner();
@@ -1103,7 +1180,7 @@ void Pet::RemoveSpell(SpellEntry * sp, bool showUnlearnSpell)
 	}
 
 	if( showUnlearnSpell && m_Owner && m_Owner->GetSession() )
-		m_Owner->GetSession()->OutPacket( SMSG_PET_UNLEARNED_SPELL, 2, &sp->Id );
+		m_Owner->GetSession()->OutPacket( SMSG_PET_UNLEARNED_SPELL, 4, &sp->Id );
 }
 
 void Pet::Rename( string NewName )
@@ -1499,7 +1576,7 @@ void Pet::HandleAutoCastEvent( AutoCastEvents Type )
 			sLog.outError("Found corrupted spell at m_autoCastSpells, skipping");
 			continue;
 		}
-		else if( sp->autocast_type != Type )
+		else if( sp->autocast_type != static_cast<uint32>( Type ) )
 		{
 			sLog.outError("Found corrupted spell (%lu) at m_autoCastSpells, skipping", sp->entryId);
 			continue;
