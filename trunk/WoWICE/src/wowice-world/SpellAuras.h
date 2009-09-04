@@ -31,20 +31,22 @@ enum AURA_INTERNAL_USAGE_FLAGS
 
 enum AURA_STATE_FLAGS
 {
-	AURASTATE_FLAG_DODGE_BLOCK			= 0x000001, //1
-    AURASTATE_FLAG_HEALTH20             = 0x000002, //2
-    AURASTATE_FLAG_BERSERK              = 0x000004, //3
-	AURASTATE_FLAG_FROZEN				= 0x000008, //4
-    AURASTATE_FLAG_JUDGEMENT            = 0x000010, //5
-    AURASTATE_FLAG_PARRY                = 0x000040, //7
-    AURASTATE_FLAG_LASTKILLWITHHONOR    = 0x000200, //10
-    AURASTATE_FLAG_CRITICAL             = 0x000400, //11
-    AURASTATE_FLAG_HEALTH35             = 0x001000, //13
-    AURASTATE_FLAG_IMMOLATE             = 0x002000, //14
-    AURASTATE_FLAG_REJUVENATE           = 0x004000, //15
-    AURASTATE_FLAG_POISON               = 0x008000, //16
-	AURASTATE_FLAG_ENRAGED				= 0x010000, //17
-	AURASTATE_FLAG_HEALTH75				= 0x400000,	//23
+	AURASTATE_FLAG_DODGE_BLOCK			= 0x000001,	//1
+	AURASTATE_FLAG_HEALTH20				= 0x000002,	//2
+	AURASTATE_FLAG_BERSERK				= 0x000004,	//3
+	AURASTATE_FLAG_FROZEN				= 0x000008,	//4
+	AURASTATE_FLAG_JUDGEMENT			= 0x000010,	//5
+	AURASTATE_FLAG_PARRY				= 0x000040,	//7
+	AURASTATE_FLAG_LASTKILLWITHHONOR	= 0x000200,	//10
+	AURASTATE_FLAG_CRITICAL				= 0x000400,	//11
+	AURASTATE_FLAG_HEALTH35				= 0x001000,	//13
+	AURASTATE_FLAG_IMMOLATE				= 0x002000,	//14
+	AURASTATE_FLAG_REJUVENATE			= 0x004000,	//15
+	AURASTATE_FLAG_POISON				= 0x008000,	//16
+	AURASTATE_FLAG_ENRAGED				= 0x010000,	//17
+	AURASTATE_FLAG_MAELSTROM_READY		= 0x020000,	//18
+	AURASTATE_FLAG_EVASIVE_CHARGE		= 0x200000,	//22
+	AURASTATE_FLAG_HEALTH75				= 0x400000,	//23 (Health ABOVE 75%)
 };
 
 enum MOD_TYPES
@@ -241,8 +243,9 @@ enum MOD_TYPES
     SPELL_AURA_INCREASE_HEALING_PCT_OF_INTELLECT = 195,		// NOT USED ANYMORE - 175 used instead
     SPELL_AURA_MOD_ALL_WEAPON_SKILLS = 196,
     SPELL_AURA_REDUCE_ATTACKER_CRICTICAL_HIT_CHANCE_PCT = 197,
-    SPELL_AURA_INCREASE_SPELL_HIT_PCT = 199,
-    SPELL_AURA_CANNOT_BE_DODGED = 201,
+	SPELL_AURA_198 = 198,
+    SSPELL_AURA_INCREASE_SPELL_HIT_PCT = 199,
+	SPELL_AURA_CANNOT_BE_DODGED = 201,
 	SPELL_AURA_FINISHING_MOVES_CANNOT_BE_DODGED = 202,
     SPELL_AURA_REDUCE_ATTACKER_CRICTICAL_HIT_DAMAGE_MELEE_PCT = 203,
     SPELL_AURA_REDUCE_ATTACKER_CRICTICAL_HIT_DAMAGE_RANGED_PCT = 204,
@@ -252,10 +255,12 @@ enum MOD_TYPES
     SPELL_AURA_REGEN_MANA_STAT_PCT=219,
     SPELL_AURA_HEALING_STAT_PCT=220,
 	SPELL_AURA_PERIODIC_TRIGGER_SPELL_WITH_VALUE=227, // Used by Mind Flay etc
+	SPELL_AURA_REDUCE_AOE_DAMAGE_TAKEN = 229,
     SPELL_AURA_INCREASE_MAX_HEALTH=230,//Used by Commanding Shout
+	SPELL_AURA_MECHANIC_DURATION_MOD = 232,
 	SPELL_AURA_MOD_HEALING_BY_AP=237,
 	SPELL_AURA_MOD_SPELL_DAMAGE_BY_AP=238,
-	SPELL_AURA_MODIFY_AXE_SKILL=240,
+	SPELL_AURA_EXPERTISE = 240,
 	SPELL_AURA_241 = 241,
     SPELL_AURA_MOD_SPELL_DAMAGE_FROM_HEALING = 242,
     SPELL_AURA_243 = 243,
@@ -267,9 +272,64 @@ enum MOD_TYPES
     SPELL_AURA_249 = 249,
     SPELL_AURA_MOD_INCREASE_HEALTH_2 = 250,
     SPELL_AURA_MOD_ENEMY_DODGE = 251,
+	SPELL_AURA_252 = 252,
+	SPELL_AURA_BLOCK_MULTIPLE_DAMAGE = 253,
+	SPELL_AURA_254 = 254,
+	SPELL_AURA_MOD_MECHANIC_DAMAGE_TAKEN_PERCENT = 255,
+	SPELL_AURA_256 = 256,
+	SPELL_AURA_257 = 257,
+	SPELL_AURA_258 = 258,
+	SPELL_AURA_259 = 259,
+	SPELL_AURA_260 = 260,
+	SPELL_AURA_PHASE = 261,
+	SPELL_AURA_IGNORE_TARGET_AURA_STATE = 262,
+	SPELL_AURA_ALLOW_ONLY_ABILITY = 263,
+	SPELL_AURA_264 = 264,
+	SPELL_AURA_265 = 265,
+	SPELL_AURA_266 = 266,
+	SPELL_AURA_267 = 267,
 	SPELL_AURA_MOD_ATTACK_POWER_BY_STAT_PCT = 268,
-    TOTAL_SPELL_AURAS = 284,
+	SPELL_AURA_269 = 269,
+	SPELL_AURA_270 = 270,
+	SPELL_AURA_INCREASE_SPELL_DOT_DAMAGE_PCT = 271,
+	SPELL_AURA_272 = 272,
+	SPELL_AURA_273 = 273,
+	SPELL_AURA_274 = 274,
+	SPELL_AURA_275 = 275,
+	SPELL_AURA_276 = 276,
+	SPELL_AURA_277 = 277,
+	SPELL_AURA_278 = 278,
+	SPELL_AURA_279 = 279,
+	SPELL_AURA_IGNORE_ARMOR_PCT = 280,
+	SPELL_AURA_281 = 281,
+	SPELL_AURA_MOD_BASE_HEALTH = 282,
+	SPELL_AURA_283 = 283,
+	SPELL_AURA_284 = 284,
+	SPELL_AURA_MOD_ATTACK_POWER_OF_ARMOR = 285,
+	SPELL_AURA_286 = 286,
+	SPELL_AURA_REFLECT_INFRONT = 287,
+	SPELL_AURA_288 = 288,
+	SPELL_AURA_289 = 289,
+	SPELL_AURA_290 = 290,
+	SPELL_AURA_291 = 291,
+	SPELL_AURA_292 = 292,
+	SPELL_AURA_293 = 293,
+	SPELL_AURA_294 = 294,
+	SPELL_AURA_295 = 295,
+	SPELL_AURA_296 = 296,
+	SPELL_AURA_297 = 297,
+	SPELL_AURA_298 = 298,
+	SPELL_AURA_299 = 299,
+	SPELL_AURA_300 = 300,
+	SPELL_AURA_301 = 301,
+	SPELL_AURA_302 = 302,
+	SPELL_AURA_303 = 303,
+	SPELL_AURA_304 = 304,
+	SPELL_AURA_305 = 305,
+	SPELL_AURA_306 = 306,
+    TOTAL_SPELL_AURAS = 307,
 };
+
 enum AuraTickFlags
 {
     FLAG_PERIODIC_DAMAGE            = 2,
@@ -615,6 +675,7 @@ public:
 	void SpellAuraRegenManaStatPCT(bool apply);
 	void SpellAuraSpellHealingStatPCT(bool apply);
 	void SpellAuraModStealthDetection(bool apply);
+	void SpellAuraReduceAOEDamageTaken(bool apply);
 	void SpellAuraIncreaseMaxHealth(bool apply);
 	void SpellAuraSpiritOfRedemption(bool apply);
 	void SpellAuraIncreaseAttackerSpellCrit(bool apply);
@@ -622,8 +683,9 @@ public:
 	void SpellAuraIncreaseRAPbyStatPct(bool apply);
 	//void SpellAuraModRangedDamageTakenPCT(bool apply);
 	void SpellAuraModBlockValue(bool apply);
+	void SpellAuraAllowFlight(bool apply);
 	void SpellAuraFinishingMovesCannotBeDodged(bool apply);
-	void SpellAuraAxeSkillModifier(bool apply);
+	void SpellAuraExpertise(bool apply);
 	void SpellAuraDrinkNew(bool apply);
 	void SpellAuraModPossessPet(bool apply);
 	void SpellAuraModHealingByAP(bool apply);
@@ -632,11 +694,22 @@ public:
 	void SpellAuraReduceEffectDuration(bool apply);
 	void HandleAuraControlVehicle(bool apply);
 	void EventPeriodicDrink(uint32 amount);
+	void SpellAuraModCombatResultChance(bool apply);
 	void SpellAuraAddHealth(bool apply);
 	void SpellAuraRemoveReagentCost(bool apply);
-	void SpellAuraIncreaseAPbyStatPct(bool apply);
 	void SpellAuraPeriodicTriggerSpellWithValue(bool apply);
-    void SpellAuraIgnoreShapeshift(bool apply);
+	void SpellAuraModMechanicDmgTakenPct(bool apply);
+	void SpellAuraBlockMultipleDamage(bool apply);
+	void SpellAuraIgnoreTargetAuraState(bool apply);
+	void SpellAuraAllowOnlyAbility(bool apply);
+	void SpellAuraIncreaseAPbyStatPct(bool apply);
+	void SpellAuraModSpellDamageDOTPct(bool apply);
+	void SpellAuraIgnoreShapeshift(bool apply);
+	void SpellAuraPhase(bool apply);
+	void SpellAuraModIgnoreArmorPct(bool apply);
+	void SpellAuraModBaseHealth(bool apply);
+	void SpellAuraModAttackPowerOfArmor(bool apply);
+	void SpellAuraReflectSpellsInfront(bool apply);
 	void UpdateAuraModDecreaseSpeed();
 
 	void SendModifierLog(int32 ** m,int32 v,uint32* mask,uint8 type,bool pct = false);
@@ -647,6 +720,7 @@ public:
 	void EventPeriodicDamagePercent(uint32);
 	void EventPeriodicHeal(uint32);
 	void EventPeriodicTriggerSpell(SpellEntry* spellInfo);
+	void EventPeriodicTrigger(uint32 amount, uint32 type);
 	void EventPeriodicEnergize(uint32,uint32);
 	void EventPeriodicEnergizeVariable(uint32,uint32);
 	void EventPeriodicHeal1(uint32);
@@ -745,6 +819,7 @@ public:
 	}
 
 	int32 GetModAmount( uint32 i ) { if(i<3) return m_modList[i].m_amount; return 0; }
+	int32 GetModAmountByMod() { return mod->m_amount; };
 
 private:
 	uint32 GetCasterFaction() { return m_casterfaction; }

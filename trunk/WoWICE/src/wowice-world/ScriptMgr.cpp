@@ -570,11 +570,6 @@ void GameObjectAIScript::RegisterAIUpdateEvent(uint32 frequency)
 }
 
 
-/* InstanceAI Stuff */
-
-InstanceScript::InstanceScript(MapMgr *instance) : _instance(instance)
-{
-}
 
 /* QuestScript Stuff */
 
@@ -634,9 +629,13 @@ void GossipScript::GossipHello(Object* pObject, Player* Plr, bool AutoSend)
 
 		if( pTrainer->TrainerType != TRAINER_TYPE_PET )
 		{
+            // I seek
 			string msg = string(Plr->GetSession()->LocalizedWorldSrv(2));
+
+            
 			if(pTrainer->RequiredClass)
 			{
+                
 				switch(Plr->getClass())
 				{
 				case MAGE:
@@ -666,16 +665,23 @@ void GossipScript::GossipHello(Object* pObject, Player* Plr, bool AutoSend)
 				case PRIEST:
 					msg += string(Plr->GetSession()->LocalizedWorldSrv(11));
 					break;
+                case DEATHKNIGHT:
+                    msg += string(Plr->GetSession()->LocalizedWorldSrv(82));
+                    break;
 				}
+
+                //training
 				msg += " "+string(Plr->GetSession()->LocalizedWorldSrv(12))+", ";
 				msg += name;
 				msg += ".";
 
+                // Sending the message itself
 				Menu->AddItem(3, msg.c_str(), 2);
 
 			}
 			else
 			{
+                // training
 				msg += string(Plr->GetSession()->LocalizedWorldSrv(12))+", ";
 				msg += name;
 				msg += ".";
@@ -685,10 +691,11 @@ void GossipScript::GossipHello(Object* pObject, Player* Plr, bool AutoSend)
 		}
 		else
 		{
-			
+			// Pet trainer menuitem
 			Menu->AddItem(3, Plr->GetSession()->LocalizedWorldSrv(13), 2);
 		}
 
+        // talent reset menuitem
 		if (pTrainer->RequiredClass &&					  // class trainer
 			pTrainer->RequiredClass == Plr->getClass() &&   // correct class
 			pCreature->getLevel() > 10 &&				   // creature level
@@ -698,6 +705,7 @@ void GossipScript::GossipHello(Object* pObject, Player* Plr, bool AutoSend)
 			Menu->AddItem(0, Plr->GetSession()->LocalizedWorldSrv(22), 11);
 		}
 	
+        // pet untraining menuitem
 		if (pTrainer->TrainerType == TRAINER_TYPE_PET &&	// pet trainer type
 			Plr->getClass() == HUNTER &&					// hunter class
 			Plr->GetSummon() != NULL )						// have pet
@@ -723,7 +731,10 @@ void GossipScript::GossipHello(Object* pObject, Player* Plr, bool AutoSend)
 		Menu->AddItem(0, Plr->GetSession()->LocalizedWorldSrv(17), 6);
 
 	if (pCreature->isSpiritHealer())
-		Menu->AddItem(0, Plr->GetSession()->LocalizedWorldSrv(18), 7);
+	{	// Spirit Healers should NOT have a menu!
+		//Menu->AddItem(0, Plr->GetSession()->LocalizedWorldSrv(18), 7);
+		Plr->GetSession()->SendSpiritHealerRequest(pCreature);
+	}
 
 	if (pCreature->isCharterGiver())
 	{
@@ -795,6 +806,7 @@ void GossipScript::GossipSelectOption(Object* pObject, Player* Plr, uint32 Id, u
 		{
 			GossipMenu *Menu;
 			objmgr.CreateGossipMenuForPlayer(&Menu, pCreature->GetGUID(), 5674, Plr);
+            // I understand
 			Menu->AddItem(0, Plr->GetSession()->LocalizedWorldSrv(24), 12);
 			Menu->SendTo(Plr);
 		}break;
@@ -809,7 +821,7 @@ void GossipScript::GossipSelectOption(Object* pObject, Player* Plr, uint32 Id, u
 		{
 			GossipMenu *Menu;
 			objmgr.CreateGossipMenuForPlayer(&Menu, pCreature->GetGUID(), 7722, Plr);
-			Menu->AddItem(0, Plr->GetSession()->LocalizedWorldSrv(25), 14);
+            Menu->AddItem(0, Plr->GetSession()->LocalizedWorldSrv(25), 14);
 			Menu->SendTo(Plr);
 		}break;
 	case 14:
@@ -830,6 +842,26 @@ void GossipScript::Destroy()
 	delete this;
 }
 
+/* InstanceAI Stuff */ 
+
+InstanceScript::InstanceScript( MapMgr* pMapMgr ) : mInstance( pMapMgr ) 
+{
+};
+
+void InstanceScript::RegisterUpdateEvent( uint32 pFrequency ) 
+{
+	sEventMgr.AddEvent( mInstance, &MapMgr::CallScriptUpdate, EVENT_SCRIPT_UPDATE_EVENT, pFrequency, 0, EVENT_FLAG_DO_NOT_EXECUTE_IN_WORLD_CONTEXT ); 
+};
+void InstanceScript::ModifyUpdateEvent( uint32 pNewFrequency ) 
+{
+	sEventMgr.ModifyEventTimeAndTimeLeft( mInstance, EVENT_SCRIPT_UPDATE_EVENT, pNewFrequency );
+};
+void InstanceScript::RemoveUpdateEvent()
+{
+	sEventMgr.RemoveEvents( mInstance, EVENT_SCRIPT_UPDATE_EVENT ); 
+};
+
+/* Hook Stuff */
 void ScriptMgr::register_hook(ServerHookEvents event, void * function_pointer)
 {
 	ASSERT(event < NUM_SERVER_HOOKS);
