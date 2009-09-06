@@ -133,7 +133,7 @@ bool Master::Run(int argc, char ** argv)
 	};
 
 	char c;
-	while ((c = wowice_getopt_long_only(argc, argv, ":f:", longopts, NULL)) != -1)
+	while ((c = static_cast<char>( wowice_getopt_long_only(argc, argv, ":f:", longopts, NULL) ) ) != -1)
 	{
 		switch (c)
 		{
