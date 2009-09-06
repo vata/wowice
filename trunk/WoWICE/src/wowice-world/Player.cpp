@@ -29,7 +29,9 @@ static const uint8 baseRunes[6] = {0,0,1,1,2,2};
 Player::Player( uint32 guid )
 :
 m_mailBox(guid),
+#ifdef ENABLE_ACHIEVEMENTS
 m_achievementMgr(this),
+#endif
 m_finishingmovesdodge(false),
 disableAppear(false),
 disableSummon(false),
@@ -44,6 +46,7 @@ misdirectionTarget(0),
 bReincarnation(false),
 removeReagentCost(false),
 ignoreShapeShiftChecks(false),
+ignoreAuraStateCheck(false),
 m_furorChance(0),
 Seal(0),
 judgespell(0),
@@ -196,6 +199,7 @@ m_GM_SelectedGO(0),
 PctIgnoreRegenModifier(0.0f),
 m_retainedrage(0),
 DetectedRange(0),
+m_eyeofkilrogg(0),
 
 m_targetIcon(0),
 bShouldHaveLootableOnCorpse(false),
@@ -226,7 +230,20 @@ mOutOfRangeIdCount(0)
 	//These should be set in the object constructor..
 	m_runSpeed = PLAYER_NORMAL_RUN_SPEED;
 	m_walkSpeed = 2.5f;
-
+	felSynergyChance = 0;
+	felSynergyPctBonus = 0;
+	demonicEmpathySpell = 0;
+	activePotionSpid = 0;
+	conflagrCritCoef = 0;
+	immolateBonus = 0;		
+	improvedSoulLeech = 0;
+	improvedFearVal = 0;
+	armToApCoeff = 0;
+	armToApValue = 0;
+	lastArmToApBonus = 0;
+	deathEmrDrain = 0;
+	deathEmrShadow = 0;
+	m_MasterShapeshift = 0;
 	m_objectTypeId = TYPEID_PLAYER;
 	m_valuesCount = PLAYER_END;
 	//////////////////////////////////////////////////////////////////////////
@@ -241,9 +258,9 @@ mOutOfRangeIdCount(0)
 	m_wowGuid.Init(GetGUID());
 	SetUInt32Value( UNIT_FIELD_FLAGS_2, UNIT_FLAG2_ENABLE_POWER_REGEN );
 	SetFloatValue( PLAYER_RUNE_REGEN_1, 0.100000f );
-	SetFloatValue( PLAYER_RUNE_REGEN_01, 0.100000f );
-	SetFloatValue( PLAYER_RUNE_REGEN_02, 0.100000f );
-	SetFloatValue( PLAYER_RUNE_REGEN_03, 0.100000f );
+	SetFloatValue( PLAYER_RUNE_REGEN_1+1, 0.100000f );
+	SetFloatValue( PLAYER_RUNE_REGEN_1+2, 0.100000f );
+	SetFloatValue( PLAYER_RUNE_REGEN_1+3, 0.100000f );
 
 	for(i=0;i<3;i++)
 	{
@@ -282,6 +299,7 @@ mOutOfRangeIdCount(0)
 	{
 		for(j = 0; j < 7; j++)
 		{
+			SpellDmgDoneByAttribute[i][j] = 0;
 			SpellHealDoneByAttribute[i][j] = 0;
 		}
 		FlatStatModPos[i] = 0;
@@ -314,9 +332,9 @@ mOutOfRangeIdCount(0)
 	SDetector =  new SpeedCheatDetector;
 
 	cannibalize			 = false;
-
+	mAvengingWrath		 = true;
 	m_AreaID				= 0;
-	m_actionsDirty		  = false;
+	m_actionsDirty		 = false;
 	cannibalizeCount		= 0;
 	rageFromDamageDealt	 = 0;
 	rageFromDamageTaken	 = 0;
@@ -371,16 +389,34 @@ mOutOfRangeIdCount(0)
 
 	UpdateLastSpeeds();
 
-	m_resist_critical[0]=m_resist_critical[1]=0;
+	m_resist_critical[0] = m_resist_critical[1] = 0;
+	m_castFilterEnabled = false;
+
 	for(i = 0; i < 3; i++ )
 	{
 		m_resist_hit[i]		= 0.0f;
 		m_attack_speed[i]	= 1.0f;
+		m_castFilter[i]		= 0;
 	}
+
+        m_maxTalentPoints = 0; //VLack: 3 Aspire values initialized
+        m_talentActiveSpec = 0;
+        m_talentSpecsCount = 1;
+
 	ok_to_remove = false;
 	m_modphyscritdmgPCT = 0;
 	m_RootedCritChanceBonus = 0;
-
+	m_IncreaseDmgSnaredSlowed = 0;
+	m_MoltenFuryDmgBonus = 0; // DuKJIoHuyC: in Player.h
+	ShatteredBarrierMod = 0;
+	FieryPaybackModHP35 = 0;
+	TormentTheWeakDmgBns = 0;
+	ArcanePotencyMod = 0;
+	LivingBmbTgt = 0;
+	JungleKingMod = 0;
+	FittestSurvivalMod = -1;
+	StunDamageReductPct = 0;
+	isGuardianSpirit = false;
 	m_ModInterrMRegenPCT = 0;
 	m_ModInterrMRegen =0;
 	m_RegenManaOnSpellResist=0;
@@ -1212,7 +1248,7 @@ void Player::_EventCharmAttack()
 
 		if (!currentCharm->canReachWithAttack(pVictim))
 		{
-			if(m_AttackMsgTimer == NULL)
+			if(m_AttackMsgTimer == 0)
 			{
 				//m_session->OutPacket(SMSG_ATTACKSWING_NOTINRANGE);
 				// 2 sec till next msg.
@@ -1486,9 +1522,9 @@ void Player::_EventExploration()
 		WorldPacket data(SMSG_EXPLORATION_EXPERIENCE, 8);
 		data << at->AreaId << explore_xp;
 		m_session->SendPacket(&data);
-
+#ifdef ENABLE_ACHIEVEMENTS
 		GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_EXPLORE_AREA);
-
+#endif
 		if(getLevel() < GetUInt32Value(PLAYER_FIELD_MAX_LEVEL) && explore_xp)
 			GiveXP(explore_xp, 0, false);
 	}
@@ -1506,6 +1542,33 @@ void Player::EventDeath()
 		sEventMgr.AddEvent(this,&Player::RepopRequestedPlayer,EVENT_PLAYER_FORECED_RESURECT,PLAYER_FORCED_RESURECT_INTERVAL,1,0); //in case he forgets to release spirit (afk or something)
 
 	RemoveNegativeAuras();
+}
+
+void Player::EventPotionCooldown()
+{
+	if (activePotionSpid == 0)
+		return;
+
+	RemoveAllAuraById(53787);
+
+	// add server cooldown
+	_Cooldown_Add( COOLDOWN_TYPE_CATEGORY, 4, getMSTime() + 60000, 2370, 2456);
+
+	// clear all cooldowns
+	WorldPacket spell_data( SMSG_CLEAR_COOLDOWN, (4+8) );
+	spell_data << uint32(activePotionSpid);
+	spell_data << uint64(GetGUID());
+	GetSession()->SendPacket(&spell_data);
+
+	// resend cooldowns
+	WorldPacket item_data(SMSG_SPELL_COOLDOWN, 8+1+4);
+	item_data << uint64(GetGUID());
+	item_data << uint8(1);
+	item_data << uint32(2597); //a potion spell with 1min cooldown
+	item_data << uint32(0);
+	GetSession()->SendPacket(&item_data);
+	// set to 0 after completion
+	activePotionSpid = 0;
 }
 
 void Player::BuildEnumData( WorldPacket * p_data )
@@ -1533,12 +1596,14 @@ void Player::BuildEnumData( WorldPacket * p_data )
 
 	*p_data << GetUInt32Value(PLAYER_GUILDID);// guild
 
-	if(rename_pending)  *p_data << uint32(0x00A04342);  // wtf blizz? :P
+	if(rename_pending)  *p_data << uint32(0x00A04342); // wtf blizz? :P
 	else if(m_banned)   *p_data << (uint32)7;	// Banned (cannot login)
-	else if(IsDead())   *p_data << (uint32)8704; // Dead (displaying as Ghost)
-	else				*p_data << (uint32)1;	// Alive
+	else if(IsDead())   *p_data << (uint32)8704;	// Dead (displaying as Ghost)
+	else		    *p_data << (uint32)1;	// Alive
 
+	*p_data << (uint32)0; //VLack: send 1 for faction change at logon
 	*p_data << (uint8)m_restState;	  // rest state
+	*p_data << (uint8)0; //3.2.0
 
 	// pet stuff
 	CreatureInfo *info = NULL;
@@ -1560,21 +1625,26 @@ void Player::BuildEnumData( WorldPacket * p_data )
 
 	for (uint32 i = 0; i < EQUIPMENT_SLOT_END ; i++)//max equipment slot is 18....this is strange
 	{
-		if (GetItemInterface()->GetInventoryItem(i) != NULL)
+		if (GetItemInterface()->GetInventoryItem(static_cast<int16>( i )) != NULL)
 		{
-			*p_data << (uint32)GetItemInterface()->GetInventoryItem(i)->GetProto()->DisplayInfoID;
-			*p_data << (uint8)GetItemInterface()->GetInventoryItem(i)->GetProto()->InventoryType;
+			*p_data << static_cast<uint32>( GetItemInterface()->GetInventoryItem(static_cast<int16>( i ))->GetProto()->DisplayInfoID );
+			*p_data << static_cast<uint8>( GetItemInterface()->GetInventoryItem(static_cast<int16>( i ))->GetProto()->InventoryType );
+			//*p_data << uint32(enchant ? enchant->aura_id : 0); //VLack: for 3.1.1, we need the enchantment here. Instead I'll send 0 now; this might need to be fixed later!
+			// At the moment BuildEnumData is not used, so it is not necessary to fix this right now, but if someone wants to use it again, then WorldSession::CharacterEnumProc has these implemented, look at it as a reference.
+			*p_data << uint32(0);
 		}
 		else
 		{
 			*p_data << (uint32)0;
 			*p_data << (uint8)0;
+			*p_data << uint32(0); //VLack: 3.1.1 enchant
 		}
 	}
 	//blizz send 20 slots for some reason(or no reason :P)
 
 	 *p_data << (uint32)0;
 	 *p_data << (uint8)0;
+	 *p_data << uint32(0); //VLack: 3.1.1 enchant?
 }
 
 /*  Gives numtps talent points to the player  */
@@ -1715,7 +1785,12 @@ void Player::GiveXP(uint32 xp, const uint64 &guid, bool allowbonus)
 			}
 		}
 		//Event_Achiement_Received(ACHIEVEMENT_CRITERIA_TYPE_REACH_LEVEL,0,level);
+#ifdef ENABLE_ACHIEVEMENTS
 		GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_REACH_LEVEL);
+#endif
+
+		//VLack: 3.1.3, as a final step, send the player's talents, this will set the talent points right too...
+		smsg_TalentsInfo(false, 0, 0);
 	}
 
 	// Set the update bit
@@ -1744,7 +1819,7 @@ void Player::smsg_InitialSpells()
 	{
 		// todo: check out when we should send 0x0 and when we should send 0xeeee
 		// this is not slot, values is always eeee or 0, seems to be cooldown
-		data << uint16(*sitr);				   // spell id
+		data << uint32(*sitr);				   // spell id
 		data << uint16(0x0000);
 	}
 
@@ -1763,7 +1838,7 @@ void Player::smsg_InitialSpells()
 			continue;
 		}
 
-		data << uint16( itr2->first );						// spell id
+		data << uint32( itr2->first );						// spell id
 		data << uint16( itr2->second.ItemId );				// item id
 		data << uint16( 0 );								// spell category
 		data << uint32( itr2->second.ExpireTime - mstime );	// cooldown remaining in ms (for spell)
@@ -1787,7 +1862,7 @@ void Player::smsg_InitialSpells()
 			continue;
 		}
 
-		data << uint16( itr2->second.SpellId );				// spell id
+		data << uint32( itr2->second.SpellId );				// spell id
 		data << uint16( itr2->second.ItemId );				// item id
 		data << uint16( itr2->first );						// spell category
 		data << uint32( 0 );								// cooldown remaining in ms (for spell)
@@ -1812,6 +1887,89 @@ void Player::smsg_InitialSpells()
 	uint32 v = 0;
 	GetSession()->OutPacket(0x041d, 4, &v);
 	//Log::getSingleton( ).outDetail( "CHARACTER: Sent Initial Spells" );
+}
+
+void Player::smsg_TalentsInfo(bool update, uint32 newTalentId, uint8 newTalentRank)
+{
+        WorldPacket data(SMSG_TALENTS_INFO, 1000);
+        update = false;
+        data << uint8(update);
+        if(update)      // send just the update
+        {
+                uint8 count = 1;
+                data << uint32(GetUInt32Value(PLAYER_CHARACTER_POINTS1)); // Unspent talents
+                data << uint8(count);
+                for(uint8 i = 0; i < count; i++)
+                {
+                        data << uint32(newTalentId); // unk     talentid?
+                        data << uint8(1); // unk        rank?
+                }
+        } else  // initialize sending all info
+        {
+                data << uint32(GetUInt32Value(PLAYER_CHARACTER_POINTS1)); // Unspent talents
+                data << uint8(m_talentSpecsCount);
+                data << uint8(m_talentActiveSpec); // unk
+                for(uint8 s = 0; s < m_talentSpecsCount; s++)
+                {
+                        PlayerSpec spec = m_specs[s];
+                        // Send Talents
+/*                        data << uint8(spec.talents.size());
+                        std::map<uint32, uint8>::iterator itr;
+                        for(itr = spec.talents.begin(); itr != spec.talents.end(); itr++)
+                        {
+                                data << uint32(itr->first);     // TalentId
+                                data << uint8(itr->second);     // TalentRank
+                        }*/
+
+			uint8 talent_count = 0;
+			size_t pos = data.wpos();
+			data << uint8(talent_count); //fake value, will be overwritten at the end
+
+			for( uint32 i = 0; i < 3; ++i )
+			{
+				uint32 talent_tab_id = sWorld.InspectTalentTabPages[getClass()][i];
+
+				for( uint32 j = 0; j < dbcTalent.GetNumRows(); ++j )
+				{
+					TalentEntry const* talent_info = dbcTalent.LookupRow( j );
+					if( talent_info == NULL )
+						continue;
+
+					if( talent_info->TalentTree != talent_tab_id ) // we can skip this tree
+						continue;
+
+					int32 talent_maxrank = -1;
+					for( int32 k = 4; k > -1; --k )
+					{
+						if( talent_info->RankID[k] && HasSpell(talent_info->RankID[k]) )
+						{
+							talent_maxrank = k;
+							break;
+						}
+					}
+
+					if( talent_maxrank < 0 ) // player doesn't have this talent, don't send it
+						continue;
+
+					data << uint32(talent_info->TalentID);
+					data << uint8(talent_maxrank);
+
+					++talent_count;
+				}
+			}
+
+			data.put<uint8>(pos, talent_count);
+
+
+                        // Send Glyph info
+                        data << uint8(GLYPHS_COUNT);
+                        for(uint8 i = 0; i < GLYPHS_COUNT; i++)
+                        {
+                                data << uint16(spec.glyphs[i]);
+                        }
+                }
+        }
+        GetSession()->SendPacket(&data);
 }
 
 void Player::_SavePet(QueryBuffer * buf)
@@ -1868,7 +2026,8 @@ void Player::_SavePet(QueryBuffer * buf)
 			<< itr->second->summon << "','"
 			<< (long)itr->second->reset_time << "','"
 			<< itr->second->reset_cost << "','"
-			<< itr->second->spellid << "')";
+			<< itr->second->spellid << "','"
+            << itr->second->petstate << "')";
 
 		if(buf == NULL)
 			CharacterDatabase.ExecuteNA(ss.str().c_str());
@@ -1966,6 +2125,7 @@ void Player::_LoadPet(QueryResult * result)
 		pet->reset_time = fields[11].GetUInt32();
 		pet->reset_cost = fields[12].GetUInt32();
 		pet->spellid = fields[13].GetUInt32();
+        pet->petstate = fields[14].GetUInt32();
 
 		m_Pets[pet->number] = pet;
 
@@ -1984,6 +2144,23 @@ void Player::SpawnPet( uint32 pet_number )
 	}
 	Pet *pPet = objmgr.CreatePet( itr->second->entry );
 	pPet->LoadFromDB( this, itr->second );
+
+    if( this->IsPvPFlagged() )
+        pPet->SetPvPFlag();
+    else
+        pPet->RemovePvPFlag();
+
+    if( this->IsFFAPvPFlagged() )
+        pPet->SetFFAPvPFlag();
+    else
+        pPet->RemoveFFAPvPFlag();
+
+	if( this->IsSanctuaryFlagged() )
+		pPet->SetSanctuaryFlag();
+	else
+		pPet->RemoveSanctuaryFlag();
+
+    pPet->SetUInt32Value( UNIT_FIELD_FACTIONTEMPLATE, this->GetUInt32Value( UNIT_FIELD_FACTIONTEMPLATE ) );
 	
 	if( itr->second->spellid )
 	{
@@ -2094,6 +2271,7 @@ void Player::addSpell(uint32 spell_id)
 		_AddSkillLine(sk->skilline, 1, max);
 		_UpdateMaxSkillCounts();
 	}
+#ifdef ENABLE_ACHIEVEMENTS
 	m_achievementMgr.UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_LEARN_SPELL, spell_id, 1, 0);
 	if(spell->MechanicsType == MECHANIC_MOUNTED) // Mounts
 	{
@@ -2109,6 +2287,7 @@ void Player::addSpell(uint32 spell_id)
 			m_achievementMgr.UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_NUMBER_OF_MOUNTS, 778, 0, 0);
 		}
 	}
+#endif
 }
 
 //===================================================================================================================
@@ -2180,8 +2359,8 @@ void Player::InitVisibleUpdateBits()
 	Player::m_visibleUpdateMask.SetBit(UNIT_FIELD_MAXPOWER7);
 
 	Player::m_visibleUpdateMask.SetBit(UNIT_VIRTUAL_ITEM_SLOT_ID);
-	Player::m_visibleUpdateMask.SetBit(UNIT_VIRTUAL_ITEM_SLOT_ID_1);
-	Player::m_visibleUpdateMask.SetBit(UNIT_VIRTUAL_ITEM_SLOT_ID_2);
+	Player::m_visibleUpdateMask.SetBit(UNIT_VIRTUAL_ITEM_SLOT_ID+1);
+	Player::m_visibleUpdateMask.SetBit(UNIT_VIRTUAL_ITEM_SLOT_ID+2);
 
 	Player::m_visibleUpdateMask.SetBit(UNIT_FIELD_LEVEL);
 	Player::m_visibleUpdateMask.SetBit(UNIT_FIELD_FACTIONTEMPLATE);
@@ -2190,7 +2369,7 @@ void Player::InitVisibleUpdateBits()
 	Player::m_visibleUpdateMask.SetBit(UNIT_FIELD_FLAGS_2);
 
 	Player::m_visibleUpdateMask.SetBit(UNIT_FIELD_BASEATTACKTIME);
-	Player::m_visibleUpdateMask.SetBit(UNIT_FIELD_BASEATTACKTIME_01);
+	Player::m_visibleUpdateMask.SetBit(UNIT_FIELD_BASEATTACKTIME+1);
 	Player::m_visibleUpdateMask.SetBit(UNIT_FIELD_BOUNDINGRADIUS);
 	Player::m_visibleUpdateMask.SetBit(UNIT_FIELD_COMBATREACH);
 	Player::m_visibleUpdateMask.SetBit(UNIT_FIELD_DISPLAYID);
@@ -2223,9 +2402,9 @@ void Player::InitVisibleUpdateBits()
 	// Players visible items are not inventory stuff
     for(uint16 i = 0; i < EQUIPMENT_SLOT_END; ++i)
 	{
-		uint32 offset = i * 18;
+		uint32 offset = i * PLAYER_VISIBLE_ITEM_LENGTH; //VLack: for 3.1.1 "* 18" is a bad idea, now it's "* 2"; but this could have been calculated based on UpdateFields.h! This is PLAYER_VISIBLE_ITEM_LENGTH
 
-		Player::m_visibleUpdateMask.SetBit(PLAYER_VISIBLE_ITEM_1_CREATOR + 0 + offset);
+/*		Player::m_visibleUpdateMask.SetBit(PLAYER_VISIBLE_ITEM_1_CREATOR + 0 + offset);
 		Player::m_visibleUpdateMask.SetBit(PLAYER_VISIBLE_ITEM_1_CREATOR + 1 + offset);
 		Player::m_visibleUpdateMask.SetBit(PLAYER_VISIBLE_ITEM_1_0 + 0 + offset);
 
@@ -2237,7 +2416,11 @@ void Player::InitVisibleUpdateBits()
 
 		Player::m_visibleUpdateMask.SetBit(PLAYER_VISIBLE_ITEM_1_PROPERTIES + offset);
 		Player::m_visibleUpdateMask.SetBit(PLAYER_VISIBLE_ITEM_1_SEED + offset);
-		Player::m_visibleUpdateMask.SetBit(PLAYER_VISIBLE_ITEM_1_PAD + offset);
+		Player::m_visibleUpdateMask.SetBit(PLAYER_VISIBLE_ITEM_1_PAD + offset);*/
+	// item entry
+	Player::m_visibleUpdateMask.SetBit(PLAYER_VISIBLE_ITEM_1_ENTRYID + offset);
+	// enchant
+	Player::m_visibleUpdateMask.SetBit(PLAYER_VISIBLE_ITEM_1_ENCHANTMENT + offset);
      }
 
 	Player::m_visibleUpdateMask.SetBit(PLAYER_CHOSEN_TITLE);
@@ -2362,8 +2545,8 @@ void Player::SaveToDB(bool bNewCharacter /* =false */)
 	ss << "', "
 	<< m_uint32Values[PLAYER_FIELD_WATCHED_FACTION_INDEX] << ","
 	<< m_uint32Values[PLAYER_CHOSEN_TITLE]<< ","
-	<< GetUInt64Value(PLAYER_FIELD_KNOWN_TITLES) << ","
-	<< GetUInt64Value(PLAYER_FIELD_KNOWN_TITLES1) << ","
+	<< GetUInt64Value(PLAYER__FIELD_KNOWN_TITLES) << ","
+	<< GetUInt64Value(PLAYER__FIELD_KNOWN_TITLES1) << ","
 	<< m_uint32Values[PLAYER_FIELD_COINAGE] << ",";
 
 	if((getClass()==MAGE) || (getClass()==PRIEST) || (getClass()==WARLOCK))
@@ -2536,11 +2719,12 @@ void Player::SaveToDB(bool bNewCharacter /* =false */)
 	// dump glyphs
 	ss << "'";
 
-	for(uint32 i = 0; i < 8; ++i)
+	for(uint32 i = 0; i < GLYPHS_COUNT; ++i)
 		ss << m_uint32Values[PLAYER_FIELD_GLYPHS_1 + i] << ",";
 
-	ss << "')";
+	ss << "', ";
 
+	ss << m_phase << ")";
 
 	if(bNewCharacter)
 		CharacterDatabase.WaitExecuteNA(ss.str().c_str());
@@ -2577,8 +2761,9 @@ void Player::SaveToDB(bool bNewCharacter /* =false */)
 
 	if(buf)
 		CharacterDatabase.AddQueryBuffer(buf);
-
+#ifdef ENABLE_ACHIEVEMENTS
 	m_achievementMgr.SaveToDB();
+#endif
 }
 
 void Player::_SaveQuestLogEntry(QueryBuffer * buf)
@@ -2671,7 +2856,7 @@ bool Player::LoadFromDB(uint32 guid)
 	q->AddQuery("SELECT character_guid FROM social_friends WHERE friend_guid = %u", guid);
 	q->AddQuery("SELECT ignore_guid FROM social_ignores WHERE character_guid = %u", guid);
 
-	// queue it!
+    // queue it!
 	m_uint32Values[OBJECT_FIELD_GUID] = guid;
 	CharacterDatabase.QueueAsyncQuery(q);
 	return true;
@@ -2700,10 +2885,10 @@ void Player::LoadFromDBProc(QueryResultVector & results)
 		return;
 	}
 
-	if (result->GetFieldCount() != 83)
+	if (result->GetFieldCount() != 84)
 	{
 		Log.Error ("Player::LoadFromDB",
-				"Expected 83 fields from the database, "
+				"Expected 84 fields from the database, "
 				"but received %u!  You may need to update your character database.",
 				(unsigned int) result->GetFieldCount ());
 		RemovePendingPlayer();
@@ -2759,7 +2944,7 @@ void Player::LoadFromDBProc(QueryResultVector & results)
 	SetNoseLevel();
 
 	// set power type
-	SetPowerType(myClass->power_type);
+	SetPowerType( static_cast<uint8>( myClass->power_type ));
 
 	// obtain player create info
 	info = objmgr.GetPlayerCreateInfo(getRace(), getClass());
@@ -2941,8 +3126,8 @@ void Player::LoadFromDBProc(QueryResultVector & results)
 	// set the rest of the stuff
 	m_uint32Values[ PLAYER_FIELD_WATCHED_FACTION_INDEX ]	= get_next_field.GetUInt32();
 	m_uint32Values[ PLAYER_CHOSEN_TITLE ]					= get_next_field.GetUInt32();
-	SetUInt64Value( PLAYER_FIELD_KNOWN_TITLES, get_next_field.GetUInt64() );
-	SetUInt64Value( PLAYER_FIELD_KNOWN_TITLES1, get_next_field.GetUInt64() );
+	SetUInt64Value( PLAYER__FIELD_KNOWN_TITLES, get_next_field.GetUInt64() );
+	SetUInt64Value( PLAYER__FIELD_KNOWN_TITLES1, get_next_field.GetUInt64() );
 	m_uint32Values[ PLAYER_FIELD_COINAGE ]					= get_next_field.GetUInt32();
 	m_uint32Values[ PLAYER_AMMO_ID ]						= get_next_field.GetUInt32();
 	m_uint32Values[ PLAYER_CHARACTER_POINTS2 ]				= get_next_field.GetUInt32();
@@ -3071,15 +3256,15 @@ void Player::LoadFromDBProc(QueryResultVector & results)
 		m_arenaTeams[z] = objmgr.GetArenaTeamByGuid(GetLowGUID(), z);
 		if(m_arenaTeams[z] != NULL)
 		{
-			SetUInt32Value(PLAYER_FIELD_ARENA_TEAM_INFO_1_1 + (z*6), m_arenaTeams[z]->m_id);
+			SetUInt32Value(PLAYER_FIELD_ARENA_TEAM_INFO_1_1 + (z*7), m_arenaTeams[z]->m_id);
 			if(m_arenaTeams[z]->m_leader == GetLowGUID())
-				SetUInt32Value(PLAYER_FIELD_ARENA_TEAM_INFO_1_1 + (z*6) + 1, 0);
+				SetUInt32Value(PLAYER_FIELD_ARENA_TEAM_INFO_1_1 + (z*7) + 1, 0);
 			else
-				SetUInt32Value(PLAYER_FIELD_ARENA_TEAM_INFO_1_1 + (z*6) + 1, 1);
+				SetUInt32Value(PLAYER_FIELD_ARENA_TEAM_INFO_1_1 + (z*7) + 1, 1);
 		}
 	}
 
-	m_StableSlotCount = get_next_field.GetUInt32();
+	m_StableSlotCount = static_cast<uint8>( get_next_field.GetUInt32() );
 	m_instanceId = get_next_field.GetUInt32();
 	m_bgEntryPointMap = get_next_field.GetUInt32();
 	m_bgEntryPointX = get_next_field.GetFloat();
@@ -3213,7 +3398,7 @@ void Player::LoadFromDBProc(QueryResultVector & results)
 		rep = new FactionReputation;
 		rep->baseStanding = basestanding;
 		rep->standing = standing;
-		rep->flag = fflag;
+		rep->flag = static_cast<uint8>( fflag );
 		m_reputation[id]=rep;
 		reputationByListId[factdbc->RepListId] = rep;
 	}
@@ -3307,9 +3492,9 @@ void Player::LoadFromDBProc(QueryResultVector & results)
     iInstanceType = get_next_field.GetUInt32();
 
 	// Load Glyphs and apply their auras
-	LoadFieldsFromString(get_next_field.GetString(), PLAYER_FIELD_GLYPHS_1, 8);
+	LoadFieldsFromString(get_next_field.GetString(), PLAYER_FIELD_GLYPHS_1, GLYPHS_COUNT);
 	GlyphPropertyEntry *glyph;
-	for(uint32 i=0; i < 8; i++)
+	for(uint32 i=0; i < GLYPHS_COUNT; i++)
 	{
 		uint32 glyphId = GetUInt32Value(PLAYER_FIELD_GLYPHS_1 + i);
 		if(glyphId == 0)
@@ -3321,8 +3506,13 @@ void Player::LoadFromDBProc(QueryResultVector & results)
 		LoginAura la;
 		la.id = glyph->SpellID;
 		la.dur = uint32(-1);
+		la.charges = 0;
+		la.positive = 0; //VLack: check this, as this was uninitialized, 0 is a safe bet, but glyphs should be positive, aren't they?
 		loginauras.push_back(la);
+		m_specs[0].glyphs[i] = static_cast< uint16 >( glyphId ); //VLack: TempFIX till we properly implement dual specs, make them appear in the first set!
 	}
+
+	m_phase = get_next_field.GetUInt32(); //Load the player's last phase
 
 	HonorHandler::RecalculateHonorFields(this);
 
@@ -3363,6 +3553,21 @@ void Player::LoadFromDBProc(QueryResultVector & results)
 	OnlineTime	= (uint32)UNIXTIME;
 	if(GetGuildId())
 		SetUInt32Value(PLAYER_GUILD_TIMESTAMP, (uint32)UNIXTIME);
+
+//VLack: Aspire code block starts
+/*        m_talentActiveSpec = get_next_field.GetUInt32();
+        m_talentSpecsCount = get_next_field.GetUInt32();
+        if(m_talentSpecsCount > MAX_SPEC_COUNT)
+                m_talentSpecsCount = MAX_SPEC_COUNT;
+        if(m_talentActiveSpec >= m_talentSpecsCount )
+                m_talentActiveSpec = 0;
+
+        bool needTalentReset = get_next_field.GetBool();
+        if( needTalentReset )
+        {
+                Reset_Talents();
+        }*/
+//VLack: Aspire code block ends
 
 #undef get_next_field
 
@@ -3462,8 +3667,11 @@ void Player::LoadFromDBProc(QueryResultVector & results)
 		}
 	}
 	// load and update achievements
+#ifdef ENABLE_ACHIEVEMENTS
 	m_achievementMgr.LoadFromDB(CharacterDatabase.Query("SELECT achievement, date FROM character_achievement WHERE guid = '%u'", GetUInt32Value(OBJECT_FIELD_GUID)),CharacterDatabase.Query("SELECT criteria, counter, date FROM character_achievement_progress WHERE guid = '%u'", GetUInt32Value(OBJECT_FIELD_GUID)));
 	m_achievementMgr.CheckAllAchievementCriteria();
+#endif
+
 }
 
 void Player::SetPersistentInstanceId(Instance *pInstance)
@@ -3678,7 +3886,9 @@ void Player::AddToWorld(MapMgr * pMapMgr)
 void Player::OnPrePushToWorld()
 {
 	SendInitialLogonPackets();
+#ifdef ENABLE_ACHIEVEMENTS
 	m_achievementMgr.SendAllAchievementData(this);
+#endif
 }
 
 void Player::OnPushToWorld()
@@ -3715,8 +3925,8 @@ void Player::OnPushToWorld()
 	if(m_FirstLogin)
 	{
 		if(class_ == DEATHKNIGHT)
-			startlevel = max(55,sWorld.StartingLevel);
-		else startlevel = sWorld.StartingLevel;
+			startlevel = static_cast<uint8>( max(55,sWorld.StartingLevel) );
+		else startlevel = static_cast<uint8>( sWorld.StartingLevel );
 
 		sHookInterface.OnFirstEnterWorld(this);
 		LevelInfo * Info = objmgr.GetLevelInfo(getRace(), getClass(), startlevel);
@@ -3725,6 +3935,8 @@ void Player::OnPushToWorld()
 	}
 
 	sHookInterface.OnEnterWorld(this);
+	CALL_INSTANCE_SCRIPT_EVENT( m_mapMgr, OnZoneChange )( this, m_zoneId, 0 ); 
+	CALL_INSTANCE_SCRIPT_EVENT( m_mapMgr, OnPlayerEnter )( this );
 
 	if(m_TeleportState == 1)		// First world enter
 		CompleteLoading();
@@ -3780,6 +3992,8 @@ void Player::OnPushToWorld()
 
 	z_axisposition = 0.0f;
 	m_changingMaps = false;
+
+    this->GetItemInterface()->HandleItemDurations();
 }
 
 void Player::RemoveFromWorld()
@@ -3866,23 +4080,8 @@ void Player::RemoveFromWorld()
 	m_playerInfo->lastOnline = UNIXTIME; // don't destroy conjured items yet
 }
 
-/*
-   ScalingStats DBC entry by level
-   FIX ME: This should not be necessary, but I don't know how to lookup dbc rows by the 2nd column
-*/
-uint32 SSVDBCEByLevel[81] = {
-1,1,2,3,4,5,6,7,8,9,10,
-81,82,83,84,85,136,137,138,139,61,
-141,142,143,144,145,146,147,148,149,150,
-151,152,153,154,155,156,157,158,159,160,
-161,162,163,164,165,166,167,168,169,170,171,
-172,173,174,175,176,177,178,179,180,181,182,
-183,184,185,186,187,188,189,190,191,192,193,
-194,195,196,197,198,199,200
-};
-
 // TODO: perhaps item should just have a list of mods, that will simplify code
-void Player::_ApplyItemMods(Item* item, int8 slot, bool apply, bool justdrokedown /* = false */, bool skip_stat_apply /* = false  */)
+void Player::_ApplyItemMods(Item* item, int16 slot, bool apply, bool justdrokedown /* = false */, bool skip_stat_apply /* = false  */)
 {
 	if (slot >= INVENTORY_SLOT_BAG_END)
 		return;
@@ -4089,12 +4288,29 @@ void Player::_ApplyItemMods(Item* item, int8 slot, bool apply, bool justdrokedow
 	if(proto->ScalingStatsEntry != 0){
 		int i = 0;
 		ScalingStatDistributionEntry *ssdrow = dbcScalingStatDistribution.LookupEntry( proto->ScalingStatsEntry );
-		ScalingStatValuesEntry *ssvrow = dbcScalingStatValues.LookupEntry( SSVDBCEByLevel[ getLevel() ] );
+		ScalingStatValuesEntry *ssvrow = NULL;
 		uint32 StatType;
 		uint32 StatMod;
+		uint32 plrLevel = getLevel();
 		int32 StatMultiplier;
 		int32 StatValue;
 		int32 col = 0;
+
+		// this is needed because the heirloom items don't scale over lvl80
+		if(plrLevel > 80)
+			plrLevel = 80;
+
+        
+        DBCStorage<ScalingStatValuesEntry>::iterator itr;
+
+        for(itr = dbcScalingStatValues.begin(); itr != dbcScalingStatValues.end(); ++itr)
+            if( (*itr)->level == plrLevel ){
+                ssvrow = *itr;
+                break;
+            }
+       
+
+		
 
 		/* Not going to put a check here since unless you put a random id/flag in the tables these should never return NULL */
 
@@ -4463,6 +4679,15 @@ void Player::SendDungeonDifficulty()
     GetSession()->SendPacket(&data);
 }
 
+void Player::SendRaidDifficulty()
+{
+    WorldPacket data(MSG_SET_RAID_DIFFICULTY, 12);
+    data << (uint32)iInstanceType;
+    data << (uint32)0x1;
+    data << (uint32)InGroup();
+    GetSession()->SendPacket(&data);
+}
+
 void Player::BuildPlayerRepop()
 {
 	// Cleanup first
@@ -4511,6 +4736,7 @@ void Player::RepopRequestedPlayer()
 	if( myCorpse != NULL ) {
 		// Cebernic: wOOo dead+dead = undead ? :D just resurrect player
 		myCorpse->ResetDeathClock();
+		ResurrectPlayer();
 		RepopAtGraveyard( GetPositionX(), GetPositionY(), GetPositionZ(), GetMapId() );
 		return;
 	}
@@ -4621,9 +4847,7 @@ void Player::ResurrectPlayer()
 	UpdateVisibility();
 	if ( m_resurrecter && IsInWorld()
 		// Don't pull players inside instances with this trick. Also fixes the part where you were able to double item bonuses
-		&& m_resurrectInstanceID == GetInstanceID()
-		)
-	{
+		&& m_resurrectInstanceID == static_cast<uint32>( GetInstanceID() )	){
 		SafeTeleport( m_resurrectMapId, m_resurrectInstanceID, m_resurrectPosition );
 	}
 	m_resurrecter = 0;
@@ -4646,7 +4870,7 @@ void Player::ResurrectPlayer()
 
 void Player::KillPlayer()
 {
-    if(getDeathState() != ALIVE) //You can't kill what has no life.
+    if(getDeathState() != ALIVE) //You can't kill what has no life.   - amg south park references ftw :P
         return;
 	setDeathState(JUST_DIED);
 
@@ -4671,6 +4895,12 @@ void Player::KillPlayer()
 		SetPower( POWER_TYPE_RAGE, 0 );
 	else if( getClass() == DEATHKNIGHT )
 		SetPower( POWER_TYPE_RUNIC_POWER, 0 );
+
+    
+    for( int i = 0; i < 4; ++i ){
+        if( m_TotemSlots[i] != NULL)
+            m_TotemSlots[i]->TotemExpire();
+    }
 
 	sHookInterface.OnDeath( this );
 
@@ -4943,17 +5173,18 @@ void Player::CleanupChannels()
 
 void Player::SendInitialActions()
 {
-#ifndef USING_BIG_ENDIAN
-	m_session->OutPacket(SMSG_ACTION_BUTTONS, PLAYER_ACTION_BUTTON_SIZE, &mActions);
-#else
+//#ifndef USING_BIG_ENDIAN
+//	m_session->OutPacket(SMSG_ACTION_BUTTONS, PLAYER_ACTION_BUTTON_SIZE + 1, &mActions); //VLack: this is BAD! It does not contain the initial bool!!! Now supposedly BROKEN, but we can still use WorldPacket!
+//#else
 	/* we can't do this the fast way on ppc, due to endianness */
-	WorldPacket data(SMSG_ACTION_BUTTONS, PLAYER_ACTION_BUTTON_SIZE);
+	WorldPacket data(SMSG_ACTION_BUTTONS, PLAYER_ACTION_BUTTON_SIZE + 1);
+	data << uint8(0);       // VLack: 3.1, some bool - 0 or 1. seems to work both ways
 	for(uint32 i = 0; i < PLAYER_ACTION_BUTTON_SIZE; ++i)
 	{
-		data << mActions[i].Action << mActions[i].Type << mActions[i].Misc;
+		data << mActions[i].Action << mActions[i].Type << mActions[i].Misc; //VLack: on 3.1.3, despite the format of CMSG_SET_ACTION_BUTTON, here Type have to be sent before Misc
 	}
 	m_session->SendPacket(&data);
-#endif
+//#endif
 }
 
 void Player::setAction(uint8 button, uint16 action, uint8 type, uint8 misc)
@@ -5301,7 +5532,7 @@ void Player::UpdateAttackSpeed()
 	if( weap != NULL && weap->GetProto()->Class == ITEM_CLASS_WEAPON )
 	{
 		speed = weap->GetProto()->Delay;
-		SetUInt32Value( UNIT_FIELD_BASEATTACKTIME_01,
+		SetUInt32Value( UNIT_FIELD_BASEATTACKTIME+1,
 			( uint32 )( (float) speed / ( m_attack_speed[ MOD_MELEE ] * ( 1.0f + CalcRating( PLAYER_RATING_MODIFIER_MELEE_HASTE ) / 100.0f ) ) ) );
 	}
 
@@ -5444,7 +5675,7 @@ void Player::UpdateStats()
 	if( sWorld.m_limits.enable && (sWorld.m_limits.healthCap > 0) && (res > sWorld.m_limits.healthCap) && GetSession()->GetPermissionCount() <= 0 ) //hacker?
 	{
 		char logmsg[256];
-		snprintf(logmsg, 256, "has over %lu health (%i)", sWorld.m_limits.healthCap, res);
+		snprintf(logmsg, 256, "has over %u health (%i)", sWorld.m_limits.healthCap, res);
 		sCheatLog.writefromsession(GetSession(), logmsg);
 		if(sWorld.m_limits.broadcast) // send info to online GM
 		{
@@ -5489,11 +5720,11 @@ void Player::UpdateStats()
 
 		res = mana + bonus + manadelta;
 		if( res < mana )
-			res = mana;	
+			res = mana;
 		if( sWorld.m_limits.enable && (sWorld.m_limits.manaCap > 0) && (res > sWorld.m_limits.manaCap) && GetSession()->GetPermissionCount() <= 0 ) //hacker?
 		{
 			char logmsg[256];
-			snprintf(logmsg, 256, "has over %lu mana (%i)", sWorld.m_limits.manaCap, res);
+			snprintf(logmsg, 256, "has over %u mana (%i)", sWorld.m_limits.manaCap, res);
 			sCheatLog.writefromsession(GetSession(), logmsg);
 			if(sWorld.m_limits.broadcast) // send info to online GM
 			{
@@ -5551,7 +5782,7 @@ void Player::UpdateStats()
 	Item* shield = GetItemInterface()->GetInventoryItem(EQUIPMENT_SLOT_OFFHAND);
 	if( shield != NULL && shield->GetProto()->InventoryType == INVTYPE_SHIELD )
 	{
-		float block_multiplier = ( 100.0f + float( m_modblockabsorbvalue ) ) / 100.0f;
+		float block_multiplier = ( ( 100.0f + float( m_modblockabsorbvalue ) ) / 100.0f );
 		if( block_multiplier < 1.0f )block_multiplier = 1.0f;
 
 		int32 blockable_damage = float2int32( (float( shield->GetProto()->Block ) + ( float(m_modblockvaluefromspells + GetUInt32Value( PLAYER_RATING_MODIFIER_BLOCK ) )) + ( ( float( str ) / 20.0f ) - 1.0f ) ) * block_multiplier);
@@ -5561,16 +5792,6 @@ void Player::UpdateStats()
 	{
 		SetUInt32Value( PLAYER_SHIELD_BLOCK, 0 );
 	}
-
-	// Expertise
-	// Expertise is somewhat tricky. Expertise on items is expertise "rating" where as "expertise"
-	// on the character sheet is the rating modified by a factor. The bonus % this value gives is
-	// actually the "rating" modified by another factor.
-	// eg. 100 expertise rating from items
-	// 100 / 3.92 = 25 expertise
-	// 100 / 15.77 = 6.3% reduced dodge/parry chances
-	SetUInt32Value( PLAYER_EXPERTISE, float2int32( CalcRating( PLAYER_RATING_MODIFIER_EXPERTISE ) ) ); // value displayed in char sheet
-	//SetUInt32Value( PLAYER_RATING_MODIFIER_EXPERTISE2, GetUInt32Value( PLAYER_RATING_MODIFIER_EXPERTISE ) );
 
 	// Dynamic aura application, auras 212, 268
 	for( uint32 x = MAX_TOTAL_AURAS_START; x < MAX_TOTAL_AURAS_END; x++ )
@@ -5718,6 +5939,9 @@ bool Player::CanSee(Object* obj) // * Invisibility & Stealth Detection - Partha 
 		return false;
 	}
 	//------------------------------------------------------------------
+
+	if (!(m_phase & obj->m_phase)) //What you can't see, you can't see, no need to check things further.
+		return false;
 
 	switch(object_type) // we are alive or we haven't released our spirit yet
 	{
@@ -6740,6 +6964,9 @@ void Player::SendInitialLogonPackets()
 		data << uint32( m_Tutorials[i] );
 	GetSession()->SendPacket(&data);
 
+	//3.1: Send the talents
+	smsg_TalentsInfo(false, 0, 0);
+
 	//Initial Spells
 	smsg_InitialSpells();
 
@@ -6804,6 +7031,7 @@ void Player::SendInitialLogonPackets()
 
     data << (uint32)gameTime;
 	data << (float)0.0166666669777748f;  // Normal Game Speed
+	data << uint32(0); // 3.1.2
 	GetSession()->SendPacket( &data );
 
 	// cebernic for speedhack bug
@@ -6953,6 +7181,8 @@ void Player::Reset_Talents()
 	{
 		ResetDualWield2H();
 	}
+
+	smsg_TalentsInfo(false, 0, 0); //VLack: should we send this as Aspire? Yes...
 }
 
 void Player::Reset_ToLevel1()
@@ -7010,6 +7240,16 @@ void Player::CalcResistance(uint32 type)
 	res=pos-neg+BaseResistance[type];
 	if(type==0)res+=m_uint32Values[UNIT_FIELD_STAT1]*2;//fix armor from agi
 
+	// Dynamic aura 285 application, removing bonus
+	for( uint32 x = MAX_TOTAL_AURAS_START; x < MAX_TOTAL_AURAS_END; x++ )
+	{
+		if( m_auras[x] != NULL )
+		{
+			if( m_auras[x]->HasModType( SPELL_AURA_MOD_ATTACK_POWER_OF_ARMOR ) )
+				m_auras[x]->SpellAuraModAttackPowerOfArmor( false );
+		}
+	}
+
 	if( res < 0 )
 		res = 1;
 
@@ -7019,6 +7259,16 @@ void Player::CalcResistance(uint32 type)
 
 	if( GetSummon() )
 		GetSummon()->CalcResistance( type );//Re-calculate pet's too.
+
+	// Dynamic aura 285 application, adding bonus
+	for( uint32 x = MAX_TOTAL_AURAS_START; x < MAX_TOTAL_AURAS_END; x++ )
+	{
+		if( m_auras[x] != NULL )
+		{
+			if( m_auras[x]->HasModType( SPELL_AURA_MOD_ATTACK_POWER_OF_ARMOR ) )
+				m_auras[x]->SpellAuraModAttackPowerOfArmor( true );
+		}
+	}
 }
 
 
@@ -7047,7 +7297,7 @@ void Player::UpdateNearbyGameObjects()
 					{
 						for(uint32 i = 0; i < qle->GetQuest()->count_required_mob; ++i)
 						{
-							if(qle->GetQuest()->required_mob[i] == go->GetEntry() &&
+							if(qle->GetQuest()->required_mob[i] == static_cast<int32>( go->GetEntry() ) &&
 								qle->GetMobCount(i) < qle->GetQuest()->required_mobcount[i])
 							{
 								activate_quest_object = true;
@@ -7251,10 +7501,12 @@ void Player::TaxiStart(TaxiPath *path, uint32 modelid, uint32 start_node)
 
 	WorldPacket data(SMSG_MONSTER_MOVE, 38 + ( (endn - start_node) * 12 ) );
 	data << GetNewGUID();
+	data << uint8(0); //VLack: it seems we have a 1 byte stuff after the new GUID
 	data << firstNode->x << firstNode->y << firstNode->z;
 	data << m_taxi_ride_time;
 	data << uint8( 0 );
-	data << uint32( 0x00000300 );
+//	data << uint32( 0x00000300 );
+	data << uint32( 0x00003000 );
 	data << uint32( traveltime );
 
 	if(!cn)
@@ -7564,7 +7816,7 @@ void Player::_Relocate(uint32 mapid, const LocationVector & v, bool sendpending,
 void Player::AddItemsToWorld()
 {
 	Item * pItem;
-	for(uint8 i = 0; i < INVENTORY_KEYRING_END; i++)
+	for(uint8 i = 0; i < CURRENCYTOKEN_SLOT_END; i++)
 	{
 		pItem = GetItemInterface()->GetInventoryItem(i);
 		if( pItem != NULL )
@@ -7576,11 +7828,16 @@ void Player::AddItemsToWorld()
 				_ApplyItemMods(pItem, i, true, false, true);
 			}
 
+			if(i >= CURRENCYTOKEN_SLOT_START && i < CURRENCYTOKEN_SLOT_END)
+			{
+				UpdateKnownCurrencies(pItem->GetEntry(), true);
+			}
+
 			if(pItem->IsContainer() && GetItemInterface()->IsBagSlot(i))
 			{
 				for(uint32 e=0; e < pItem->GetProto()->ContainerSlots; e++)
 				{
-					Item *item = ((Container*)pItem)->GetItem(e);
+					Item *item = (static_cast<Container*>( pItem ))->GetItem(static_cast<int16>( e ));
 					if(item)
 					{
 						item->PushToWorld(m_mapMgr);
@@ -7599,7 +7856,7 @@ void Player::AddItemsToWorld()
 void Player::RemoveItemsFromWorld()
 {
 	Item * pItem;
-	for(uint32 i = 0; i < INVENTORY_KEYRING_END; i++)
+	for(uint32 i = 0; i < CURRENCYTOKEN_SLOT_END; i++)
 	{
 		pItem = m_ItemInterface->GetInventoryItem((int8)i);
 		if(pItem)
@@ -7608,16 +7865,16 @@ void Player::RemoveItemsFromWorld()
 			{
 				if(i < INVENTORY_SLOT_BAG_END)	  // only equipment+bags slots get mods.
 				{
-					_ApplyItemMods(pItem, i, false, false, true);
+					_ApplyItemMods(pItem, static_cast<int16>( i ), false, false, true);
 				}
 				pItem->RemoveFromWorld();
 			}
 
-			if(pItem->IsContainer() && GetItemInterface()->IsBagSlot(i))
+			if(pItem->IsContainer() && GetItemInterface()->IsBagSlot(static_cast<int16>( i )))
 			{
 				for(uint32 e=0; e < pItem->GetProto()->ContainerSlots; e++)
 				{
-					Item *item = ((Container*)pItem)->GetItem(e);
+					Item *item = (static_cast<Container*>( pItem ))->GetItem( static_cast<int16>( e ));
 					if(item && item->IsInWorld())
 					{
 						item->RemoveFromWorld();
@@ -8171,6 +8428,7 @@ bool Player::IsInCity()
 
 void Player::ZoneUpdate(uint32 ZoneId)
 {
+	uint32 oldzone = m_zoneId;
 	if( m_zoneId != ZoneId )
 	{
 		m_zoneId = ZoneId;
@@ -8190,6 +8448,7 @@ void Player::ZoneUpdate(uint32 ZoneId)
 
 	m_playerInfo->lastZone = ZoneId;
 	sHookInterface.OnZone(this, ZoneId);
+	CALL_INSTANCE_SCRIPT_EVENT( m_mapMgr, OnZoneChange )( this, ZoneId, oldzone );
 
 	AreaTable * at = dbcArea.LookupEntry(GetAreaID());
 	if(at && ( at->category == AREAC_SANCTUARY || at->AreaFlags & AREA_SANCTUARY ) )
@@ -8263,7 +8522,7 @@ void Player::ZoneUpdate(uint32 ZoneId)
 	if( m_mapMgr != NULL )
 		m_mapMgr->SendInitialStates( this );
 
-	UpdateChannels(ZoneId);
+	UpdateChannels(static_cast<int16>( ZoneId ));
 	/*std::map<uint32, AreaTable*>::iterator iter = sWorld.mZoneIDToTable.find(ZoneId);
 	if(iter == sWorld.mZoneIDToTable.end())
 		return;
@@ -9095,14 +9354,19 @@ void Player::UpdatePvPArea()
 				RemovePvPFlag();
 			else
 				StopPvPTimer();
+			
 			RemoveFFAPvPFlag();
+			SetSanctuaryFlag();
 		}
 		else
 		{
+			// if we are not in a sanctuary we don't need this flag
+			RemoveSanctuaryFlag();
+
 			//contested territory
 			if(sWorld.GetRealmType() == REALM_PVP)
 			{
-				//automatically sets pvp flag on contested territory's.
+				//automatically sets pvp flag on contested territories.
 				if(!IsPvPFlagged())
 					SetPvPFlag();
 				else
@@ -9461,6 +9725,7 @@ void Player::CompleteLoading()
 				charge.spellId = sp->Id;
 				charge.ProcFlag = sp->procFlags;
 				charge.lastproc = 0;
+				charge.procdiff = 0;
 				m_chargeSpells.insert( make_pair( sp->Id , charge ) );
 			}
 		}
@@ -9663,7 +9928,7 @@ void Player::ModifyBonuses( uint32 type, int32 val, bool apply )
 			}break;
 		case MELEE_HIT_AVOIDANCE_RATING:
 			{
-	//			ModUnsigned32Value( PLAYER_RATING_MODIFIER_MELEE_HIT_AVOIDANCE, val );
+				ModUnsigned32Value( PLAYER_RATING_MODIFIER_MELEE_HIT_AVOIDANCE, val );
 			}break;
 		case RANGED_HIT_AVOIDANCE_RATING:
 			{
@@ -9711,16 +9976,17 @@ void Player::ModifyBonuses( uint32 type, int32 val, bool apply )
 			}break;
 		case HIT_AVOIDANCE_RATING:// this is guessed based on layout of other fields
 			{
-//				ModUnsigned32Value( PLAYER_RATING_MODIFIER_MELEE_HIT_AVOIDANCE, val );//melee
+				ModUnsigned32Value( PLAYER_RATING_MODIFIER_MELEE_HIT_AVOIDANCE, val );//melee
 				ModUnsigned32Value( PLAYER_RATING_MODIFIER_RANGED_HIT_AVOIDANCE, val );//ranged
 				ModUnsigned32Value( PLAYER_RATING_MODIFIER_SPELL_HIT_AVOIDANCE, val );//spell
 			}break;
+		case CRITICAL_AVOIDANCE_RATING:
+			{
+			
+			}break;
 		case EXPERTISE_RATING:
-		case EXPERTISE_RATING_2:
 			{
 				ModUnsigned32Value( PLAYER_RATING_MODIFIER_EXPERTISE, val );
-				ModUnsigned32Value( PLAYER_RATING_MODIFIER_EXPERTISE2, val );
-				//ModUnsigned32Value( PLAYER_EXPERTISE, val );
 			}break;
 		case RESILIENCE_RATING:
 			{
@@ -9736,8 +10002,8 @@ void Player::ModifyBonuses( uint32 type, int32 val, bool apply )
 			}break;
 		case ATTACK_POWER:
 			{
-				ModUnsigned32Value(UNIT_FIELD_ATTACK_POWER_MODS, val);
-				ModUnsigned32Value(UNIT_FIELD_RANGED_ATTACK_POWER_MODS, val);
+				ModUnsigned32Value( UNIT_FIELD_ATTACK_POWER_MODS, val );
+				ModUnsigned32Value( UNIT_FIELD_RANGED_ATTACK_POWER_MODS, val );
 			}break;
 		case RANGED_ATTACK_POWER:
 			{
@@ -9768,7 +10034,7 @@ void Player::ModifyBonuses( uint32 type, int32 val, bool apply )
 			}break;
 		case ARMOR_PENETRATION_RATING:
 			{
-//				ModUnsigned32Value(PLAYER_RATING_MODIFIER_ARMOR_PENETRATION_RATING, val);
+				ModUnsigned32Value(PLAYER_RATING_MODIFIER_ARMOR_PENETRATION_RATING, val);
 			}break;
 		case SPELL_POWER:
 			{
@@ -9777,7 +10043,6 @@ void Player::ModifyBonuses( uint32 type, int32 val, bool apply )
 					ModUnsigned32Value( PLAYER_FIELD_MOD_DAMAGE_DONE_POS + school, val );
 					HealDoneMod[school] += val;
 				}
-
 				ModUnsigned32Value( PLAYER_FIELD_MOD_HEALING_DONE_POS, uint32( float( val ) * 1.88f ) );
 			}break;
 		}
@@ -9849,7 +10114,7 @@ void Player::SaveAuras(stringstream &ss)
 
 void Player::SetShapeShift(uint8 ss)
 {
-	uint8 old_ss = GetByte( UNIT_FIELD_BYTES_2, 3 );
+	uint8 old_ss = GetShapeShift(); //GetByte( UNIT_FIELD_BYTES_2, 3 );
 	SetByte( UNIT_FIELD_BYTES_2, 3, ss );
 
 	//remove auras that we should not have
@@ -10136,7 +10401,6 @@ void Player::CalcDamage()
 /////////////////////////////////RANGED end
 		if( GetSummon() )
 			GetSummon()->CalcDamage();//Re-calculate pet's too
-
 }
 
 uint32 Player::GetMainMeleeDamage(uint32 AP_owerride)
@@ -10196,7 +10460,7 @@ void Player::UpdateComboPoints()
 		}
 		else
 		{
-			c = FastGUIDPack(m_comboTarget, buffer, 0);
+			c = static_cast<uint16>( FastGUIDPack(m_comboTarget, buffer, 0) );
 			buffer[c++] = m_comboPoints;
 		}
 	}
@@ -10249,6 +10513,11 @@ void Player::removeSoulStone()
 		{
 			sSoulStone = 27239;
 		}break;
+	case 47882:
+		{//Rank 7
+			sSoulStone = 47883;
+		}break;
+
 	}
 	this->RemoveAura(sSoulStone);
 	this->SoulStone = this->SoulStoneReceiver = 0; //just incase
@@ -10375,7 +10644,7 @@ void Player::Possess(Unit * pTarget)
 
 		WorldPacket data(SMSG_PET_SPELLS, pTarget->GetAIInterface()->m_spells.size() * 4 + 20);
 		data << pTarget->GetGUID();
-		data << uint32(0x00000000);//unk1
+		data << uint16(0x00000000);//unk1
 		data << uint32(0x00000101);//unk2
 		data << uint32(0x00000100);//unk3
 
@@ -10447,7 +10716,6 @@ void Player::UnPossess()
 	{
 		data.Initialize( SMSG_PET_SPELLS );
 		data << uint64(0);
-		data << uint32(0);
 		m_session->SendPacket( &data );
 	}
 }
@@ -10532,8 +10800,10 @@ void Player::_AddSkillLine(uint32 SkillLine, uint32 Curr_sk, uint32 Max_sk)
 
 	// Displaying bug fix
 	_UpdateSkillFields();
+#ifdef ENABLE_ACHIEVEMENTS
 	m_achievementMgr.UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_LEARN_SKILL_LEVEL, SkillLine, Max_sk/75, 0);
 	m_achievementMgr.UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_REACH_SKILL_LEVEL, SkillLine, Curr_sk, 0);
+#endif
 }
 
 void Player::_UpdateSkillFields()
@@ -10553,12 +10823,16 @@ void Player::_UpdateSkillFields()
 		if(itr->second.Skill->type == SKILL_TYPE_PROFESSION)
 		{
 			SetUInt32Value(f++, itr->first | 0x10000);
+#ifdef ENABLE_ACHIEVEMENTS
 			m_achievementMgr.UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_REACH_SKILL_LEVEL, itr->second.Skill->id, itr->second.CurrentValue, 0);
+#endif	
 		}
 		else
 		{
 			SetUInt32Value(f++, itr->first);
+#ifdef ENABLE_ACHIEVEMENTS
 			m_achievementMgr.UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_LEARN_SKILL_LEVEL, itr->second.Skill->id, itr->second.MaximumValue/75, 0);
+#endif
 		}
 
 		SetUInt32Value(f++, (itr->second.MaximumValue << 16) | itr->second.CurrentValue);
@@ -10589,8 +10863,10 @@ void Player::_AdvanceSkillLine(uint32 SkillLine, uint32 Count /* = 1 */)
 		_AddSkillLine(SkillLine, Count, getLevel() * 5);
 		_UpdateMaxSkillCounts();
 		sHookInterface.OnAdvanceSkillLine(this, SkillLine, Count);
+#ifdef ENABLE_ACHIEVEMENTS
 		m_achievementMgr.UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_LEARN_SKILL_LEVEL, SkillLine, _GetSkillLineMax(SkillLine), 0);
 		m_achievementMgr.UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_REACH_SKILL_LEVEL, SkillLine, Count, 0);
+#endif
 	}
 	else
 	{
@@ -10602,8 +10878,10 @@ void Player::_AdvanceSkillLine(uint32 SkillLine, uint32 Count /* = 1 */)
 			_UpdateSkillFields();
 			sHookInterface.OnAdvanceSkillLine(this, SkillLine, curr_sk);
 		}
+#ifdef ENABLE_ACHIEVEMENTS
 		m_achievementMgr.UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_LEARN_SKILL_LEVEL, SkillLine, itr->second.MaximumValue/75, 0);
 		m_achievementMgr.UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_REACH_SKILL_LEVEL, SkillLine, itr->second.CurrentValue, 0);
+#endif
 	}
 	_LearnSkillSpells(SkillLine, curr_sk);
 }
@@ -10911,7 +11189,9 @@ void Player::_ModifySkillMaximum(uint32 SkillLine, uint32 NewMax)
 
 		itr->second.MaximumValue = NewMax;
 		_UpdateSkillFields();
+#ifdef ENABLE_ACHIEVEMENTS
 		m_achievementMgr.UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_LEARN_SKILL_LEVEL, SkillLine, NewMax/75, 0);
+#endif
 	}
 }
 
@@ -10920,7 +11200,7 @@ void Player::RemoveSpellTargets(uint32 Type, Unit* target)
 	if( m_spellIndexTypeTargets[Type] != 0 )
 	{
 		Unit * pUnit = m_mapMgr ? m_mapMgr->GetUnit(m_spellIndexTypeTargets[Type]) : NULL;
-		if( pUnit != NULL && pUnit != target ) //some auras can stack on target. There is no need to remove them if target is same as previous one
+		if( pUnit != NULL /*&& pUnit != target*/ ) //some auras can stack on target. There is no need to remove them if target is same as previous one // KFL: This is wrong and allows casting all Judgements on 1 target
 		{
 			pUnit->RemoveAurasByBuffIndexType(Type, GetGUID());
 			m_spellIndexTypeTargets[Type] = 0;
@@ -11603,21 +11883,29 @@ void Player::Cooldown_AddStart(SpellEntry * pSpell)
 		return;
 
 	uint32 mstime = getMSTime();
-	int32 atime = float2int32( float( pSpell->StartRecoveryTime ) / SpellHasteRatingBonus );
+	int32 atime; // = float2int32( float( pSpell->StartRecoveryTime ) / SpellHasteRatingBonus );
 
+	if( m_floatValues[UNIT_MOD_CAST_SPEED] >= 1.0f )
+		atime = pSpell->StartRecoveryTime;
+	else
+		atime = float2int32( float(pSpell->StartRecoveryTime) * m_floatValues[UNIT_MOD_CAST_SPEED] );
 
-	if( atime < 1000 )	// global cooldown is limited to 1s
-		atime = 1000;
+	if( pSpell->SpellGroupType )
+	{
+		SM_FIValue(SM_FGlobalCooldown, &atime, pSpell->SpellGroupType);
+		SM_PIValue(SM_PGlobalCooldown, &atime, pSpell->SpellGroupType);
+	}
 
-	if( pSpell->StartRecoveryCategory )		// if we have a different cool category to the actual spell category - only used by few spells
+	if( atime < 0 )
+		return;
+
+	if( pSpell->StartRecoveryCategory && pSpell->StartRecoveryCategory != 133 )		// if we have a different cool category to the actual spell category - only used by few spells
 		_Cooldown_Add( COOLDOWN_TYPE_CATEGORY, pSpell->StartRecoveryCategory, mstime + atime, pSpell->Id, 0 );
-	/*else if( pSpell->Category )				// cooldowns are grouped
-		_Cooldown_Add( COOLDOWN_TYPE_CATEGORY, pSpell->Category, mstime + pSpell->StartRecoveryTime, pSpell->Id, 0 );*/
+	//else if( pSpell->Category )				// cooldowns are grouped
+		//_Cooldown_Add( COOLDOWN_TYPE_CATEGORY, pSpell->Category, mstime + pSpell->StartRecoveryTime, pSpell->Id, 0 );
 	else									// no category, so it's a gcd
 	{
-#ifdef _DEBUG
-		Log.Debug("Cooldown", "Global cooldown adding: %u ms", atime );
-#endif
+		//Log.Debug("Cooldown", "Global cooldown adding: %u ms", atime );
 		m_globalCooldown = mstime + atime;
 
 	}
@@ -11814,7 +12102,9 @@ void Player::_FlyhackCheck()
 {
 	if(!sWorld.antihack_flight || m_TransporterGUID != 0 || GetTaxiState() || (sWorld.no_antihack_on_gm && GetSession()->HasGMPermissions()))
 		return;
-    return; //disabled
+    return; 
+	//disabled
+	/*
 	MovementInfo * mi = GetSession()->GetMovementInfo();
 	if(!mi) return; //wtf?
 
@@ -11848,6 +12138,8 @@ void Player::_FlyhackCheck()
 			GetSession()->SendPacket(&data);
 		}
 	}
+	*/
+
 }
 
 /************************************************************************/
@@ -12326,16 +12618,17 @@ void Player::FullHPMP()
     SetUInt32Value(UNIT_FIELD_POWER4, GetUInt32Value(UNIT_FIELD_MAXPOWER4));
 }
 
-/***********************************
-* Remove all temporary enchants
-***********************************/
+/**********************************************
+* Remove all temporary enchants from all items
+**********************************************/
 void Player::RemoveTempEnchantsOnArena()
 {
 	ItemInterface *itemi = GetItemInterface();
-
-	for( uint32 x = EQUIPMENT_SLOT_START; x < EQUIPMENT_SLOT_END; ++x ) // all equipment items
+	
+	// Loop through all equipment items
+	for( uint32 x = EQUIPMENT_SLOT_START; x < EQUIPMENT_SLOT_END; ++x )
 	{
-		Item * it = itemi->GetInventoryItem(x);
+		Item * it = itemi->GetInventoryItem( static_cast<int16>( x ));
 
 		if( it != NULL )
 		{
@@ -12343,9 +12636,10 @@ void Player::RemoveTempEnchantsOnArena()
 		}
 	}
 
-	for( uint32 x = INVENTORY_SLOT_BAG_START; x < INVENTORY_SLOT_BAG_END; ++x) // all bags items
+	// Loop through all your bags.. 
+	for( uint32 x = INVENTORY_SLOT_BAG_START; x < INVENTORY_SLOT_BAG_END; ++x)
 	{
-		Item * it = itemi->GetInventoryItem(x);
+		Item * it = itemi->GetInventoryItem(static_cast<int16>( x ));
 		
 		if( it != NULL )
 		{
@@ -12354,7 +12648,7 @@ void Player::RemoveTempEnchantsOnArena()
 				Container *bag = static_cast<Container*>( it );
 				for( uint32 ci = 0; ci < bag->GetProto()->ContainerSlots; ++ci )
 				{
-					it = bag->GetItem( ci );
+					it = bag->GetItem( static_cast<int16>( ci ));
 					if( it != NULL )
 						it->RemoveAllEnchantments(true);
 				}
@@ -12362,9 +12656,10 @@ void Player::RemoveTempEnchantsOnArena()
 		}
 	}
 
-	for( uint32 x = INVENTORY_SLOT_ITEM_START; x < INVENTORY_SLOT_ITEM_END; ++x ) // all inventory items
+	// Loop through all your invintory items
+	for( uint32 x = INVENTORY_SLOT_ITEM_START; x < INVENTORY_SLOT_ITEM_END; ++x )
 	{
-		Item * it = itemi->GetInventoryItem(x);
+		Item * it = itemi->GetInventoryItem( static_cast<int16>( x ));
 
 		if( it != NULL )
 		{
@@ -12461,7 +12756,7 @@ void Player::ConvertRune(uint8 index, uint8 value)
 uint32 Player::HasRunes(uint8 type, uint32 count)
 {
 	uint32 found = 0;
-	for(uint32 i=0; i<6 && count != found; ++i)
+	for(uint32 i = 0; i < 6 && count != found; ++i)
 	{
 		if(GetRune(i) == type)
 			found++;
@@ -12903,22 +13198,22 @@ void Player::SetSanctuaryFlag(){
 		m_Summon->SetSanctuaryFlag();
 }
 
-void Player::RemoveSancturayFlag(){
+void Player::RemoveSanctuaryFlag(){
 	RemoveByteFlag( UNIT_FIELD_BYTES_2, 1, U_FIELD_BYTES_FLAG_SANCTUARY );
 
 	// Adjusting the totems' sanctuary flag	
 	for(int i = 0; i < 4; ++i){
 		if( m_TotemSlots[i] != NULL ){
-			m_TotemSlots[i]->RemoveSancturayFlag();
+			m_TotemSlots[i]->RemoveSanctuaryFlag();
 			
 			// Adjusting the totems' summons' sanctuary flag
 			if( static_cast<Unit*>( m_TotemSlots[i] )->summonPet != NULL)
-				static_cast<Unit*>( m_TotemSlots[i] )->summonPet->RemoveSancturayFlag();
+				static_cast<Unit*>( m_TotemSlots[i] )->summonPet->RemoveSanctuaryFlag();
 		}
 	}
 	
 	// If we have a pet we will remove the sanctuary flag from that too
 	if( m_Summon != NULL )
-		m_Summon->RemoveSancturayFlag();
+		m_Summon->RemoveSanctuaryFlag();
 }
 

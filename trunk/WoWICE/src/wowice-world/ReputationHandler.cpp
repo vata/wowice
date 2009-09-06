@@ -102,7 +102,7 @@ WoWICE_INLINE bool RankChangedFlat( int32 Standing, int32 NewStanding )
 
 void Player::smsg_InitialFactions()
 {
-	WorldPacket data( SMSG_INITIALIZE_FACTIONS, 644 );
+	WorldPacket data( SMSG_INITIALIZE_FACTIONS, 764 ); //VLack: Aspire has this on 764, it was 644 before.
 	data << uint32( 128 );
 	FactionReputation * rep;
 	for ( uint32 i = 0; i < 128; ++i )
@@ -167,13 +167,17 @@ void Player::SetStanding( uint32 Faction, int32 Value )
 		// Increment it.
 		if ( RankChangedFlat( itr->second->standing, newValue ) )
 		{
+#ifdef ENABLE_ACHIEVEMENTS
 			if(itr->second->standing-newValue >= exaltedReputation) // somehow we lost exalted status
 				m_achievementMgr.UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_GAIN_EXALTED_REPUTATION, -1, 0, 0); // decrement # of exalted
 			else if(newValue >= exaltedReputation) // check if we are exalted now
 				m_achievementMgr.UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_GAIN_EXALTED_REPUTATION, 1, 0, 0); // increment # of exalted
+#endif
 			itr->second->standing = newValue;
 			UpdateInrangeSetsBasedOnReputation();
-			m_achievementMgr.UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_GAIN_REPUTATION, f->ID, Value, 0);
+#ifdef ENABLE_ACHIEVEMENTS
+m_achievementMgr.UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_GAIN_REPUTATION, f->ID, Value, 0);
+#endif
 		}
 		else
 			itr->second->standing = newValue;
@@ -237,11 +241,13 @@ void Player::ModStanding( uint32 Faction, int32 Value )
 		{
 			itr->second->standing += newValue;
 			UpdateInrangeSetsBasedOnReputation();
+#ifdef ENABLE_ACHIEVEMENTS
 			this->m_achievementMgr.UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_GAIN_REPUTATION, f->ID, itr->second->standing, 0);
 			if(itr->second->standing >= exaltedReputation) // check if we are exalted now
 				m_achievementMgr.UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_GAIN_EXALTED_REPUTATION, 1, 0, 0); // increment # of exalted
 			else if(itr->second->standing-newValue >= exaltedReputation) // somehow we lost exalted status
 				m_achievementMgr.UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_GAIN_EXALTED_REPUTATION, -1, 0, 0); // decrement # of exalted
+#endif		
 		}
 		else
 		{
@@ -440,7 +446,7 @@ bool Player::AddNewFaction( FactionDBC * dbc, int32 standing, bool base ) // if 
 		if ( dbc->RaceMask[i] & RaceMask && ( dbc->ClassMask[i] & ClassMask || dbc->ClassMask[i] == 0 ) )
 		{
 			FactionReputation * rep = new FactionReputation;
-			rep->flag = dbc->repFlags[i];
+			rep->flag = static_cast<uint8>( dbc->repFlags[i] );
 			rep->baseStanding = dbc->baseRepValue[i];
 			rep->standing = ( base ) ? dbc->baseRepValue[i] : standing;
 			m_reputation[dbc->ID] = rep;
