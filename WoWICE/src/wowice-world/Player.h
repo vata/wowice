@@ -16,7 +16,9 @@
 #ifndef _PLAYER_H
 #define _PLAYER_H
 struct BGScore;
+#ifdef ENABLE_ACHIEVEMENTS
 class AchievementMgr;
+#endif
 class Channel;
 class Creature;
 class Battleground;
@@ -964,6 +966,20 @@ protected:
 	// END COOLDOWNS
 
 public:
+    void RemoveItemByGuid( uint64 GUID );
+	float m_MasterShapeshift;
+	int32 pandemicDamagePerc;
+	int8 improvedFearVal;
+	uint8 deathEmrDrain;
+	uint8 deathEmrShadow;
+	uint8 improvedSoulLeech;
+	int8 conflagrCritCoef;
+	int8 immolateBonus;	
+	int8 felSynergyChance;
+	int8 felSynergyPctBonus;
+	uint32 demonicEmpathySpell;
+	uint32 activePotionSpid;
+
 	//! Okay to remove from world
 	bool ok_to_remove;
 	uint64 m_spellIndexTypeTargets[NUM_SPELL_TYPE_INDEX];
@@ -973,6 +989,7 @@ public:
 	void SetSpellTargetType(uint32 Type, Unit* target);
 	void SendMeetingStoneQueue(uint32 DungeonId, uint8 Status);
 	void SendDungeonDifficulty();
+	void SendRaidDifficulty();
 
 	void AddToWorld();
 	void AddToWorld(MapMgr * pMapMgr);
@@ -990,6 +1007,7 @@ public:
 	//void KilledMonster(uint32 entry, const uint64 &guid);
 	void GiveXP(uint32 xp, const uint64 &guid, bool allowbonus);   // to stop rest xp being given
 	void ModifyBonuses( uint32 type, int32 val, bool apply );
+	void CalcExpertise();
 	std::map<uint32, uint32> m_wratings;
 
 	ArenaTeam * m_arenaTeams[NUM_ARENA_TEAM_TYPES];
@@ -1108,6 +1126,7 @@ public:
 	bool HasSpellwithNameHash(uint32 hash);
 	bool HasDeletedSpell(uint32 spell);
 	void smsg_InitialSpells();
+	void smsg_TalentsInfo(bool update, uint32 newTalentId, uint8 newTalentRank);
 	void addSpell(uint32 spell_idy);
 	void removeSpellByHashName(uint32 hash);
 	bool removeSpell(uint32 SpellID, bool MoveToDeleted, bool SupercededSpell, uint32 SupercededSpellID);
@@ -1197,9 +1216,11 @@ public:
 
 	WoWICE_INLINE bool HasTitle( RankTitles title )
 	{
-		return ( GetUInt64Value( PLAYER_FIELD_KNOWN_TITLES + ( ( title >> 6 ) << 1 )  ) & ( uint64(1) << ( title % 64 ) ) ) != 0;
+		return ( GetUInt64Value( PLAYER__FIELD_KNOWN_TITLES + ( ( title >> 6 ) << 1 )  ) & ( uint64(1) << ( title % 64 ) ) ) != 0;
 	}
 	void SetKnownTitle( RankTitles title, bool set );
+	void SendAvailSpells(SpellShapeshiftForm* ssf,bool active);
+
     /************************************************************************/
     /* Groups                                                               */
     /************************************************************************/
@@ -1309,6 +1330,7 @@ public:
 	void						EventSummonPet(Pet *new_pet); //if we charmed or simply summoned a pet, this function should get called
 	void						EventDismissPet(); //if pet/charm died or whatever happened we should call this function
 
+	Creature * m_eyeofkilrogg;
     /************************************************************************/
     /* Item Interface                                                       */
     /************************************************************************/
@@ -1413,6 +1435,7 @@ public:
 	void EventAttackStop();
 	void EventAttackUpdateSpeed() { }
 	void EventDeath();
+	void EventPotionCooldown();
 	//Note:ModSkillLine -> value+=amt;ModSkillMax -->value=amt; --weird
 	float GetSkillUpChance(uint32 id);
 	//WoWICE_INLINE std::list<struct skilllines>getSkillLines() { return m_skilllines; }
@@ -1454,6 +1477,10 @@ public:
 		return GetByte(UNIT_FIELD_BYTES_2,3);
 	}
 
+	WoWICE_INLINE uint32 GetShapeShiftMask()
+	{
+		return ( (uint32)1 << (GetShapeShift() - 1) );
+	}
 
 	void delayAttackTimer(int32 delay)
 	{
@@ -1592,12 +1619,29 @@ public:
 	uint32 BaseResistanceModPctNeg[7];
 	uint32 ResistanceModPctPos[7];
 	uint32 ResistanceModPctNeg[7];
+	uint32 m_ExpertiseMod;
 	float m_resist_critical[2];//when we are a victim we can have talents to decrease chance for critical hit. This is a negative value and it's added to critchances
 	float m_resist_hit[3]; // 0 = melee; 1= ranged; 2=spells
 	float m_attack_speed[3];
+	float SpellDmgDoneByAttribute[5][7];
 	float SpellHealDoneByAttribute[5][7];
 	uint32 m_modphyscritdmgPCT;
 	uint32 m_RootedCritChanceBonus; // Class Script Override: Shatter
+	uint32 m_IncreaseDmgSnaredSlowed;
+	uint32 m_MoltenFuryDmgBonus;    // DuKJIoHuyC: для таланта http://www.wowhead.com/?spell=31680
+	uint32 ShatteredBarrierMod;		// For Shattered Barrier http://www.wowhead.com/?spell=54787
+	uint32 FieryPaybackModHP35;		// for Fiery Payback
+	uint32 TormentTheWeakDmgBns;
+	uint32 ArcanePotencyMod;
+	uint64 LivingBmbTgt;
+	uint32 JungleKingMod;
+	int32 FittestSurvivalMod;
+	uint8  StunDamageReductPct;		// For Primal Tenacity  DK Talent
+	bool isGuardianSpirit;
+ 
+	//megai2: incr type, incr idx, src type, src idx, pct, real amt
+	int32 ModStatByAttr[5][7][5][7][2];
+	void ApplyStatByAttrMod(uint8 dstType, uint8 dstIdx, uint8 srcType, uint8 srcIdx);
 
 	uint32 m_ModInterrMRegenPCT;
 	int32 m_ModInterrMRegen;
@@ -1648,6 +1692,7 @@ public:
 	bool bReincarnation;
 	bool removeReagentCost;
 	bool ignoreShapeShiftChecks;
+	bool ignoreAuraStateCheck;
 
 	map<uint32, WeaponModifier> damagedone;
 	map<uint32, WeaponModifier> tocritchance;
@@ -1672,6 +1717,7 @@ public:
 
 	void AddItemsToWorld();
 	void RemoveItemsFromWorld();
+	void UpdateKnownCurrencies(uint32 itemId, bool apply);
 
 	uint32 m_ShapeShifted;
 	uint32 m_MountSpellId;
@@ -1847,48 +1893,24 @@ public:
 	******************/
 	uint32 m_pvpTimer;
 
-	//! Is PVP flagged?
-	WoWICE_INLINE bool IsPvPFlagged()
-	{
-		return HasByteFlag(UNIT_FIELD_BYTES_2, 1, U_FIELD_BYTES_FLAG_PVP);
-	}
+	bool IsPvPFlagged();
+	void SetPvPFlag();
+	void RemovePvPFlag();
 
-	WoWICE_INLINE void SetPvPFlag()
-	{
-		StopPvPTimer();
-//		This is now done in Player::OnPushToWorld() to allow PvP-off characters to attack PvP-on characters without having to type /pvp
-//		RemoveByteFlag(UNIT_FIELD_BYTES_2, 1, 0x28);
-		SetByteFlag(UNIT_FIELD_BYTES_2, 1, U_FIELD_BYTES_FLAG_PVP);
-		SetFlag(PLAYER_FLAGS, PLAYER_FLAG_PVP);
-		if( CombatStatus.IsInCombat() )
-			SetFlag(PLAYER_FLAGS, 0x100);
-	}
+	bool IsFFAPvPFlagged();
+	void SetFFAPvPFlag();
+	void RemoveFFAPvPFlag();
 
-	WoWICE_INLINE void RemovePvPFlag()
-	{
-		StopPvPTimer();
-		RemoveByteFlag(UNIT_FIELD_BYTES_2, 1, U_FIELD_BYTES_FLAG_PVP);
-		RemoveFlag(PLAYER_FLAGS, PLAYER_FLAG_PVP);
-	}
+	bool IsSanctuaryFlagged();
+	void SetSanctuaryFlag();
+	void RemoveSanctuaryFlag();
 
-	WoWICE_INLINE bool IsFFAPvPFlagged()
-	{
-		return HasByteFlag(UNIT_FIELD_BYTES_2, 1, U_FIELD_BYTES_FLAG_FFA_PVP);
-	}
-
-	WoWICE_INLINE void SetFFAPvPFlag()
-	{
-		StopPvPTimer();
-		SetByteFlag(UNIT_FIELD_BYTES_2, 1, U_FIELD_BYTES_FLAG_FFA_PVP);
-		SetFlag(PLAYER_FLAGS, PLAYER_FLAG_FREE_FOR_ALL_PVP);
-	}
-
-	WoWICE_INLINE void RemoveFFAPvPFlag()
-	{
-		StopPvPTimer();
-		RemoveByteFlag(UNIT_FIELD_BYTES_2, 1, U_FIELD_BYTES_FLAG_FFA_PVP);
-		RemoveFlag(PLAYER_FLAGS, PLAYER_FLAG_FREE_FOR_ALL_PVP);
-	}
+    WoWICE_INLINE void AddCoins( int32 coins ){ 
+        ModUnsigned32Value( PLAYER_FIELD_COINAGE , coins );
+    }
+    WoWICE_INLINE void TakeCoins( int32 coins ){ 
+        ModUnsigned32Value(PLAYER_FIELD_COINAGE, -coins);
+    }
 
 	//! Do this on /pvp off
 	WoWICE_INLINE void ResetPvPTimer();
@@ -2053,6 +2075,9 @@ public:
 	void CopyAndSendDelayedPacket(WorldPacket * data);
 	void PartLFGChannel();
 	SpeedCheatDetector	*SDetector;
+	int32 armToApValue;
+	int32 armToApCoeff;
+	int32 lastArmToApBonus;
 protected:
 	LocationVector m_summonPos;
 	uint32 m_summonInstanceId;
@@ -2083,7 +2108,7 @@ protected:
 	void _LoadPetSpells(QueryResult * result);
 	void _SavePet(QueryBuffer * buf);
 	void _SavePetSpells(QueryBuffer * buf);
-	void _ApplyItemMods( Item* item, int8 slot, bool apply, bool justdrokedown = false, bool skip_stat_apply = false );
+	void _ApplyItemMods( Item* item, int16 slot, bool apply, bool justdrokedown = false, bool skip_stat_apply = false );
 	void _EventAttack( bool offhand );
 	void _EventExploration();
 
@@ -2249,6 +2274,9 @@ public:
 	/* end social                                                           */
 	/************************************************************************/
 
+	bool m_castFilterEnabled;
+	uint32 m_castFilter[3];	// spell group relation of only spells that player can currently cast
+
 	uint32 m_outStealthDamageBonusPct;
 	uint32 m_outStealthDamageBonusPeriod;
 	uint32 m_outStealthDamageBonusTimer;
@@ -2274,7 +2302,9 @@ public:
 	uint32 HasRunes(uint8 type, uint32 count);
 	uint32 m_runetimer[6];
 
-
+	// Avenging Wrath
+	bool mAvengingWrath;
+	void AvengingWrath() { mAvengingWrath = true; }
 
 	int16 m_vampiricEmbrace;
 	int16 m_vampiricTouch;
@@ -2303,11 +2333,31 @@ public:
 	std::map<uint32,AchievementVal*> m_achievements;
 //	uint32 m_achievement_points; // for quick check in case it is used as currency*/
 
+#ifdef ENABLE_ACHIEVEMENTS
     WoWICE_INLINE AchievementMgr& GetAchievementMgr() { return m_achievementMgr; }
 	AchievementMgr m_achievementMgr;
+#endif
     /************************************************************************/
 	/* Player Achievements - end				                            */
     /************************************************************************/
+
+    /************************************************************************/
+    /* Talent Specs                                                         */
+    /************************************************************************/
+	// VLack: Talent Specs from Aspire, now just the values for an empty packet
+	uint16 m_maxTalentPoints;
+//	uint16 GetMaxTalentPoints();
+//	void ApplySpec(uint8 spec, bool init);
+//	void ApplyTalent(uint32 spellId);
+//	void RemoveTalent(uint32 spellid);
+	uint8 m_talentSpecsCount;
+	uint8 m_talentActiveSpec;
+	struct PlayerSpec
+	{
+		std::map<uint32, uint8> talents;	// map of <talentId, talentRank>
+		uint16  glyphs[GLYPHS_COUNT];
+	};
+	PlayerSpec m_specs[MAX_SPEC_COUNT];
 
     /************************************************************************/
     /* Player Vehicles							                            */

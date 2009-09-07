@@ -467,40 +467,33 @@ bool PurifyBoarMeat(uint32 i, Spell *pSpell)
 
 bool WarpRiftGenerator(uint32 i, Spell * pSpell)
 {
-	if(!pSpell->p_caster) return true;
+	if( !pSpell->p_caster )
+		return true;
 
 	float SSX = pSpell->p_caster->GetPositionX();
 	float SSY = pSpell->p_caster->GetPositionY();
 	float SSZ = pSpell->p_caster->GetPositionZ();
 	float SSO = pSpell->p_caster->GetOrientation();
 
-	pSpell->p_caster->GetMapMgr()->GetInterface()->SpawnCreature(16939,SSX,SSY,SSZ,SSO,true,false,0,0);
+	pSpell->p_caster->GetMapMgr()->GetInterface()->SpawnCreature(16939, SSX, SSY, SSZ, SSO, true, false, 0, 0);
 
 	return true;
 }
-
-
-bool TrainingDummy(uint32 i, Aura* pAura, bool apply)
+bool OrbOfTheSindorei(uint32 i, Aura * pAura, bool apply)
 {
-	Unit *u_caster = NULL;
-
-	if(pAura == NULL)
-		return false;
-
-	u_caster = pAura->GetUnitCaster();
-	if(u_caster == NULL)
-		return false;
-
-	if(apply){
-		u_caster->GetAIInterface()->SetAllowedToEnterCombat(false);
-		u_caster->bUnbeatable = true;
-	}else{
-		u_caster->GetAIInterface()->SetAllowedToEnterCombat(true);
-		u_caster->bUnbeatable = false;
+	Unit* target = pAura->GetTarget();
+	if( !target || !target->IsPlayer() )
+		return true;
+	if( apply )
+	{
+		if( target->getGender() == 0 )
+			target->CastSpell(target, 46355, true);
+		else
+			target->CastSpell(target, 46356, true);
 	}
-	
 	return true;
 }
+
 
 // ADD NEW FUNCTIONS ABOVE THIS LINE
 // *****************************************************************************
@@ -532,10 +525,9 @@ void SetupItemSpells_1(ScriptMgr * mgr)
 	mgr->register_dummy_spell(32001, &MinionsOfGurok);			// Minions of gurok
 	mgr->register_dummy_spell(29200, &PurifyBoarMeat);			// Purify Boar meat spell
 	mgr->register_dummy_spell(35036, &WarpRiftGenerator);       // Summon a Warp Rift in Void Ridge
+	mgr->register_dummy_aura( 46354, &OrbOfTheSindorei);        //Orb of the Sin'dorei
 	mgr->register_dummy_spell(17512, &PiccolooftheFlamingFire); //Piccolo of the flaming fire.
 	mgr->register_dummy_spell(18400, &PiccolooftheFlamingFire); //Piccolo of the flaming fire.
-	mgr->register_dummy_aura(61574,&TrainingDummy);
-	mgr->register_dummy_aura(61573,&TrainingDummy);
 
 // REGISTER NEW DUMMY SPELLS ABOVE THIS LINE
 // *****************************************************************************

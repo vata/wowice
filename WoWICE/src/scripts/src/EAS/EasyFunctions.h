@@ -13,6 +13,9 @@
  * this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+
+
+
 #ifndef EASYFUNC_H
 #define EASYFUNC_H
 
