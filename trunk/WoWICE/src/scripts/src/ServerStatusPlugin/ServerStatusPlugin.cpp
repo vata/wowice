@@ -47,6 +47,8 @@ extern "C" SCRIPT_DECL uint32 _exp_get_script_type()
 	LONGLONG m_lnOldValue = 0;
 	LARGE_INTEGER m_OldPerfTime100nSec;
 	uint32 number_of_cpus;
+#else
+UnixMetric *UMPTR = NULL;
 #endif
 
 // This is needed because windows is a piece of shit
@@ -62,7 +64,11 @@ char Filename[MAX_PATH];
 // Actual StatDumper Class
 class StatDumper
 {
+private:
+    time_t LastTrafficUpdate;
 public:
+    StatDumper() : LastTrafficUpdate(0){ };
+    ~StatDumper(){ };
     void DumpStats();
 };
 
@@ -98,6 +104,9 @@ void StatDumperThread::OnShutdown()
 
 StatDumperThread::StatDumperThread()
 {
+#ifndef WIN32
+ UMPTR = new UnixMetric;
+#endif
 }
 
 StatDumperThread::~StatDumperThread()
@@ -105,6 +114,7 @@ StatDumperThread::~StatDumperThread()
 #ifdef WIN32
 	CloseHandle(hEvent);
 #else
+	delete UMPTR;
 	pthread_cond_destroy(&cond);
 	pthread_mutex_destroy(&mutex);
 #endif
@@ -261,7 +271,7 @@ float GetCPUUsage()
 #ifdef WIN32
     return GetCPUUsageWin32();
 #else
-    return 0.0f;
+    return UMPTR->GetCPUUsageUnix();
 #endif
 }
 
@@ -270,7 +280,7 @@ float GetRAMUsage()
 #ifdef WIN32
     return GetRAMUsageWin32();
 #else
-     return 0.0f;
+    return UMPTR->GetRAMUsageUnix();
 #endif
 }
 
@@ -307,6 +317,19 @@ void FillOnlineTime(uint32 Time, char * Dest)
 
 void StatDumper::DumpStats()
 {
+
+    double TotalTrafficInKb = 0.0;
+    double TotalTrafficOutKb = 0.0;
+    double LastTotalTrafficInKb = 0.0;
+    double LastTotalTrafficOutKb = 0.0;
+    double TrafficInKb = 0.0;
+    double TrafficOutKb = 0.0;
+
+    double TrafficInKbsec = 0.0;
+    double TrafficOutKbsec = 0.0;
+
+    time_t timediff = 0;
+
     if( Filename[0] == NULL )
         return;
     FILE* f = fopen( Filename, "w" );
@@ -365,6 +388,23 @@ void StatDumper::DumpStats()
         AvgLat = count ? (float)((float)avg / (float)count) : 0;
         GMCount = gm;
 
+        sWorld.QueryTotalTraffic(&TotalTrafficInKb,&TotalTrafficOutKb);
+
+        if(LastTrafficUpdate != 0){
+            sWorld.QueryLastTotalTraffic(&LastTotalTrafficInKb, &LastTotalTrafficOutKb);
+            TrafficInKb = TotalTrafficInKb - LastTotalTrafficInKb;
+            TrafficOutKb = TotalTrafficOutKb - LastTotalTrafficOutKb;
+
+            timediff = UNIXTIME - LastTrafficUpdate;
+            if(TrafficInKb != 0 && TrafficOutKb != 0 && timediff != 0){
+                
+                TrafficInKbsec = TrafficInKb / timediff;
+                TrafficOutKbsec = TrafficOutKb / timediff;
+            }
+        }
+
+        LastTrafficUpdate = UNIXTIME;
+
         fprintf(f, "    <uptime>%s</uptime>\n", uptime);
 		fprintf(f, "    <oplayers>%u</oplayers>\n", (unsigned int)(sWorld.getPlayerCount()));
         fprintf(f, "    <cpu>%2.2f</cpu>\n", GetCPUUsage());
@@ -373,7 +413,7 @@ void StatDumper::DumpStats()
         fprintf(f, "    <avglat>%.3f</avglat>\n", AvgLat);
 		fprintf(f, "    <threads>%u</threads>\n", (unsigned int)ThreadPool.GetActiveThreadCount());
 		fprintf(f, "    <fthreads>%u</fthreads>\n", (unsigned int)ThreadPool.GetFreeThreadCount());
-        time_t t = (time_t)UNIXTIME;
+        time_t t = UNIXTIME;
         fprintf(f, "    <gmcount>%u</gmcount>\n", (unsigned int)GMCount);
         fprintf(f, "    <lastupdate>%s</lastupdate>\n", asctime(localtime(&t)));
 		fprintf(f, "    <alliance>%u</alliance>\n", (unsigned int)sWorld.getAlliancePlayerCount());
@@ -382,6 +422,16 @@ void StatDumper::DumpStats()
         fprintf(f, "    <peakcount>%u</peakcount>\n", (unsigned int)sWorld.PeakSessionCount);
 		fprintf(f, "    <wdbquerysize>%u</wdbquerysize>\n", WorldDatabase.GetQueueSize());
 		fprintf(f, "    <cdbquerysize>%u</cdbquerysize>\n", CharacterDatabase.GetQueueSize());
+		fprintf(f, "    <bandwithin>%lf</bandwithin>\n", TrafficInKbsec);
+		if( TotalTrafficInKb < 1024.0 )
+                  fprintf(f, "    <bandwithintotal>%lf KB</bandwithintotal>\n", TotalTrafficInKb);
+                else
+                  fprintf(f, "    <bandwithintotal>%lf MB</bandwithintotal>\n", ( TotalTrafficInKb / 1024.0));
+		fprintf(f, "    <bandwithout>%lf</bandwithout>\n", TrafficOutKbsec);
+		if( TotalTrafficOutKb < 1024.0 )
+                  fprintf(f, "    <bandwithouttotal>%lf KB</bandwithouttotal>\n", TotalTrafficOutKb);
+                else
+		  fprintf(f, "    <bandwithouttotal>%lf MB</bandwithouttotal>\n", ( TotalTrafficOutKb / 1024.0 ));
     }
     fprintf(f, "  </status>\n");
 	static const char * race_names[RACE_DRAENEI+1] = {
