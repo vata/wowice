@@ -62,12 +62,13 @@ bool ChatHandler::HandleBGInfoCommnad(const char *args, WorldSession *m_session)
 bool ChatHandler::HandleBattlegroundCommand(const char* args, WorldSession *m_session)
 {
 	uint32 type = atoi(args);
-	if (type >= BATTLEGROUND_NUM_TYPES)
+	if( type >= BATTLEGROUND_NUM_TYPES )
 		return false;
 
-	Player * plr = getSelectedChar(m_session, true);
-	if(!plr) return true;
-	BattlegroundManager.HandleBattlegroundListPacket(plr->GetSession(), atoi(args));
+	Player * plr = getSelectedChar( m_session, true );
+	if( plr == NULL )
+		return true;
+	BattlegroundManager.HandleBattlegroundListPacket( plr->GetSession(), type );
 	return true;
 }
 
