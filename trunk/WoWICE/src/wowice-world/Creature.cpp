@@ -34,7 +34,7 @@ Creature::Creature(uint64 guid)
 	proto = NULL;
 	spawnid=0;
 
-	creature_info=NULL;
+	creature_info= NULL;
 	m_H_regenTimer=0;
 	m_P_regenTimer=0;
 	m_useAI = true;
@@ -89,7 +89,7 @@ Creature::Creature(uint64 guid)
 	m_escorter = 0;
 	m_limbostate = false;
 	m_corpseEvent=false;
-	m_respawnCell=NULL;
+	m_respawnCell= NULL;
 	m_walkSpeed = 2.5f;
 	m_runSpeed = MONSTER_NORMAL_RUN_SPEED;
 	m_base_runSpeed = m_runSpeed;
@@ -128,6 +128,13 @@ Creature::~Creature()
 
 	if (m_escorter != NULL)
 		m_escorter = NULL;
+
+	// remove our reference from owner
+	if( m_owner != NULL )
+	{
+		m_owner->RemoveGuardianRef( this );
+		m_owner = NULL;
+	}
 }
 
 void Creature::Update( uint32 p_time )
@@ -142,7 +149,7 @@ void Creature::Update( uint32 p_time )
 	if(m_corpseEvent)
 	{
 		sEventMgr.RemoveEvents(this);
-		if(this->GetProto()==NULL)
+		if(this->GetProto()== NULL)
 			sEventMgr.AddEvent(this, &Creature::OnRemoveCorpse, EVENT_CREATURE_REMOVE_CORPSE, 1000, 1, EVENT_FLAG_DO_NOT_EXECUTE_IN_WORLD_CONTEXT);
 		else if (this->creature_info->Rank == ELITE_WORLDBOSS)
 			sEventMgr.AddEvent(this, &Creature::OnRemoveCorpse, EVENT_CREATURE_REMOVE_CORPSE, TIME_CREATURE_REMOVE_BOSSCORPSE, 1,EVENT_FLAG_DO_NOT_EXECUTE_IN_WORLD_CONTEXT);
@@ -258,7 +265,7 @@ void Creature::OnRespawn(MapMgr * m)
 			newhealth = 1;*/
 		SetUInt32Value(UNIT_FIELD_HEALTH, 1);
 		m_limbostate = true;
-		bInvincible = true;
+		setDeathState( CORPSE );
 		SetUInt32Value(UNIT_NPC_EMOTESTATE, EMOTE_STATE_DEAD);
 	}
 
@@ -637,6 +644,9 @@ void Creature::RemoveFromWorld( bool addrespawnevent, bool free_guid )
 	}
 
 	RemoveAllAuras();
+	
+	// If we have a summons then let's remove them
+	RemoveAllGuardians();
 
 	if( IsInWorld() )
 	{
@@ -1002,14 +1012,7 @@ void Creature::TotemExpire()
 	totemSlot = -1;
 	totemOwner = NULL;
 
-    // If we have a summon then let's remove that first
-    if(summonPet != NULL){
-        if( summonPet->IsInWorld() )
-            summonPet->RemoveFromWorld( false, true );
-        else
-            summonPet->SafeDelete();
-        summonPet = NULL;
-    }
+ 
 
 	if(pOwner != NULL)
 		DestroyForPlayer(pOwner); //make sure the client knows it's gone...
@@ -1161,10 +1164,10 @@ bool Creature::Load(CreatureSpawn *spawn, uint32 mode, MapInfo *info)
 {
 	m_spawn = spawn;
 	proto = CreatureProtoStorage.LookupEntry(spawn->entry);
-	if(!proto)
+	if( proto == NULL )
 		return false;
 	creature_info = CreatureNameStorage.LookupEntry(spawn->entry);
-	if(!creature_info)
+	if( creature_info == NULL )
 		return false;
 
 	spawnid = spawn->id;
@@ -1181,7 +1184,7 @@ bool Creature::Load(CreatureSpawn *spawn, uint32 mode, MapInfo *info)
 	//SetUInt32Value(UNIT_FIELD_HEALTH, (mode ? long2int32(proto->Health * 1.5)  : proto->Health));
 	//SetUInt32Value(UNIT_FIELD_BASE_HEALTH, (mode ? long2int32(proto->Health * 1.5)  : proto->Health));
 	//SetUInt32Value(UNIT_FIELD_MAXHEALTH, (mode ? long2int32(proto->Health * 1.5)  : proto->Health));
-	if(proto && proto->MinHealth > proto->MaxHealth)
+	if( proto->MinHealth > proto->MaxHealth )
 	{
 		proto->MaxHealth = proto->MinHealth+1;
 		SaveToDB();
@@ -1393,7 +1396,7 @@ bool Creature::Load(CreatureSpawn *spawn, uint32 mode, MapInfo *info)
 			newhealth = 1;*/
 		SetUInt32Value(UNIT_FIELD_HEALTH, 1);
 		m_limbostate = true;
-		bInvincible = true;
+		setDeathState( CORPSE );
 		SetUInt32Value(UNIT_NPC_EMOTESTATE, EMOTE_STATE_DEAD);
 	}
 	m_invisFlag = static_cast<uint8>( proto->invisibility_type );
@@ -1595,7 +1598,7 @@ void Creature::Load(CreatureProto * proto_, float x, float y, float z, float o)
 			newhealth = 1;*/
 		SetUInt32Value(UNIT_FIELD_HEALTH, 1);
 		m_limbostate = true;
-		bInvincible = true;
+		setDeathState( CORPSE );
 		SetUInt32Value(UNIT_NPC_EMOTESTATE, EMOTE_STATE_DEAD);
 	}
 	m_invisFlag = static_cast<uint8>( proto->invisibility_type );
@@ -1734,10 +1737,9 @@ void Creature::AISpellUpdate()
 				//get the spell
 				SpellEntry* newspell=dbcSpell.LookupEntry(this->GetProto()->AISpells[i]);
 				SpellCastTime* casttime=dbcSpellCastTime.LookupEntry(newspell->CastingTimeIndex);
-				Spell* spell = SpellPool.PooledNew();
+				Spell* spell = new Spell(this, newspell, false, 0);
 				if (!spell)
 					return;
-				spell->Init(this, newspell, false, 0);
 				SpellCastTargets t(0);
 				spell->GenerateTargets(&t);
 
@@ -1749,7 +1751,7 @@ void Creature::AISpellUpdate()
 				if (t.m_destX == 0.0f && t.m_destY == 0.0f && t.m_destZ == 0.0f && t.m_itemTarget == 0 && t.m_unitTarget == 0)
 				{
 					//printf("\nNo target, not casting!");
-					SpellPool.PooledDelete(spell);
+					delete spell;
 					spell = NULL;
 					continue;
 				}
@@ -1759,7 +1761,7 @@ void Creature::AISpellUpdate()
 
 				if (spell->CanCast(false) != SPELL_CANCAST_OK || !spell->HasPower() || m_silenced || IsStunned() || IsFeared())
 				{
-					SpellPool.PooledDelete(spell);
+					delete spell;
 					spell = NULL;
 					continue;
 				}
@@ -1929,7 +1931,7 @@ Group *Creature::GetGroup()
 {
 	if ( IsPet() )
 		static_cast<Pet *>(this)->GetGroup();
-	else if( IsTotem() && totemOwner)
+	else if( IsTotem() && totemOwner != NULL )
 		return totemOwner->GetGroup();
 	else if( GetUInt64Value( UNIT_FIELD_CREATEDBY ) && GetMapMgr() )
 	{
@@ -1981,40 +1983,75 @@ uint32 Creature::GetRequiredLootSkill()
 //! Is PVP flagged?
 bool Creature::IsPvPFlagged()
 {
-	return HasByteFlag(UNIT_FIELD_BYTES_2, 1, U_FIELD_BYTES_FLAG_PVP);
+	return HasByteFlag( UNIT_FIELD_BYTES_2, 1, U_FIELD_BYTES_FLAG_PVP );
 }
 
 void Creature::SetPvPFlag()
 {
-	SetByteFlag(UNIT_FIELD_BYTES_2, 1, U_FIELD_BYTES_FLAG_PVP);
+	SetByteFlag( UNIT_FIELD_BYTES_2, 1, U_FIELD_BYTES_FLAG_PVP );
+	
+	// adjust our guardians too
+	std::set< Creature* >::iterator itr = m_Guardians.begin();
+	for( ; itr != m_Guardians.end(); ++itr )
+		(*itr)->SetPvPFlag();
 }
 
 void Creature::RemovePvPFlag()
 {
-	RemoveByteFlag(UNIT_FIELD_BYTES_2, 1, U_FIELD_BYTES_FLAG_PVP);
+	RemoveByteFlag( UNIT_FIELD_BYTES_2, 1, U_FIELD_BYTES_FLAG_PVP );
+	
+	// adjust our guardians too
+	std::set< Creature* >::iterator itr = m_Guardians.begin();
+	for( ; itr != m_Guardians.end(); ++itr )
+		(*itr)->RemovePvPFlag();
 }
 
 bool Creature::IsFFAPvPFlagged()
 {
-	return HasByteFlag(UNIT_FIELD_BYTES_2, 1, U_FIELD_BYTES_FLAG_FFA_PVP);
+	return HasByteFlag( UNIT_FIELD_BYTES_2, 1, U_FIELD_BYTES_FLAG_FFA_PVP );
 }
 
 void Creature::SetFFAPvPFlag()
 {
-	SetByteFlag(UNIT_FIELD_BYTES_2, 1, U_FIELD_BYTES_FLAG_FFA_PVP);
+	SetByteFlag( UNIT_FIELD_BYTES_2, 1, U_FIELD_BYTES_FLAG_FFA_PVP );
+
+	// adjust our guardians too
+	std::set< Creature* >::iterator itr = m_Guardians.begin();
+	for( ; itr != m_Guardians.end(); ++itr )
+		(*itr)->SetFFAPvPFlag();
 }
 
 void Creature::RemoveFFAPvPFlag()
 {
-	RemoveByteFlag(UNIT_FIELD_BYTES_2, 1, U_FIELD_BYTES_FLAG_FFA_PVP);
+	RemoveByteFlag( UNIT_FIELD_BYTES_2, 1, U_FIELD_BYTES_FLAG_FFA_PVP );
+
+	// adjust our guardians too
+	std::set< Creature* >::iterator itr = m_Guardians.begin();
+	for( ; itr != m_Guardians.end(); ++itr )
+		(*itr)->RemoveFFAPvPFlag();
 }
 
-bool Creature::IsSanctuaryFlagged(){ 
+bool Creature::IsSanctuaryFlagged()
+{ 
 	return HasByteFlag( UNIT_FIELD_BYTES_2, 1, U_FIELD_BYTES_FLAG_SANCTUARY); 
 }
-void Creature::SetSanctuaryFlag(){ 
-	SetByteFlag( UNIT_FIELD_BYTES_2, 1, U_FIELD_BYTES_FLAG_SANCTUARY ); 
+
+void Creature::SetSanctuaryFlag()
+{ 
+	SetByteFlag( UNIT_FIELD_BYTES_2, 1, U_FIELD_BYTES_FLAG_SANCTUARY );
+	
+	// adjust our guardians too
+	std::set< Creature* >::iterator itr = m_Guardians.begin();
+	for( ; itr != m_Guardians.end(); ++itr )
+		(*itr)->SetSanctuaryFlag();
 }
-void Creature::RemoveSanctuaryFlag(){ 
-	RemoveByteFlag( UNIT_FIELD_BYTES_2, 1, U_FIELD_BYTES_FLAG_SANCTUARY ); 
+
+void Creature::RemoveSanctuaryFlag()
+{ 
+	RemoveByteFlag( UNIT_FIELD_BYTES_2, 1, U_FIELD_BYTES_FLAG_SANCTUARY );
+
+	// adjust our guardians too
+	std::set< Creature* >::iterator itr = m_Guardians.begin();
+	for( ; itr != m_Guardians.end(); ++itr )
+		(*itr)->RemoveSanctuaryFlag();
 }

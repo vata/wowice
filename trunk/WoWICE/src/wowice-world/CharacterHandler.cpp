@@ -14,7 +14,6 @@
  */
 
 #include "StdAfx.h"
-#include "AuthCodes.h"
 #include "svn_revision.h"
 
 LoginErrorCode VerifyName(const char * name, size_t nlen)
@@ -208,10 +207,10 @@ void WorldSession::CharacterEnumProc(QueryResult * result)
 					delete res;
 				}
 				else
-					info=NULL;
+					info= NULL;
 			}
 			else
-				info=NULL;
+				info= NULL;
 
 			if(info)  //PET INFO uint32 displayid,	uint32 level,		 uint32 familyid
 				data << uint32(info->Male_DisplayID) << uint32(10) << uint32(info->Family);
@@ -450,11 +449,11 @@ void WorldSession::HandleCharCreateOpcode( WorldPacket & recv_data )
 	pn->acct = GetAccountId();
 	pn->m_Group=0;
 	pn->subGroup=0;
-	pn->m_loggedInPlayer=NULL;
+	pn->m_loggedInPlayer= NULL;
 	pn->team = pNewChar->GetTeam ();
-	pn->guild=NULL;
-	pn->guildRank=NULL;
-	pn->guildMember=NULL;
+	pn->guild= NULL;
+	pn->guildRank= NULL;
+	pn->guildMember= NULL;
 #ifdef VOICE_CHAT
 	pn->groupVoiceId = -1;
 #endif
@@ -484,8 +483,8 @@ void WorldSession::HandleCharDeleteOpcode( WorldPacket & recv_data )
 	else
 	{
 		fail = DeleteCharacter((uint32)guid);
-		OutPacket(SMSG_CHAR_DELETE, 1, &fail);
 	}
+	OutPacket( SMSG_CHAR_DELETE, 1, &fail );
 }
 
 uint8 WorldSession::DeleteCharacter(uint32 guid)
@@ -521,7 +520,7 @@ uint8 WorldSession::DeleteCharacter(uint32 guid)
 				ArenaTeam * t = objmgr.GetArenaTeamByGuid((uint32)guid, i);
 				if(t != NULL && t->m_leader == guid)
 					return E_CHAR_DELETE_FAILED_ARENA_CAPTAIN;
-				if(t !=NULL)
+				if(t != NULL)
 					t->RemoveMember(inf);
 			}
 			
@@ -961,6 +960,9 @@ void WorldSession::FullLogin(Player * plr)
 	// Shows Online players, and connection peak
 	_player->BroadcastMessage("Online Players: %s%u |rPeak: %s%u|r Accepted Connections: %s%u",
 		MSG_COLOR_SEXGREEN, sWorld.GetSessionCount(), MSG_COLOR_SEXBLUE, sWorld.PeakSessionCount, MSG_COLOR_SEXBLUE, sWorld.mAcceptedConnections);
+	
+	// Shows Server uptime
+	_player->BroadcastMessage("Server Uptime: |r%s", sWorld.GetUptimeString().c_str());
 
 	//Set current RestState
 	if( plr->m_isResting)

@@ -27,7 +27,7 @@ const char * gAreaTriggerFormat							= "ucuusffffuu";
 const char * gItemPageFormat							= "usu";
 const char * gNpcTextFormat								= "ufssuuuuuuufssuuuuuuufssuuuuuuufssuuuuuuufssuuuuuuufssuuuuuuufssuuuuuuufssuuuuuuu";
 const char * gQuestFormat								= "uuuuuuuuuuuuuuuuuuussssssssssuuuuuuuuiiiiuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuiiiiiiuiuuuuuuuuuuuusuuuusuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuu";
-const char * gSpellExtraFormat							= "uuuu";
+//const char * gSpellExtraFormat							= "uuuu";
 const char * gGraveyardFormat							= "uffffuuuux";
 const char * gTeleportCoordFormat						= "uxufffx";
 const char * gPvPAreaFormat								= "ush";
@@ -349,7 +349,7 @@ void ObjectMgr::LoadExtraItemStuff()
 			ft = iter->second;
 		pItemPrototype->FoodType = ft ;
 	
-		pItemPrototype->gossip_script=NULL;
+		pItemPrototype->gossip_script= NULL;
 
 		// forced pet entries
 		switch( pItemPrototype->ItemId )

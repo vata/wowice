@@ -58,7 +58,7 @@ void ParseBanArgs(char* args, char** BanDuration, char** BanReason)
 
 int32 GetSpellIDFromLink(const char* spelllink)
 {
-	if(spelllink==NULL)
+	if(spelllink== NULL)
 		return 0;
 
 	const char* ptr = strstr(spelllink, "|Hspell:");
@@ -101,11 +101,15 @@ bool ChatHandler::HandleSpawnByDisplayId(const char * args, WorldSession * m_ses
 	if(!plr)
 		return false;
 
-	GameObject* go = plr->GetMapMgr()->CreateAndSpawnGameObject(entry, plr->GetPositionX(), plr->GetPositionY(),
-		plr->GetPositionZ(), plr->GetOrientation(), 1);
-	go->Phase(PHASE_SET, plr->GetPhase());
+	GameObject* go = plr->GetMapMgr()->CreateAndSpawnGameObject( entry, plr->GetPositionX(), plr->GetPositionY(),
+		plr->GetPositionZ(), plr->GetOrientation(), 1 );
+	
+	if( go == NULL)
+		return false;
+	
+	go->Phase( PHASE_SET, plr->GetPhase() );
 	GOSpawn* gs = go->m_spawn;
-	if (gs)
+	if( gs != NULL )
 		gs->phase = go->GetPhase();
 
 	return true;
@@ -521,15 +525,15 @@ bool ChatHandler::HandleBanCharacterCommand(const char* args, WorldSession *m_se
 			SystemMessage(m_session, "Player not found.");
 			return true;
 		}
-		SystemMessage(m_session, "Banning player '%s' in database for '%s'.", pCharacter, (pReason==NULL)?"No reason.":pReason);
-		string escaped_reason = (pReason==NULL)?"No reason.":CharacterDatabase.EscapeString(string(pReason));
+		SystemMessage(m_session, "Banning player '%s' in database for '%s'.", pCharacter, (pReason== NULL)?"No reason.":pReason);
+		string escaped_reason = (pReason== NULL)?"No reason.":CharacterDatabase.EscapeString(string(pReason));
 		CharacterDatabase.Execute("UPDATE characters SET banned = %u, banReason = '%s' WHERE guid = %u",
 		BanTime ? BanTime+(uint32)UNIXTIME : 1, escaped_reason.c_str(), pInfo->guid);
 	}
 	else
 	{
-		SystemMessage(m_session, "Banning player '%s' ingame for '%s'.", pCharacter, (pReason==NULL)?"No reason.":pReason);
-		string sReason = (pReason==NULL)?"No Reason.":string(pReason);
+		SystemMessage(m_session, "Banning player '%s' ingame for '%s'.", pCharacter, (pReason== NULL)?"No reason.":pReason);
+		string sReason = (pReason== NULL)?"No Reason.":string(pReason);
 		uint32 uBanTime = BanTime ? BanTime+(uint32)UNIXTIME : 1;
 		pPlayer->SetBanned(uBanTime, sReason);
 		pInfo = pPlayer->getPlayerInfo();
@@ -541,13 +545,13 @@ bool ChatHandler::HandleBanCharacterCommand(const char* args, WorldSession *m_se
 		pPlayer->Kick();
 	}
 
-	sGMLog.writefromsession(m_session, "banned %s, reason %s, for %s", pCharacter, (pReason==NULL)?"No reason":pReason, BanTime ? ConvertTimeStampToString(BanTime).c_str() : "ever");
+	sGMLog.writefromsession(m_session, "banned %s, reason %s, for %s", pCharacter, (pReason== NULL)?"No reason":pReason, BanTime ? ConvertTimeStampToString(BanTime).c_str() : "ever");
 	char msg[200];
-	snprintf( msg, 200, "%sGM: %s has been banned by %s for %s. Reason: %s", MSG_COLOR_RED, pCharacter, m_session->GetPlayer()->GetName(), BanTime ? ConvertTimeStampToString( BanTime ).c_str() : "ever", (pReason==NULL)?"No reason.":pReason );
+	snprintf( msg, 200, "%sGM: %s has been banned by %s for %s. Reason: %s", MSG_COLOR_RED, pCharacter, m_session->GetPlayer()->GetName(), BanTime ? ConvertTimeStampToString( BanTime ).c_str() : "ever", (pReason== NULL)?"No reason.":pReason );
 	sWorld.SendWorldText( msg, NULL );
 	if( sWorld.m_banTable && pInfo )
 	{
-		CharacterDatabase.Execute("INSERT INTO %s VALUES('%s', '%s', %u, %u, '%s')", sWorld.m_banTable, m_session->GetPlayer()->GetName(), pInfo->name, (uint32)UNIXTIME, (uint32)UNIXTIME + BanTime, (pReason==NULL)?"No reason.":CharacterDatabase.EscapeString(string(pReason)).c_str() );
+		CharacterDatabase.Execute("INSERT INTO %s VALUES('%s', '%s', %u, %u, '%s')", sWorld.m_banTable, m_session->GetPlayer()->GetName(), pInfo->name, (uint32)UNIXTIME, (uint32)UNIXTIME + BanTime, (pReason== NULL)?"No reason.":CharacterDatabase.EscapeString(string(pReason)).c_str() );
 	}
 	return true;
 }
@@ -1620,7 +1624,7 @@ bool ChatHandler::HandlePetSpawnAIBot(const char* args, WorldSession *m_session)
 		return true;
 	}
 	Player * plr = m_session->GetPlayer();
-	Unit *newguard = plr->create_guardian(Entry,2*60*1000,float(-M_PI*2), plr->getLevel() );
+	Creature *newguard = plr->create_guardian( Entry, 2*60*1000, float(-M_PI*2), plr->getLevel() );
 	AiAgentHealSupport *new_interface = new AiAgentHealSupport;
 	new_interface->Init(newguard,AITYPE_PET,MOVEMENTTYPE_NONE,plr);
 	newguard->ReplaceAIInterface( (AIInterface *) new_interface );
@@ -1844,10 +1848,11 @@ bool ChatHandler::HandlePetLevelCommand(const char* args, WorldSession* m_sessio
 
 bool ChatHandler::HandleShutdownCommand(const char* args, WorldSession* m_session)
 {
-	uint32 shutdowntime = atol(args);
-	if(!args)
+	uint32 shutdowntime;
+	if( !args )
 		shutdowntime = 5;
-
+	else
+		shutdowntime = atol( args );
 
 	char msg[500];
 	snprintf(msg, 500, "%sServer shutdown initiated by %s, shutting down in %u seconds.", MSG_COLOR_LIGHTBLUE,
@@ -1864,9 +1869,11 @@ bool ChatHandler::HandleShutdownCommand(const char* args, WorldSession* m_sessio
 
 bool ChatHandler::HandleShutdownRestartCommand(const char* args, WorldSession* m_session)
 {
-	uint32 shutdowntime = atol(args);
-	if(!args)
+	uint32 shutdowntime;
+	if( !args )
 		shutdowntime = 5;
+	else
+		shutdowntime = atol( args );
 
 	char msg[500];
 	snprintf(msg, 500, "%sServer restart initiated by %s, shutting down in %u seconds.", MSG_COLOR_LIGHTBLUE,
@@ -2074,10 +2081,9 @@ bool ChatHandler::HandleCastAllCommand(const char* args, WorldSession* m_session
 			}
 			else
 			{
-				Spell * sp = SpellPool.PooledNew();
+				Spell * sp = new Spell(plr, info, true, 0);
 				if (!sp)
 					return true;
-				sp->Init(plr, info, true, 0);
 				SpellCastTargets targets(plr->GetGUID());
 				sp->prepare(&targets);
 			}
@@ -2746,7 +2752,7 @@ bool ChatHandler::HandleSetStandingCommand(const char * args, WorldSession * m_s
 	return true;
 }
 
-void SendHighlightedName(WorldSession * m_session, const char* prefix, char* full_name, string& lowercase_name, string& highlight, uint32 id)
+void ChatHandler::SendHighlightedName(WorldSession * m_session, const char* prefix, char* full_name, string& lowercase_name, string& highlight, uint32 id)
 {
 	char message[1024];
 	char start[50];
@@ -2765,10 +2771,10 @@ void SendHighlightedName(WorldSession * m_session, const char* prefix, char* ful
 	strcat(message, MSG_COLOR_WHITE);
 	if(remaining > 0) strncat(message, (fullname.c_str() + offset + hlen), remaining);
 
-	sChatHandler.SystemMessage(m_session, message);
+	SystemMessage(m_session, message);
 }
 
-void SendItemLinkToPlayer(ItemPrototype * iProto, WorldSession * pSession, bool ItemCount, Player * owner = NULL, uint32 language = NULL)
+void ChatHandler::SendItemLinkToPlayer(ItemPrototype * iProto, WorldSession * pSession, bool ItemCount, Player * owner, uint32 language )
 {
 	if(!iProto || !pSession)
 		return;
@@ -2781,22 +2787,22 @@ void SendItemLinkToPlayer(ItemPrototype * iProto, WorldSession * pSession, bool 
 		//int8 slot = owner->GetItemInterface()->GetInventorySlotById(iProto->ItemId); //DISABLED due to being a retarded concept
 		if( iProto->ContainerSlots > 0 )
 		{
-			sChatHandler.SystemMessage(pSession,"Item %u %s Count %u ContainerSlots %u", iProto->ItemId, GetItemLinkByProto(iProto, language).c_str(), count, iProto->ContainerSlots);
+			SystemMessage(pSession,"Item %u %s Count %u ContainerSlots %u", iProto->ItemId, GetItemLinkByProto(iProto, language).c_str(), count, iProto->ContainerSlots);
 		}
 		else
 		{
-			sChatHandler.SystemMessage(pSession,"Item %u %s Count %u", iProto->ItemId, GetItemLinkByProto(iProto, language).c_str(), count);
+			SystemMessage(pSession,"Item %u %s Count %u", iProto->ItemId, GetItemLinkByProto(iProto, language).c_str(), count);
 		}
 	}
  	else
 	{
 		if( iProto->ContainerSlots > 0 )
 		{
-			sChatHandler.SystemMessage(pSession,"Item %u %s ContainerSlots %u", iProto->ItemId, GetItemLinkByProto(iProto, language).c_str(), iProto->ContainerSlots);
+			SystemMessage(pSession,"Item %u %s ContainerSlots %u", iProto->ItemId, GetItemLinkByProto(iProto, language).c_str(), iProto->ContainerSlots);
 		}
 		else
 		{
-			sChatHandler.SystemMessage(pSession,"Item %u %s", iProto->ItemId, GetItemLinkByProto(iProto, language).c_str());
+			SystemMessage(pSession,"Item %u %s", iProto->ItemId, GetItemLinkByProto(iProto, language).c_str());
 		}
 	}
 }
@@ -3856,7 +3862,7 @@ bool ChatHandler::HandleAddTrainerSpellCommand( const char * args, WorldSession 
 	}
 
 	SpellEntry* pSpell = dbcSpell.LookupEntryForced(spellid);
-	if(pSpell==NULL)
+	if(pSpell== NULL)
 	{
 		RedSystemMessage(m_session, "Invalid spell.");
 		return true;

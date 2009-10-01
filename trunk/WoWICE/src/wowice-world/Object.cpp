@@ -738,82 +738,78 @@ void Object::_BuildValuesUpdate(ByteBuffer * data, UpdateMask *updateMask, Playe
 			reset = true;
 		}
 
-		if(target && GetTypeId() == TYPEID_GAMEOBJECT)
+		if( target && GetTypeId() == TYPEID_GAMEOBJECT )
 		{
 			GameObject *go = ((GameObject*)this);
 			QuestLogEntry *qle;
 			GameObjectInfo *info;
-
-			if ( go )
+			if( go->HasQuests() )
 			{
-				if( go->HasQuests() )
-				{
-					std::list<QuestRelation *>::iterator itr;
-					for( itr = go->QuestsBegin(); itr != go->QuestsEnd(); ++itr ) {
-						QuestRelation * qr = (*itr);
-						if( qr != NULL )
+				std::list<QuestRelation *>::iterator itr;
+				for( itr = go->QuestsBegin(); itr != go->QuestsEnd(); ++itr ) {
+					QuestRelation * qr = (*itr);
+					if( qr != NULL )
+					{
+						Quest * qst = qr->qst;
+						if( qst != NULL )
 						{
-							Quest * qst = qr->qst;
-							if( qst != NULL )
+							if(		( qr->type & QUESTGIVER_QUEST_START && !target->HasQuest(qst->id) ) 
+								||	( qr->type & QUESTGIVER_QUEST_END && target->HasQuest(qst->id) )
+								)
 							{
-								if(		( qr->type & QUESTGIVER_QUEST_START && !target->HasQuest(qst->id) ) 
-									||	( qr->type & QUESTGIVER_QUEST_END && target->HasQuest(qst->id) )
-									)
+								activate_quest_object = true;
+								break;
+							}
+						}
+					}
+				}
+			}
+			else
+			{
+				info = go->GetInfo();
+				if( info && ( info->goMap.size() || info->itemMap.size() ) )
+				{
+					for( GameObjectGOMap::iterator itr = go->GetInfo()->goMap.begin(); itr != go->GetInfo()->goMap.end(); ++itr )
+					{
+						qle = target->GetQuestLogForEntry( itr->first->id );
+						if( qle != NULL )
+						{
+							if( qle->GetQuest()->count_required_mob == 0 )
+								continue;
+							for( uint32 i = 0; i < 4; ++i )
+							{
+								if( qle->GetQuest()->required_mob[i] == static_cast<int32>( go->GetEntry() ) && qle->GetMobCount(i) < qle->GetQuest()->required_mobcount[i])
 								{
 									activate_quest_object = true;
 									break;
 								}
 							}
+							if( activate_quest_object )
+								break;
 						}
 					}
-				}
-				else
-				{
-					info = go->GetInfo();
-					if( info && ( info->goMap.size() || info->itemMap.size() ) )
+
+					if( !activate_quest_object )
 					{
-						for( GameObjectGOMap::iterator itr = go->GetInfo()->goMap.begin(); itr != go->GetInfo()->goMap.end(); ++itr )
+						for( GameObjectItemMap::iterator itr = go->GetInfo()->itemMap.begin();
+							itr != go->GetInfo()->itemMap.end();
+							++itr )
 						{
-							qle = target->GetQuestLogForEntry( itr->first->id );
-							if( qle != NULL )
+							for( std::map<uint32, uint32>::iterator it2 = itr->second.begin();
+								it2 != itr->second.end();
+								++it2 )
 							{
-								if( qle->GetQuest()->count_required_mob == 0 )
-									continue;
-								for( uint32 i = 0; i < 4; ++i )
+								if( ( qle = target->GetQuestLogForEntry( itr->first->id ) ) != 0 )
 								{
-									if( qle->GetQuest()->required_mob[i] == static_cast<int32>( go->GetEntry() ) && qle->GetMobCount(i) < qle->GetQuest()->required_mobcount[i])
+									if( target->GetItemInterface()->GetItemCount(it2->first) < it2->second )
 									{
 										activate_quest_object = true;
 										break;
 									}
 								}
-								if(activate_quest_object)
-									break;
 							}
-						}
-
-						if(!activate_quest_object)
-						{
-							for(GameObjectItemMap::iterator itr = go->GetInfo()->itemMap.begin();
-								itr != go->GetInfo()->itemMap.end();
-								++itr)
-							{
-								for(std::map<uint32, uint32>::iterator it2 = itr->second.begin();
-									it2 != itr->second.end();
-									++it2)
-								{
-									if((qle = target->GetQuestLogForEntry(itr->first->id)) != 0)
-									{
-										if(target->GetItemInterface()->GetItemCount(it2->first) < it2->second)
-										{
-											activate_quest_object = true;
-											break;
-										}
-									}
-								}
-								if(activate_quest_object)
-									break;
-							}
+							if( activate_quest_object )
+								break;
 						}
 					}
 				}
@@ -1889,11 +1885,13 @@ void Object::EventSetUInt32Value(uint32 index, uint32 value)
 
 void Object::DealDamage(Unit *pVictim, uint32 damage, uint32 targetEvent, uint32 unitEvent, uint32 spellId, bool no_remove_auras)
 {
-	Player* plr = 0;
+	Player* plr = NULL;
 
 	if( !pVictim || !pVictim->isAlive() || !pVictim->IsInWorld() || !IsInWorld() )
 		return;
 	if( pVictim->GetTypeId() == TYPEID_PLAYER && static_cast< Player* >( pVictim )->GodModeCheat == true )
+		return;
+	if( pVictim->bInvincible )
 		return;
 	if( pVictim->IsSpiritHealer() )
 		return;
@@ -2507,7 +2505,8 @@ void Object::DealDamage(Unit *pVictim, uint32 damage, uint32 targetEvent, uint32
 
 		if( this->IsUnit() )
 		{
-            pVictim->RemoveAllNonPersistantAuras();
+			if( !pVictim->IsPlayer() && !pVictim->IsPet() )
+				pVictim->RemoveAllNonPersistentAuras();
 
             CALL_SCRIPT_EVENT( this, OnTargetDied )( pVictim );
 			static_cast< Unit* >( this )->smsg_AttackStop( pVictim );
@@ -2527,10 +2526,9 @@ void Object::DealDamage(Unit *pVictim, uint32 damage, uint32 targetEvent, uint32
 				SpellEntry* sorInfo = dbcSpell.LookupEntry(27827);
 				if( sorInfo != NULL )
 				{
-					Spell *sor = SpellPool.PooledNew();
+					Spell *sor = new Spell(pVictim, sorInfo, true, NULL);
 					if (!sor)
 						return;
-					sor->Init(pVictim, sorInfo, true, NULL);
 					SpellCastTargets targets;
 					targets.m_unitTarget = pVictim->GetGUID();
 					sor->prepare(&targets);
@@ -3024,7 +3022,7 @@ void Object::SpellNonMeleeDamageLog(Unit *pVictim, uint32 spellID, uint32 damage
 //==============================+Spell Damage Bonus Calculations============================
 //==========================================================================================
 //------------------------------by stats----------------------------------------------------
-	if( this->IsUnit() && !static_damage )
+	if( IsUnit() && !static_damage )
 	{
 		Unit* caster = static_cast< Unit* >( this );
 		caster->RemoveAurasByInterruptFlag( AURA_INTERRUPT_ON_START_ATTACK );
@@ -3098,7 +3096,7 @@ void Object::SpellNonMeleeDamageLog(Unit *pVictim, uint32 spellID, uint32 damage
 			if(spellInfo->NameHash == SPELL_HASH_LAVA_BURST && (fs = pVictim->FindAuraByNameHash(SPELL_HASH_FLAME_SHOCK)) != NULL)
 			{
 				critical = true;
-				if(caster && !caster->HasAura(55447))	// Glyph of Flame Shock
+				if( !caster->HasAura(55447) )	// Glyph of Flame Shock
 						fs->Remove();
 			}
 
@@ -3205,10 +3203,9 @@ void Object::SpellNonMeleeDamageLog(Unit *pVictim, uint32 spellID, uint32 damage
 		if( !entry ) 
 			return;
 
-		Spell * sp = SpellPool.PooledNew();
+		Spell * sp = new Spell( pl, entry, true, NULL );
 		if ( !sp )
 			return;
-		sp->Init( pl, entry, true, NULL );
 		sp->GetProto()->EffectBasePoints[0] = spellpower;
 		SpellCastTargets targets;
 		targets.m_unitTarget = pl->GetGUID();

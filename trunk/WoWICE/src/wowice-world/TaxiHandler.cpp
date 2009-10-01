@@ -227,21 +227,20 @@ void WorldSession::HandleActivateTaxiOpcode( WorldPacket & recv_data )
 	// 0x000004 locks you so you can't move, no msg_move updates are sent to the server
 	// 0x000008 seems to enable detailed collision checking
 
-	// check for a summon -> if we do, remove.
 	//! Check if the player is casting, obviously they should not be able to cast on a taxi
 	if ( _player->GetCurrentSpell() != NULL )
 		 _player->GetCurrentSpell()->cancel();
 
-	_player->DismissActivePet();
 	_player->taxi_model_id = modelid;
-	GetPlayer()->TaxiStart(taxipath, modelid, 0);
+	_player->TaxiStart(taxipath, modelid, 0);
 
 	//sLog.outString("TAXI: Starting taxi trip. Next update in %d msec.", first_node_time);
 }
 
 void WorldSession::HandleMultipleActivateTaxiOpcode(WorldPacket & recvPacket)
 {
-	if(!_player->IsInWorld()) return;
+	if( !_player->IsInWorld() )
+		return;
 	sLog.outDebug( "WORLD: Received CMSG_ACTIVATETAXI" );
 
 	uint64 guid;
@@ -273,29 +272,29 @@ void WorldSession::HandleMultipleActivateTaxiOpcode(WorldPacket & recvPacket)
 	TaxiPath* taxipath = sTaxiMgr.GetTaxiPath(pathes[0], pathes[1]);
 	TaxiNode* taxinode = sTaxiMgr.GetTaxiNode(pathes[0]);
 
+	// Check for valid node
+	if( taxinode == NULL )
+	{
+		data << uint32( 1 );
+		SendPacket( &data );
+		return;
+	}
+
+	if( taxipath == NULL || !taxipath->GetNodeCount() )
+	{
+		data << uint32( 2 );
+		SendPacket( &data );
+		return;
+	}
+	
 	curloc = taxinode->id;
 	field = (uint8)((curloc - 1) / 32);
 	submask = 1<<((curloc-1)%32);
 
 	// Check for known nodes
-	if ( (GetPlayer( )->GetTaximask(field) & submask) != submask )
+	if ( ( _player->GetTaximask(field) & submask ) != submask )
 	{
 		data << uint32( 1 );
-		SendPacket( &data );
-		return;
-	}
-
-	// Check for valid node
-	if (!taxinode)
-	{
-		data << uint32( 1 );
-		SendPacket( &data );
-		return;
-	}
-
-	if (!taxipath || !taxipath->GetNodeCount())
-	{
-		data << uint32( 2 );
 		SendPacket( &data );
 		return;
 	}
@@ -375,8 +374,6 @@ void WorldSession::HandleMultipleActivateTaxiOpcode(WorldPacket & recvPacket)
 	// 0x000004 locks you so you can't move, no msg_move updates are sent to the server
 	// 0x000008 seems to enable detailed collision checking
 
-	// check for a summon -> if we do, remove.
-	_player->DismissActivePet();
 	_player->taxi_model_id = modelid;
 
 	// build the rest of the path list
@@ -396,5 +393,5 @@ void WorldSession::HandleMultipleActivateTaxiOpcode(WorldPacket & recvPacket)
 	}
 
 	// start the first trip :)
-	GetPlayer()->TaxiStart(taxipath, modelid, 0);
+	_player->TaxiStart(taxipath, modelid, 0);
 }

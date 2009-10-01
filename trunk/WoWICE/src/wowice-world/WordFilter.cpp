@@ -35,7 +35,7 @@ WordFilter::~WordFilter()
 	for(i = 0; i < m_filterCount; ++i)
 	{
 		p = m_filters[i];
-		if(p==NULL)
+		if(p== NULL)
 			continue;
 
 		if(p->szMatch)
@@ -98,14 +98,14 @@ void WordFilter::Load(const char * szTableName)
 	list<WordFilterMatch*> lItems;
 	list<WordFilterMatch*>::iterator itr;
 	QueryResult * pResult = WorldDatabase.Query("SELECT * FROM %s", szTableName);
-	if(pResult==NULL)
+	if(pResult== NULL)
 		return;
 
 	do 
 	{
 		pMatch = new WordFilterMatch;
 		pMatch->szMatch = (strlen(pResult->Fetch()[0].GetString()) > 1) ? strdup(pResult->Fetch()[0].GetString()) : NULL;
-		if(pMatch->szMatch==NULL)
+		if(pMatch->szMatch== NULL)
 		{
 			delete pMatch;
 			continue;
@@ -136,8 +136,8 @@ void WordFilter::Load(const char * szTableName)
 		}
 		else
 		{
-			pMatch->pCompiledIgnoreExpression=NULL;
-			pMatch->pCompiledIgnoreExpressionOptions=NULL;
+			pMatch->pCompiledIgnoreExpression= NULL;
+			pMatch->pCompiledIgnoreExpressionOptions= NULL;
 		}
 
 		pMatch->iType = pResult->Fetch()[2].GetUInt32();

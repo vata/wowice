@@ -13,6 +13,8 @@
  * this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+	// Initial import of my scripts - Bapes
+
 #include "StdAfx.h"
 #include "../Setup.h"
 #include "../Base.h"

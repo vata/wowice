@@ -39,7 +39,7 @@ void TaxiPath::ComputeLen()
 	uint32 curmap = itr->second->mapid;
 	m_map1 = curmap;
 
-	itr++;
+	++itr;
 
 	while (itr != m_pathNodes.end())
 	{

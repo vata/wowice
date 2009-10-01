@@ -744,7 +744,7 @@ void WorldSession::HandleMailCreateTextItem(WorldPacket & recv_data )
 	}
 
 	Item * pItem = objmgr.CreateItem(8383, _player);
-	if (pItem==NULL)
+	if (pItem== NULL)
 		return;
 
 	pItem->SetUInt32Value(ITEM_FIELD_ITEM_TEXT_ID, message_id);

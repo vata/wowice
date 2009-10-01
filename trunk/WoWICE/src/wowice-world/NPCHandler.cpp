@@ -524,8 +524,8 @@ void WorldSession::HandleGossipSelectOptionOpcode( WorldPacket & recv_data )
 	recv_data >> guid >> unk24 >> option;
 
 	sLog.outDetail("WORLD: CMSG_GOSSIP_SELECT_OPTION Option %i Guid %.8X", option, guid );
-	GossipScript * Script=NULL;
-	Object * qst_giver=NULL;
+	GossipScript * Script= NULL;
+	Object * qst_giver= NULL;
 	uint32 guidtype = GET_TYPE_FROM_GUID(guid);
 
 	if(guidtype==HIGHGUID_TYPE_UNIT)
@@ -540,7 +540,7 @@ void WorldSession::HandleGossipSelectOptionOpcode( WorldPacket & recv_data )
 	else if(guidtype==HIGHGUID_TYPE_ITEM)
 	{
 		Item * pitem = _player->GetItemInterface()->GetItemByGUID(guid);
-		if(pitem==NULL)
+		if(pitem== NULL)
 			return;
 
 		qst_giver=pitem;
@@ -597,10 +597,9 @@ void WorldSession::HandleSpiritHealerActivateOpcode( WorldPacket & recv_data )
 			SpellEntry *spellInfo = dbcSpell.LookupEntry( 15007 );//resurrection sickness
 			SpellCastTargets targets;
 			targets.m_unitTarget = GetPlayer()->GetGUID();
-			Spell * sp = SpellPool.PooledNew();
+			Spell * sp = new Spell(_player,spellInfo,true,NULL);
 			if (!sp)
 				return;
-			sp->Init(_player,spellInfo,true,NULL);
 			sp->prepare(&targets);
 		}
 

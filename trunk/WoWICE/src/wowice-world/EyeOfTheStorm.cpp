@@ -315,10 +315,9 @@ void EyeOfTheStorm::HookOnAreaTrigger(Player * plr, uint32 id)
 			SpellEntry * sp = dbcSpell.LookupEntryForced(spellid);
 			if(sp)
 			{
-				Spell * pSpell = SpellPool.PooledNew();
+				Spell * pSpell = new Spell(plr, sp, true, NULL);
 				if (!pSpell)
 					return;
-				pSpell->Init(plr, sp, true, NULL);
 				SpellCastTargets targets(plr->GetGUID());
 				pSpell->prepare(&targets);
 			}
@@ -918,28 +917,30 @@ bool EyeOfTheStorm::GivePoints(uint32 team, uint32 points)
 			{
 				(*itr)->Root();
 				
-				if ( (*itr)==NULL )
+				if ( (*itr)== NULL )
 					continue;
 
 				if(i == m_winningteam)
 				{
 					(*itr)->m_bgScore.BonusHonor += winHonorToAdd;
 					HonorHandler::AddHonorPointsToPlayer((*itr), winHonorToAdd);
-					Item *item;
-					item = objmgr.CreateItem( 29024 , *itr);
-					item->SetUInt32Value(ITEM_FIELD_STACK_COUNT,3);
-					item->SoulBind();
-					if(!(*itr)->GetItemInterface()->AddItemToFreeSlot(item))
+					Item *item = objmgr.CreateItem( 29024 , *itr );
+					if( item != NULL )
 					{
-						(*itr)->GetSession()->SendNotification("No free slots were found in your inventory!");
-						item->DeleteMe();
-					}
-					else
-					{
-						(*itr)->m_bgScore.BonusHonor += lostHonorToAdd;
-						HonorHandler::AddHonorPointsToPlayer((*itr), lostHonorToAdd);
-						SlotResult *lr = (*itr)->GetItemInterface()->LastSearchResult();
-						(*itr)->GetSession()->SendItemPushResult(item,false,true,false,true,lr->ContainerSlot,lr->Slot,3);
+						item->SetUInt32Value( ITEM_FIELD_STACK_COUNT, 3 );
+						item->SoulBind();
+						if( !(*itr)->GetItemInterface()->AddItemToFreeSlot( item ) )
+						{
+							(*itr)->GetSession()->SendNotification("No free slots were found in your inventory!");
+							item->DeleteMe();
+						}
+						else
+						{
+							(*itr)->m_bgScore.BonusHonor += lostHonorToAdd;
+							HonorHandler::AddHonorPointsToPlayer( (*itr), lostHonorToAdd );
+							SlotResult *lr = (*itr)->GetItemInterface()->LastSearchResult();
+							(*itr)->GetSession()->SendItemPushResult( item, false, true, false, true, lr->ContainerSlot, lr->Slot, 3 );
+						}
 					}
 					if(i && (*itr)->GetQuestLogForEntry(11341))
 						(*itr)->GetQuestLogForEntry(11341)->SendQuestComplete();
@@ -948,19 +949,21 @@ bool EyeOfTheStorm::GivePoints(uint32 team, uint32 points)
 				}
 				else
 				{
-					Item *item;
-					item = objmgr.CreateItem( 29024 , *itr);
-					item->SetUInt32Value(ITEM_FIELD_STACK_COUNT,1);
-					item->SoulBind();
-					if(!(*itr)->GetItemInterface()->AddItemToFreeSlot(item))
+					Item *item = objmgr.CreateItem( 29024 , *itr );
+					if( item != NULL )
 					{
-						(*itr)->GetSession()->SendNotification("No free slots were found in your inventory!");
-						item->DeleteMe();
-					}
-					else
-					{
-						SlotResult *lr = (*itr)->GetItemInterface()->LastSearchResult();
-						(*itr)->GetSession()->SendItemPushResult(item,false,true,false,true,lr->ContainerSlot,lr->Slot,1);
+						item->SetUInt32Value( ITEM_FIELD_STACK_COUNT, 1 );
+						item->SoulBind();
+						if( !(*itr)->GetItemInterface()->AddItemToFreeSlot( item ) )
+						{
+							(*itr)->GetSession()->SendNotification("No free slots were found in your inventory!");
+							item->DeleteMe();
+						}
+						else
+						{
+							SlotResult *lr = (*itr)->GetItemInterface()->LastSearchResult();
+							(*itr)->GetSession()->SendItemPushResult( item, false, true, false, true, lr->ContainerSlot, lr->Slot, 1 );
+						}
 					}
 				}
 			}

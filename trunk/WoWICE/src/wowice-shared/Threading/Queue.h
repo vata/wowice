@@ -39,7 +39,7 @@ public:
 	{
 		h*p=new h;
 		p->value=item;
-		p->pNext=NULL;
+		p->pNext= NULL;
 		
 		//lock.Acquire();
 		cond.BeginSynchronized();
@@ -82,7 +82,7 @@ public:
 		}
 		else//last item
 		{
-			first=last=NULL;
+			first=last= NULL;
 		}
 		//lock.Release();
 		cond.EndSynchronized();
@@ -113,7 +113,7 @@ public:
 		}
 		else//last item
 		{
-			first=last=NULL;
+			first=last= NULL;
 		}
 		//lock.Release();
 		cond.EndSynchronized();

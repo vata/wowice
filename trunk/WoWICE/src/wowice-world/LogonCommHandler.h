@@ -46,8 +46,6 @@ enum RealmType
 	REALMTYPE_RPPVP  = 8,
 };
 
-class SocketLoadBalancer;
-
 class LogonCommHandler : public Singleton<LogonCommHandler>
 {
 #ifdef WIN32

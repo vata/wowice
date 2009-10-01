@@ -183,7 +183,7 @@ ObjectMgr::~ObjectMgr()
 	Log.Notice("ObjectMgr", "Deleting Player Information...");
 	for(HM_NAMESPACE::hash_map<uint32, PlayerInfo*>::iterator itr = m_playersinfo.begin(); itr != m_playersinfo.end(); ++itr)
 	{
-		itr->second->m_Group=NULL;
+		itr->second->m_Group = NULL;
 		free(itr->second->name);
 		delete itr->second;
 	}
@@ -226,7 +226,7 @@ ObjectMgr::~ObjectMgr()
 Group * ObjectMgr::GetGroupByLeader(Player* pPlayer)
 {
 	GroupMap::iterator itr;
-	Group * ret=NULL;
+	Group * ret= NULL;
 	m_groupLock.AcquireReadLock();
 	for(itr = m_groups.begin(); itr != m_groups.end(); ++itr)
 	{
@@ -244,7 +244,7 @@ Group * ObjectMgr::GetGroupByLeader(Player* pPlayer)
 Group * ObjectMgr::GetGroupById(uint32 id)
 {
 	GroupMap::iterator itr;
-	Group * ret=NULL;
+	Group * ret= NULL;
 	m_groupLock.AcquireReadLock();
 	itr = m_groups.find(id);
 	if(itr!=m_groups.end())
@@ -401,10 +401,10 @@ void ObjectMgr::LoadPlayersInfo()
 			pn->acct = fields[8].GetUInt32();
 			pn->m_Group=0;
 			pn->subGroup=0;
-			pn->m_loggedInPlayer=NULL;
-			pn->guild=NULL;
-			pn->guildRank=NULL;
-			pn->guildMember=NULL;
+			pn->m_loggedInPlayer= NULL;
+			pn->guild= NULL;
+			pn->guildRank= NULL;
+			pn->guildMember= NULL;
 #ifdef VOICE_CHAT
 			pn->groupVoiceId = -1;
 #endif
@@ -1583,12 +1583,16 @@ Item * ObjectMgr::CreateItem(uint32 entry,Player * owner)
 	}
 	else
 	{
-		Item * pItem = ItemPool.PooledNew();
-		if (!pItem)
+		Item * pItem = new Item;
+        if (!pItem)
 			return NULL;
 		pItem->Init(HIGHGUID_TYPE_ITEM,GenerateLowGuid(HIGHGUID_TYPE_ITEM));
 		pItem->Create(entry, owner);
 		pItem->SetUInt32Value(ITEM_FIELD_STACK_COUNT, 1);
+
+        uint32 *played = owner->GetPlayedtime();
+        pItem->SetUInt32Value( ITEM_FIELD_CREATE_PLAYED_TIME, played[1] );
+        
 		return pItem;
 	}
 }
@@ -1612,7 +1616,7 @@ Item * ObjectMgr::LoadItem(uint64 guid)
 		}
 		else
 		{
-			Item * pItem = ItemPool.PooledNew();
+			Item * pItem = new Item;
 			if (!pItem)
 				return NULL;
 			pItem->Init(HIGHGUID_TYPE_ITEM,(uint32)guid);
@@ -1644,7 +1648,7 @@ Item * ObjectMgr::LoadExternalItem(uint64 guid)
 		}
 		else
 		{
-			Item * pItem = ItemPool.PooledNew();
+			Item * pItem = new Item;
 			if (!pItem)
 				return NULL;
 			pItem->Init(HIGHGUID_TYPE_ITEM,(uint32)guid);
@@ -1830,6 +1834,8 @@ GossipMenuItem GossipMenu::GetItem(uint32 Id)
 	{
 		GossipMenuItem k;
 		k.IntId = 1;
+		k.Extra = 0;
+
 		return k;
 	} else {
 		return Menu[Id];
@@ -2947,7 +2953,7 @@ void ObjectMgr::HandleMonsterSayEvent(Creature * pCreature, MONSTER_SAY_EVENTS E
 		static const char* races[12] = {"None","Human","Orc","Dwarf","Night Elf","Undead","Tauren","Gnome","Troll","None","Blood Elf","Draenei"};
 		static const char* classes[12] = {"None","Warrior", "Paladin", "Hunter", "Rogue", "Priest", "Death Knight", "Shaman", "Mage", "Warlock", "None", "Druid"};
 		char* test=strstr((char*)text,"$R");
-		if(test==NULL)
+		if(test== NULL)
 			test = strstr((char*)text,"$r");
 		if(test != NULL)
 		{
@@ -2955,12 +2961,12 @@ void ObjectMgr::HandleMonsterSayEvent(Creature * pCreature, MONSTER_SAY_EVENTS E
 			Unit* CurrentTarget = pCreature->GetMapMgr()->GetUnit(targetGUID);
 			if(CurrentTarget)
 			{
-				uint32 testOfs = test-text;
+				ptrdiff_t testOfs = test-text;
 				newText.replace(testOfs, 2, races[CurrentTarget->getRace()]);
 			}
 		}
 		test = strstr((char*)text,"$N");
-		if(test==NULL)
+		if(test== NULL)
 			test = strstr((char*)text,"$n");
 		if(test != NULL)
 		{
@@ -2973,7 +2979,7 @@ void ObjectMgr::HandleMonsterSayEvent(Creature * pCreature, MONSTER_SAY_EVENTS E
 			}
 		}
 		test = strstr((char*)text,"$C");
-		if(test==NULL)
+		if(test== NULL)
 			test = strstr((char*)text,"$c");
 		if(test != NULL)
 		{
@@ -2986,7 +2992,7 @@ void ObjectMgr::HandleMonsterSayEvent(Creature * pCreature, MONSTER_SAY_EVENTS E
 			}
 		}
 		test = strstr((char*)text,"$G");
-		if(test==NULL)
+		if(test== NULL)
 			test = strstr((char*)text,"$g");
 		if(test != NULL)
 		{

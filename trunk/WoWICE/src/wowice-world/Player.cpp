@@ -366,9 +366,9 @@ mOutOfRangeIdCount(0)
 	m_TeleportState = 1;
 	m_beingPushed = false;
 	for(i = 0; i < NUM_CHARTER_TYPES; ++i)
-		m_charters[i]=NULL;
+		m_charters[i]= NULL;
 	for(i = 0; i < NUM_ARENA_TEAM_TYPES; ++i)
-		m_arenaTeams[i]=NULL;
+		m_arenaTeams[i]= NULL;
 	for(int i = 0; i < 6; ++i)
 	{
 		m_runes[i] = baseRunes[i];
@@ -447,7 +447,7 @@ mOutOfRangeIdCount(0)
 	m_waterwalk=false;
 	m_setwaterwalk=false;
 	m_areaSpiritHealer_guid=0;
-	m_CurrentTaxiPath=NULL;
+	m_CurrentTaxiPath= NULL;
 	m_setflycheat = false;
 	m_fallDisabledUntil = 0;
 	m_lfgMatch = NULL;
@@ -594,7 +594,7 @@ Player::~Player ( )
 	m_objectTypeId = TYPEID_UNUSED;
 
 	if(m_playerInfo)
-		m_playerInfo->m_loggedInPlayer=NULL;
+		m_playerInfo->m_loggedInPlayer= NULL;
 
 	delete SDetector;
 	SDetector = NULL;
@@ -1196,10 +1196,9 @@ void Player::_EventAttack( bool offhand )
 		else
 		{
 			SpellEntry *spellInfo = dbcSpell.LookupEntry( GetOnMeleeSpell() );
-			Spell *spell = SpellPool.PooledNew();
+			Spell *spell = new Spell( this, spellInfo, true, NULL );
 			if (!spell)
 				return;
-			spell->Init( this, spellInfo, true, NULL );
 			spell->extra_cast_number = GetOnMeleeSpellEcn();
 			SpellCastTargets targets;
 			targets.m_unitTarget = GetSelection();
@@ -1290,10 +1289,9 @@ void Player::_EventCharmAttack()
 			{
 				SpellEntry *spellInfo = dbcSpell.LookupEntry(currentCharm->GetOnMeleeSpell());
 				currentCharm->SetOnMeleeSpell(0);
-				Spell *spell = SpellPool.PooledNew();
+				Spell *spell = new Spell(currentCharm,spellInfo,true,NULL);
 				if (!spell)
 					return;
-				spell->Init(currentCharm,spellInfo,true,NULL);
 				SpellCastTargets targets;
 				targets.m_unitTarget = GetSelection();
 				spell->prepare(&targets);
@@ -2830,7 +2828,7 @@ void Player::RemovePendingPlayer()
 {
 	if(m_session)
 	{
-		uint8 respons = 0x42;		// CHAR_LOGIN_NO_CHARACTER
+		uint8 respons = E_CHAR_LOGIN_NO_CHARACTER;
 		m_session->OutPacket(SMSG_CHARACTER_LOGIN_FAILED, 1, &respons);
 		m_session->m_loggingInPlayer = NULL;
 	}
@@ -3446,7 +3444,7 @@ void Player::LoadFromDBProc(QueryResultVector & results)
 		end = strchr(start,',');
                 if(!end)break;
                 *end=0;
-                la.positive = (start!=NULL);
+                la.positive = (start!= NULL);
                 start = end +1;
 		end = strchr(start,',');
 		if(!end)break;
@@ -4206,10 +4204,9 @@ void Player::_ApplyItemMods(Item* item, int16 slot, bool apply, bool justdrokedo
 					if( Set->itemscount==set->itemscount[x])
 					{//cast new spell
 						SpellEntry *info = dbcSpell.LookupEntry( set->SpellID[x] );
-						Spell * spell = SpellPool.PooledNew();
+						Spell * spell = new Spell( this, info, true, NULL );
 						if (!spell)
 							return;
-						spell->Init( this, info, true, NULL );
 						SpellCastTargets targets;
 						targets.m_unitTarget = this->GetGUID();
 						spell->prepare( &targets );
@@ -4309,9 +4306,6 @@ void Player::_ApplyItemMods(Item* item, int16 slot, bool apply, bool justdrokedo
                 break;
             }
        
-
-		
-
 		/* Not going to put a check here since unless you put a random id/flag in the tables these should never return NULL */
 
 		/* Calculating the stats correct for our level and applying them */
@@ -4319,7 +4313,8 @@ void Player::_ApplyItemMods(Item* item, int16 slot, bool apply, bool justdrokedo
 			StatType = ssdrow->stat[i];
 			StatMod  = ssdrow->statmodifier[i];
 			col = GetStatScalingStatValueColumn(proto,SCALINGSTATSTAT);
-			if(col == -1) continue;
+			if( col == -1 )
+				continue;
 			StatMultiplier = ssvrow->multiplier[col];
 			StatValue = StatMod*StatMultiplier/10000;
 			ModifyBonuses(StatType,StatValue,apply);
@@ -4445,10 +4440,9 @@ void Player::_ApplyItemMods(Item* item, int16 slot, bool apply, bool justdrokedo
 					continue;
 				}
 
-				Spell *spell = SpellPool.PooledNew();
+				Spell *spell = new Spell( this, spells ,true, NULL );
 				if (!spell)
 					return;
-				spell->Init( this, spells ,true, NULL );
 				SpellCastTargets targets;
 				targets.m_unitTarget = this->GetGUID();
 				spell->castedItemId = item->GetEntry();
@@ -4702,19 +4696,17 @@ void Player::BuildPlayerRepop()
 	if(getRace()==RACE_NIGHTELF)
 	{
 		SpellEntry *inf=dbcSpell.LookupEntry(9036); // Cebernic:20584 triggered.
-		Spell * sp = SpellPool.PooledNew();
+		Spell * sp = new Spell(this,inf,true,NULL);
 		if (!sp)
 			return;
-		sp->Init(this,inf,true,NULL);
 		sp->prepare(&tgt);
 	}
 	else
 	{
 		SpellEntry *inf=dbcSpell.LookupEntry(8326);
-		Spell * sp = SpellPool.PooledNew();
+		Spell * sp = new Spell(this,inf,true,NULL);
 		if (!sp)
 			return;
-		sp->Init(this,inf,true,NULL);
 		sp->prepare(&tgt);
 	}
 
@@ -4722,7 +4714,7 @@ void Player::BuildPlayerRepop()
 	StopMirrorTimer(1);
 	StopMirrorTimer(2);
 
-	SetFlag(PLAYER_FLAGS, 0x10);
+	SetFlag( PLAYER_FLAGS, PLAYER_FLAG_DEATH_WORLD_ENABLE );
 
 	SetMovement(MOVE_UNROOT, 1);
 	SetMovement(MOVE_WATER_WALK, 1);
@@ -4811,7 +4803,7 @@ void Player::RepopRequestedPlayer()
 	{
 		SpawnCorpseBody();
 
-		if ( myCorpse!=NULL ) myCorpse->ResetDeathClock();
+		if ( myCorpse!= NULL ) myCorpse->ResetDeathClock();
 
 		/* Send Spirit Healer Location */
 		WorldPacket data( SMSG_DEATH_RELEASE_LOC, 16 );
@@ -4842,7 +4834,7 @@ void Player::ResurrectPlayer()
 	uint32 AuraIds[] = {20584,9036,8326,0};
 	RemoveAuras(AuraIds); // Cebernic: removeaura just remove once(bug?).
 
-	RemoveFlag(PLAYER_FLAGS, 0x10);
+	RemoveFlag( PLAYER_FLAGS, PLAYER_FLAG_DEATH_WORLD_ENABLE );
 	setDeathState(ALIVE);
 	UpdateVisibility();
 	if ( m_resurrecter && IsInWorld()
@@ -6770,10 +6762,9 @@ void Player::EventRepeatSpell()
 	{
 		m_AutoShotAttackTimer = m_AutoShotDuration;
 
-		Spell * sp = SpellPool.PooledNew();
+		Spell * sp = new Spell(this, m_AutoShotSpell, true, NULL);
 		if (!sp)
 			return;
-		sp->Init(this, m_AutoShotSpell, true, NULL);
 		SpellCastTargets tgt;
 		tgt.m_unitTarget = m_curSelection;
 		tgt.m_targetMask = TARGET_FLAG_UNIT;
@@ -6862,15 +6853,15 @@ bool Player::removeSpell(uint32 SpellID, bool MoveToDeleted, bool SupercededSpel
 	}
 	else
 	{
-   iter = mDeletedSpells.find(SpellID);
-    if(iter != mDeletedSpells.end())
-    {
+		iter = mDeletedSpells.find(SpellID);
+		if(iter != mDeletedSpells.end())
+		{
 			mDeletedSpells.erase(iter);
-	  }
-    else
-    {
-	    return false;
-    }
+		}
+		else
+		{
+			return false;
+		}
 	}
 
 	if(MoveToDeleted)
@@ -7369,7 +7360,7 @@ void Player::UpdateNearbyGameObjects()
 
 void Player::EventTaxiInterpolate()
 {
-	if(!m_CurrentTaxiPath || m_mapMgr==NULL) return;
+	if(!m_CurrentTaxiPath || m_mapMgr== NULL) return;
 
 	float x = 0.0f;
 	float y = 0.0f;
@@ -7396,14 +7387,16 @@ void Player::TaxiStart(TaxiPath *path, uint32 modelid, uint32 start_node)
 
 	m_taxiMapChangeNode = 0;
 
-	if(this->m_MountSpellId)
-		RemoveAura(m_MountSpellId);
+	if( m_MountSpellId )
+		RemoveAura( m_MountSpellId );
 	//also remove morph spells
-	if(GetUInt32Value(UNIT_FIELD_DISPLAYID)!=GetUInt32Value(UNIT_FIELD_NATIVEDISPLAYID))
+	if( GetUInt32Value(UNIT_FIELD_DISPLAYID )!= GetUInt32Value( UNIT_FIELD_NATIVEDISPLAYID ) )
 	{
 		RemoveAllAuraType( SPELL_AURA_TRANSFORM );
 		RemoveAllAuraType( SPELL_AURA_MOD_SHAPESHIFT );
 	}
+	
+	DismissActivePet();
 
 	SetUInt32Value( UNIT_FIELD_MOUNTDISPLAYID, modelid );
 	SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_MOUNTED_TAXI);
@@ -8597,8 +8590,8 @@ void Player::UpdateChannels(uint16 AreaID)
 		else
 			channelname += AreaName;
 
-		Channel * chn = channelmgr.GetCreateChannel(channelname.c_str(), this, c->m_id);
-		if( !chn->HasMember(this) )
+		Channel * chn = channelmgr.GetCreateChannel( channelname.c_str(), this, c->m_id );
+		if( chn != NULL && !chn->HasMember(this) )
 		{
 			c->Part(this);
 			chn->AttemptJoin(this, NULL);
@@ -9658,10 +9651,9 @@ void Player::CompleteLoading()
 					continue;
 			}
 
-			Spell * spell = SpellPool.PooledNew();
+			Spell * spell = new Spell(this,info,true,NULL);
 			if (!spell)
 				return;
-			spell->Init(this,info,true,NULL);
 			spell->prepare(&targets);
 		}
 	}
@@ -9688,10 +9680,9 @@ void Player::CompleteLoading()
 		if ( sp->c_is_flags & SPELL_FLAG_IS_EXPIREING_WITH_PET )
 			continue; //do not load auras that only exist while pet exist. We should recast these when pet is created anyway
 
-		Aura * aura = AuraPool.PooledNew();
+		Aura * aura = new Aura(sp,(*i).dur,this,this, false);
 		if (!aura)
 			return;
-		aura->Init(sp,(*i).dur,this,this, false);
 		//if ( !(*i).positive ) // do we need this? - vojta
 		//	aura->SetNegative();
 
@@ -9708,10 +9699,9 @@ void Player::CompleteLoading()
 			Aura * a = NULL;
 			for ( uint32 x = 0; x < (*i).charges - 1; x++ )
 			{
-				a = AuraPool.PooledNew();
+				a = new Aura( sp, (*i).dur, this, this, false );
 				if (!a)
 					return;
-				a->Init( sp, (*i).dur, this, this, false );
 				this->AddAura( a );
 				a = NULL;
 			}
@@ -9758,7 +9748,7 @@ void Player::CompleteLoading()
 
 	if( IsDead() )
 	{
-		if ( myCorpse!=NULL ) {
+		if ( myCorpse!= NULL ) {
 			// cebernic: tempfix. This send a counter for player with just logging in.
 			// TODO: counter will be follow with death time.
 			myCorpse->ResetDeathClock();
@@ -9773,10 +9763,9 @@ void Player::CompleteLoading()
 	SpawnActivePet();
 
 	// useless logon spell
-	Spell *logonspell = SpellPool.PooledNew();
+	Spell *logonspell = new Spell(this, dbcSpell.LookupEntry(836), false, NULL);
 	if (!logonspell)
 		return;
-	logonspell->Init(this, dbcSpell.LookupEntry(836), false, NULL);
 	logonspell->prepare(&targets);
 
 	// Banned
@@ -10050,7 +10039,7 @@ void Player::ModifyBonuses( uint32 type, int32 val, bool apply )
 
 bool Player::CanSignCharter(Charter * charter, Player * requester)
 {
-	if(charter==NULL || requester==NULL)
+	if(charter== NULL || requester== NULL)
 		return false;
 	if(charter->CharterType >= CHARTER_TYPE_ARENA_2V2 && m_arenaTeams[charter->CharterType-1] != NULL)
 		return false;
@@ -10152,7 +10141,7 @@ void Player::SetShapeShift(uint8 ss)
 					break;
 				}
 
-				/*Shady: is this check necessary? anyway m_auras[x]!=NULL check already done in next iteration. Commented*/
+				/*Shady: is this check necessary? anyway m_auras[x]!= NULL check already done in next iteration. Commented*/
 				//if( m_auras[x] == NULL )
 				//	break;
 			}
@@ -10172,10 +10161,9 @@ void Player::SetShapeShift(uint8 ss)
 		{
 			if( sp->RequiredShapeShift && ((uint32)1 << (ss-1)) & sp->RequiredShapeShift )
 			{
-				spe = SpellPool.PooledNew();
+				spe = new Spell( this, sp, true, NULL );
 				if (!spe)
 					return;
-				spe->Init( this, sp, true, NULL );
 				spe->prepare( &t );
 			}
 		}
@@ -10187,10 +10175,9 @@ void Player::SetShapeShift(uint8 ss)
 		sp = dbcSpell.LookupEntry( *itr );
 		if( sp->RequiredShapeShift && ((uint32)1 << (ss-1)) & sp->RequiredShapeShift )
 		{
-			spe = SpellPool.PooledNew();
+			spe = new Spell( this, sp, true, NULL );
 			if (!spe)
 				return;
-			spe->Init( this, sp, true, NULL );
 			spe->prepare( &t );
 		}
 	}
@@ -10940,12 +10927,11 @@ void Player::_LearnSkillSpells(uint32 SkillLine, uint32 curr_sk)
 						SpellCastTargets targets;
 						targets.m_unitTarget = this->GetGUID();
 						targets.m_targetMask = TARGET_FLAG_UNIT;
-						Spell* spell = SpellPool.PooledNew();
-						if( spell == NULL )
+						Spell* spell = new Spell(this,sp,true,NULL);
+						if( !spell )
 						{
 							return;
 						}
-						spell->Init(this,sp,true,NULL);
 						spell->prepare(&targets);
 					}
 				}
@@ -11636,20 +11622,18 @@ void Player::EventSummonPet( Pet *new_pet )
 		{
 			this->RemoveAllAuras( SpellID, this->GetGUID() ); //this is required since unit::addaura does not check for talent stacking
 			SpellCastTargets targets( this->GetGUID() );
-			Spell *spell = SpellPool.PooledNew();
+			Spell *spell = new Spell(this, spellInfo ,true, NULL);	//we cast it as a proc spell, maybe we should not !
 			if (!spell)
 				return;
-			spell->Init(this, spellInfo ,true, NULL);	//we cast it as a proc spell, maybe we should not !
 			spell->prepare(&targets);
 		}
 		if( spellInfo->c_is_flags & SPELL_FLAG_IS_CASTED_ON_PET_SUMMON_ON_PET )
 		{
 			this->RemoveAllAuras( SpellID, this->GetGUID() ); //this is required since unit::addaura does not check for talent stacking
 			SpellCastTargets targets( new_pet->GetGUID() );
-			Spell *spell = SpellPool.PooledNew();
+			Spell *spell = new Spell(this, spellInfo ,true, NULL);	//we cast it as a proc spell, maybe we should not !
 			if (!spell)
 				return;
-			spell->Init(this, spellInfo ,true, NULL);	//we cast it as a proc spell, maybe we should not !
 			spell->prepare(&targets);
 		}
 	}
@@ -11804,10 +11788,9 @@ void Player::AddShapeShiftSpell(uint32 id)
 
 	if( sp->RequiredShapeShift && ((uint32)1 << (GetShapeShift()-1)) & sp->RequiredShapeShift )
 	{
-		Spell * spe = SpellPool.PooledNew();
+		Spell * spe = new Spell( this, sp, true, NULL );
 		if (!spe)
 			return;
-		spe->Init( this, sp, true, NULL );
 		SpellCastTargets t(this->GetGUID());
 		spe->prepare( &t );
 	}
@@ -12907,13 +12890,13 @@ void Player::UpdateGlyphs()
     {
         GlyphSlotEntry * gse;
         uint32 y = 0;
-    for( uint32 i = 0; i < dbcGlyphSlot.GetNumRows(); ++i )
-    {
-        gse = dbcGlyphSlot.LookupRow( i );
-        if( gse->Slot > 0 )
-        SetUInt32Value( PLAYER_FIELD_GLYPH_SLOTS_1 + y++, gse->Id );
-    }
-}
+		for( uint32 i = 0; i < dbcGlyphSlot.GetNumRows(); ++i )
+		{
+			gse = dbcGlyphSlot.LookupRow( i );
+			if( gse->Slot > 0 )
+			SetUInt32Value( PLAYER_FIELD_GLYPH_SLOTS_1 + y++, gse->Id );
+		}
+	}
 
 	// Enable number of glyphs depending on level
 	uint32 glyph_mask = 0;
@@ -13088,15 +13071,11 @@ void Player::SetPvPFlag()
 	SetFlag(PLAYER_FLAGS, PLAYER_FLAG_PVP);
        
     // Adjusting the totems' PVP flag
-    for(int i = 0; i < 4; ++i){
-		if( m_TotemSlots[i] != NULL ){
+    for( uint8 i = 0; i < 4; ++i )
+	{
+		if( m_TotemSlots[i] != NULL )
 			m_TotemSlots[i]->SetPvPFlag();
-			
-			// Adjusting the totems' summons' PVP flag
-			if( static_cast<Unit*>( m_TotemSlots[i] )->summonPet != NULL)
-				static_cast<Unit*>( m_TotemSlots[i] )->summonPet->SetPvPFlag();
-            }
-        }
+	}
 	
 	// flagging the pet too for PvP, if we have one
 	if( m_Summon != NULL )
@@ -13104,6 +13083,11 @@ void Player::SetPvPFlag()
 	
 	if( CombatStatus.IsInCombat() )
 		SetFlag(PLAYER_FLAGS, 0x100);
+
+	// adjust our guardians too
+	std::set< Creature* >::iterator itr = m_Guardians.begin();
+	for( ; itr != m_Guardians.end(); ++itr )
+		(*itr)->SetPvPFlag();
 }
 
 void Player::RemovePvPFlag()
@@ -13113,19 +13097,20 @@ void Player::RemovePvPFlag()
 	RemoveFlag(PLAYER_FLAGS, PLAYER_FLAG_PVP);
 	
 	// Adjusting the totems' PVP flag
-	for(int i = 0; i < 4; ++i){
-		if( m_TotemSlots[i] != NULL ){
+	for( uint8 i = 0; i < 4; ++i )
+	{
+		if( m_TotemSlots[i] != NULL )
 			m_TotemSlots[i]->RemovePvPFlag();
-			
-			// Adjusting the totems' summons' PVP flag
-			if( static_cast<Unit*>( m_TotemSlots[i] )->summonPet != NULL )
-				static_cast<Unit*>( m_TotemSlots[i] )->summonPet->RemovePvPFlag();
-		}
 	}
 	
 	// If we have a pet we will remove the pvp flag from that too
 	if( m_Summon != NULL )
 		m_Summon->RemovePvPFlag();
+
+	// adjust our guardians too
+	std::set< Creature* >::iterator itr = m_Guardians.begin();
+	for( ; itr != m_Guardians.end(); ++itr )
+		(*itr)->RemovePvPFlag();
 }
 
 bool Player::IsFFAPvPFlagged()
@@ -13139,19 +13124,20 @@ void Player::SetFFAPvPFlag()
 	SetByteFlag(UNIT_FIELD_BYTES_2, 1, U_FIELD_BYTES_FLAG_FFA_PVP);
 	SetFlag(PLAYER_FLAGS, PLAYER_FLAG_FREE_FOR_ALL_PVP);
 	
-	for(int i = 0; i < 4; ++i){
-		if( m_TotemSlots[i] != NULL ){
+	for( uint8 i = 0; i < 4; ++i )
+	{
+		if( m_TotemSlots[i] != NULL )
 			m_TotemSlots[i]->SetFFAPvPFlag();
-			
-			// Adjusting the totems' summons' FFAPVP flag
-			if( static_cast<Unit*>( m_TotemSlots[i] )->summonPet != NULL)
-				static_cast<Unit*>( m_TotemSlots[i] )->summonPet->SetFFAPvPFlag();
-		}
 	}
 	
 	// flagging the pet too for FFAPvP, if we have one
 	if( m_Summon != NULL )
 		m_Summon->SetFFAPvPFlag();
+
+	// adjust our guardians too
+	std::set< Creature* >::iterator itr = m_Guardians.begin();
+	for( ; itr != m_Guardians.end(); ++itr )
+		(*itr)->SetFFAPvPFlag();
 }
 
 void Player::RemoveFFAPvPFlag()
@@ -13161,59 +13147,65 @@ void Player::RemoveFFAPvPFlag()
 	RemoveFlag(PLAYER_FLAGS, PLAYER_FLAG_FREE_FOR_ALL_PVP);
 	
 	// Adjusting the totems' FFAPVP flag	
-	for(int i = 0; i < 4; ++i){
-		if( m_TotemSlots[i] != NULL ){
+	for( uint8 i = 0; i < 4; ++i )
+	{
+		if( m_TotemSlots[i] != NULL )
 			m_TotemSlots[i]->RemoveFFAPvPFlag();
-			
-			// Adjusting the totems' summons' FFAPVP flag
-			if( static_cast<Unit*>( m_TotemSlots[i] )->summonPet != NULL)
-				static_cast<Unit*>( m_TotemSlots[i] )->summonPet->RemoveFFAPvPFlag();
-		}
 	}
 	
 	// If we have a pet we will remove the FFA pvp flag from that too
 	if( m_Summon != NULL )
 		m_Summon->RemoveFFAPvPFlag();
+
+	// adjust our guardians too
+	std::set< Creature* >::iterator itr = m_Guardians.begin();
+	for( ; itr != m_Guardians.end(); ++itr )
+		(*itr)->RemoveFFAPvPFlag();
 }
 
-bool Player::IsSanctuaryFlagged(){
+bool Player::IsSanctuaryFlagged()
+{
 	return HasByteFlag( UNIT_FIELD_BYTES_2, 1 , U_FIELD_BYTES_FLAG_SANCTUARY );
 }
 
-void Player::SetSanctuaryFlag(){
+void Player::SetSanctuaryFlag()
+{
 	SetByteFlag( UNIT_FIELD_BYTES_2, 1, U_FIELD_BYTES_FLAG_SANCTUARY );
 
-	for(int i = 0; i < 4; ++i){
-		if( m_TotemSlots[i] != NULL ){
+	for(int i = 0; i < 4; ++i)
+	{
+		if( m_TotemSlots[i] != NULL )
 			m_TotemSlots[i]->SetSanctuaryFlag();
-			
-			// Adjusting the totems' summons' sanctuary flag
-			if( static_cast<Unit*>( m_TotemSlots[i] )->summonPet != NULL)
-				static_cast<Unit*>( m_TotemSlots[i] )->summonPet->SetSanctuaryFlag();
-		}
 	}
 	
 	// flagging the pet too for sanctuary, if we have one
 	if( m_Summon != NULL )
 		m_Summon->SetSanctuaryFlag();
+	
+	// adjust our guardians too
+	std::set< Creature* >::iterator itr = m_Guardians.begin();
+	for( ; itr != m_Guardians.end(); ++itr )
+		(*itr)->SetSanctuaryFlag();
 }
 
-void Player::RemoveSanctuaryFlag(){
+void Player::RemoveSanctuaryFlag()
+{
 	RemoveByteFlag( UNIT_FIELD_BYTES_2, 1, U_FIELD_BYTES_FLAG_SANCTUARY );
 
 	// Adjusting the totems' sanctuary flag	
-	for(int i = 0; i < 4; ++i){
-		if( m_TotemSlots[i] != NULL ){
+	for(int i = 0; i < 4; ++i)
+	{
+		if( m_TotemSlots[i] != NULL )
 			m_TotemSlots[i]->RemoveSanctuaryFlag();
-			
-			// Adjusting the totems' summons' sanctuary flag
-			if( static_cast<Unit*>( m_TotemSlots[i] )->summonPet != NULL)
-				static_cast<Unit*>( m_TotemSlots[i] )->summonPet->RemoveSanctuaryFlag();
-		}
 	}
 	
 	// If we have a pet we will remove the sanctuary flag from that too
 	if( m_Summon != NULL )
 		m_Summon->RemoveSanctuaryFlag();
+
+	// adjust our guardians too
+	std::set< Creature* >::iterator itr = m_Guardians.begin();
+	for( ; itr != m_Guardians.end(); ++itr )
+		(*itr)->RemoveSanctuaryFlag();
 }
 

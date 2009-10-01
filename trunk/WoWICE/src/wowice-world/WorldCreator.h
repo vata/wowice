@@ -58,7 +58,6 @@ class MapMgr;
 class Object;
 class Group;
 class Player;
-class MapUpdaterThread;
 class Battleground;
 
 class SERVER_DECL FormationMgr : public Singleton < FormationMgr >

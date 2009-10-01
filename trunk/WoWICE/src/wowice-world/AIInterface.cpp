@@ -662,10 +662,9 @@ void AIInterface::Update(uint32 p_time)
 		assert(totemspell != 0);
 		if(p_time >= m_totemspelltimer)
 		{
-			Spell *pSpell = SpellPool.PooledNew();
+			Spell *pSpell = new Spell(m_Unit, totemspell, true, 0);
 			if (!pSpell)
 				return;
-			pSpell->Init(m_Unit, totemspell, true, 0);
 			SpellCastTargets targets(0);
 			if(!GetNextTarget() ||
 				(GetNextTarget() && 
@@ -693,7 +692,7 @@ void AIInterface::Update(uint32 p_time)
 			}
 			else
 			{
-				SpellPool.PooledDelete(pSpell);
+				delete pSpell;
 				pSpell = NULL;
 			}
 			// these will *almost always* be AoE, so no need to find a target here.
@@ -1080,12 +1079,12 @@ void AIInterface::_UpdateCombat(uint32 p_time)
 #endif
 
 	if (sWorld.Collision) {
-		float target_land_z=0.0f;
+		
 		if ( m_Unit->GetMapMgr() != NULL && GetNextTarget() != NULL )
 		{
 			if (!m_moveFly)
 			{
-				target_land_z = CollideInterface.GetHeight(m_Unit->GetMapId(), GetNextTarget()->GetPositionX(), GetNextTarget()->GetPositionY(), GetNextTarget()->GetPositionZ() + 2.0f);
+				float target_land_z = CollideInterface.GetHeight(m_Unit->GetMapId(), GetNextTarget()->GetPositionX(), GetNextTarget()->GetPositionY(), GetNextTarget()->GetPositionZ() + 2.0f);
 				if ( target_land_z == NO_WMO_HEIGHT )
 					target_land_z = m_Unit->GetMapMgr()->GetLandHeight(GetNextTarget()->GetPositionX(), GetNextTarget()->GetPositionY());
 
@@ -1266,10 +1265,9 @@ void AIInterface::_UpdateCombat(uint32 p_time)
 								if(fabs(our_facing-his_facing)<CREATURE_DAZE_TRIGGER_ANGLE && !GetNextTarget()->HasAura(CREATURE_SPELL_TO_DAZE))
 								{
 									SpellEntry *info = dbcSpell.LookupEntry(CREATURE_SPELL_TO_DAZE);
-									Spell *sp = SpellPool.PooledNew();
+									Spell *sp = new Spell(m_Unit, info, false, NULL);
 									if (!sp)
 										return;
-									sp->Init(m_Unit, info, false, NULL);
 									SpellCastTargets targets;
 									targets.m_unitTarget = GetNextTarget()->GetGUID();
 									sp->prepare(&targets);
@@ -1343,10 +1341,9 @@ void AIInterface::_UpdateCombat(uint32 p_time)
 							SpellEntry *info = dbcSpell.LookupEntry(SPELL_RANGED_GENERAL);
 							if(info)
 							{
-								Spell *sp = SpellPool.PooledNew();
+								Spell *sp = new Spell(m_Unit, info, false, NULL);
 								if (!sp)
 									return;
-								sp->Init(m_Unit, info, false, NULL);
 								SpellCastTargets targets;
 								targets.m_unitTarget = GetNextTarget()->GetGUID();
 								sp->prepare(&targets);
@@ -1548,12 +1545,11 @@ void AIInterface::AttackReaction(Unit* pUnit, uint32 damage_dealt, uint32 spellI
 
 	if( sWorld.Collision && pUnit->IsPlayer() )
 	{
-		float target_land_z=0.0f;
 		if ( m_Unit->GetMapMgr() != NULL )
 		{
 			if (!m_moveFly)
 			{
-				target_land_z = CollideInterface.GetHeight(m_Unit->GetMapId(), pUnit->GetPositionX(), pUnit->GetPositionY(), pUnit->GetPositionZ() + 2.0f);
+				float target_land_z = CollideInterface.GetHeight(m_Unit->GetMapId(), pUnit->GetPositionX(), pUnit->GetPositionY(), pUnit->GetPositionZ() + 2.0f);
 				if ( target_land_z == NO_WMO_HEIGHT )
 					target_land_z = m_Unit->GetMapMgr()->GetLandHeight(pUnit->GetPositionX(), pUnit->GetPositionY());
 
@@ -1659,9 +1655,6 @@ bool AIInterface::UnsafeCanOwnerAttackUnit(Unit *pUnit)
 	if( !pUnit->isAlive() )
 		return false;
 
-	if( pUnit->bInvincible )
-		return false;
-
 	if( !(pUnit->m_phase & m_Unit->m_phase) ) //Not in the same phase
 		return false;
 
@@ -1748,9 +1741,9 @@ Unit* AIInterface::FindTarget()
 			tmpPlr = (*itrPlr);
 			if (tmpPlr == NULL)
 				continue;
-			if (tmpPlr->GetTaxiState())
+			if (tmpPlr->IsDead())
 				continue;
-			if (tmpPlr->bInvincible)
+			if (tmpPlr->GetTaxiState())
 				continue;
 			if (tmpPlr->HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_FEIGN_DEATH))
 				continue;
@@ -1758,7 +1751,7 @@ Unit* AIInterface::FindTarget()
 				continue;
 			if (tmpPlr->m_invisible)
 				continue;
-			if( !tmpPlr->HasFlag( PLAYER_FLAGS, 0x100) )//PvP Guard Attackable.
+			if( !tmpPlr->HasFlag( PLAYER_FLAGS, PLAYER_FLAG_UNKNOWN2 ) )//PvP Guard Attackable.
 				continue;
 			if( !(tmpPlr->m_phase & m_Unit->m_phase) ) //Not in the same phase, skip this target
 				continue;
@@ -3465,10 +3458,9 @@ void AIInterface::CastSpell(Unit* caster, SpellEntry *spellInfo, SpellCastTarget
 #endif
 
 	//i wonder if this will lead to a memory leak :S
-	Spell *nspell = SpellPool.PooledNew();
+	Spell *nspell = new Spell(caster, spellInfo, false, NULL);
 	if (!nspell)
 		return;
-	nspell->Init(caster, spellInfo, false, NULL);
 	nspell->prepare(&targets);
 }
 
@@ -3508,9 +3500,18 @@ SpellCastTargets AIInterface::setSpellTargets(SpellEntry *spellInfo, Unit* targe
 	else if(m_nextSpell->spelltargetType == TTYPE_DESTINATION)
 	{
 		targets.m_targetMask = 64;
-		targets.m_destX = target->GetPositionX();
-		targets.m_destY = target->GetPositionY();
-		targets.m_destZ = target->GetPositionZ();
+		if( target != NULL )
+		{
+			targets.m_destX = target->GetPositionX();
+			targets.m_destY = target->GetPositionY();
+			targets.m_destZ = target->GetPositionZ();
+		}
+		else
+		{
+			targets.m_destX = m_Unit->GetPositionX();
+			targets.m_destY = m_Unit->GetPositionY();
+			targets.m_destZ = m_Unit->GetPositionZ();
+		}
 	}
 	else if(m_nextSpell->spelltargetType == TTYPE_CASTER)
 	{
@@ -3708,15 +3709,15 @@ __declspec(noinline) bool ___CheckTarget(Unit * ptr, Unit * him)
 //should return a valid target
 Unit *AIInterface::GetMostHated()
 {
-	if(  m_Unit->GetMapMgr() == NULL )
+	if( m_Unit->GetMapMgr() == NULL )
 		return NULL; 
 
-	Unit *ResultUnit=NULL;
+	Unit *ResultUnit= NULL;
 
 	//override mosthated with taunted target. Basic combat checks are made for it. 
 	//What happens if we can't see tauntedby unit ?
 	ResultUnit = getTauntedBy();
-	if(ResultUnit)
+	if( ResultUnit != NULL )
 		return ResultUnit;
 
 	pair<Unit*, int32> currentTarget;
@@ -4203,7 +4204,7 @@ void AIInterface::ResetProcCounts()
 }
 
 //we only cast once a spell and we will set his health and resistances. Note that this can be made with db too !
-void AIInterface::Event_Summon_EE_totem(uint32 summon_duration)
+void AIInterface::Event_Summon_EE_totem( uint32 summon_duration )
 {
 	//some say it should inherit the level of the caster
 	Unit *caster = m_Unit->GetMapMgr()->GetUnit( m_Unit->GetUInt64Value( UNIT_FIELD_CREATEDBY ) );
@@ -4213,64 +4214,59 @@ void AIInterface::Event_Summon_EE_totem(uint32 summon_duration)
 	//timer should not reach this value thus not cast this spell again
 	m_totemspelltimer = 0xEFFFFFFF;
 	//creatures do not support PETs and the spell uses that effect so we force a summon guardian thing
-	Unit *ourslave=m_Unit->create_guardian(15352,summon_duration,float(-M_PI*2), new_level );
+	Creature *ourslave = m_Unit->create_guardian( 15352, summon_duration, float(-M_PI * 2), new_level );
+    if( ourslave == NULL )
+		return;
 
-    if(ourslave)
-	{
-        m_Unit->summonPet = static_cast<Creature*>( ourslave );
-		static_cast<Creature*>(ourslave)->ResistanceModPct[NATURE_DAMAGE]=100;//we should be immune to nature dmg. This can be also set in db
-		static_cast<Creature*>(ourslave)->m_noRespawn = true;
+	m_Unit->AddGuardianRef( ourslave );
+	ourslave->ResistanceModPct[ NATURE_DAMAGE ] = 100; //we should be immune to nature dmg. This can be also set in db
+	ourslave->m_noRespawn = true;
+	ourslave->SetOwner( caster );
+	ourslave->SetUInt32Value( UNIT_FIELD_FLAGS, UNIT_FLAG_PLAYER_CONTROLLED | UNIT_FLAG_SELF_RES );
 
-        // we want the elemental to have the same pvp flag as the shaman who popped the totem
-        if( caster->IsPvPFlagged() )
-            ourslave->SetPvPFlag();
-        else
-            ourslave->RemovePvPFlag();
+    // we want the elemental to have the same pvp flag as the shaman who popped the totem
+    if( caster->IsPvPFlagged() )
+        ourslave->SetPvPFlag();
+    else
+        ourslave->RemovePvPFlag();
 
-        if( caster->IsFFAPvPFlagged() )
-            ourslave->SetFFAPvPFlag();
-        else
-            ourslave->RemoveFFAPvPFlag();
-
-        static_cast< Creature* >(ourslave)->SetOwner( caster );
-
-        ourslave->SetUInt32Value(UNIT_FIELD_FLAGS, UNIT_FLAG_PLAYER_CONTROLLED | UNIT_FLAG_SELF_RES);
-    }
+    if( caster->IsFFAPvPFlagged() )
+        ourslave->SetFFAPvPFlag();
+    else
+        ourslave->RemoveFFAPvPFlag();
 }
 
 //we only cast once a spell and we will set his health and resistances. Note that this can be made with db too !
-void AIInterface::Event_Summon_FE_totem(uint32 summon_duration)
+void AIInterface::Event_Summon_FE_totem( uint32 summon_duration )
 {
 	//some say it should inherit the level of the caster
 	Unit *caster = m_Unit->GetMapMgr()->GetUnit( m_Unit->GetUInt64Value( UNIT_FIELD_CREATEDBY ) );
 	uint32 new_level = 0;
-	if( caster )
+	if( caster != NULL )
 		new_level = caster->getLevel( );
 	//timer should not reach this value thus not cast this spell again
 	m_totemspelltimer = 0xEFFFFFFF;
 	//creatures do not support PETs and the spell uses that effect so we force a summon guardian thing
-	Unit *ourslave=m_Unit->create_guardian(15438,summon_duration,float(-M_PI*2), new_level);
-	if(ourslave)
-	{
-		m_Unit->summonPet = static_cast<Creature*>( ourslave );
-		static_cast<Creature*>(ourslave)->ResistanceModPct[FIRE_DAMAGE]=100;//we should be immune to fire dmg. This can be also set in db
-		static_cast<Creature*>(ourslave)->m_noRespawn = true;
-        
-        // we want the elemental to have the same pvp flag as the shaman who popped the totem
-        if( caster->IsPvPFlagged() )
-            ourslave->SetPvPFlag();
-        else
-            ourslave->RemovePvPFlag();
+	Creature *ourslave = m_Unit->create_guardian( 15438, summon_duration, float(-M_PI * 2), new_level );
+    if( ourslave == NULL )
+		return;
 
-        if( caster->IsFFAPvPFlagged() )
-            ourslave->SetFFAPvPFlag();
-        else
-            ourslave->RemoveFFAPvPFlag();
+	m_Unit->AddGuardianRef( ourslave );
+	ourslave->ResistanceModPct[ FIRE_DAMAGE ] = 100; //we should be immune to nature dmg. This can be also set in db
+	ourslave->m_noRespawn = true;
+	ourslave->SetOwner( caster );
+	ourslave->SetUInt32Value( UNIT_FIELD_FLAGS, UNIT_FLAG_PLAYER_CONTROLLED | UNIT_FLAG_SELF_RES );
 
-        static_cast< Creature* >(ourslave)->SetOwner( caster );
+    // we want the elemental to have the same pvp flag as the shaman who popped the totem
+    if( caster->IsPvPFlagged() )
+        ourslave->SetPvPFlag();
+    else
+        ourslave->RemovePvPFlag();
 
-        ourslave->SetUInt32Value(UNIT_FIELD_FLAGS, UNIT_FLAG_PLAYER_CONTROLLED | UNIT_FLAG_SELF_RES);
-	}
+    if( caster->IsFFAPvPFlagged() )
+        ourslave->SetFFAPvPFlag();
+    else
+        ourslave->RemoveFFAPvPFlag();
 }
 /*
 void AIInterface::CancelSpellCast()

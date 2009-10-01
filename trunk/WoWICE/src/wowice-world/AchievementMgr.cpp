@@ -22,15 +22,11 @@
 uint32 GetAchievementIDFromLink(const char* achievementlink)
 {
 	if( achievementlink == NULL )
-	{
 		return 0;
-	}
 
 	const char* ptr = strstr(achievementlink, "|Hachievement:");
 	if( ptr == NULL )
-	{
 		return 0;
-	}
 
 	// achievement id is just past "|Hachievement:" (14 bytes)
 	return atol(ptr + 14);
@@ -47,25 +43,21 @@ uint32 GetAchievementIDFromLink(const char* achievementlink)
 bool SendAchievementProgress(const CriteriaProgress* c)
 {
 	if( c == NULL || c->counter <= 0 )
-	{
 		// achievement not started yet, don't send progress
 		return false;
-	}
+
 	AchievementCriteriaEntry const* acEntry = dbcAchievementCriteriaStore.LookupEntry(c->id);
 	if( !acEntry )
-	{
 		return false;
-	}
+
 	if( acEntry->requiredType == ACHIEVEMENT_CRITERIA_TYPE_GAIN_REPUTATION )
-	{
 		// Exalted with X faction (don't send 12323/42000 progress, it's not shown anyway)
 		return false;
-	}
+
 	if( acEntry->requiredType == ACHIEVEMENT_CRITERIA_TYPE_REACH_LEVEL )
-	{
 		// Reach level (don't send 7/80 progress, it's not shown anyway)
 		return false;
-	}
+
 	return true;
 }
 
@@ -283,7 +275,11 @@ void AchievementMgr::LoadFromDB(QueryResult *achievementResult, QueryResult *cri
 		do
 		{
 			Field *fields = achievementResult->Fetch();
-			m_completedAchievements[fields[0].GetUInt32()] = fields[1].GetUInt32();
+			uint32 id = fields[0].GetUInt32();
+			if( m_completedAchievements[id] == NULL )
+				m_completedAchievements[id] = fields[1].GetUInt32();
+			else 
+				sLog.outError("Duplicate completed achievement %u for player %u, skipping", id, (uint32)m_player->GetGUID() );
 		} while(achievementResult->NextRow());
 		delete achievementResult;
 	}
@@ -293,9 +289,16 @@ void AchievementMgr::LoadFromDB(QueryResult *achievementResult, QueryResult *cri
 		do
 		{
 			Field *fields = criteriaResult->Fetch();
-			CriteriaProgress *progress = new CriteriaProgress(fields[0].GetUInt32(), fields[1].GetUInt32(), fields[2].GetUInt64());
-			m_criteriaProgress[progress->id] = progress;
-		} while(criteriaResult->NextRow());
+			uint32 progress_id = fields[0].GetUInt32();
+			if( m_criteriaProgress[ progress_id ] == NULL )
+			{
+				CriteriaProgress *progress = new CriteriaProgress( progress_id, fields[1].GetUInt32(), fields[2].GetUInt64() );
+				m_criteriaProgress[ progress_id ] = progress;
+			}
+			else
+				sLog.outError( "Duplicate criteria progress %u for player %u, skipping", progress_id, (uint32) m_player->GetGUID() );
+
+		}while( criteriaResult->NextRow() );
 		delete criteriaResult;
 	}
 }
@@ -1645,7 +1648,7 @@ void AchievementMgr::SendAllAchievementData(Player* player)
 		data << int32(-1);
 		for(; progressIter != m_criteriaProgress.end() && !packetFull; ++progressIter)
 		{
-			acEntry = dbcAchievementCriteriaStore.LookupEntry(progressIter->second->id);
+			acEntry = dbcAchievementCriteriaStore.LookupEntry(progressIter->first);
 			if( !acEntry )
 			{
 				continue;
@@ -1660,7 +1663,7 @@ void AchievementMgr::SendAllAchievementData(Player* player)
 			{
 				if( SendAchievementProgress(progressIter->second) )
 				{
-					data << uint32(progressIter->second->id);
+					data << uint32(progressIter->first);
 					data.appendPackGUID(progressIter->second->counter);
 					data << GetPlayer()->GetNewGUID();
 					data << uint32(0);
@@ -1675,7 +1678,7 @@ void AchievementMgr::SendAllAchievementData(Player* player)
 				// only send statistics, no other unfinished achievement progress, since client only displays them as completed or not completed
 				if( (progressIter->second->counter > 0) && (achievement->flags & ACHIEVEMENT_FLAG_COUNTER) )
 				{
-					data << uint32(progressIter->second->id);
+					data << uint32(progressIter->first);
 					data.appendPackGUID(progressIter->second->counter);
 					data << GetPlayer()->GetNewGUID();
 					data << uint32(0);
@@ -2060,8 +2063,6 @@ bool AchievementMgr::GMCompleteCriteria(WorldSession* gmSession, int32 criteriaI
 	{
 		uint32 nr = dbcAchievementCriteriaStore.GetNumRows();
 		AchievementCriteriaEntry const* crt;
-		CriteriaProgressMap::iterator itr;
-		CriteriaProgress* progress;
 		for(uint32 i = 0, j = 0; j < nr; ++i)
 		{
 			crt = dbcAchievementCriteriaStore.LookupRow(i);
@@ -2073,17 +2074,6 @@ bool AchievementMgr::GMCompleteCriteria(WorldSession* gmSession, int32 criteriaI
 			++j;
 			if( crt->raw.field4 )
 			{
-				itr = m_criteriaProgress.find(crt->ID);
-				if( itr == m_criteriaProgress.end() )
-				{
-					// not in progress map
-					progress = new CriteriaProgress(crt->ID, 0);
-					m_criteriaProgress[criteriaID] = progress;
-				}
-				else
-				{
-					progress = itr->second;
-				}
 				SetCriteriaProgress( crt, crt->raw.field4 );
 				CompletedCriteria(crt);
 			}
