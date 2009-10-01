@@ -59,9 +59,12 @@ void SpellCastTargets::read( WorldPacket & data,uint64 caster )
 			case 25387: // Mind Flay (Rank 7)
 			case 48155: // Mind Flay (Rank 8)
 			case 48156: // Mind Flay (Rank 9)
-				m_targetMask = TARGET_FLAG_UNIT;
-				m_unitTarget = objmgr.GetPlayer((uint32)caster)->GetUInt64Value(UNIT_FIELD_TARGET);
-				break;
+				{
+					m_targetMask = TARGET_FLAG_UNIT;
+					Player* plr = objmgr.GetPlayer( (uint32)caster );
+					if( plr != NULL )
+						m_unitTarget = plr->GetUInt64Value( UNIT_FIELD_TARGET );
+				}break;
 			default:
 				m_unitTarget = caster;
 				break;
@@ -138,18 +141,9 @@ void SpellCastTargets::write( WorldPacket& data )
 		data << m_strTarget.c_str();
 }
 
-Spell::Spell()
+Spell::Spell(Object* Caster, SpellEntry *info, bool triggered, Aura* aur)
 {
-	m_bufferPoolId = OBJECT_WAS_ALLOCATED_STANDARD_WAY;
-}
-
-void Spell::Virtual_Constructor()
-{
-}
-
-void Spell::Init(Object* Caster, SpellEntry *info, bool triggered, Aura* aur)
-{
-	if(info==NULL) return;
+	if(info== NULL) return;
 	ASSERT( Caster != NULL && info != NULL );
 
 	chaindamage = 0;
@@ -283,15 +277,8 @@ void Spell::Init(Object* Caster, SpellEntry *info, bool triggered, Aura* aur)
 
 Spell::~Spell()
 {
-	for(uint32 i=0; i<3; ++i)
-	{
-		m_targetUnits[i].clear();
-	}
-}
-
-void Spell::Virtual_Destructor()
-{
-	if( u_caster != NULL && u_caster->GetCurrentSpell() == this )
+    ///////////////////////////// This is from the virtual_destructor shit ///////////////
+    if( u_caster != NULL && u_caster->GetCurrentSpell() == this )
 		u_caster->SetCurrentSpell(NULL);
 
 	if( p_caster )
@@ -300,6 +287,13 @@ void Spell::Virtual_Destructor()
 
 	if( m_spellInfo_override != NULL)
 		delete[] m_spellInfo_override;
+    ////////////////////////////////////////////////////////////////////////////////////////
+
+
+	for(uint32 i=0; i<3; ++i)
+	{
+		m_targetUnits[i].clear();
+	}
 }
 
 //i might forget conditions here. Feel free to add them
@@ -1065,7 +1059,7 @@ void Spell::GenerateTargets(SpellCastTargets *store_buff)
 				case EFF_TARGET_SINGLE_PARTY:// Single Target Party Member
 				case EFF_TARGET_ALL_PARTY: // all Members of the targets party
 					{
-						Player *p=NULL;
+						Player *p= NULL;
 						if( p_caster != NULL )
 								p = p_caster;
 						else if( u_caster && u_caster->GetTypeId() == TYPEID_UNIT && static_cast< Creature* >( u_caster )->IsTotem() )
@@ -1812,8 +1806,10 @@ void Spell::cast(bool check)
 
 			m_isCasting = false;
 
-			if(m_spellState != SPELL_STATE_CASTING)
+			if(m_spellState != SPELL_STATE_CASTING){
 				finish();
+				return;
+			}
 		}
 		else //this shit has nothing to do with instant, this only means it will be on NEXT melee hit
 		{
@@ -1840,6 +1836,8 @@ void Spell::cast(bool check)
 				u_caster->SetOnMeleeSpell( GetProto()->Id, extra_cast_number );
 
 			finish();
+
+			return;
 		}
 
 		//if( u_caster != NULL )
@@ -1877,8 +1875,8 @@ void Spell::cast(bool check)
 				}
 				if( numTargets == 0 )
 				{
-					uint64 playerTarget = p_caster->GetUInt64Value(UNIT_FIELD_TARGET);
-					sQuestMgr.OnPlayerCast(p_caster,GetProto()->Id,playerTarget);
+					uint64 guid = p_caster->GetUInt64Value( UNIT_FIELD_TARGET );
+					sQuestMgr.OnPlayerCast( p_caster, GetProto()->Id, guid );
 				}
 			}
 		}
@@ -2149,7 +2147,7 @@ void Spell::finish(bool successful)
 		if( !m_triggeredSpell && (GetProto()->ChannelInterruptFlags || m_castTime>0) )
 			u_caster->SetCurrentSpell(NULL);
 	}
-	SpellPool.PooledDelete(this);
+	delete this;
 }
 
 void Spell::SendCastResult(uint8 result)
@@ -2919,13 +2917,13 @@ void Spell::HandleEffects(uint64 guid, uint32 i)
 	}
 	else
 	{
-		if(!m_caster->IsInWorld())
+		if( !m_caster->IsInWorld() )
 		{
-			unitTarget = 0;
-			playerTarget = 0;
-			itemTarget = 0;
-			gameObjTarget = 0;
-			corpseTarget = 0;
+			unitTarget = NULL;
+			playerTarget = NULL;
+			itemTarget = NULL;
+			gameObjTarget = NULL;
+			corpseTarget = NULL;
 		}
 		else if(m_targets.m_targetMask & TARGET_FLAG_TRADE_ITEM)
 		{
@@ -2963,6 +2961,9 @@ void Spell::HandleEffects(uint64 guid, uint32 i)
 			case HIGHGUID_TYPE_CORPSE:
 				corpseTarget = objmgr.GetCorpse( GET_LOWGUID_PART( guid ) );
 				break;
+			default:
+				sLog.outError("unitTarget not set");
+				return;
 			}
 		}
 	}
@@ -2993,7 +2994,7 @@ void Spell::HandleEffects(uint64 guid, uint32 i)
 
 void Spell::HandleAddAura(uint64 guid)
 {
-	Unit * Target = 0;
+	Unit * Target = NULL;
 	if(guid == 0)
 		return;
 
@@ -3002,7 +3003,7 @@ void Spell::HandleAddAura(uint64 guid)
 	else if(m_caster->IsInWorld())
 		Target = m_caster->GetMapMgr()->GetUnit(guid);
 
-	if(!Target)
+	if( Target == NULL )
 		return;
 
 	// Applying an aura to a flagged target will cause you to get flagged.
@@ -3065,10 +3066,9 @@ void Spell::HandleAddAura(uint64 guid)
 		if(!spellInfo) 
 			return;
 
-		Spell *spell = SpellPool.PooledNew();
+		Spell *spell = new Spell(p_caster, spellInfo ,true, NULL);
 		if (!spell)
 			return;
-		spell->Init(p_caster, spellInfo ,true, NULL);
 		spell->forced_basepoints[0] = p_caster->FindAuraByNameHash(SPELL_HASH_KING_OF_THE_JUNGLE)->m_spellProto->RankNumber * 5;
 		SpellCastTargets targets(p_caster->GetGUID());
 		spell->prepare(&targets);
@@ -3100,11 +3100,10 @@ void Spell::HandleAddAura(uint64 guid)
 		if( !spellInfo )
 			return;
 
-		Spell *spell = SpellPool.PooledNew();
+		Spell *spell = new Spell( u_caster, spellInfo ,true, NULL );
 		if ( !spell )
 			return;
 
-		spell->Init( u_caster, spellInfo ,true, NULL );
 		if( spellid == 31665 && Target->HasAurasWithNameHash(SPELL_HASH_MASTER_OF_SUBTLETY) )
 			spell->forced_basepoints[0] = Target->FindAuraByNameHash(SPELL_HASH_MASTER_OF_SUBTLETY)->m_spellProto->EffectBasePoints[0];
 
@@ -3123,7 +3122,7 @@ void Spell::HandleAddAura(uint64 guid)
 		{
 			if(itr->second->GetSpellProto()->procCharges>0)
 			{
-				Aura *aur=NULL;
+				Aura *aur= NULL;
 				int charges = itr->second->GetSpellProto()->procCharges;
 				if( itr->second->GetSpellProto()->SpellGroupType && u_caster != NULL )
 				{
@@ -3132,12 +3131,11 @@ void Spell::HandleAddAura(uint64 guid)
 				}
 				for(int i=0;i<charges-1;i++)
 				{
-					aur = AuraPool.PooledNew();
+					aur = new Aura(itr->second->GetSpellProto(),itr->second->GetDuration(),itr->second->GetCaster(),itr->second->GetTarget(), m_triggeredSpell, i_caster);
 					if (!aur)
 						return;
-					aur->Init(itr->second->GetSpellProto(),itr->second->GetDuration(),itr->second->GetCaster(),itr->second->GetTarget(), m_triggeredSpell, i_caster);
 					Target->AddAura(aur);
-					aur=NULL;
+					aur= NULL;
 				}
 				if( !(itr->second->GetSpellProto()->procFlags & PROC_REMOVEONUSE) )
 				{
@@ -3185,13 +3183,19 @@ void Spell::TriggerSpell()
 
 void Spell::DetermineSkillUp()
 {
-	if(!p_caster)return;
+	if( p_caster == NULL )
+		return;
+
+	skilllinespell* skill = objmgr.GetSpellSkill( GetProto()->Id );
+	if( skill == NULL )
+		return;
+
 	float chance = 0.0f;
-	skilllinespell* skill = objmgr.GetSpellSkill(GetProto()->Id);
-	if( skill != NULL && static_cast< Player* >( m_caster )->_HasSkillLine( skill->skilline ) )
+
+	if( p_caster->_HasSkillLine( skill->skilline ) )
 	{
-		uint32 amt = static_cast< Player* >( m_caster )->_GetSkillLineCurrent( skill->skilline, false );
-		uint32 max = static_cast< Player* >( m_caster )->_GetSkillLineMax( skill->skilline );
+		uint32 amt = p_caster->_GetSkillLineCurrent( skill->skilline, false );
+		uint32 max = p_caster->_GetSkillLineMax( skill->skilline );
 		if( amt >= max )
 			return;
 		if( amt >= skill->grey ) //grey
@@ -3203,8 +3207,8 @@ void Spell::DetermineSkillUp()
 		else //brown
 			chance=100.0f;
 	}
-	if(Rand(chance*sWorld.getRate(RATE_SKILLCHANCE)))
-		p_caster->_AdvanceSkillLine(skill->skilline, float2int32( 1.0f * sWorld.getRate(RATE_SKILLRATE)));
+	if( Rand( chance * sWorld.getRate( RATE_SKILLCHANCE ) ) )
+		p_caster->_AdvanceSkillLine( skill->skilline, float2int32( 1.0f * sWorld.getRate( RATE_SKILLRATE ) ) );
 }
 
 bool Spell::IsAspect()
@@ -5443,7 +5447,6 @@ void Spell::Heal(int32 amount, bool ForceCrit)
 				amount = (int)(0.15f * u_caster->GetUInt32Value(UNIT_FIELD_ATTACK_POWER) + 0.15f * (u_caster)->GetUInt32Value(PLAYER_FIELD_MOD_DAMAGE_DONE_POS+1));
 			break;
 		case 54172: //Paladin - Divine Storm heal effect
-			if( u_caster != NULL )
 			{
 				int dmg = (int)CalculateDamage( u_caster, unitTarget, MELEE, 0, dbcSpell.LookupEntry( 53385 ) );//1 hit
 				int target = 0;
@@ -5573,7 +5576,7 @@ void Spell::Heal(int32 amount, bool ForceCrit)
 
 void Spell::DetermineSkillUp(uint32 skillid,uint32 targetlevel, uint32 multiplicator)
 {
-	if(!p_caster)
+	if( p_caster == NULL )
 		return;
 
 	if(p_caster->GetSkillUpChance(skillid) < 0.01)
@@ -5727,13 +5730,14 @@ void Spell::DetermineSkillUp(uint32 skillid,uint32 targetlevel, uint32 multiplic
 void Spell::DetermineSkillUp(uint32 skillid)
 {
 	//This code is wrong for creating items and disenchanting.
-	if(!p_caster)return;
+	if( p_caster == NULL )
+		return;
 	float chance = 0.0f;
 	skilllinespell* skill = objmgr.GetSpellSkill(GetProto()->Id);
-	if( skill != NULL && skillid == skill->skilline && static_cast< Player* >( m_caster )->_HasSkillLine( skillid ) )
+	if( skill != NULL && skillid == skill->skilline && p_caster->_HasSkillLine( skillid ) )
 	{
-		uint32 amt = static_cast< Player* >( m_caster )->_GetSkillLineCurrent( skillid, false );
-		uint32 max = static_cast< Player* >( m_caster )->_GetSkillLineMax( skillid );
+		uint32 amt = p_caster->_GetSkillLineCurrent( skillid, false );
+		uint32 max = p_caster->_GetSkillLineMax( skillid );
 		if( amt >= max )
 			return;
 		if( amt >= skill->grey ) //grey
@@ -5754,7 +5758,7 @@ void Spell::SafeAddTarget(TargetsList* tgt,uint64 guid)
 	if(guid == 0)
 		return;
 
-	for( TargetsList::iterator i=tgt->begin(); i!=tgt->end(); ++i)
+	for( TargetsList::iterator i=tgt->begin(); i!=tgt->end(); ++i )
 	{
 		if(*i == guid)
 		{
@@ -5851,10 +5855,9 @@ bool Spell::Reflect(Unit *refunit)
 	if( !refspell || !canreflect ) 
 		return false;
 
-	Spell *spell = SpellPool.PooledNew();
+	Spell *spell = new Spell( refunit, refspell, true, NULL );
 	if ( !spell )
 		return false;
-	spell->Init( refunit, refspell, true, NULL );
 	spell->SetReflected();
 	SpellCastTargets targets;
 	targets.m_unitTarget = m_caster->GetGUID();

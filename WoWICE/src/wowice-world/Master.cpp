@@ -28,7 +28,6 @@
 createFileSingleton( Master );
 std::string LogFileName;
 bool bLogChat;
-bool crashed = false;
 
 volatile bool Master::m_stopEvent = false;
 
@@ -307,10 +306,6 @@ bool Master::Run(int argc, char ** argv)
 
 	new EventMgr;
 	new World;
-	//have to init this ones for singleton
-	new tPPoolClass<Item>;
-	new tPPoolClass<Aura>;
-	new tPPoolClass<Spell>;
 
 	// open cheat log file
 	Anticheat_Log = new SessionLogWriter(FormatOutputString( "logs", "cheaters", false).c_str(), false );
@@ -574,19 +569,6 @@ bool Master::Run(int argc, char ** argv)
 
 	delete LogonCommHandler::getSingletonPtr();
 
-	//should delete pools before other handlers !
-	Log.Notice( "Item Pool", "Item Pool" );
-	ItemPool.DestroyPool();
-	delete ItemPool.getSingletonPtr();
-
-	Log.Notice( "Spell Pool", "Spell Pool" );
-	SpellPool.DestroyPool();
-	delete SpellPool.getSingletonPtr();
-
-	Log.Notice( "Aura Pool", "Aura Pool" );
-	AuraPool.DestroyPool();
-	delete AuraPool.getSingletonPtr();
-
 	sWorld.ShutdownClasses();
 	Log.Notice( "World", "~World()" );
 	delete World::getSingletonPtr();
@@ -641,8 +623,8 @@ bool Master::Run(int argc, char ** argv)
 
 bool Master::_StartDB()
 {
-	Database_World=NULL;
-	Database_Character=NULL;
+	Database_World= NULL;
+	Database_Character= NULL;
 	string hostname, username, password, database;
 	int port = 0;
 	int type = 1;

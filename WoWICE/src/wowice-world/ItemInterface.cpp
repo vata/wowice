@@ -148,7 +148,7 @@ Item *ItemInterface::SafeAddItem(uint32 ItemId, int8 ContainerSlot, int16 slot)
 	}
 	else
 	{
-		pItem = ItemPool.PooledNew();
+		pItem = new Item;
 		if (!pItem)
 			return NULL;
 		pItem->Init(HIGHGUID_TYPE_ITEM,objmgr.GenerateLowGuid(HIGHGUID_TYPE_ITEM));
@@ -159,7 +159,7 @@ Item *ItemInterface::SafeAddItem(uint32 ItemId, int8 ContainerSlot, int16 slot)
 		}
 		else
 		{
-			ItemPool.PooledDelete(pItem);
+			delete pItem;
 			return NULL;
 		}
 	}
@@ -596,7 +596,7 @@ bool ItemInterface::SafeFullRemoveItemFromSlot(int8 ContainerSlot, int16 slot)
 			}
 
 			pItem->DeleteFromDB();
-			ItemPool.PooledDelete(pItem);
+			delete pItem;
 		}
 	}
 	else
@@ -2832,18 +2832,17 @@ void ItemInterface::BuildInventoryChangeError(Item *SrcItem, Item *DstItem, uint
 
 	data.Initialize( SMSG_INVENTORY_CHANGE_FAILURE );
 	data << Error;
+	data << (SrcItem ? SrcItem->GetGUID() : uint64(0));
+	data << (DstItem ? DstItem->GetGUID() : uint64(0));
+	data << uint8(0);
 
-	if(Error == 1) 
+	if( Error == INV_ERR_YOU_MUST_REACH_LEVEL_N ) 
 	{
 		if(SrcItem)
 		{
 			data << SrcItem->GetProto()->RequiredLevel;
 		}
 	}
-
-	data << (SrcItem ? SrcItem->GetGUID() : uint64(0));
-	data << (DstItem ? DstItem->GetGUID() : uint64(0));
-	data << uint8(0);
 
 	m_pOwner->GetSession()->SendPacket( &data );
 }
@@ -2868,7 +2867,7 @@ void ItemInterface::EmptyBuyBack()
 			 {
 				if (m_pBuyBack[j]->IsInWorld())
 					m_pBuyBack[j]->RemoveFromWorld();
-				ItemPool.PooledDelete(m_pBuyBack[j]);
+				delete m_pBuyBack[j];
 				m_pBuyBack[j] = NULL;
 			 }
 
@@ -2903,7 +2902,7 @@ void ItemInterface::AddBuyBackItem(Item *it,uint32 price)
 			 {
 				if (m_pBuyBack[0]->IsInWorld())
 					m_pBuyBack[0]->RemoveFromWorld();
-				ItemPool.PooledDelete(m_pBuyBack[0]);
+				delete m_pBuyBack[0];
 			 }
 
 			m_pBuyBack[0] = NULL;
@@ -3087,7 +3086,7 @@ void ItemInterface::SwapItemSlots(int8 srcslot, int8 dstslot)
 	m_pItems[(int)dstslot] = SrcItem;
 
 	// Moving a bag with items to a empty bagslot
-	if ( (DstItem == NULL) && (SrcItem->IsContainer()) )
+	if ( DstItem == NULL && SrcItem != NULL && SrcItem->IsContainer() )
 	{
 		Item *tSrcItem = NULL;
 
@@ -3107,7 +3106,7 @@ void ItemInterface::SwapItemSlots(int8 srcslot, int8 dstslot)
 	m_pItems[(int)srcslot] = DstItem;
 
 	// swapping 2 bags filled with items
-	if ( DstItem && SrcItem->IsContainer() && DstItem->IsContainer() )
+	if ( DstItem != NULL && SrcItem != NULL && SrcItem->IsContainer() && DstItem->IsContainer() )
 	{
 		Item *tDstItem = NULL;
 		Item *tSrcItem = NULL;
@@ -3310,7 +3309,7 @@ void ItemInterface::mLoadItemsFromDatabase(QueryResult * result)
 				}
 				else
 				{
-					item = ItemPool.PooledNew();
+					item = new Item;
 					if (!item)
 						return;
 					item->Init( HIGHGUID_TYPE_ITEM, fields[1].GetUInt32() );
@@ -3329,7 +3328,7 @@ void ItemInterface::mLoadItemsFromDatabase(QueryResult * result)
 				    item->m_isDirty = false;
 				else
 				{
-					ItemPool.PooledDelete(item);
+					delete item;
 					item = NULL;
 				}
 			}
@@ -3888,8 +3887,10 @@ void ItemInterface::AddRefundable( uint64 GUID,  uint32 extendedcost ){
 
     if( item == NULL )
         return;
+	
+	uint32 *played = this->GetOwner()->GetPlayedtime();
 
-    RefundableEntry.first = UNIXTIME;               // time of purchase in Unixtime
+    RefundableEntry.first = played[1];               // time of purchase in playedtime
     RefundableEntry.second = extendedcost;          // extendedcost
 
     insertpair.first = GUID;
@@ -3909,7 +3910,7 @@ void ItemInterface::AddRefundable( uint64 GUID, uint32 extendedcost, time_t buyt
     if( item == NULL )
         return;
 
-    RefundableEntry.first = buytime;            // time of purchase in Unixtime
+    RefundableEntry.first = buytime;               // time of purchase in playedtime
     RefundableEntry.second = extendedcost;      // extendedcost
 
     insertpair.first = GUID;
@@ -3927,7 +3928,7 @@ void ItemInterface::AddRefundable( Item *item, uint32 extendedcost, time_t buyti
     if( item == NULL )
         return;
 
-    RefundableEntry.first = buytime;       // time of purchase in Unixtime
+    RefundableEntry.first = buytime;      // time of purchase in playedtime
     RefundableEntry.second = extendedcost; // extendedcost
 
     insertpair.first = item->GetGUID();
@@ -3959,7 +3960,7 @@ std::pair< time_t, uint32 > ItemInterface::LookupRefundable(uint64 GUID){
     std::pair< time_t, uint32 > RefundableEntry;
     RefundableMap::iterator itr;
 
-    RefundableEntry.first = 0;   // time of purchase in Unixtime
+    RefundableEntry.first = 0;   // time of purchase in playedtime
     RefundableEntry.second = 0;  // extendedcost
 
     itr = this->m_refundableitems.find( GUID );
@@ -3979,6 +3980,9 @@ std::pair< time_t, uint32 > ItemInterface::LookupRefundable(uint64 GUID){
 /////////////////////////////////////////////////////////////////////////////
 bool ItemInterface::AddItemById(uint32 itemid, uint32 count, int32 randomprop)
 {
+	if( count == 0 )
+		return false;
+
 	uint32 numadded = 0;
     Player *chr = this->GetOwner();
 

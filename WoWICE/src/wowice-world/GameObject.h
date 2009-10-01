@@ -204,7 +204,6 @@ public:
 	void Despawn(uint32 delay, uint32 respawntime);
 	Loot loot;
 	//void _EnvironmentalDamageUpdate();
-	void UpdateTrapState();
 	// Serialization
 	void SaveToDB();
 	void SaveToFile(std::stringstream & name);

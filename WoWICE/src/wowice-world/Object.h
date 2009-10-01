@@ -630,9 +630,6 @@ protected:
 	std::set<Object*> m_sameFactsInRange;
 
 
-	//! Remove object from map
-	void _RemoveFromMap();
-
 	int32 m_instanceId;
 
 	ExtensionSet * m_extensions;

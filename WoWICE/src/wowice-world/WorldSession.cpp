@@ -307,9 +307,9 @@ void WorldSession::LogoutPlayer(bool Save)
 		// Repop or Resurrect and remove from battlegrounds
 		if( _player->m_bg )
 		{
-			if (pPlayer->getDeathState() == 1) // Just died
+			if( pPlayer->getDeathState() == JUST_DIED )
 				pPlayer->RemoteRevive();
-			if (pPlayer->getDeathState() != 0) // Not alive
+			if( pPlayer->getDeathState() != ALIVE )
 				pPlayer->ResurrectPlayer();
 			_player->m_bg->RemovePlayer( _player, true );
 		}
@@ -337,6 +337,7 @@ void WorldSession::LogoutPlayer(bool Save)
 		_player->load_mana = _player->GetUInt32Value( UNIT_FIELD_POWER1 );
 
 		_player->DismissActivePet();
+		_player->RemoveAllGuardians();
 
 		//_player->SaveAuras();
 
@@ -719,8 +720,8 @@ void WorldSession::InitPacketHandlerTable()
 	WorldPacketHandlers[CMSG_CANCEL_TEMP_ENCHANTMENT].handler					= &WorldSession::HandleCancelTemporaryEnchantmentOpcode;
 	WorldPacketHandlers[CMSG_SOCKET_GEMS].handler								= &WorldSession::HandleInsertGemOpcode;
 	WorldPacketHandlers[CMSG_WRAP_ITEM].handler									= &WorldSession::HandleWrapItemOpcode;
-    WorldPacketHandlers[CMSG_UNKNOWN_1203].handler									= &WorldSession::HandleItemRefundInfoOpcode;
-    WorldPacketHandlers[CMSG_UNKNOWN_1204].handler									= &WorldSession::HandleItemRefundRequestOpcode;
+    WorldPacketHandlers[CMSG_ITEMREFUNDINFO].handler									= &WorldSession::HandleItemRefundInfoOpcode;
+    WorldPacketHandlers[CMSG_ITEMREFUNDREQUEST].handler									= &WorldSession::HandleItemRefundRequestOpcode;
 
 	
 	// Spell System / Talent System
@@ -1125,7 +1126,7 @@ void WorldSession::SendRefundInfo( uint64 GUID ){
     if( itm == NULL )
         return;
 
-    if( itm->IsEligibleForRefund() ){
+	if( itm->IsEligibleForRefund() ){
         std::pair< time_t, uint32 > RefundEntry;
 
         RefundEntry = _player->GetItemInterface()->LookupRefundable( GUID );
@@ -1142,7 +1143,7 @@ void WorldSession::SendRefundInfo( uint64 GUID ){
             return;
 
         //////////////////////////////////////////////////////////////////////////////////////////
-        //  As of 3.1.3 the server sends this packet to provide refund info on an item
+        //  As of 3.2.0a the server sends this packet to provide refund info on an item
         //
         //  {SERVER} Packet: (0x04B2) UNKNOWN PacketSize = 68 TimeStamp = 265984265
         //  E6 EE 09 18 02 00 00 42 00 00 00 00 4B 25 00 00 00 00 00 00 50 50 00 00 0A 00 00 00 00 
@@ -1164,12 +1165,18 @@ void WorldSession::SendRefundInfo( uint64 GUID ){
         //  uint32 item4cnt
         //  uint32 item5
         //  uint32 item5cnt
-        //  uint32 buytime?  always seems 0
-        //  uint32 remainingtime?
+        //  uint32 unknown  - always seems 0
+        //  uint32 buytime  - buytime in total playedtime seconds
+		//
+		//
+		// Remainingtime:
+        // Seems to be in playedtime format
+		//
+		//
         //////////////////////////////////////////////////////////////////////////////////////////
 
 
-        WorldPacket packet( SMSG_UNKNOWN_1202, 60 );
+        WorldPacket packet( SMSG_ITEMREFUNDINFO, 68 );
         packet << uint64( GUID );
         packet << uint32( proto->BuyPrice );
         packet << uint32( ex->honor );
@@ -1180,12 +1187,14 @@ void WorldSession::SendRefundInfo( uint64 GUID ){
             packet << uint32( ex->count[i] );
         }
 
-        packet << uint32( 0 );  // buytime? It always seems 0
+        packet << uint32( 0 );  // always seems to be 0
+
+        uint32 *played = _player->GetPlayedtime();
         
-        if( UNIXTIME > ( RefundEntry.first + 60*60*2 ))
+        if( played[1] > ( RefundEntry.first + 60*60*2 ))
             packet << uint32( 0 );
         else
-            packet << uint32( ( RefundEntry.first + (60*60*2) ) - UNIXTIME );
+            packet << uint32( RefundEntry.first );
         
         this->SendPacket( &packet );
 

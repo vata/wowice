@@ -103,7 +103,7 @@ bool LogonConsoleThread::run()
 		sLogonConsole.ProcessCmd( cmd );
 	}
 
-	sLogonConsole._thread=NULL;
+	sLogonConsole._thread= NULL;
 	return true;
 }
 

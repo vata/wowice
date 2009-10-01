@@ -106,7 +106,7 @@ void WorldSession::HandleSplitOpcode(WorldPacket& recv_data)
 			i1->ModUnsigned32Value(ITEM_FIELD_STACK_COUNT,-count);
 
 			i2=objmgr.CreateItem(i1->GetEntry(),_player);
-			if( i2==NULL )
+			if( i2== NULL )
 				return;
 
 			i2->SetUInt32Value(ITEM_FIELD_STACK_COUNT,c);
@@ -472,7 +472,7 @@ void WorldSession::HandleSwapInvItemOpcode( WorldPacket & recv_data )
 		}
 	}
 
-	if(dstitem)
+	if( dstitem != NULL )
 	{
 		if((error=_player->GetItemInterface()->CanEquipItemInSlot2(INVENTORY_SLOT_NOT_SET, srcslot, dstitem, skip_combat)) != 0)
 		{
@@ -480,13 +480,14 @@ void WorldSession::HandleSwapInvItemOpcode( WorldPacket & recv_data )
 			{
 				data.Initialize( SMSG_INVENTORY_CHANGE_FAILURE );
 				data << error;
-				if(error == 1) 
+				data << (srcitem ? srcitem->GetGUID() : uint64(0));
+				data << dstitem->GetGUID();
+				data << uint8(0);
+
+				if( error == INV_ERR_YOU_MUST_REACH_LEVEL_N ) 
 				{
 					data << dstitem->GetProto()->RequiredLevel;
 				}
-				data << (srcitem ? srcitem->GetGUID() : uint64(0));
-				data << (dstitem ? dstitem->GetGUID() : uint64(0));
-				data << uint8(0);
 
 				SendPacket( &data );
 				return;
@@ -648,7 +649,7 @@ void WorldSession::HandleDestroyItemOpcode( WorldPacket & recv_data )
 
 		if(_player->GetCurrentSpell() && _player->GetCurrentSpell()->i_caster==pItem)
 		{
-			_player->GetCurrentSpell()->i_caster=NULL;
+			_player->GetCurrentSpell()->i_caster= NULL;
 			_player->GetCurrentSpell()->cancel();
 		}
 
@@ -817,9 +818,9 @@ void WorldSession::HandleAutoEquipItemOpcode( WorldPacket & recv_data )
 		
 	}
 
-	if( eitem->GetProto()->Bonding==ITEM_BIND_ON_EQUIP )
+	if( eitem != NULL && eitem->GetProto()->Bonding == ITEM_BIND_ON_EQUIP )
 		eitem->SoulBind();
-	#ifdef ENABLE_ACHIEVEMENTS
+#ifdef ENABLE_ACHIEVEMENTS
 	_player->GetAchievementMgr().UpdateAchievementCriteria( ACHIEVEMENT_CRITERIA_TYPE_EQUIP_ITEM, eitem->GetProto()->ItemId, 0, 0 );
 	// Achievement ID:556 description Equip an epic item in every slot with a minimum item level of 213.
 	// "213" value not found in achievement or criteria entries, have to hard-code it here? :(
@@ -1351,7 +1352,7 @@ void WorldSession::HandleBuyItemInSlotOpcode( WorldPacket & recv_data ) // drag 
 
 	// ok our z and slot are set.
 	Item * oldItem= NULL;
-	Item * pItem=NULL;
+	Item * pItem= NULL;
 	if(slot != INVENTORY_SLOT_NOT_SET)
 		oldItem = _player->GetItemInterface()->GetInventoryItem(bagslot, slot);
 
@@ -1531,7 +1532,6 @@ void WorldSession::HandleBuyItemOpcode( WorldPacket & recv_data ) // right-click
             else{
                 if( itm->IsEligibleForRefund() && ex != NULL ){
                     itm->GetOwner()->GetItemInterface()->AddRefundable( itm->GetGUID(), ex->costid );
-                    this->SendRefundInfo( itm->GetGUID() );
                 }
                 SendItemPushResult(itm, false, true, false, true, static_cast<uint8>(INVENTORY_SLOT_NOT_SET), slotresult.Result, amount*item.amount);
             }
@@ -1545,7 +1545,6 @@ void WorldSession::HandleBuyItemOpcode( WorldPacket & recv_data ) // right-click
                 else{
                     if( itm->IsEligibleForRefund() && ex != NULL ){
                         itm->GetOwner()->GetItemInterface()->AddRefundable( itm->GetGUID(), ex->costid );
-                        this->SendRefundInfo( itm->GetGUID() );
                     }
 					SendItemPushResult(itm, false, true, false, true, slotresult.ContainerSlot, slotresult.Result, 1);
                 }
@@ -1626,9 +1625,10 @@ void WorldSession::SendInventoryList(Creature* unit)
 		return;
 	}
 
-	if(!unit->HasItems())
+	if( !unit->HasItems() )
 	{
-		sChatHandler.BlueSystemMessageToPlr(_player, "No sell template found. Report this to devs: %d (%s)", unit->GetEntry(), unit->GetCreatureInfo()->Name);
+		sChatHandler.BlueSystemMessageToPlr( _player, "No sell template found. Report this to database's devs: %d (%s)", unit->GetEntry(), unit->GetCreatureInfo()->Name );
+		sLog.outError( "'%s' discovered that a creature with entry %u (%s) has no sell template.", GetPlayer()->GetName(), unit->GetEntry(), unit->GetCreatureInfo()->Name );
 		GetPlayer()->Gossip_Complete(); // cebernic: don't get a hang for the NPC
 		return;
 	}
@@ -1824,43 +1824,6 @@ void WorldSession::HandleReadItemOpcode(WorldPacket &recvPacket)
 	}
 }
 
-WoWICE_INLINE uint32 RepairItemCost(Player * pPlayer, Item * pItem)
-{
-	DurabilityCostsEntry * dcosts = dbcDurabilityCosts.LookupEntry(pItem->GetProto()->ItemLevel);
-	if(!dcosts)
-	{
-		sLog.outError("Repair: Unknown item level (%u)", dcosts);
-		return 0;
-	}
-
-	DurabilityQualityEntry * dquality = dbcDurabilityQuality.LookupEntry((pItem->GetProto()->Quality + 1) * 2);
-	if(!dquality)
-	{
-		sLog.outError("Repair: Unknown item quality (%u)", dquality);
-		return 0;
-	}
-
-	uint32 dmodifier = dcosts->modifier[pItem->GetProto()->Class == ITEM_CLASS_WEAPON ? pItem->GetProto()->SubClass : pItem->GetProto()->SubClass + 21];
-	uint32 cost = long2int32((pItem->GetDurabilityMax() - pItem->GetDurability()) * dmodifier * double(dquality->quality_modifier));
-	return cost;
-}
-
-WoWICE_INLINE bool RepairItem(Player * pPlayer, Item * pItem)
-{
-	//int32 cost = (int32)pItem->GetUInt32Value( ITEM_FIELD_MAXDURABILITY ) - (int32)pItem->GetUInt32Value( ITEM_FIELD_DURABILITY );
-	int32 cost = RepairItemCost(pPlayer, pItem);
-	if( cost <= 0 )
-		return FALSE;
-
-	if( cost > (int32)pPlayer->GetUInt32Value( PLAYER_FIELD_COINAGE ) )
-		return FALSE;
-
-	pPlayer->ModUnsigned32Value( PLAYER_FIELD_COINAGE, -cost );
-	pItem->SetDurabilityToMax();
-	pItem->m_isDirty = true;
-	return TRUE;
-}
-
 void WorldSession::HandleRepairItemOpcode(WorldPacket &recvPacket)
 {
 	if( !_player || !_player->IsInWorld() )
@@ -1900,17 +1863,17 @@ void WorldSession::HandleRepairItemOpcode(WorldPacket &recvPacket)
 					{
 						pItem = pContainer->GetItem( static_cast<int16>( j ) );
 						if( pItem != NULL )
-							RepairItem( _player, pItem );
+							pItem->RepairItem( _player );
 					}
 				}
 				else
 				{
 					if( i < INVENTORY_SLOT_BAG_END )
 					{
-						if( pItem->GetDurability() == 0 && RepairItem( _player, pItem ) )
+						if( pItem->GetDurability() == 0 && pItem->RepairItem( _player ) )
 							_player->ApplyItemMods( pItem, static_cast<int16>( i ), true );
 						else
-							RepairItem( _player, pItem );
+							pItem->RepairItem( _player );
 					}
 				}
 			}
@@ -1928,7 +1891,7 @@ void WorldSession::HandleRepairItemOpcode(WorldPacket &recvPacket)
 			{
                 uint32 cDurability = item->GetDurability();
 				//only apply item mods if they are on char equipped
-                if( RepairItem( _player, item ) && cDurability == 0 && searchres->ContainerSlot==INVALID_BACKPACK_SLOT && searchres->Slot < static_cast<int8>( INVENTORY_SLOT_BAG_END ))
+                if( item->RepairItem( _player ) && cDurability == 0 && searchres->ContainerSlot==INVALID_BACKPACK_SLOT && searchres->Slot < static_cast<int8>( INVENTORY_SLOT_BAG_END ))
                     _player->ApplyItemMods(item, searchres->Slot, true);
 			}
 		}
@@ -1995,7 +1958,7 @@ void WorldSession::HandleAutoBankItemOpcode(WorldPacket &recvPacket)
 	else
 	{
 		eitem = _player->GetItemInterface()->SafeRemoveAndRetreiveItemFromSlot(SrcInvSlot,SrcSlot, false);
-		if (eitem==NULL)
+		if (eitem== NULL)
 			return;
 
 		if(!_player->GetItemInterface()->SafeAddItem(eitem, slotresult.ContainerSlot, slotresult.Slot))
@@ -2040,7 +2003,7 @@ void WorldSession::HandleAutoStoreBankItemOpcode(WorldPacket &recvPacket)
 	else
 	{
 		eitem = _player->GetItemInterface()->SafeRemoveAndRetreiveItemFromSlot(SrcInvSlot, SrcSlot, false);
-		if (eitem==NULL)
+		if (eitem== NULL)
 			return;
 		if (!_player->GetItemInterface()->AddItemToFreeSlot(eitem))
 		{
@@ -2330,7 +2293,7 @@ void WorldSession::HandleItemRefundInfoOpcode( WorldPacket& recvPacket ){
     sLog.outDebug("Recieved CMSG_ITEMREFUNDINFO.");
 
     //////////////////////////////////////////////////////////////////////////////////////////
-    //  As of 3.1.3 the client sends this packet to request refund info on an item
+    //  As of 3.2.0a the client sends this packet to request refund info on an item
     //
     //	{CLIENT} Packet: (0x04B3) UNKNOWN PacketSize = 8 TimeStamp = 265984125
     //	E6 EE 09 18 02 00 00 42 
@@ -2355,7 +2318,7 @@ void WorldSession::HandleItemRefundRequestOpcode( WorldPacket& recvPacket ){
     sLog.outDebug("Recieved CMSG_ITEMREFUNDREQUEST.");
 
     //////////////////////////////////////////////////////////////////////////////////////////
-    //  As of 3.1.3 the client sends this packet to initiate refund of an item
+    //  As of 3.2.0a the client sends this packet to initiate refund of an item
     //
     //	{CLIENT} Packet: (0x04B4) UNKNOWN PacketSize = 8 TimeStamp = 266021296
     //	E6 EE 09 18 02 00 00 42 
@@ -2384,8 +2347,14 @@ void WorldSession::HandleItemRefundRequestOpcode( WorldPacket& recvPacket ){
             RefundEntry.second = 0;
             
             RefundEntry = _player->GetItemInterface()->LookupRefundable( GUID );
-            
-            ex = dbcItemExtendedCost.LookupEntry( RefundEntry.second );
+
+			// If the item is refundable we look up the extendedcost
+            if( RefundEntry.first != 0 && RefundEntry.second != 0 ){
+                uint32 *played = _player->GetPlayedtime();
+
+                if( played[1] < ( RefundEntry.first + 60*60*2 ) )
+                    ex = dbcItemExtendedCost.LookupEntry( RefundEntry.second );
+            }
 
             if( ex != NULL ){
                 proto = itm->GetProto();
@@ -2405,6 +2374,9 @@ void WorldSession::HandleItemRefundRequestOpcode( WorldPacket& recvPacket ){
                     _player->GetItemInterface()->RemoveItemAmtByGuid( GUID, 1 );
 
                     _player->GetItemInterface()->RemoveRefundable( GUID );
+
+					// we were successful!
+					error = 0;
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
                 }
             }
@@ -2443,8 +2415,9 @@ void WorldSession::HandleItemRefundRequestOpcode( WorldPacket& recvPacket ){
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-        WorldPacket packet( SMSG_UNKNOWN_1205, 52 );
+        WorldPacket packet( SMSG_ITEMREFUNDREQUEST, 60 );
         packet << uint64( GUID );
+        packet << uint32( error );
 
         if( error == 0 ){
             packet << uint32( proto->BuyPrice );
@@ -2456,11 +2429,9 @@ void WorldSession::HandleItemRefundRequestOpcode( WorldPacket& recvPacket ){
                 packet << uint32( ex->count[i] );
             }
 
-        }else{
-            packet << uint32( 1 );
         }
 
         this->SendPacket( &packet );
 
-        sLog.outDebug("Recieved CMSG_ITEMREFUNDREQUEST.");
+        sLog.outDebug("Sent SMSG_ITEMREFUNDREQUEST.");
 }

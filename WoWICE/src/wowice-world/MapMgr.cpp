@@ -1548,7 +1548,7 @@ void MapMgr::KillThreadWithCleanup()
 			else
 			{
 				// just null out the pointer
-				pInstance->m_mapMgr=NULL;
+				pInstance->m_mapMgr= NULL;
 			}
 		}
 		else if(GetMapInfo()->type == INSTANCE_NULL)
@@ -1694,7 +1694,7 @@ bool MapMgr::Do()
 		else
 		{
 			// just null out the pointer
-			pInstance->m_mapMgr=NULL;
+			pInstance->m_mapMgr= NULL;
 		}
 	}
 	else if(GetMapInfo()->type == INSTANCE_NULL)
@@ -1987,7 +1987,7 @@ void MapMgr::EventRespawnCreature(Creature * c, MapCell * p)
 	ObjectSet::iterator itr = p->_respawnObjects.find((Object*)c);
 	if(itr != p->_respawnObjects.end())
 	{
-		c->m_respawnCell=NULL;
+		c->m_respawnCell= NULL;
 		p->_respawnObjects.erase(itr);
 		c->OnRespawn(this);
 	}
@@ -1998,7 +1998,7 @@ void MapMgr::EventRespawnGameObject(GameObject * o, MapCell * c)
 	ObjectSet::iterator itr = c->_respawnObjects.find((Object*)o);
 	if(itr != c->_respawnObjects.end())
 	{
-		o->m_respawnCell=NULL;
+		o->m_respawnCell= NULL;
 		c->_respawnObjects.erase(itr);
 		o->Spawn(this);
 	}

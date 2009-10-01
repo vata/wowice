@@ -278,10 +278,10 @@ void ArathiBasin::SpawnControlPoint(uint32 Id, uint32 Type)
 		m_controlPoints[Id]->PushToWorld(m_mapMgr);
 	}
 
-	if(gi_aura==NULL)
+	if(gi_aura== NULL)
 	{
 		// remove it if it exists
-		if(m_controlPointAuras[Id]!=NULL && m_controlPointAuras[Id]->IsInWorld())
+		if(m_controlPointAuras[Id]!= NULL && m_controlPointAuras[Id]->IsInWorld())
 			m_controlPointAuras[Id]->RemoveFromWorld(false);
 			
 		return;
@@ -740,10 +740,9 @@ void ArathiBasin::HookOnAreaTrigger(Player * plr, uint32 id)
 		SpellEntry * sp = dbcSpell.LookupEntryForced(spellid);
 		if(sp)
 		{
-			Spell * pSpell = SpellPool.PooledNew();
+			Spell * pSpell = new Spell(plr, sp, true, NULL);
 			if (!pSpell)
 				return;
-			pSpell->Init(plr, sp, true, NULL);
 			SpellCastTargets targets(plr->GetGUID());
 			pSpell->prepare(&targets);
 		}

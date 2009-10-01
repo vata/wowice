@@ -1064,7 +1064,7 @@ void QuestMgr::OnQuestFinished(Player* plr, Quest* qst, Object *qst_giver, uint3
 						else
 						{
 							Item *itm = objmgr.CreateItem(qst->reward_item[i], plr);
-							if (itm==NULL)
+							if (itm== NULL)
 								return;
 
 							itm->SetUInt32Value(ITEM_FIELD_STACK_COUNT, uint32(qst->reward_itemcount[i]));
@@ -1104,7 +1104,7 @@ void QuestMgr::OnQuestFinished(Player* plr, Quest* qst, Object *qst_giver, uint3
 					else
 					{
 						Item *itm = objmgr.CreateItem(qst->reward_choiceitem[reward_slot], plr);
-						if (itm==NULL)
+						if (itm== NULL)
 								return;
 
 						itm->SetUInt32Value(ITEM_FIELD_STACK_COUNT, uint32(qst->reward_choiceitemcount[reward_slot]));
@@ -1137,10 +1137,9 @@ void QuestMgr::OnQuestFinished(Player* plr, Quest* qst, Object *qst_giver, uint3
 			SpellEntry  * inf =dbcSpell.LookupEntry(qst->effect_on_player);
 			if(inf)
 			{
-				Spell * spe = SpellPool.PooledNew();
+				Spell * spe = new Spell(plr,inf,true,NULL);
 				if (!spe)
 					return;
-				spe->Init(plr,inf,true,NULL);
 				SpellCastTargets tgt;
 				tgt.m_unitTarget = plr->GetGUID();
 				spe->prepare(&tgt);
@@ -1184,7 +1183,7 @@ void QuestMgr::OnQuestFinished(Player* plr, Quest* qst, Object *qst_giver, uint3
 						else
 						{
 							Item *itm = objmgr.CreateItem(qst->reward_item[i], plr);
-							if (itm==NULL)
+							if (itm== NULL)
 								return;
 
 							itm->SetUInt32Value(ITEM_FIELD_STACK_COUNT, uint32(qst->reward_itemcount[i]));
@@ -1224,7 +1223,7 @@ void QuestMgr::OnQuestFinished(Player* plr, Quest* qst, Object *qst_giver, uint3
 					else 
 					{
 						Item *itm = objmgr.CreateItem(qst->reward_choiceitem[reward_slot], plr);
-						if (itm==NULL)
+						if (itm== NULL)
 							return;
 
 						itm->SetUInt32Value(ITEM_FIELD_STACK_COUNT, uint32(qst->reward_choiceitemcount[reward_slot]));
@@ -1288,10 +1287,9 @@ void QuestMgr::OnQuestFinished(Player* plr, Quest* qst, Object *qst_giver, uint3
 			SpellEntry  * inf =dbcSpell.LookupEntry(qst->effect_on_player);
 			if(inf)
 			{
-				Spell * spe = SpellPool.PooledNew();
+				Spell * spe = new Spell(plr,inf,true,NULL);
 				if (!spe)
 					return;
-				spe->Init(plr,inf,true,NULL);
 				SpellCastTargets tgt;
 				tgt.m_unitTarget = plr->GetGUID();
 				spe->prepare(&tgt);

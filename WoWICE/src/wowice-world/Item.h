@@ -120,12 +120,8 @@ class SERVER_DECL Item : public Object
 {
 public:
 	Item();
-	void Init( uint32 high, uint32 low );
-	void Virtual_Constructor();		//when using object pool contructor is not good to be called again sometimes. Use this instead
+    void Init( uint32 high, uint32 low );
 	virtual ~Item();
-	void Virtual_Destructor();		//this makes sure we do not leave events on objects that are supposed to be deleted
-	int32 m_bufferPoolId;
-
 	void Create( uint32 itemid, Player* owner );
 
 	WoWICE_INLINE ItemPrototype* GetProto() const { return m_itemProto; }
@@ -277,6 +273,8 @@ public:
     void SetItemExpireTime( time_t timesec ){ ItemExpiresOn = timesec; }
     void EventRemoveItem();
     void RemoveFromRefundableMap();
+	bool RepairItem(Player * pPlayer);
+	uint32 RepairItemCost();
         
 protected:
 

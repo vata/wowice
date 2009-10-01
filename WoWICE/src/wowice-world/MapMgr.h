@@ -263,7 +263,7 @@ public:
 	// kill the worker thread only
 	void KillThread()
 	{
-		pInstance=NULL;
+		pInstance= NULL;
 		thread_kill_only = true;
 		SetThreadState(THREADSTATE_TERMINATE);
 		while(thread_running)

@@ -18,7 +18,7 @@ class ChatHandler;
 
 uint32 GetQuestIDFromLink(const char* questlink)
 {
-	if(questlink==NULL)
+	if(questlink== NULL)
 		return 0;
 
 	const char* ptr = strstr(questlink, "|Hquest:");
@@ -262,7 +262,7 @@ bool ChatHandler::HandleQuestStartCommand(const char * args, WorldSession * m_se
 						if(qst->receive_items[i])
 						{
 							Item *item = objmgr.CreateItem( qst->receive_items[i], plr);
-							if(item==NULL)
+							if(item== NULL)
 								return false;
 
 							if(!plr->GetItemInterface()->AddItemToFreeSlot(item))
@@ -857,7 +857,7 @@ bool ChatHandler::HandleQuestListCommand(const char * args, WorldSession * m_ses
 			uint32 quest_id = fields[0].GetUInt32();
 
 			qst = QuestStorage.LookupEntry(quest_id);
-			if(qst==NULL)
+			if(qst== NULL)
 				continue;
 
 			string qid  = MyConvertIntToString(quest_id);
@@ -972,6 +972,7 @@ bool ChatHandler::HandleQuestAddStartCommand(const char * args, WorldSession * m
 	SendMultilineMessage(m_session, recout.c_str());
 	sGMLog.writefromsession( m_session, "added starter of quest %u [%s] to NPC %u [%s]", qst->id, qst->title, unit->GetEntry(), unit->GetCreatureInfo()->Name );
 
+	delete qstrel;
 	return true;
 }
 
@@ -1055,7 +1056,8 @@ bool ChatHandler::HandleQuestAddFinishCommand(const char * args, WorldSession * 
 	recout += "\n\n";
 	SendMultilineMessage(m_session, recout.c_str());
 	sGMLog.writefromsession( m_session, "added finisher of quest %u [%s] to NPC %u [%s]", qst->id, qst->title, unit->GetEntry(), unit->GetCreatureInfo()->Name );
-
+	
+	delete qstrel;
 	return true;
 }
 

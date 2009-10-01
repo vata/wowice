@@ -29,7 +29,7 @@ DynamicObject::DynamicObject(uint32 high, uint32 low)
 	m_floatValues[OBJECT_FIELD_SCALE_X] = 1;
 
 
-	m_parentSpell=NULL;
+	m_parentSpell= NULL;
 	m_aliveDuration = 0;
 	u_caster = 0;
 	m_spellProto = 0;
@@ -118,7 +118,8 @@ void DynamicObject::UpdateTargets()
 		Aura * pAura;
 		float radius = m_floatValues[DYNAMICOBJECT_RADIUS]*m_floatValues[DYNAMICOBJECT_RADIUS];
 
-		this->AquireInrangeLock(); //make sure to release lock before exit function !
+		AquireInrangeLock(); //make sure to release lock before exit function !
+		
 		while(itr != iend)
 		{
 //			target = *itr;
@@ -141,10 +142,9 @@ void DynamicObject::UpdateTargets()
 
 			if(GetDistanceSq(target) <= radius)
 			{
-				pAura = AuraPool.PooledNew();
+				pAura = new Aura(m_spellProto, m_aliveDuration, u_caster, target, true);
 				if (!pAura)
 					return;
-				pAura->Init(m_spellProto, m_aliveDuration, u_caster, target, true);
 				for(uint32 i = 0; i < 3; ++i)
 				{
 					if(m_spellProto->Effect[i] == SPELL_EFFECT_PERSISTENT_AREA_AURA)
@@ -165,7 +165,8 @@ void DynamicObject::UpdateTargets()
 			}
 		}
 
-		this->ReleaseInrangeLock();
+		ReleaseInrangeLock();
+
 		// loop the targets, check the range of all of them
 		DynamicObjectList::iterator jtr  = targets.begin();
 		DynamicObjectList::iterator jtr2;

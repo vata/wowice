@@ -448,7 +448,7 @@ public:
 		if (!HasSummoned && _unit->GetHealthPct() <= 8)
 		{
 			Unit *Warchief = NULL;
-			Warchief =_unit->GetMapMgr()->GetInterface()->SpawnCreature(CN_REND_BLACKHAND, 157.366516f, -419.779358f, 110.472336f, 3.056772f, false, false, 0, 0);
+			Warchief =_unit->GetMapMgr()->GetInterface()->SpawnCreature(CN_REND_BLACKHAND, 157.366516f, -419.779358f, 110.472336f, 3.056772f, true, false, 0, 0);
 			if (Warchief != NULL)
 			{
 				if (_unit->GetAIInterface()->GetNextTarget() != NULL)
@@ -1465,7 +1465,7 @@ public:
 		if (!HasSummoned && _unit->GetHealthPct() <= 25)
 		{
 			Unit *cGizrul = NULL;
-			cGizrul =_unit->GetMapMgr()->GetInterface()->SpawnCreature(CN_GIZRUL, -195.100006f, -321.970001f, 65.424400f, 0.016500f, false, false, 0, 0);
+			cGizrul =_unit->GetMapMgr()->GetInterface()->SpawnCreature(CN_GIZRUL, -195.100006f, -321.970001f, 65.424400f, 0.016500f, true, false, 0, 0);
 			if (cGizrul != NULL)
 			{
 				if (_unit->GetAIInterface()->GetNextTarget() != NULL)

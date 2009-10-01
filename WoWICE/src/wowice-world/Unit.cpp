@@ -243,7 +243,6 @@ Unit::Unit()
 	m_CombatResult_Parry = 0;
 
 	critterPet = NULL;
-	summonPet = NULL;
 
 	m_useAI = false;
 	for(i=0;i<10;i++)
@@ -1473,10 +1472,9 @@ uint32 Unit::HandleProc( uint32 flag, Unit* victim, SpellEntry* CastingSpell, ui
 						if( new_caster && new_caster->isAlive() )
 						{
 							SpellEntry *spellInfo = dbcSpell.LookupEntry( spellId ); //we already modified this spell on server loading so it must exist
-							Spell *spell = SpellPool.PooledNew();
+							Spell *spell = new Spell( new_caster, spellInfo ,true, NULL );
 							if (!spell)
 								return 0;
-							spell->Init( new_caster, spellInfo ,true, NULL );
 							SpellCastTargets targets;
 							targets.m_destX = GetPositionX();
 							targets.m_destY = GetPositionY();
@@ -1519,10 +1517,9 @@ uint32 Unit::HandleProc( uint32 flag, Unit* victim, SpellEntry* CastingSpell, ui
 						if( new_caster != NULL && new_caster->isAlive() )
 						{
 							SpellEntry* spellInfo = dbcSpell.LookupEntry( 25228 ); //we already modified this spell on server loading so it must exist
-							Spell* spell = SpellPool.PooledNew();
+							Spell* spell = new Spell( new_caster, spellInfo, true, NULL );
 							if (!spell)
 								return 0;
-							spell->Init( new_caster, spellInfo, true, NULL );
 							spell->forced_basepoints[0] = dmg;
 							SpellCastTargets targets;
 							targets.m_unitTarget = GetGUID();
@@ -1612,13 +1609,12 @@ uint32 Unit::HandleProc( uint32 flag, Unit* victim, SpellEntry* CastingSpell, ui
 						SpellEntry *spellInfo = dbcSpell.LookupEntry(spellId );
 						if(!spellInfo)
 							continue;
-						Spell *spell = SpellPool.PooledNew();
+						Spell *spell = new Spell(this, spellInfo ,true, NULL);
 						if (!spell)
 							return 0;
-						spell->Init(this, spellInfo ,true, NULL);
 						spell->SetUnitTarget(this);
 						spell->Heal(amount*(ospinfo->EffectBasePoints[0]+1)/100);
-						SpellPool.PooledDelete(spell);
+						delete spell;
 						spell = NULL;
 						continue;
 					}break;
@@ -1791,10 +1787,9 @@ uint32 Unit::HandleProc( uint32 flag, Unit* victim, SpellEntry* CastingSpell, ui
 
 						if( Next_new_target )
 						{
-							Spell *spell = SpellPool.PooledNew();
+							Spell *spell = new Spell(p_caster, ospinfo ,true, NULL);
 							if (!spell)
 								return 0;
-							spell->Init(p_caster, ospinfo ,true, NULL);
 							spell->forced_basepoints[0] = pa->GetModAmount( 0 ) - 1 ;
 							SpellCastTargets targets( Next_new_target->GetGUID() ); //no target so spelltargeting will get an injured party member
 							spell->prepare( &targets );
@@ -1847,11 +1842,10 @@ uint32 Unit::HandleProc( uint32 flag, Unit* victim, SpellEntry* CastingSpell, ui
 						if (!parentproc || !spellInfo)
 							continue;
 						int32 val = parentproc->EffectBasePoints[0] + 1;
-                        Spell *spell = SpellPool.PooledNew();
+                        Spell *spell = new Spell(this, spellInfo ,true, NULL);
 						if (!spell)
 							return 0;
-						spell->Init(this, spellInfo ,true, NULL);
-                        spell->forced_basepoints[0] = (val*dmg)/300; //per tick
+						spell->forced_basepoints[0] = (val*dmg)/300; //per tick
                         SpellCastTargets targets;
                         targets.m_unitTarget = GetGUID();
                         spell->prepare(&targets);
@@ -2655,10 +2649,9 @@ uint32 Unit::HandleProc( uint32 flag, Unit* victim, SpellEntry* CastingSpell, ui
 			targets.m_unitTarget = victim->GetGUID();
 
 		SpellEntry *spellInfo = dbcSpell.LookupEntry(spellId );
-		Spell *spell = SpellPool.PooledNew();
+		Spell *spell = new Spell(this, spellInfo ,true, NULL);
 		if (!spell)
 			return 0;
-		spell->Init(this, spellInfo ,true, NULL);
 		spell->forced_basepoints[0] = dmg_overwrite;
 		spell->ProcedOnSpell = CastingSpell;
 		//Spell *spell = new Spell(this,spellInfo,false,0,true,false);
@@ -2666,7 +2659,7 @@ uint32 Unit::HandleProc( uint32 flag, Unit* victim, SpellEntry* CastingSpell, ui
 		{
 			spell->pSpellId=itr2->spellId;
 			spell->SpellEffectDummy(0);
-			SpellPool.PooledDelete(spell);
+			delete spell;
 			spell = NULL;
 			continue;
 		}
@@ -3095,7 +3088,7 @@ uint32 Unit::GetSpellDidHitResult( Unit* pVictim, uint32 weapon_damage_type, Spe
 		if(pVictim->m_objectTypeId == TYPEID_UNIT)
 		{
 			Creature * c = (Creature*)(pVictim);
-			if(c&&c->GetCreatureInfo()&&c->GetCreatureInfo()->Rank == ELITE_WORLDBOSS)
+			if( c->GetCreatureInfo() && c->GetCreatureInfo()->Rank == ELITE_WORLDBOSS )
 			{
 				victim_skill = std::max(victim_skill,((int32)this->getLevel()+3)*5); //used max to avoid situation when lowlvl hits boss.
 			}
@@ -3166,7 +3159,7 @@ uint32 Unit::GetSpellDidHitResult( Unit* pVictim, uint32 weapon_damage_type, Spe
 		if(m_objectTypeId == TYPEID_UNIT)
 		{
 			Creature * c = (Creature*)(this);
-			if(c&&c->GetCreatureInfo()&&c->GetCreatureInfo()->Rank == ELITE_WORLDBOSS)
+			if( c->GetCreatureInfo()&&c->GetCreatureInfo()->Rank == ELITE_WORLDBOSS )
 				self_skill = std::max(self_skill,((int32)pVictim->getLevel()+3)*5);//used max to avoid situation when lowlvl hits boss.
 		}
 	}
@@ -3184,7 +3177,7 @@ uint32 Unit::GetSpellDidHitResult( Unit* pVictim, uint32 weapon_damage_type, Spe
 	if(int32(this->getLevel()*5)>self_skill)
 		diffAcapped -=(float)self_skill;
 	else
-		diffAcapped -=(float)(this->getLevel()*5);
+		diffAcapped -=(float)( getLevel() * 5 );
 	//<SHIT END>
 
 	//--------------------------------by victim state-------------------------------------------
@@ -3265,7 +3258,7 @@ void Unit::Strike( Unit* pVictim, uint32 weapon_damage_type, SpellEntry* ability
 //==========================================================================================
 //==============================Unacceptable Cases Processing===============================
 //==========================================================================================
-	if( !pVictim || !pVictim->isAlive() || !isAlive()  || IsStunned() || IsPacified() || IsFeared())
+	if( !pVictim || !pVictim->isAlive() || !isAlive()  || IsStunned() || IsPacified() || IsFeared() )
 		return;
 
 	if(!isInFront(pVictim))
@@ -3980,8 +3973,6 @@ void Unit::Strike( Unit* pVictim, uint32 weapon_damage_type, SpellEntry* ability
 						else sEventMgr.ModifyEventTimeLeft( this, EVENT_CRIT_FLAG_EXPIRE, 5000 );
 					}
 
-					CastSpellOnCasterOnCritHit();
-
 					CALL_SCRIPT_EVENT(pVictim, OnTargetCritHit)(this, float(dmg.full_damage));
 					CALL_SCRIPT_EVENT(this, OnCritHit)(pVictim, float(dmg.full_damage));
 				}
@@ -4124,18 +4115,16 @@ void Unit::Strike( Unit* pVictim, uint32 weapon_damage_type, SpellEntry* ability
 					}
 
 					// Cast.
-					cspell = SpellPool.PooledNew();
+					cspell = new Spell(this, itr->first, true, NULL);
 					if (!cspell)
 						return;
-					cspell->Init(this, itr->first, true, NULL);
 					cspell->prepare(&targets);
 				}
 				else
 				{
-					cspell = SpellPool.PooledNew();
+					cspell = new Spell(this, itr->first, true, NULL);
 					if (!cspell)
 						return;
-					cspell->Init(this, itr->first, true, NULL);
 					cspell->prepare(&targets);
 				}
 			}
@@ -4217,21 +4206,22 @@ void Unit::Strike( Unit* pVictim, uint32 weapon_damage_type, SpellEntry* ability
 
 	if(this->IsPlayer() && ability)
 		static_cast< Player* >( this )->m_casted_amount[dmg.school_type]=(uint32)(realdamage+abs);
-	if(realdamage)
-	{
-		DealDamage(pVictim, realdamage, 0, targetEvent, 0);
-		//pVictim->HandleProcDmgShield(PROC_ON_MELEE_ATTACK_VICTIM,this);
-//		HandleProcDmgShield(PROC_ON_MELEE_ATTACK_VICTIM,pVictim);
 
-		if(pVictim->GetCurrentSpell())
-			pVictim->GetCurrentSpell()->AddTime(0);
-	}
-	else
-	{
-		// have to set attack target here otherwise it wont be set
-		// because dealdamage is not called.
-		//setAttackTarget(pVictim);
-		this->CombatStatus.OnDamageDealt( pVictim );
+	// invincible people don't take damage
+	if( pVictim->bInvincible == false ){		
+		if(realdamage){
+			DealDamage(pVictim, realdamage, 0, targetEvent, 0);
+			//pVictim->HandleProcDmgShield(PROC_ON_MELEE_ATTACK_VICTIM,this);
+			//		HandleProcDmgShield(PROC_ON_MELEE_ATTACK_VICTIM,pVictim);
+			
+			if(pVictim->GetCurrentSpell())
+				pVictim->GetCurrentSpell()->AddTime(0);
+		}else{
+			// have to set attack target here otherwise it wont be set
+			// because dealdamage is not called.
+			//setAttackTarget(pVictim);
+			this->CombatStatus.OnDamageDealt( pVictim );
+		}
 	}
 //==========================================================================================
 //==============================Post Damage Dealing Processing==============================
@@ -4507,7 +4497,7 @@ void Unit::AddAura(Aura * aur)
 	if ( !aur )
 		return;
 
-    if( !this->isAlive() && !( aur->GetSpellProto()->AttributesExC & CAN_PERSIST_AND_CASTED_WHILE_DEAD ) )
+    if( !isAlive() && !( aur->GetSpellProto()->AttributesExC & CAN_PERSIST_AND_CASTED_WHILE_DEAD ) )
         return;
 
 	if(m_mapId!=530 && (m_mapId!=571 || (IsPlayer() && !((Player*)this)->HasSpellwithNameHash(SPELL_HASH_COLD_WEATHER_FLYING))))
@@ -4517,16 +4507,7 @@ void Unit::AddAura(Aura * aur)
 		{
 			if( aur->GetSpellProto()->EffectApplyAuraName[i] == 208 || aur->GetSpellProto()->EffectApplyAuraName[i] == 207 )
 			{
-				// Pretty sure this gets removed somewhere in the aura pool..
-				// Watch:
-				/*
-				PooledDelete(T* dumped) calls dumped->Virtual_Destructor(); 
-				which calls Aura::Virtual_Destructor() which then calls
-				sEventMgr.RemoveEvents( this ); this refers to the Aura pointer which we've named aur.
-				Cheers!
-				*/
-				//sEventMgr.RemoveEvents(aur);
-				AuraPool.PooledDelete(aur);
+				delete aur;
 				return;
 			}
 		}
@@ -4534,7 +4515,7 @@ void Unit::AddAura(Aura * aur)
 
 	if( aur->GetSpellProto()->School && SchoolImmunityList[aur->GetSpellProto()->School] )
 	{
-		AuraPool.PooledDelete(aur);
+		delete aur;
 		return;
 	}
 
@@ -4562,10 +4543,11 @@ void Unit::AddAura(Aura * aur)
 			if( aur->GetSpellProto()->procCharges > 0 )
 			{
 				int charges = aur->GetSpellProto()->procCharges;
-				if( aur->GetSpellProto()->SpellGroupType && aur->GetUnitCaster() != NULL )
+				Unit* ucaster = aur->GetUnitCaster();
+				if( aur->GetSpellProto()->SpellGroupType && ucaster != NULL )
 				{
-					SM_FIValue( aur->GetUnitCaster()->SM_FCharges, &charges, aur->GetSpellProto()->SpellGroupType );
-					SM_PIValue( aur->GetUnitCaster()->SM_PCharges, &charges, aur->GetSpellProto()->SpellGroupType );
+					SM_FIValue( ucaster->SM_FCharges, &charges, aur->GetSpellProto()->SpellGroupType );
+					SM_PIValue( ucaster->SM_PCharges, &charges, aur->GetSpellProto()->SpellGroupType );
 				}
 				maxStack=charges;
 			}
@@ -4642,7 +4624,7 @@ void Unit::AddAura(Aura * aur)
 			if(deleteAur)
 			{
 				sEventMgr.RemoveEvents( aur );
-				AuraPool.PooledDelete( aur );
+				delete aur;
 				return;
 			}
 		}
@@ -4675,7 +4657,7 @@ void Unit::AddAura(Aura * aur)
 	{
 		sLog.outError("Aura error in active aura. ");
 		sEventMgr.RemoveEvents( aur );
-		AuraPool.PooledDelete( aur );
+		delete aur;
 /*
 		if ( aur != NULL ) 
 			{
@@ -4704,7 +4686,7 @@ void Unit::AddAura(Aura * aur)
 	{
 		//TODO : notify client that we are immune to this spell
 		sEventMgr.RemoveEvents( aur );
-		AuraPool.PooledDelete( aur );
+		delete aur;
 		return;
 	}
 
@@ -5002,13 +4984,13 @@ void Unit::RemoveAllAuras()
 			m_auras[x]->Remove();
 }
 
-void Unit::RemoveAllNonPersistantAuras(){
-	for(uint32 x=MAX_TOTAL_AURAS_START;x<MAX_TOTAL_AURAS_END;x++)
+void Unit::RemoveAllNonPersistentAuras(){
+	for(uint32 x = MAX_TOTAL_AURAS_START; x < MAX_TOTAL_AURAS_END; x++ )
 		if(m_auras[x])
 		{
             if(m_auras[x]->GetSpellProto()->AttributesExC & CAN_PERSIST_AND_CASTED_WHILE_DEAD)
                 continue;
-            else
+			else
 			    m_auras[x]->Remove();
 		}
 }
@@ -5292,7 +5274,7 @@ void Unit::InterruptSpell()
 		{
 			// shouldn't really happen. but due to spell system bugs there are some cases where this can happen.
 			sEventMgr.AddEvent(this,&Unit::CancelSpell,m_currentSpell,EVENT_UNIT_DELAYED_SPELL_CANCEL,1,1,EVENT_FLAG_DO_NOT_EXECUTE_IN_WORLD_CONTEXT);
-			m_currentSpell=NULL;
+			m_currentSpell= NULL;
 		}
 		else*/
 			m_currentSpell->cancel();
@@ -5893,30 +5875,31 @@ bool Unit::HasVisialPosAurasOfNameHashWithCaster(uint32 namehash, Unit * caster)
 
 void Unit::EventSummonPetExpire()
 {
-	if(summonPet)
+	std::set< Creature* >::iterator itr = m_Guardians.begin();
+	for( ; itr != m_Guardians.end(); ++itr )
 	{
-		if(summonPet->GetEntry() == 7915)//Goblin Bomb
+		if( (*itr)->GetEntry() == 7915 ) //Goblin Bomb
 		{
-			SpellEntry *spInfo = dbcSpell.LookupEntry(13259);
-			if(!spInfo)
+			SpellEntry *spInfo = dbcSpell.LookupEntry( 13259 );
+			if( spInfo == NULL )
 				return;
 
-			Spell * sp = SpellPool.PooledNew();
-			if (!sp)
-				return;
-			sp->Init(summonPet,spInfo,true,NULL);
-			SpellCastTargets tgt;
-			tgt.m_unitTarget=summonPet->GetGUID();
-			sp->prepare(&tgt);
+			Spell * sp = new Spell( (*itr), spInfo, true, NULL );
+			if( sp != NULL )
+			{
+				SpellCastTargets tgt;
+				tgt.m_unitTarget = (*itr)->GetGUID();
+				sp->prepare( &tgt );
+			}
 		}
 		else
 		{
-			summonPet->RemoveFromWorld(false, true);
-			delete summonPet;
-			summonPet = NULL;
+			(*itr)->RemoveFromWorld( false, true );
+			delete (*itr);
+			m_Guardians.erase( itr );
 		}
 	}
-	sEventMgr.RemoveEvents(this, EVENT_SUMMON_PET_EXPIRE);
+	sEventMgr.RemoveEvents( this, EVENT_SUMMON_PET_EXPIRE );
 }
 
 uint8 Unit::CastSpell(Unit* Target, SpellEntry* Sp, bool triggered)
@@ -5924,10 +5907,9 @@ uint8 Unit::CastSpell(Unit* Target, SpellEntry* Sp, bool triggered)
 	if( Sp == NULL )
 		return SPELL_FAILED_UNKNOWN;
 
-	Spell *newSpell = SpellPool.PooledNew();
+	Spell *newSpell = new Spell(this, Sp, triggered, 0);
 	if (!newSpell)
 		return SPELL_FAILED_UNKNOWN;
-	newSpell->Init(this, Sp, triggered, 0);
 	SpellCastTargets targets(0);
 	if(Target)
 	{
@@ -5955,10 +5937,9 @@ uint8 Unit::CastSpell(uint64 targetGuid, SpellEntry* Sp, bool triggered)
 		return SPELL_FAILED_UNKNOWN;
 
 	SpellCastTargets targets(targetGuid);
-	Spell *newSpell = SpellPool.PooledNew();
+	Spell *newSpell = new Spell(this, Sp, triggered, 0);
 	if (!newSpell)
 		return 0;
-	newSpell->Init(this, Sp, triggered, 0);
 	return newSpell->prepare(&targets);
 }
 
@@ -5979,10 +5960,9 @@ void Unit::CastSpellAoF(float x,float y,float z,SpellEntry* Sp, bool triggered)
 	targets.m_destY = y;
 	targets.m_destZ = z;
 	targets.m_targetMask=TARGET_FLAG_DEST_LOCATION;
-	Spell *newSpell = SpellPool.PooledNew();
+	Spell *newSpell = new Spell(this, Sp, triggered, 0);
 	if (!newSpell)
 		return;
-	newSpell->Init(this, Sp, triggered, 0);
 	newSpell->prepare(&targets);
 }
 
@@ -6650,10 +6630,9 @@ bool Unit::GetSpeedDecrease()
 
 void Unit::EventCastSpell(Unit * Target, SpellEntry * Sp)
 {
-	Spell * pSpell = SpellPool.PooledNew();
+	Spell * pSpell = new Spell(Target, Sp, true, NULL);
 	if (!pSpell)
 		return;
-	pSpell->Init(Target, Sp, true, NULL);
 	SpellCastTargets targets(Target->GetGUID());
 	pSpell->prepare(&targets);
 }
@@ -6684,48 +6663,47 @@ void Unit::SetFacing(float newo)
 }
 
 //guardians are temporary spawn that will inherit master faction and will follow them. Apart from that they have their own mind
-Unit* Unit::create_guardian(uint32 guardian_entry,uint32 duration,float angle, uint32 lvl, GameObject * obj, LocationVector * Vec)
+Creature* Unit::create_guardian(uint32 guardian_entry,uint32 duration,float angle, uint32 lvl, GameObject * obj, LocationVector * Vec)
 {
-	CreatureProto * proto = CreatureProtoStorage.LookupEntry(guardian_entry);
-	CreatureInfo * info = CreatureNameStorage.LookupEntry(guardian_entry);
-	float m_fallowAngle = angle;
-	float x = 3 * ( cosf( m_fallowAngle + GetOrientation() ) );
-	float y = 3 * ( sinf( m_fallowAngle + GetOrientation() ) );
-	float z = 0;
-
-	if(!proto || !info)
+	CreatureProto * proto = CreatureProtoStorage.LookupEntry( guardian_entry );
+	CreatureInfo * info = CreatureNameStorage.LookupEntry( guardian_entry );
+	
+	if( proto == NULL || info == NULL )
 	{
 		sLog.outDetail("Warning : Missing summon creature template %u !",guardian_entry);
 		return NULL;
 	}
+	
+	float m_followAngle = angle;
+	float x = 3 * ( cosf( m_followAngle + GetOrientation() ) );
+	float y = 3 * ( sinf( m_followAngle + GetOrientation() ) );
+	float z = 0;
 
-	Creature* p = GetMapMgr()->CreateCreature(guardian_entry);
-	p->SetInstanceID(GetMapMgr()->GetInstanceID());
+	Creature* p = GetMapMgr()->CreateCreature( guardian_entry );
+	p->SetInstanceID( GetMapMgr()->GetInstanceID() );
 
 	if( Vec )
 	{
 		x += Vec->x;
 		y += Vec->y;
 		z += Vec->z;
-		p->Load(proto, x, y, z);
 	}
 	//Summoned by a GameObject?
-	else if ( !obj )
+	else if( obj == NULL )
 	{
 		x += GetPositionX();
 		y += GetPositionY();
 		z += GetPositionZ();
-		p->Load(proto, x, y, z);
 	}
 	else //if so, we should appear on it's location ;)
 	{
 		x += obj->GetPositionX();
 		y += obj->GetPositionY();
 		z += obj->GetPositionZ();
-		p->Load(proto, x, y, z);
 	}
+	p->Load( proto, x, y, z );
 
-	if ( lvl != 0 )
+	if( lvl != 0 )
 	{
 		/* MANA */
 		p->SetPowerType(POWER_TYPE_MANA);
@@ -6739,34 +6717,35 @@ Unit* Unit::create_guardian(uint32 guardian_entry,uint32 duration,float angle, u
 	}
 
 	p->SetUInt64Value(UNIT_FIELD_SUMMONEDBY, GetGUID());
-    p->SetUInt64Value(UNIT_FIELD_CREATEDBY, GetGUID());
-    p->SetZoneId(GetZoneId());
+	p->SetUInt64Value(UNIT_FIELD_CREATEDBY, GetGUID());
+	p->SetZoneId(GetZoneId());
 	p->SetUInt32Value(UNIT_FIELD_FACTIONTEMPLATE,GetUInt32Value(UNIT_FIELD_FACTIONTEMPLATE));
 	p->_setFaction();
 
 	p->GetAIInterface()->Init(p,AITYPE_PET,MOVEMENTTYPE_NONE,this);
 	p->GetAIInterface()->SetUnitToFollow(this);
-	p->GetAIInterface()->SetUnitToFollowAngle(m_fallowAngle);
+	p->GetAIInterface()->SetUnitToFollowAngle(m_followAngle);
 	p->GetAIInterface()->SetFollowDistance(3.0f);
 	p->m_noRespawn = true;
 
-    // if it's summoned by a totem owned by a player it will be owned by the player, so we can PvP check on them in dealdamage, and isattackable
-    if( this->IsCreature() && static_cast< Creature* >( this )->IsTotem() && static_cast< Creature* >( this )->GetTotemOwner() ){
-        
-        if( static_cast< Creature* >( this )->GetTotemOwner()->IsPlayer() ){
-            p->SetOwner( static_cast< Unit* >( static_cast< Creature* >( this )->GetTotemOwner()));
-        }
+	// if it's summoned by a totem owned by a player it will be owned by the player, so we can PvP check on them in dealdamage, and isattackable
+	if( IsCreature() && static_cast< Creature* >( this )->IsTotem() && static_cast< Creature* >( this )->GetTotemOwner() != NULL )
+	{
+		Player* totem_owner = static_cast< Creature* >( this )->GetTotemOwner();
+		p->SetOwner( static_cast< Unit* >( totem_owner ) );
+		totem_owner->AddGuardianRef( p );
+	}
+	else
+	{
+		p->SetOwner( this );
+		AddGuardianRef( p );
+	}
 
-    }else{
-        p->SetOwner( this );
-    }
+	p->PushToWorld( GetMapMgr() );
 
-    p->PushToWorld(GetMapMgr());
+	sEventMgr.AddEvent( p, &Creature::SummonExpire, EVENT_SUMMON_EXPIRE, duration, 1, 0 );
 
-	sEventMgr.AddEvent(p, &Creature::SummonExpire, EVENT_SUMMON_EXPIRE, duration, 1,0);
-
-	return p;//lol, will compiler make the pointer conversion ?
-
+	return p;
 }
 
 float Unit::get_chance_to_daze(Unit *target)
@@ -7505,7 +7484,7 @@ void CombatStatusHandler::TryToClearAttackTargets()
 	Unit * pt;
 	
 	if( m_Unit->IsPlayer() )
-		static_cast<Player*>(m_Unit)->RemoveFlag(PLAYER_FLAGS, 0x100);
+		static_cast<Player*>(m_Unit)->RemoveFlag( PLAYER_FLAGS, PLAYER_FLAG_UNKNOWN2 );
 
 
 	for(i = m_attackTargets.begin(); i != m_attackTargets.end();)
@@ -7571,7 +7550,7 @@ void Unit::DispelAll(bool positive)
 {
 	for(uint32 i = MAX_TOTAL_AURAS_START; i < MAX_TOTAL_AURAS_END; ++i)
 	{
-		if(m_auras[i]!=NULL)
+		if(m_auras[i]!= NULL)
 			if((m_auras[i]->IsPositive()&&positive)||!m_auras[i]->IsPositive())
 				m_auras[i]->Remove();
 	}
@@ -7767,10 +7746,9 @@ void Unit::EventStunOrImmobilize(Unit *proc_target, bool is_victim)
 		if(!spellInfo)
 			return;
 
-		Spell *spell = SpellPool.PooledNew();
+		Spell *spell = new Spell(this, spellInfo ,true, NULL);
 		if (!spell)
 			return;
-		spell->Init(this, spellInfo ,true, NULL);
 		SpellCastTargets targets;
 
 		if ( spellInfo->procFlags & PROC_TARGET_SELF )
@@ -7811,10 +7789,9 @@ void Unit::EventChill(Unit *proc_target, bool is_victim)
 		if(!spellInfo)
 			return;
 
-		Spell *spell = SpellPool.PooledNew();
+		Spell *spell = new Spell(this, spellInfo ,true, NULL);
 		if (!spell)
 			return;
-		spell->Init(this, spellInfo ,true, NULL);
 		SpellCastTargets targets;
 
 		if ( spellInfo->procFlags & PROC_TARGET_SELF )
@@ -7924,10 +7901,8 @@ void Unit::RemoveReflect( uint32 spellid, bool apply )
 	if( apply && spellid == 23920 && IsPlayer() && HasAurasWithNameHash(SPELL_HASH_IMPROVED_SPELL_REFLECTION) )
 	{
 		Player *pPlayer = static_cast<Player*>(this);
-		if( !pPlayer )
-			return;
-
 		Group * pGroup = pPlayer->GetGroup();
+		
 		if(pGroup != NULL)
 		{
 			int32 targets = 0;
@@ -7959,10 +7934,8 @@ void Unit::RemoveReflect( uint32 spellid, bool apply )
 	if( !apply && spellid == 59725 && IsPlayer() )
 	{
 		Player *pPlayer = static_cast<Player*>(this);
-		if( !pPlayer )
-			return;
-
 		Group * pGroup = pPlayer->GetGroup();
+
 		if(pGroup != NULL)
 		{
 			pGroup->Lock();
@@ -8023,23 +7996,29 @@ void Unit::UpdatePowerAmm()
 	SendMessageToSet( &data, true );
 }
 
-void Unit::CastSpellOnCasterOnCritHit()
+void Unit::RemoveGuardianRef( Creature* g )
 {
-	if( HasAura( 54646 ) )
+	// just remove from the set	
+	std::set< Creature* >::iterator itr = m_Guardians.find( g );
+	if( itr != m_Guardians.end() )
+		m_Guardians.erase( itr );
+}
+
+void Unit::RemoveAllGuardians( bool remove_from_world )
+{
+	// remove all guardians from set and optionally remove from world
+	std::set< Creature* >::iterator itr = m_Guardians.begin();
+	while( itr != m_Guardians.end() )
 	{
-		SpellEntry *spellInfo = dbcSpell.LookupEntry( 54646 );
-		if(!spellInfo)
-			return;
-
-		Spell *spell = SpellPool.PooledNew();
-		if (!spell)
-			return;
-
-		Unit *uCaster = NULL;
-		if( spell->u_caster )
-			uCaster = spell->u_caster;
-
-		if( uCaster )
-				uCaster->CastSpell( uCaster, 54648, true );
+		if( remove_from_world )
+		{
+			if( (*itr)->IsInWorld() )
+				(*itr)->RemoveFromWorld( false, true );
+			else
+				(*itr)->SafeDelete();
+		}
+		(*itr)->SetOwner( NULL );
+		m_Guardians.erase( itr++ );
 	}
 }
+

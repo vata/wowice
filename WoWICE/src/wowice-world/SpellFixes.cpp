@@ -2243,7 +2243,7 @@ void ApplyNormalFixes()
 
 		// Shockwave Damage - useless?
 		sp = dbcSpell.LookupEntryForced( 46968 );
-		if(sp!=NULL){
+		if(sp!= NULL){
 			sp->Effect[1] = SPELL_EFFECT_SCHOOL_DAMAGE;
 			sp->Effect[2] = SPELL_EFFECT_DUMMY;
 		}
@@ -2754,7 +2754,7 @@ void ApplyNormalFixes()
 
 		//Paladin - Art of War
 		sp = dbcSpell.LookupEntryForced( 53486 );
-		if( sp !=NULL )
+		if( sp != NULL )
 		{
 			sp->Effect[1] = 6;
 			sp->EffectApplyAuraName[0] = SPELL_AURA_MOD_DAMAGE_DONE;
@@ -2767,7 +2767,7 @@ void ApplyNormalFixes()
 			sp->AuraInterruptFlags = AURA_INTERRUPT_ON_CAST_SPELL;
 
 		sp = dbcSpell.LookupEntryForced( 53488 );
-		if( sp !=NULL )
+		if( sp != NULL )
 		{
 			sp->Effect[1] = 6;
 			sp->EffectApplyAuraName[0] = SPELL_AURA_MOD_DAMAGE_DONE;
@@ -3844,19 +3844,19 @@ void ApplyNormalFixes()
 		{
 			uint32 group = sp->EffectSpellGroupRelation[0];
 			sp = dbcSpell.LookupEntryForced(15334);
-			if (sp !=NULL)
+			if (sp != NULL)
 				sp->EffectSpellGroupRelation[0] = group;
 			sp = dbcSpell.LookupEntryForced(15333);
-			if (sp !=NULL)
+			if (sp != NULL)
 				sp->EffectSpellGroupRelation[0] = group;
 			sp = dbcSpell.LookupEntryForced(15332);
-			if (sp !=NULL)
+			if (sp != NULL)
 				sp->EffectSpellGroupRelation[0] = group;
 			sp = dbcSpell.LookupEntryForced(15331);
-			if (sp !=NULL)
+			if (sp != NULL)
 				sp->EffectSpellGroupRelation[0] = group;
 			sp = dbcSpell.LookupEntryForced(15257);
-			if (sp !=NULL)
+			if (sp != NULL)
 				sp->EffectSpellGroupRelation[0] = group;
 		}
 	#endif
@@ -5374,7 +5374,7 @@ void ApplyNormalFixes()
 
 		//Improved Counterspell rank 1
 		sp = dbcSpell.LookupEntryForced( 11255 );
-		if( sp!=NULL )
+		if( sp!= NULL )
 		{
 			sp->procFlags = PROC_ON_CAST_SPECIFIC_SPELL;
 			sp->ProcOnNameHash[0] = SPELL_HASH_COUNTERSPELL;
@@ -5384,7 +5384,7 @@ void ApplyNormalFixes()
 
 		//Improved Counterspell rank 2
 		sp = dbcSpell.LookupEntryForced( 12598 );
-		if( sp!=NULL )
+		if( sp!= NULL )
 		{
 			sp->procFlags = PROC_ON_CAST_SPECIFIC_SPELL;
 			sp->ProcOnNameHash[0] = SPELL_HASH_COUNTERSPELL;
@@ -8244,181 +8244,6 @@ void ApplyNormalFixes()
 		sp = dbcSpell.LookupEntryForced( 32791 );
 		if( sp != NULL )
 			sp->DurationIndex = 64;
-
-		//STEW's VEHICLE MOUNT TEMP FIXES
-		//MECHANO HOG (Horde bike)
-		sp = dbcSpell.LookupEntryForced( 55531 );
-		if( sp != NULL )
-		{
-			sp->Effect[0] = SPELL_EFFECT_APPLY_AURA;
-			sp->Effect[1] = SPELL_EFFECT_APPLY_AURA;
-			sp->EffectApplyAuraName[0] = SPELL_AURA_MOUNTED;
-			sp->EffectApplyAuraName[1] = SPELL_AURA_MOD_INCREASE_MOUNTED_SPEED;
-			sp->EffectMiscValue[0] = 29929;
-			sp->EffectMiscValueB[1] = 0;
-			sp->EffectImplicitTargetA[0] = 1;
-			sp->EffectImplicitTargetA[1] = 1;
-			sp->EffectBasePoints[0] = 0;
-			sp->EffectBasePoints[1] = 99;
-		}
-		//MEKGINEER'S CHOPPER (Alliance Bike)
-		sp = dbcSpell.LookupEntryForced( 60424 );
-		if( sp != NULL )
-		{
-			sp->Effect[0] = SPELL_EFFECT_APPLY_AURA;
-			sp->Effect[1] = SPELL_EFFECT_APPLY_AURA;
-			sp->EffectApplyAuraName[0] = SPELL_AURA_MOUNTED;
-			sp->EffectApplyAuraName[1] = SPELL_AURA_MOD_INCREASE_MOUNTED_SPEED;
-			sp->EffectMiscValue[0] = 32286;
-			sp->EffectMiscValueB[1] = 0;
-			sp->EffectImplicitTargetA[0] = 1;
-			sp->EffectImplicitTargetA[1] = 1;
-			sp->EffectBasePoints[0] = 0;
-			sp->EffectBasePoints[1] = 99;
-		}
-		//Tundra Mammoth (Alliance flavour)
-		sp = dbcSpell.LookupEntryForced( 61425 );
-		if( sp != NULL )
-		{
-			sp->Effect[0] = SPELL_EFFECT_APPLY_AURA;
-			sp->Effect[1] = SPELL_EFFECT_APPLY_AURA;
-			sp->EffectApplyAuraName[0] = SPELL_AURA_MOUNTED;
-			sp->EffectApplyAuraName[1] = SPELL_AURA_MOD_INCREASE_MOUNTED_SPEED;
-			sp->EffectMiscValue[0] = 32633;
-			sp->EffectMiscValueB[1] = 0;
-			sp->EffectImplicitTargetA[0] = 1;
-			sp->EffectImplicitTargetA[1] = 1;
-			sp->EffectBasePoints[0] = 0;
-			sp->EffectBasePoints[1] = 99;
-		}
-		 
-		//Tundra Mammoth (Horde flavour)
-		sp = dbcSpell.LookupEntryForced( 61447 );
-		if( sp != NULL )
-		{
-			sp->Effect[0] = SPELL_EFFECT_APPLY_AURA;
-			sp->Effect[1] = SPELL_EFFECT_APPLY_AURA;
-			sp->EffectApplyAuraName[0] = SPELL_AURA_MOUNTED;
-			sp->EffectApplyAuraName[1] = SPELL_AURA_MOD_INCREASE_MOUNTED_SPEED;
-			sp->EffectMiscValue[0] = 32640;
-			sp->EffectMiscValueB[1] = 0;
-			sp->EffectImplicitTargetA[0] = 1;
-			sp->EffectImplicitTargetA[1] = 1;
-			sp->EffectBasePoints[0] = 0;
-			sp->EffectBasePoints[1] = 99;
-		}
-		 
-		//Swift Mooncloth Carpet
-		sp = dbcSpell.LookupEntryForced( 61442 );
-		if( sp != NULL )
-		{
-			sp->Effect[0] = SPELL_EFFECT_APPLY_AURA;
-			sp->Effect[1] = SPELL_EFFECT_APPLY_AURA;
-			sp->EffectApplyAuraName[0] = SPELL_AURA_MOUNTED;
-			sp->EffectApplyAuraName[1] = SPELL_AURA_MOD_INCREASE_MOUNTED_SPEED;
-			sp->EffectMiscValue[0] = 32634;
-			sp->EffectMiscValueB[1] = 0;
-			sp->EffectImplicitTargetA[0] = 1;
-			sp->EffectImplicitTargetA[1] = 1;
-			sp->EffectBasePoints[0] = 0;
-			sp->EffectBasePoints[1] = 99;
-		}
-		 
-		//Swift Spellfire Carpet
-		sp = dbcSpell.LookupEntryForced( 61446 );
-		if( sp != NULL )
-		{
-			sp->Effect[0] = SPELL_EFFECT_APPLY_AURA;
-			sp->Effect[1] = SPELL_EFFECT_APPLY_AURA;
-			sp->EffectApplyAuraName[0] = SPELL_AURA_MOUNTED;
-			sp->EffectApplyAuraName[1] = SPELL_AURA_MOD_INCREASE_MOUNTED_SPEED;
-			sp->EffectMiscValue[0] = 32636;
-			sp->EffectMiscValueB[1] = 0;
-			sp->EffectImplicitTargetA[0] = 1;
-			sp->EffectImplicitTargetA[1] = 1;
-			sp->EffectBasePoints[0] = 0;
-			sp->EffectBasePoints[1] = 99;
-		}
-		 
-		//Swift Shadoweave Carpet
-		sp = dbcSpell.LookupEntryForced( 61444 );
-		if( sp != NULL )
-		{
-			sp->Effect[0] = SPELL_EFFECT_APPLY_AURA;
-			sp->Effect[1] = SPELL_EFFECT_APPLY_AURA;
-			sp->EffectApplyAuraName[0] = SPELL_AURA_MOUNTED;
-			sp->EffectApplyAuraName[1] = SPELL_AURA_MOD_INCREASE_MOUNTED_SPEED;
-			sp->EffectMiscValue[0] = 32635;
-			sp->EffectMiscValueB[1] = 0;
-			sp->EffectImplicitTargetA[0] = 1;
-			sp->EffectImplicitTargetA[1] = 1;
-			sp->EffectBasePoints[0] = 0;
-			sp->EffectBasePoints[1] = 99;
-		}
-		 
-		//Grand Ice Mammoth (Horde flavour)
-		sp = dbcSpell.LookupEntryForced( 61469 );
-		if( sp != NULL )
-		{
-			sp->Effect[0] = SPELL_EFFECT_APPLY_AURA;
-			sp->Effect[1] = SPELL_EFFECT_APPLY_AURA;
-			sp->EffectApplyAuraName[0] = SPELL_AURA_MOUNTED;
-			sp->EffectApplyAuraName[1] = SPELL_AURA_MOD_INCREASE_MOUNTED_SPEED;
-			sp->EffectMiscValue[0] = 31857;
-			sp->EffectMiscValueB[1] = 0;
-			sp->EffectImplicitTargetA[0] = 1;
-			sp->EffectImplicitTargetA[1] = 1;
-			sp->EffectBasePoints[0] = 0;
-			sp->EffectBasePoints[1] = 99;
-		}
-		 
-		//Grand Ice Mammoth (Alliance flavour)
-		sp = dbcSpell.LookupEntryForced( 61470 );
-		if( sp != NULL )
-		{
-			sp->Effect[0] = SPELL_EFFECT_APPLY_AURA;
-			sp->Effect[1] = SPELL_EFFECT_APPLY_AURA;
-			sp->EffectApplyAuraName[0] = SPELL_AURA_MOUNTED;
-			sp->EffectApplyAuraName[1] = SPELL_AURA_MOD_INCREASE_MOUNTED_SPEED;
-			sp->EffectMiscValue[0] = 31858;
-			sp->EffectMiscValueB[1] = 0;
-			sp->EffectImplicitTargetA[0] = 1;
-			sp->EffectImplicitTargetA[1] = 1;
-			sp->EffectBasePoints[0] = 0;
-			sp->EffectBasePoints[1] = 99;
-		}
-		 
-		//Grand Black War Mammoth (Horde flavour)
-		sp = dbcSpell.LookupEntryForced( 61467 );
-		if( sp != NULL )
-		{
-			sp->Effect[0] = SPELL_EFFECT_APPLY_AURA;
-			sp->Effect[1] = SPELL_EFFECT_APPLY_AURA;
-			sp->EffectApplyAuraName[0] = SPELL_AURA_MOUNTED;
-			sp->EffectApplyAuraName[1] = SPELL_AURA_MOD_INCREASE_MOUNTED_SPEED;
-			sp->EffectMiscValue[0] = 31861;
-			sp->EffectMiscValueB[1] = 0;
-			sp->EffectImplicitTargetA[0] = 1;
-			sp->EffectImplicitTargetA[1] = 1;
-			sp->EffectBasePoints[0] = 0;
-			sp->EffectBasePoints[1] = 99;
-		}
-		 
-		//Grand Black War Mammoth (Alliance flavour)
-		sp = dbcSpell.LookupEntryForced( 61465 );
-		if( sp != NULL )
-		{
-			sp->Effect[0] = SPELL_EFFECT_APPLY_AURA;
-			sp->Effect[1] = SPELL_EFFECT_APPLY_AURA;
-			sp->EffectApplyAuraName[0] = SPELL_AURA_MOUNTED;
-			sp->EffectApplyAuraName[1] = SPELL_AURA_MOD_INCREASE_MOUNTED_SPEED;
-			sp->EffectMiscValue[0] = 31862;
-			sp->EffectMiscValueB[1] = 0;
-			sp->EffectImplicitTargetA[0] = 1;
-			sp->EffectImplicitTargetA[1] = 1;
-			sp->EffectBasePoints[0] = 0;
-			sp->EffectBasePoints[1] = 99;
-		}
 
        // Rune Tap
 	   sp = dbcSpell.LookupEntryForced( 48982 );

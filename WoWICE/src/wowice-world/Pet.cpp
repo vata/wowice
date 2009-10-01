@@ -25,7 +25,7 @@
 #define SPIRITWOLF		29264
 #define DANCINGRUNEWEAPON 27893
 
-uint32 GetAutoCastTypeForSpell( SpellEntry * ent )
+uint32 Pet::GetAutoCastTypeForSpell( SpellEntry * ent )
 {
 	switch( ent->NameHash )
 	{
@@ -131,11 +131,14 @@ void Pet::SetNameForEntry( uint32 entry )
 
 void Pet::CreateAsSummon( uint32 entry, CreatureInfo *ci, Creature* created_from_creature, Player* owner, SpellEntry* created_by_spell, uint32 type, uint32 expiretime, LocationVector* Vec )
 {
-	if( !ci || !owner )
+	if( ci == NULL || owner == NULL )
 	{
 		sEventMgr.AddEvent( this, &Pet::PetSafeDelete, EVENT_CREATURE_SAFE_DELETE, 1, 1, EVENT_FLAG_DO_NOT_EXECUTE_IN_WORLD_CONTEXT );
 		return;
 	}
+	
+	if( owner->GetSummon() != NULL )
+		owner->GetSummon()->Dismiss(); // to avoid problems caused by loosing reference to old pet
 
 	m_Owner = owner;
 	m_OwnerGuid = m_Owner->GetGUID();
@@ -262,6 +265,7 @@ Pet::Pet( uint64 guid ) : Creature( guid )
 	m_PetXP = 0;
 	Summon = false;
 	memset(ActionBar, 0, sizeof(uint32)*10);
+	ScheduledForDeletion = false;
 
 	m_AutoCombatSpell = 0;
 
@@ -474,10 +478,9 @@ void Pet::InitializeSpells()
 		if( info->Attributes & ATTRIBUTES_PASSIVE )
 		{
 			// Cast on self..
-			Spell * sp = SpellPool.PooledNew();
+			Spell * sp = new Spell(this, info, true, false);
 			if (!sp)
 				return;
-			sp->Init(this, info, true, false);
 			SpellCastTargets targets( this->GetGUID() );
 			sp->prepare( &targets );
 
@@ -773,6 +776,7 @@ void Pet::Dismiss() //Abandon pet
 
 void Pet::Remove( bool bUpdate, bool bSetOffline )
 {
+	ScheduledForDeletion = true;
 	RemoveAllAuras(); // Prevent pet overbuffing
 	if( m_Owner )
 	{
@@ -788,7 +792,7 @@ void Pet::Remove( bool bUpdate, bool bSetOffline )
 		m_Owner->SetUInt64Value( UNIT_FIELD_SUMMON, 0 );
 		m_Owner->SetSummon( NULL );
 		SendNullSpellsToOwner();
-		// ClearPetOwner();
+		ClearPetOwner();
 	}
 
 	// has to be next loop - reason because of RemoveFromWorld, iterator gets broken
@@ -817,9 +821,6 @@ void Pet::DelayedRemove( bool bTime, bool bDeath )
 	// called when pet has died
 	if( bTime )
 	{
-		if( !m_Owner )
-			m_Owner = objmgr.GetPlayer( GET_LOWGUID_PART( m_OwnerGuid ) );
-
 		if( Summon )
 			Dismiss();  // remove us..
 		else
@@ -955,10 +956,9 @@ void Pet::AddSpell( SpellEntry * sp, bool learning, bool showLearnSpell )
 	{
 		if( IsInWorld() )
 		{
-			Spell * spell = SpellPool.PooledNew();
+			Spell * spell = new Spell(this, sp, true, false);
 			if (!spell)
 				return;
-			spell->Init(this, sp, true, false);
 			SpellCastTargets targets(this->GetGUID());
 			spell->prepare(&targets);
 			mSpells[sp] = 0x0100;

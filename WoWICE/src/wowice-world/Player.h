@@ -264,7 +264,12 @@ enum RankTitles
 	PVPTITLE_STARCALLER						= 129,
 	PVPTITLE_THE_ASTRAL_WALKER				= 130,
 	PVPTITLE_HERALD_OF_THE_TITANS			= 131,
-	PVPTITLE_END							= 132,
+	PVPTITLE_FURIOUS_GLADIATOR				= 132,
+	PVPTITLE_THE_PILGRIM					= 133,
+	PVPTITLE_RELENTLESS_GLADIATOR			= 134,
+	PVPTITLE_GRAND_CRUSADER					= 135,
+	PVPTITLE_THE_ARGENT_DEFENDER			= 136,
+	PVPTITLE_END							= 137,
 };
 
 enum PvPAreaStatus
@@ -1364,7 +1369,6 @@ public:
 		if(bDeleteOnSend) delete data;
 	}
 	float offhand_dmg_mod;
-	float GetSpellTimeMod(uint32 id);
 	int GetSpellDamageMod(uint32 id);
 	int32 GetSpellManaMod(uint32 id);
 
@@ -1669,7 +1673,6 @@ public:
 	WoWICE_INLINE uint32* GetPlayedtime() { return m_playedtime; };
 	void CalcStat(uint32 t);
 	float CalcRating(uint32 t);
-	void RecalcAllRatings();
 	void RegenerateMana(bool is_interrupted);
 	void RegenerateHealth(bool inCombat);
 	void RegenerateEnergy();

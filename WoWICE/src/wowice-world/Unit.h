@@ -892,7 +892,7 @@ public:
 
 	virtual bool IsSanctuaryFlagged() = 0;
 	virtual void SetSanctuaryFlag() = 0;
-	virtual void RemoveSancturayFlag() = 0;
+	virtual void RemoveSanctuaryFlag() = 0;
 
 
     void setAttackTimer(int32 time, bool offhand);
@@ -1023,7 +1023,7 @@ public:
 
 	//! Remove all auras
 	void RemoveAllAuras();
-    void RemoveAllNonPersistantAuras();
+    void RemoveAllNonPersistentAuras();
 	bool RemoveAllAuras(uint32 spellId,uint64 guid); //remove stacked auras but only if they come from the same caster. Shaman purge If GUID = 0 then removes all auras with this spellid
     void RemoveAllAuraType(uint32 auratype);//ex:to remove morph spells
     void RemoveAllAuraFromSelfType2(uint32 auratype, uint32 butskip_hash);//ex:to remove morph spells
@@ -1048,7 +1048,7 @@ public:
 	//caller is the caster
 	int32 GetSpellDmgBonus(Unit *pVictim, SpellEntry *spellInfo,int32 base_dmg, bool isdot);
    
-	Unit* create_guardian(uint32 guardian_entry,uint32 duration,float angle, uint32 lvl = 0, GameObject * obj = NULL, LocationVector * Vec = NULL);//guardians are temporary spawn that will inherit master faction and will follow them. Apart from that they have their own mind
+	
 
 	uint32 m_addDmgOnce;
 	Creature *m_TotemSlots[4];
@@ -1062,7 +1062,7 @@ public:
 	bool m_damgeShieldsInUse;
 	std::list<struct DamageProc> m_damageShields;
 	std::list<struct ReflectSpellSchool*> m_reflectSpellSchool;
-	void RemoveReflect( uint32 spellid );
+	void RemoveReflect( uint32 spellid , bool apply);
 	struct DamageSplitTarget *m_damageSplitTarget;
  
 	std::list<struct ProcTriggerSpell> m_procSpells;
@@ -1440,7 +1440,19 @@ public:
 	int32 m_modlanguage;
 	
 	Creature *critterPet;
-	Creature *summonPet;
+	
+	/************************************************************************/
+    /* Guardians                                                            */
+    /************************************************************************/
+
+	//guardians are temporary spawn that will inherit master faction and will follow them. Apart from that they have their own mind	
+	std::set<Creature*> m_Guardians;
+	Creature* create_guardian( uint32 guardian_entry, uint32 duration, float angle, uint32 lvl = 0, GameObject * obj = NULL, LocationVector * Vec = NULL); 
+	WoWICE_INLINE void AddGuardianRef( Creature* guard ){ if( guard != NULL ) m_Guardians.insert( guard );	}
+	void RemoveGuardianRef( Creature* g );
+	void RemoveAllGuardians( bool remove_from_world = true );
+
+	/************************************************************************/
 
 	WoWICE_INLINE uint32 GetCharmTempVal() { return m_charmtemp; }
 	WoWICE_INLINE void SetCharmTempVal(uint32 val) { m_charmtemp = val; }
@@ -1484,8 +1496,8 @@ public:
 //	uint32 CountNegativeAura(uint32 spell_id); //just to reduce search range in some cases
 	bool IsPoisoned();
 
-	AuraCheckResponse AuraCheck(SpellEntry *proto, Object *caster=NULL);
-	AuraCheckResponse AuraCheck(uint32 name_hash, uint32 rank, Aura* aur, Object *caster=NULL);
+	AuraCheckResponse AuraCheck(SpellEntry *proto, Object *caster= NULL);
+	AuraCheckResponse AuraCheck(uint32 name_hash, uint32 rank, Aura* aur, Object *caster= NULL);
 
 	uint16 m_diminishCount[DIMINISHING_GROUP_COUNT];
 	uint8  m_diminishAuraCount[DIMINISHING_GROUP_COUNT];
@@ -1499,9 +1511,6 @@ public:
 
 	DynamicObject * dynObj;
 	
-	void RemoveAuraVisual(uint32 spellid, uint8 slot);
-	bool HasVisibleAura(uint32 spellid);
-
 	//! returns: aura stack count
 	uint8 m_auraStackCount[MAX_NEGATIVE_VISUAL_AURAS_END];
 
@@ -1556,8 +1565,6 @@ public:
 	void SetDodgeFromSpell(float value) { m_dodgefromspell = value; }
 	
 	void AggroPvPGuards();
-
-	void CastSpellOnCasterOnCritHit();
 
 protected:
 	Unit ();
