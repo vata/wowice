@@ -1051,7 +1051,7 @@ void WorldSession::HandleResurrectResponseOpcode(WorldPacket & recv_data)
 
 void WorldSession::HandleUpdateAccountData(WorldPacket &recv_data)
 {
-	//sLog.outDetail("WORLD: Received CMSG_UPDATE_ACCOUNT_DATA");
+	sLog.outDetail("WORLD: Received CMSG_UPDATE_ACCOUNT_DATA");
 
 	uint32 uiID;
 	if(!sWorld.m_useAccountData)
@@ -1081,11 +1081,13 @@ void WorldSession::HandleUpdateAccountData(WorldPacket &recv_data)
 		return;
 	}
 
+	/*
 	if(uiDecompressedSize>100000)
 	{
 		Disconnect();
 		return;
 	}
+	*/
 
 	if(uiDecompressedSize >= 65534)
 	{
@@ -1141,7 +1143,7 @@ void WorldSession::HandleUpdateAccountData(WorldPacket &recv_data)
 
 void WorldSession::HandleRequestAccountData(WorldPacket& recv_data)
 {
-	//sLog.outDetail("WORLD: Received CMSG_REQUEST_ACCOUNT_DATA");
+	sLog.outDetail("WORLD: Received CMSG_REQUEST_ACCOUNT_DATA");
 
 	uint32 id;
 	if(!sWorld.m_useAccountData)

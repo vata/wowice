@@ -1,8 +1,8 @@
-INCLUDES += -I$(srcdir) -I$(srcdir)/../ascent-shared
+INCLUDES += -I$(srcdir) -I$(srcdir)/../wowice-shared
 
-bin_PROGRAMS = ascent-realmserver
+bin_PROGRAMS = wowice-realmserver
 
-ascent_realmserver_SOURCES = \
+wowice_realmserver_SOURCES = \
 ClientManager.h \
 ClusterManager.h \
 LogonCommClient.h \
@@ -30,8 +30,8 @@ WorkerServer.cpp \
 WorkerServerSocket.cpp \
 WorldSocket.cpp 
 	
-ascent_realmserver_LDADD = -lshared -lz
+wowice_realmserver_LDADD = -lshared -lz
 
-ascent_realmserver_LDFLAGS = -L$(srcdir)/../ascent-shared \
+wowice_realmserver_LDFLAGS = -L$(srcdir)/../wowice-shared \
                -L/usr/lib
                

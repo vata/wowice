@@ -338,8 +338,21 @@ AddItemResult ItemInterface::m_AddItem(Item *item, int8 ContainerSlot, int16 slo
 		m_pOwner->UpdateKnownCurrencies(item->GetEntry(), true);
 	}
 
-	if( ContainerSlot == INVENTORY_SLOT_NOT_SET && slot == EQUIPMENT_SLOT_OFFHAND && item->GetProto()->Class == ITEM_CLASS_WEAPON )
+	if( ContainerSlot == INVENTORY_SLOT_NOT_SET && slot == EQUIPMENT_SLOT_OFFHAND && item->GetProto()->Class == ITEM_CLASS_WEAPON ){
 		m_pOwner->SetDualWield( true );
+
+		/////////////////////////////////////////// Titan's grip stuff ////////////////////////////////////////////////////////////
+
+		uint32 subclass = item->GetProto()->SubClass;
+		if( subclass == ITEM_SUBCLASS_WEAPON_TWOHAND_AXE 
+			|| subclass == ITEM_SUBCLASS_WEAPON_TWOHAND_MACE 
+			|| subclass == ITEM_SUBCLASS_WEAPON_TWOHAND_SWORD ){
+				
+				m_pOwner->CastSpell( m_pOwner, 49152, true );
+
+		///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+		}
+	}
 
 #ifdef ENABLE_ACHIEVEMENTS
 	m_pOwner->GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_OWN_ITEM, item->GetEntry(), 1, 0);
@@ -1156,9 +1169,18 @@ uint32 ItemInterface::RemoveItemAmt_ProtectPointer(uint32 id, uint32 amt, Item**
 				}
 				else if (item->GetUInt32Value(ITEM_FIELD_STACK_COUNT)== amt)
 				{
-					bool result = SafeFullRemoveItemFromSlot(INVENTORY_SLOT_NOT_SET, static_cast<int16>( i ));
+					// bool result = SafeFullRemoveItemFromSlot(INVENTORY_SLOT_NOT_SET, static_cast<int16>( i ));
+					//
+					//  This should be fixed properly. Instead of adding an event to remove it, it should be removed after
+					// we finished all spell related operations.
+
+					bool result = true;
+					sEventMgr.AddEvent( item, &Item::EventRemoveItem, EVENT_REMOVE_ITEM, 1, 1, EVENT_FLAG_DO_NOT_EXECUTE_IN_WORLD_CONTEXT | EVENT_FLAG_DELETES_OBJECT );
+
+					/*
 					if( pointer != NULL && *pointer != NULL && *pointer == item )
 						*pointer = NULL;
+					*/
 
 					if(result)
 					{
@@ -3252,9 +3274,21 @@ void ItemInterface::SwapItemSlots(int8 srcslot, int8 dstslot)
 	// handle dual wield
 	if( dstslot == EQUIPMENT_SLOT_OFFHAND || srcslot == EQUIPMENT_SLOT_OFFHAND )
 	{
-		if( m_pItems[EQUIPMENT_SLOT_OFFHAND] != NULL && m_pItems[EQUIPMENT_SLOT_OFFHAND]->GetProto()->Class == ITEM_CLASS_WEAPON )
+		if( m_pItems[EQUIPMENT_SLOT_OFFHAND] != NULL && m_pItems[EQUIPMENT_SLOT_OFFHAND]->GetProto()->Class == ITEM_CLASS_WEAPON ){
 			m_pOwner->SetDualWield( true );
-		else
+
+		/////////////////////////////////////////// Titan's grip stuff ////////////////////////////////////////////////////////////
+
+		uint32 subclass = m_pItems[EQUIPMENT_SLOT_OFFHAND]->GetProto()->SubClass;
+		if( subclass == ITEM_SUBCLASS_WEAPON_TWOHAND_AXE 
+			|| subclass == ITEM_SUBCLASS_WEAPON_TWOHAND_MACE 
+			|| subclass == ITEM_SUBCLASS_WEAPON_TWOHAND_SWORD ){
+				
+				m_pOwner->CastSpell( m_pOwner, 49152, true );
+		}
+
+		///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+		}else
 			m_pOwner->SetDualWield( false );
 	}
 

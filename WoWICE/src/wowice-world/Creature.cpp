@@ -1400,6 +1400,8 @@ bool Creature::Load(CreatureSpawn *spawn, uint32 mode, MapInfo *info)
 		SetUInt32Value(UNIT_NPC_EMOTESTATE, EMOTE_STATE_DEAD);
 	}
 	m_invisFlag = static_cast<uint8>( proto->invisibility_type );
+	if( m_invisFlag > 0 )
+		m_invisible = true;
 	if( spawn->stand_state )
 		SetStandState( (uint8)spawn->stand_state );
 
@@ -1602,6 +1604,8 @@ void Creature::Load(CreatureProto * proto_, float x, float y, float z, float o)
 		SetUInt32Value(UNIT_NPC_EMOTESTATE, EMOTE_STATE_DEAD);
 	}
 	m_invisFlag = static_cast<uint8>( proto->invisibility_type );
+	if( m_invisFlag > 0 )
+		m_invisible = true;
 }
 
 void Creature::OnPushToWorld()

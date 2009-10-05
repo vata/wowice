@@ -394,14 +394,22 @@ mOutOfRangeIdCount(0)
 
 	for(i = 0; i < 3; i++ )
 	{
-		m_resist_hit[i]		= 0.0f;
 		m_attack_speed[i]	= 1.0f;
 		m_castFilter[i]		= 0;
 	}
+	
+	for( i = 0; i < SCHOOL_COUNT; i++ )
+		m_resist_hit_spell[i] = 0;
+	
+	m_resist_hit[MOD_MELEE]		= 0.0f;
+	m_resist_hit[MOD_RANGED]	= 0.0f;
 
-        m_maxTalentPoints = 0; //VLack: 3 Aspire values initialized
-        m_talentActiveSpec = 0;
-        m_talentSpecsCount = 1;
+	m_maxTalentPoints = 0; //VLack: 3 Aspire values initialized
+	m_talentActiveSpec = 0;
+	m_talentSpecsCount = 1;
+
+	m_drunkTimer = 0;
+	m_drunk = 0;
 
 	ok_to_remove = false;
 	m_modphyscritdmgPCT = 0;
@@ -1063,6 +1071,14 @@ void Player::Update( uint32 p_time )
 		}*/
 	}
 
+	if( m_drunk > 0 )
+	{
+		m_drunkTimer += p_time;
+
+		if( m_drunkTimer > 10000 )
+			HandleSobering();
+	}
+
 #ifdef TRACK_IMMUNITY_BUG
 	bool immune = false;
 	for(uint32 i = 0; i < 7; i++)
@@ -1517,14 +1533,16 @@ void Player::_EventExploration()
 		uint32 explore_xp = at->level * 10;
 		explore_xp *= float2int32(sWorld.getRate(RATE_EXPLOREXP));
 
-		WorldPacket data(SMSG_EXPLORATION_EXPERIENCE, 8);
-		data << at->AreaId << explore_xp;
-		m_session->SendPacket(&data);
 #ifdef ENABLE_ACHIEVEMENTS
 		GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_EXPLORE_AREA);
 #endif
-		if(getLevel() < GetUInt32Value(PLAYER_FIELD_MAX_LEVEL) && explore_xp)
+		uint32 maxlevel = GetUInt32Value(PLAYER_FIELD_MAX_LEVEL);
+		if(getLevel() <  maxlevel && explore_xp > 0 ){
+			SendExploreXP( at->AreaId, explore_xp );
 			GiveXP(explore_xp, 0, false);
+		}else{
+			SendExploreXP( at->AreaId, 0 );
+		}
 	}
 }
 
@@ -1540,6 +1558,8 @@ void Player::EventDeath()
 		sEventMgr.AddEvent(this,&Player::RepopRequestedPlayer,EVENT_PLAYER_FORECED_RESURECT,PLAYER_FORCED_RESURECT_INTERVAL,1,0); //in case he forgets to release spirit (afk or something)
 
 	RemoveNegativeAuras();
+
+	SetDrunkValue(0);
 }
 
 void Player::EventPotionCooldown()
@@ -2714,6 +2734,8 @@ void Player::SaveToDB(bool bNewCharacter /* =false */)
 	ss << m_honorPoints << ", ";
     ss << iInstanceType << ", ";
 
+	ss << (m_uint32Values[PLAYER_BYTES_3] & 0xFFFE) << ", ";
+
 	// dump glyphs
 	ss << "'";
 
@@ -2883,10 +2905,10 @@ void Player::LoadFromDBProc(QueryResultVector & results)
 		return;
 	}
 
-	if (result->GetFieldCount() != 84)
+	if( result->GetFieldCount() != 85 )
 	{
 		Log.Error ("Player::LoadFromDB",
-				"Expected 84 fields from the database, "
+				"Expected 85 fields from the database, "
 				"but received %u!  You may need to update your character database.",
 				(unsigned int) result->GetFieldCount ());
 		RemovePendingPlayer();
@@ -3487,7 +3509,16 @@ void Player::LoadFromDBProc(QueryResultVector & results)
 	if (m_honorPoints > 75000) m_honorPoints = 75000;
 
 	RolloverHonor();
-    iInstanceType = get_next_field.GetUInt32();
+	iInstanceType = get_next_field.GetUInt32();
+
+	// Load drunk value and calculate sobering. after 15 minutes logged out, the player will be sober again
+	uint32 timediff = (uint32)UNIXTIME - m_timeLogoff;
+	uint32 soberFactor;
+	if( timediff > 900 )
+		soberFactor = 0;
+	else
+		soberFactor = 1 - timediff / 900;
+	SetDrunkValue( uint16( soberFactor * get_next_field.GetUInt32() ) );
 
 	// Load Glyphs and apply their auras
 	LoadFieldsFromString(get_next_field.GetString(), PLAYER_FIELD_GLYPHS_1, GLYPHS_COUNT);
@@ -6189,13 +6220,50 @@ void Player::EventCannibalize(uint32 amount)
 	SendMessageToSet(&data, true);
 }
 
-void Player::EventReduceDrunk(bool full)
+///The player sobers by 256 every 10 seconds
+void Player::HandleSobering()
 {
-	uint8 drunk = ((GetUInt32Value(PLAYER_BYTES_3) >> 8) & 0xFF);
-	if(full) drunk = 0;
-	else drunk -= 10;
-	SetUInt32Value(PLAYER_BYTES_3, ((GetUInt32Value(PLAYER_BYTES_3) & 0xFFFF00FF) | (drunk << 8)));
-	if(drunk == 0) sEventMgr.RemoveEvents(this, EVENT_PLAYER_REDUCEDRUNK);
+	m_drunkTimer = 0;
+
+	SetDrunkValue( ( m_drunk <= 256 ) ? 0 : ( m_drunk - 256 ) );
+}
+
+DrunkenState Player::GetDrunkenstateByValue( uint16 value )
+{
+	if( value >= 23000 )
+		return DRUNKEN_SMASHED;
+	if( value >= 12800 )
+		return DRUNKEN_DRUNK;
+	if( value & 0xFFFE )
+		return DRUNKEN_TIPSY;
+	return DRUNKEN_SOBER;
+}
+
+void Player::SetDrunkValue( uint16 newDrunkenValue, uint32 itemId )
+{
+	uint32 oldDrunkenState = Player::GetDrunkenstateByValue( m_drunk );
+
+	m_drunk = newDrunkenValue;
+	SetUInt32Value( PLAYER_BYTES_3, ( GetUInt32Value( PLAYER_BYTES_3 ) & 0xFFFF0001 ) | ( m_drunk & 0xFFFE ) );
+
+	uint32 newDrunkenState = Player::GetDrunkenstateByValue( m_drunk );
+
+	if( newDrunkenState == oldDrunkenState )
+		return;
+
+	// special drunk invisibility detection
+	if( newDrunkenState >= DRUNKEN_DRUNK )
+		m_invisDetect[ INVIS_FLAG_UNKNOWN6 ] = 100;
+	else
+		m_invisDetect[ INVIS_FLAG_UNKNOWN6 ] = 0;
+
+	UpdateVisibility();
+
+	WorldPacket data( SMSG_CROSSED_INEBRIATION_THRESHOLD, (8+4+4) );
+	data << GetNewGUID();
+	data << uint32( newDrunkenState );
+	data << uint32( itemId );
+	SendMessageToSet( &data, true );
 }
 
 void Player::LoadTaxiMask(const char* data)
@@ -10030,9 +10098,9 @@ void Player::ModifyBonuses( uint32 type, int32 val, bool apply )
 				for( uint8 school = 1; school < 7; ++school )
 				{
 					ModUnsigned32Value( PLAYER_FIELD_MOD_DAMAGE_DONE_POS + school, val );
-					HealDoneMod[school] += val;
+					HealDoneMod[ school ] += val;
 				}
-				ModUnsigned32Value( PLAYER_FIELD_MOD_HEALING_DONE_POS, uint32( float( val ) * 1.88f ) );
+				ModUnsigned32Value( PLAYER_FIELD_MOD_HEALING_DONE_POS, val );
 			}break;
 		}
 }
@@ -10114,7 +10182,10 @@ void Player::SetShapeShift(uint8 ss)
 			uint32 reqss = m_auras[x]->GetSpellProto()->RequiredShapeShift;
 			if( reqss != 0 && m_auras[x]->IsPositive() )
 			{
-				if( old_ss > 0 && old_ss != 28 )	// 28 = FORM_SHADOW - Didn't find any aura that required this form
+				if( old_ss > 0 
+					&& old_ss != FORM_SHADOW 
+					&& old_ss != FORM_STEALTH
+					)	// 28 = FORM_SHADOW - Didn't find any aura that required this form
 													// not sure why all priest spell proto's RequiredShapeShift are set [to 134217728]
 				{
 					if(  ( ((uint32)1 << (old_ss-1)) & reqss ) &&		// we were in the form that required it
@@ -13209,3 +13280,10 @@ void Player::RemoveSanctuaryFlag()
 		(*itr)->RemoveSanctuaryFlag();
 }
 
+void Player::SendExploreXP( uint32 areaid, uint32 xp ){
+	
+	WorldPacket data(SMSG_EXPLORATION_EXPERIENCE, 8);
+	data << uint32( areaid );
+	data << uint32( xp );
+	m_session->SendPacket(&data);
+}
