@@ -897,11 +897,8 @@ public:
 
     void setAttackTimer(int32 time, bool offhand);
 	bool isAttackReady(bool offhand);
-
-	WoWICE_INLINE void SetDualWield(bool enabled)
-	{
-		m_dualWield = enabled;
-	}
+	
+	void SetDualWield(bool enabled);
 
 	bool __fastcall canReachWithAttack(Unit *pVictim);
 

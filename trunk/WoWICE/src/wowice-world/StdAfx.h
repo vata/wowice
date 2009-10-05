@@ -81,6 +81,7 @@
 #include "UpdateFields.h"
 #include "UpdateMask.h"
 #include "Opcodes.h"
+#include "AuthCodes.h"
 
 #include "Packets.h"
 

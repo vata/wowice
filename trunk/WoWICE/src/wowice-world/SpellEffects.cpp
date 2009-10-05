@@ -176,6 +176,8 @@ pSpellEffect SpellEffectsHandler[TOTAL_SPELL_EFFECTS]={
 	&Spell::SpellEffectCreateItem2,				//157 SPELL_EFFECT_CREATE_ITEM_2  
 	&Spell::SpellEffectMilling,					// Milling - 158
 	&Spell::SpellEffectRenamePet,				// Allow Pet Rename - 159
+	&Spell::SpellEffectNULL,					// unknown - 160
+	&Spell::SpellEffectNULL,					// unknown - 161 //used by spell 63624(dual talents)
 };
 
 const char* SpellEffectNames[TOTAL_SPELL_EFFECTS] = {
@@ -308,7 +310,6 @@ const char* SpellEffectNames[TOTAL_SPELL_EFFECTS] = {
 	"UNKNOWN5",                  //    126
 	"PROSPECTING",               //    127
 	"UNKNOWN7",                  //    128
-	"UNKNOWN8",                  //    129
 	"UNKNOWN9",                  //    129
 	"UNKNOWN10",                 //    130
 	"UNKNOWN11",                 //    131
@@ -338,7 +339,10 @@ const char* SpellEffectNames[TOTAL_SPELL_EFFECTS] = {
 	"UNKNOWN33",                 //    155
 	"UNKNOWN34",                 //    156
 	"UNKNOWN35",                 //    157
-	"MILLING"	                 //    158
+	"MILLING",                   //    158
+	"ALLOW_PET_RENAME",          //    159
+	"UNKNOWN36",                 //    160
+	"UNKNOWN37"                  //    161 //used by spell 63624(dual talents)
 };
 
 void Spell::SpellEffectNULL(uint32 i)
@@ -539,7 +543,7 @@ void Spell::SpellEffectSchoolDMG(uint32 i) // dmg school
 			{
 				if(u_caster)
 					dmg += float2int32(float(u_caster->GetRAP())*0.15f);
-				dmg *= float2int32( 0.9f + RandomFloat( 0.2f ) ); // randomized damage
+				dmg = float2int32( dmg * (0.9f + RandomFloat( 0.2f ) ) ); // randomized damage
 			}break;
 		case SPELL_HASH_GORE: // boar/ravager: Gore (50% chance of double damage)
 			{
@@ -2287,7 +2291,7 @@ void Spell::SpellEffectPowerDrain(uint32 i)  // Power Drain
 			return;
 
 		// Resilience - reduces the effect of mana drains by (CalcRating*2)%.
-		damage *= float2int32( 1 - ( ( static_cast<Player*>(unitTarget)->CalcRating( PLAYER_RATING_MODIFIER_SPELL_CRIT_RESILIENCE ) * 2 ) / 100.0f ) );
+		damage = float2int32( damage * (1 - ( ( static_cast<Player*>(unitTarget)->CalcRating( PLAYER_RATING_MODIFIER_SPELL_CRIT_RESILIENCE ) * 2 ) / 100.0f ) ) );
 	}
 	uint32 amt = damage + ( ( u_caster->GetDamageDoneMod( GetProto()->School ) * 80 ) / 100 );
 	if(amt>curPower)
@@ -4818,7 +4822,7 @@ void Spell::SpellEffectPowerBurn(uint32 i) // power burn
 			return;
 
 		// Resilience - reduces the effect of mana drains by (CalcRating*2)%.
-		damage *= float2int32( 1 - ( ( static_cast<Player*>(unitTarget)->CalcRating( PLAYER_RATING_MODIFIER_SPELL_CRIT_RESILIENCE ) * 2 ) / 100.0f ) );
+		damage = float2int32( damage * (1 - ( ( static_cast<Player*>(unitTarget)->CalcRating( PLAYER_RATING_MODIFIER_SPELL_CRIT_RESILIENCE ) * 2 ) / 100.0f ) ) );
 	}
 	int32 mult = damage;
 	damage = mult * unitTarget->GetUInt32Value(UNIT_FIELD_MAXPOWER1) / 100;
@@ -6454,15 +6458,17 @@ void Spell::SpellEffectDisenchant( uint32 i )
 
 void Spell::SpellEffectInebriate(uint32 i) // lets get drunk!
 {
-	if(!p_caster) return;
+	if( playerTarget == NULL )
+		return;
 
 	// Drunkee!
-	uint8 b2 = m_caster->GetByte(PLAYER_BYTES_3,1);
-	b2 += static_cast<uint8>( damage );	// 10 beers will get you smassssshed!
-
-	m_caster->SetByte(PLAYER_BYTES_3,1,b2>90?90:b2);
-	sEventMgr.RemoveEvents(p_caster, EVENT_PLAYER_REDUCEDRUNK);
-	sEventMgr.AddEvent(p_caster, &Player::EventReduceDrunk, false, EVENT_PLAYER_REDUCEDRUNK, 300000, 0,EVENT_FLAG_DO_NOT_EXECUTE_IN_WORLD_CONTEXT);
+	uint16 currentDrunk = playerTarget->GetDrunkValue();
+	uint16 drunkMod = static_cast<uint16>(damage) * 256;
+	if( currentDrunk + drunkMod > 0xFFFF )
+		currentDrunk = 0xFFFF;
+	else
+		currentDrunk += drunkMod;
+	playerTarget->SetDrunkValue( currentDrunk, i_caster ? i_caster->GetEntry() : 0 );
 }
 
 void Spell::SpellEffectFeedPet(uint32 i)  // Feed Pet

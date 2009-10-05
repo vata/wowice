@@ -5216,7 +5216,7 @@ int32 Unit::GetSpellDmgBonus(Unit *pVictim, SpellEntry *spellInfo,int32 base_dmg
 		bonus_damage *= (int32)pVictim->AOEDmgMod;*/
 
 	if( ( pVictim->HasAuraWithMechanics(MECHANIC_ENSNARED) || pVictim->HasAuraWithMechanics(MECHANIC_DAZED) ) && caster->IsPlayer() )
-			bonus_damage *= static_cast< Player* >(caster)->m_IncreaseDmgSnaredSlowed;
+			bonus_damage += static_cast< Player* >(caster)->m_IncreaseDmgSnaredSlowed;
 
 	if(spellInfo->SpellGroupType)
 	{
@@ -8020,5 +8020,15 @@ void Unit::RemoveAllGuardians( bool remove_from_world )
 		(*itr)->SetOwner( NULL );
 		m_Guardians.erase( itr++ );
 	}
+}
+
+void Unit::SetDualWield(bool enabled)
+{
+	m_dualWield = enabled;
+	
+	
+	// Titan's grip
+	if( !enabled && IsPlayer() )
+		RemoveAllAuraById( 49152 );
 }
 

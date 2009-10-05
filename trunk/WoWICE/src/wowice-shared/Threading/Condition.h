@@ -137,7 +137,7 @@ protected:
 	{
 		SECURITY_ATTRIBUTES attr;
 		attr.nLength=sizeof(SECURITY_ATTRIBUTES);
-		attr.lpSecurityDescriptor=NULL;
+		attr.lpSecurityDescriptor= NULL;
 		attr.bInheritHandle=false;
 		return CreateSemaphore(&attr,cur,max,NULL);
 	}

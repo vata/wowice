@@ -637,35 +637,36 @@ uint64 Spell::GetSinglePossibleFriend(uint32 i,float prange)
 	return 0;
 }
 
-uint8 Spell::DidHit(uint32 effindex,Unit* target)
+uint8 Spell::DidHit( uint32 effindex, Unit* target )
 {
 	//note resistchance is vise versa, is full hit chance
 	Unit* u_victim = target;
+	if( u_victim == NULL )
+		return SPELL_DID_HIT_MISS;
+	
 	Player* p_victim = ( target->GetTypeId() == TYPEID_PLAYER ) ? static_cast< Player* >( target ) : NULL;
 
-	//
 	float baseresist[3] = { 4.0f, 5.0f, 6.0f };
 	int32 lvldiff;
 	float resistchance ;
-	if( u_victim == NULL )
-		return SPELL_DID_HIT_MISS;
+
 
 	/************************************************************************/
 	/* Can't resist non-unit                                                */
 	/************************************************************************/
-	if(!u_caster)
+	if( u_caster == NULL )
 		return SPELL_DID_HIT_SUCCESS;
 
 	/************************************************************************/
 	/* Can't reduce your own spells                                         */
 	/************************************************************************/
-	if(u_caster == u_victim)
+	if( u_caster == u_victim )
 		return SPELL_DID_HIT_SUCCESS;
 
 	/************************************************************************/
 	/* Check if the unit is evading                                         */
 	/************************************************************************/
-	if(u_victim->GetTypeId()==TYPEID_UNIT && u_victim->GetAIInterface()->getAIState()==STATE_EVADE)
+	if( u_victim->GetTypeId()==TYPEID_UNIT && u_victim->GetAIInterface()->getAIState() == STATE_EVADE )
 		return SPELL_DID_HIT_EVADE;
 
 	/************************************************************************/
@@ -673,7 +674,7 @@ uint8 Spell::DidHit(uint32 effindex,Unit* target)
 	/* Unless the spell would actually dispel invulnerabilities             */
 	/************************************************************************/
 	int dispelMechanic = GetProto()->Effect[0] == SPELL_EFFECT_DISPEL_MECHANIC && GetProto()->EffectMiscValue[0] == MECHANIC_INVULNERABLE;
-	if(u_victim->SchoolImmunityList[GetProto()->School] && !dispelMechanic)
+	if( u_victim->SchoolImmunityList[ GetProto()->School ] && !dispelMechanic )
 		return SPELL_DID_HIT_IMMUNE;
 
 	/* Check if player target has god mode */
@@ -685,7 +686,7 @@ uint8 Spell::DidHit(uint32 effindex,Unit* target)
 	/*************************************************************************/
 	/* Check if the target is immune to this mechanic                        */
 	/*************************************************************************/
-	if( m_spellInfo->MechanicsType<27 && u_victim->MechanicsDispels[m_spellInfo->MechanicsType])
+	if( m_spellInfo->MechanicsType < MECHANIC_END && u_victim->MechanicsDispels[ m_spellInfo->MechanicsType ] )
 
 	{
 		// Immune - IF, and ONLY IF, there is no damage component!
@@ -713,16 +714,13 @@ uint8 Spell::DidHit(uint32 effindex,Unit* target)
 	/************************************************************************/
 	/* Check if the target has a % resistance to this mechanic              */
 	/************************************************************************/
-	if( m_spellInfo->MechanicsType<27)
+	if( GetProto()->MechanicsType < MECHANIC_END )
 	{
-		float res;
-		if(p_victim)
-			res = p_victim->MechanicsResistancesPCT[m_spellInfo->MechanicsType];
-		else
-			res = u_victim->MechanicsResistancesPCT[m_spellInfo->MechanicsType];
-		if(Rand(res))
+		float res = u_victim->MechanicsResistancesPCT[ m_spellInfo->MechanicsType ];
+		if( Rand( res ) )
 			return SPELL_DID_HIT_RESIST;
 	}
+
 	/************************************************************************/
 	/* Check if the spell is a melee attack and if it was missed/parried    */
 	/************************************************************************/
@@ -748,7 +746,7 @@ uint8 Spell::DidHit(uint32 effindex,Unit* target)
 	/************************************************************************/
 	/* Check if the spell is resisted.                                      */
 	/************************************************************************/
-	if( GetProto()->School == 0  && !GetProto()->MechanicsType )
+	if( GetProto()->School == 0  && GetProto()->MechanicsType == 0 )
 		return SPELL_DID_HIT_SUCCESS;
 
 	bool pvp =(p_caster && p_victim);
@@ -775,14 +773,12 @@ uint8 Spell::DidHit(uint32 effindex,Unit* target)
 				resistchance = baseresist[2] + (((float)lvldiff-2.0f)*11.0f);
 		}
 	}
+	// TODO: This mechanic resist chance is handled twice, once several lines above, then as part of resistchance here
 	//check mechanical resistance
 	//i have no idea what is the best pace for this code
 	if( GetProto()->MechanicsType < MECHANIC_END )
 	{
-		if(p_victim)
-			resistchance += p_victim->MechanicsResistancesPCT[GetProto()->MechanicsType];
-		else
-			resistchance += u_victim->MechanicsResistancesPCT[GetProto()->MechanicsType];
+		resistchance += u_victim->MechanicsResistancesPCT[ GetProto()->MechanicsType ];
 	}
 	//rating bonus
 	if( p_caster != NULL )
@@ -791,19 +787,28 @@ uint8 Spell::DidHit(uint32 effindex,Unit* target)
 		resistchance -= p_caster->GetHitFromSpell();
 	}
 
-	if(p_victim && GetProto()->School != 0)
-		resistchance += p_victim->m_resist_hit[ MOD_SPELL ];
-
-	if( this->GetProto()->Effect[effindex] == SPELL_EFFECT_DISPEL && GetProto()->SpellGroupType && u_caster)
+	// school hit resistance: check all schools and take the minimal
+	if( p_victim != NULL && GetProto()->SchoolMask > 0 )
 	{
-		SM_FFValue(u_victim->SM_FRezist_dispell,&resistchance,GetProto()->SpellGroupType);
-		SM_PFValue(u_victim->SM_PRezist_dispell,&resistchance,GetProto()->SpellGroupType);
+		int32 min = 100;
+		for( uint8 i = 0; i < SCHOOL_COUNT; i++ )
+		{
+			if( GetProto()->SchoolMask & ( 1 << i ) && min > p_victim->m_resist_hit_spell[ i ] )
+				min = p_victim->m_resist_hit_spell[ i ];
+		}
+		resistchance += float( min );
 	}
 
-	if(GetProto()->SpellGroupType && u_caster)
+	if( GetProto()->Effect[effindex] == SPELL_EFFECT_DISPEL && GetProto()->SpellGroupType )
+	{
+		SM_FFValue( u_victim->SM_FRezist_dispell,&resistchance,GetProto()->SpellGroupType );
+		SM_PFValue( u_victim->SM_PRezist_dispell,&resistchance,GetProto()->SpellGroupType );
+	}
+
+	if( GetProto()->SpellGroupType )
 	{
 		float hitchance=0;
-		SM_FFValue(u_caster->SM_FHitchance,&hitchance,GetProto()->SpellGroupType);
+		SM_FFValue( u_caster->SM_FHitchance, &hitchance, GetProto()->SpellGroupType );
 		resistchance -= hitchance;
 	}
 
@@ -2173,17 +2178,7 @@ void Spell::SendCastResult(uint8 result)
 		break;
 
 	case SPELL_FAILED_REQUIRES_AREA:
-		if( GetProto()->RequiresAreaId > 0 )
-		{
-			AreaGroup *ag = dbcAreaGroup.LookupEntry( GetProto()->RequiresAreaId );
-			uint16 plrarea = plr->GetMapMgr()->GetAreaID( plr->GetPositionX(), plr->GetPositionY() );
-			for( uint8 i = 0; i < 7; i++ )
-				if( ag->AreaId[i] != 0 && ag->AreaId[i] != plrarea )
-				{
-					Extra = ag->AreaId[i];
-					break;
-				}
-		}
+		Extra = GetProto()->RequiresAreaId;
 		break;
 
 	case SPELL_FAILED_TOTEMS:
@@ -3294,7 +3289,7 @@ uint8 Spell::CanCast(bool tolerate)
 			if(abysal != NULL)
 			{
 				if(!abysal->isAlive())
-					if(!(p_caster->GetItemInterface()->GetItemCount(31672, FALSE) > 1 && p_caster->GetItemInterface()->GetItemCount(31673, FALSE) > 0 && p_caster->CalcDistance(p_caster, abysal) < 10))
+					if(!(p_caster->GetItemInterface()->GetItemCount(31672) > 1 && p_caster->GetItemInterface()->GetItemCount(31673) > 0 && p_caster->CalcDistance(p_caster, abysal) < 10))
 						return SPELL_FAILED_NOT_HERE;
 			}
 			else
@@ -3575,13 +3570,6 @@ uint8 Spell::CanCast(bool tolerate)
 				// check if the item has the required charges
 				if (i_caster->GetUInt32Value(ITEM_FIELD_SPELL_CHARGES) == 0)
 					return SPELL_FAILED_NO_CHARGES_REMAIN;
-
-				// for items that combine to create a new item, check if we have the required quantity of the item
-				if ((i_caster->GetProto()->ItemId == GetProto()->Reagent[0]) &&
-					(i_caster->GetProto()->Flags != 268435520)) // Enchanting scrolls
-
-					if(p_caster->GetItemInterface()->GetItemCount(GetProto()->Reagent[0]) < 1 + GetProto()->ReagentCount[0])
-						return SPELL_FAILED_ITEM_GONE;
 			}
 		}
 
@@ -3672,21 +3660,11 @@ uint8 Spell::CanCast(bool tolerate)
 		if( GetProto()->RequiresAreaId > 0 )
 		{
 			AreaGroup *ag = dbcAreaGroup.LookupEntry(GetProto()->RequiresAreaId);
-			uint8 i;
-			uint16 plrarea;
-			AreaTable * at = dbcArea.LookupEntry(p_caster->GetMapMgr()->GetAreaID(p_caster->GetPositionX(), p_caster->GetPositionY()));
-			if( at->ZoneId == 0 )
-			{
-				plrarea = p_caster->GetMapMgr()->GetAreaID(p_caster->GetPositionX(), p_caster->GetPositionY());
-			}
-			else
-			{
-				plrarea = static_cast<uint16>( at->ZoneId );
-			}
-			for(i = 0; i < 7; i++)
+			uint16 plrarea = p_caster->GetMapMgr()->GetAreaID( p_caster->GetPositionX(), p_caster->GetPositionY() );
+			for( i = 0; i < 7; i++ )
 				if( ag->AreaId[i] == plrarea )
 					break;
-			if (i == 7)
+			if( i == 7 )
 				return SPELL_FAILED_REQUIRES_AREA;
 		}
 
@@ -3758,7 +3736,8 @@ uint8 Spell::CanCast(bool tolerate)
 		}
 
 		// check to make sure we have a targeted item
-		if (!i_target)
+		// the second check is a temporary exploit fix, people keep stacking enchants on 0 durability items and then 1hit/1shot the other guys
+		if (!i_target || ( i_target->GetDurability() == 0 && i_target->GetDurabilityMax() != 0 ) )
 			return SPELL_FAILED_BAD_TARGETS;
 
 		ItemPrototype* proto = i_target->GetProto();
@@ -4968,7 +4947,7 @@ exit:
 		if( i==0 && p_caster != NULL )
 		{
 			//Heal is increased by 6%
-			value *= (uint32)( 1.06f );
+			value = float2int32( value * 1.06f );
 		}
 	}
 	else if( GetProto()->Id == 57669 || GetProto()->Id == 61782) //Replenishment

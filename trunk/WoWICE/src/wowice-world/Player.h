@@ -378,6 +378,14 @@ struct spells
 	uint16  slotId;
 };
 
+enum DrunkenState
+{
+	DRUNKEN_SOBER	= 0,
+	DRUNKEN_TIPSY	= 1,
+	DRUNKEN_DRUNK	= 2,
+	DRUNKEN_SMASHED	= 3
+};
+
 /**
 	TalentTree table
 
@@ -1396,6 +1404,17 @@ public:
 	void LoadNamesFromDB(uint32 guid);
 	bool m_FirstLogin;
 
+	/************************************************************************/
+	/* Drunk system                                                         */
+	/************************************************************************/
+	void SetDrunkValue( uint16 newDrunkValue, uint32 itemid = 0 );
+	uint16 GetDrunkValue() const { return m_drunk; }
+	static DrunkenState GetDrunkenstateByValue( uint16 value );
+	void HandleSobering();
+
+	uint32 m_drunkTimer;
+	uint16 m_drunk;
+
     /************************************************************************/
     /* Death system                                                         */
     /************************************************************************/
@@ -1576,7 +1595,6 @@ public:
 	float m_TransporterUnk;
 	// Misc
 	void EventCannibalize(uint32 amount);
-	void EventReduceDrunk(bool full);
 	bool m_AllowAreaTriggerPort;
 	void EventAllowTiggerPort(bool enable);
 	void UpdatePowerAmm();
@@ -1625,14 +1643,15 @@ public:
 	uint32 ResistanceModPctNeg[7];
 	uint32 m_ExpertiseMod;
 	float m_resist_critical[2];//when we are a victim we can have talents to decrease chance for critical hit. This is a negative value and it's added to critchances
-	float m_resist_hit[3]; // 0 = melee; 1= ranged; 2=spells
+	float m_resist_hit[2];			// 0 = melee; 1= ranged;
+	int32 m_resist_hit_spell[7];	// spell resist per school
 	float m_attack_speed[3];
 	float SpellDmgDoneByAttribute[5][7];
 	float SpellHealDoneByAttribute[5][7];
 	uint32 m_modphyscritdmgPCT;
 	uint32 m_RootedCritChanceBonus; // Class Script Override: Shatter
 	uint32 m_IncreaseDmgSnaredSlowed;
-	uint32 m_MoltenFuryDmgBonus;    // DuKJIoHuyC: для таланта http://www.wowhead.com/?spell=31680
+	uint32 m_MoltenFuryDmgBonus;    // http://www.wowhead.com/?spell=31680
 	uint32 ShatteredBarrierMod;		// For Shattered Barrier http://www.wowhead.com/?spell=54787
 	uint32 FieryPaybackModHP35;		// for Fiery Payback
 	uint32 TormentTheWeakDmgBns;
