@@ -5,9 +5,15 @@
 #include <cstdio>
 #include <cstdlib>
 
-#define SEARCH_TEXT "SPELL_FAILED_AFFECTING_COMBAT"
+#define SEARCH_TEXT "SPELL_FAILED_SUCCESS"
 #define SEARCH_TEXT2 "PETTAME_INVALIDCREATURE"
 #define FIRST_FAILURE 0
+#define INDEX_CANTDO 173
+
+const char *Executable = "wow.exe";
+const char *OutputFile = "SpellFailure.h";
+
+const char *HDR = "/*\n * WoWICE MMORPG Server\n\n *\n */";
 
 bool reverse_pointer_back_to_string(char ** ptr, char * str)
 {
@@ -68,10 +74,20 @@ int find_string_in_buffer(char * str, size_t str_len, char * buf, size_t buf_len
 
 int main(int argc, char* argv[])
 {
-	FILE * in = fopen("WoW.exe", "rb");
-	FILE * out = fopen("SpellFailure.h", "w");
-	if(!in || !out)
-		return 1;
+	FILE * in = fopen( Executable, "rb");
+	FILE * out = fopen( OutputFile, "w");
+	
+	if( in == NULL ){
+		printf("ERROR: Couldn't open %s for reading!\n", Executable );
+		printf("Exiting.\n");
+		return -1;
+	}
+
+	if( out == NULL ){
+		printf("ERROR: Couldn't open %s for writing!\n", OutputFile );
+		printf("Exiting.\n");
+		return -1;
+	}
 
 	fseek(in, 0, SEEK_END);
 	int len = ftell(in);
@@ -91,19 +107,9 @@ int main(int argc, char* argv[])
 		return 3;
 
 	/* dump header */
-	fprintf(out, "/****************************************************************************\n");
-    fprintf(out, " *\n");
-    fprintf(out, " * Spell System\n");
-    fprintf(out, " * Copyright (c) 2007 Antrix Team\n");
-    fprintf(out, " *\n");
-    fprintf(out, " * This file may be distributed under the terms of the Q Public License\n");
-    fprintf(out, " * as defined by Trolltech ASA of Norway and appearing in the file\n");
-    fprintf(out, " * COPYING included in the packaging of this file.\n");
-    fprintf(out, " *\n");
-    fprintf(out, " * This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE\n");
-    fprintf(out, " * WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.\n");
-    fprintf(out, " *\n");
-    fprintf(out, " */\n");
+
+	fprintf(out, "%s", HDR );
+	fprintf(out, "\n\n" );
 	fprintf(out, "\n#ifndef _SPELLFAILURE_H\n#define _SPELLFAILURE_H\n\nenum SpellCastError\n{\n");
 
 	printf("Ripping...");
@@ -114,6 +120,13 @@ int main(int argc, char* argv[])
 	char *endp=(buffer + endoffset);
 	do
 	{
+		// This is a terrible hack, it will most likely be incorrect later
+		if( index == INDEX_CANTDO ){
+			fprintf(out, "\t%-60s = %d,\n", "SPELL_FAILED_CANT_DO_THAT_RIGHT_NOW",index);
+			index++;
+			continue;
+		}
+
 		name = p;
 		fprintf(out, "\t%-60s = %d,\n", name,index);
 		p--;
@@ -123,7 +136,10 @@ int main(int argc, char* argv[])
 		reverse_pointer_back_to_string(&p, "SPELL_FAILED");
 	}while( 1 );
 
+	// fprintf(out, "\t%-60s = %d,\n", "SPELL_CANCAST_OK",255);
 	fprintf(out, "};\n");
+	fprintf(out, "#define SPELL_CANCAST_OK SPELL_FAILED_SUCCESS\n");
+	fprintf(out, "\n");
 
 	fprintf(out, "enum PetTameFailure\n{\n");
 	offset = find_string_in_buffer(SEARCH_TEXT2, strlen(SEARCH_TEXT2), buffer, len);

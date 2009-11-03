@@ -192,6 +192,7 @@ enum CreatureFlag1
 	CREATURE_FLAG1_TAMEABLE   = 0x0001,
 	CREATURE_FLAG1_HERBLOOT   = 0x0100,
 	CREATURE_FLAG1_MININGLOOT = 0x0200,
+	CREATURE_FLAG1_ENGINEERLOOT = 0x08000,
 };
 
 enum FAMILY
@@ -579,7 +580,7 @@ public:
 	void RegenerateFocus();
 
 	CreatureFamilyEntry * myFamily;
-	WoWICE_INLINE bool IsTotem() { return totemOwner != 0 && totemSlot != -1; }
+	WoWICE_INLINE bool IsTotem() { return totemOwner != NULL && totemSlot != -1; }
 
 	WoWICE_INLINE bool IsExotic()
 	{

@@ -44,7 +44,7 @@ protected:
 	void event_ModifyTimeAndTimeLeft(uint32 EventType, time_t Time);
 	bool event_HasEvent(uint32 EventType);
 	void event_RemoveByPointer(TimedEvent * ev);
-	ARCEMU_INLINE int32 event_GetCurrentInstanceId() { return m_event_Instanceid; }
+	WoWICE_INLINE int32 event_GetCurrentInstanceId() { return m_event_Instanceid; }
 	bool event_GetTimeLeft(uint32 EventType, time_t * Time);
 
 public:

@@ -18,7 +18,8 @@
 
 /////////////////////////////
 // Battlemaster definitions
-////////////////////////////
+// Last update: 3.0.2 prep, Wotlk release
+////////////////////
 
 // Warsong Gulch battlemaster
 class SCRIPT_DECL WarsongGulchBattlemaster : public GossipScript

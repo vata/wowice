@@ -856,7 +856,7 @@ void LootRoll::Finalize()
 			sQuestMgr.OnPlayerItemPickup(_player,item);
 #ifdef ENABLE_ACHIEVEMENTS
 			_player->GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_LOOT_ITEM, item->GetEntry(), 1, 0);
-#endif
+#endif	
 		}
 		else
 			item->DeleteMe();
