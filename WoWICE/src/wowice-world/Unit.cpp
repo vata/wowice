@@ -295,7 +295,7 @@ Unit::Unit()
 	BaseRangedDamage[1]=0;
 
 	m_CombatUpdateTimer = 0;
-	for(i=0;i<7;i++)
+	for( i = 0; i < SCHOOL_COUNT; i++ )
 	{
 		SchoolImmunityList[i] = 0;
 		BaseResistance[i] = 0;
@@ -6143,18 +6143,18 @@ void Unit::OnPushToWorld()
 void Unit::RemoveFromWorld(bool free_guid)
 {
 	CombatStatus.OnRemoveFromWorld();
-	if(critterPet != 0)
+	if( critterPet != NULL )
 	{
 		critterPet->RemoveFromWorld(false, true);
 		//removed by Zack. Multiple deletes would lead to crash.
 //		delete critterPet;
-		critterPet = 0;
+		critterPet = NULL;
 	}
 
 	if(dynObj != 0)
 		dynObj->Remove();
 
-	for(uint32 i = 0; i < 4; ++i)
+	for( uint8 i = 0; i < 4; ++i )
 	{
 		if(m_ObjectSlots[i] != 0)
 		{
@@ -6541,35 +6541,6 @@ void Unit::UpdateVisibility()
 	}
 }
 
-void Unit::RemoveSoloAura(uint32 type)
-{
-	switch(type)
-	{
-		case 1:// Polymorph
-		{
-			if(!polySpell) return;
-			if(HasAura(polySpell))
-				RemoveAura(polySpell);
-		}break;
-/*		case 2:// Sap
-		{
-			if(!sapSpell) return;
-			if(HasActiveAura(sapSpell))
-				RemoveAura(sapSpell);
-		}break;
-		case 3:// Fear (Warlock)
-		{
-			if(!fearSpell) return;
-			if(HasActiveAura(fearSpell))
-				RemoveAura(fearSpell);
-		}break;*/
-		default:
-			{
-			sLog.outDebug("Warning: we are trying to remove a soloauratype that has no handle");
-			}break;
-	}
-}
-
 void Unit::EventHealthChangeSinceLastUpdate()
 {
 	int pct = GetHealthPct();
@@ -6822,6 +6793,9 @@ void CombatStatusHandler::UpdateFlag()
 
 			// remove any of our healers from combat too, if they are able to be.
 			ClearMyHealers();
+
+			if( m_Unit->GetTypeId() == TYPEID_PLAYER )
+				TO_PLAYER(m_Unit)->UpdatePotionCooldown();
 		}
 	}
 }
@@ -7142,9 +7116,6 @@ void Unit::Energize( Unit* target, uint32 SpellId, uint32 amount, uint32 type )
 	uint32 cur = target->GetUInt32Value( UNIT_FIELD_POWER1 + type );
 	uint32 max = target->GetUInt32Value( UNIT_FIELD_MAXPOWER1 + type );
 
-	//if( max == cur ) // can we show null power gains in client? eg. zero happiness gain should be show...
-		//return;
-
 	if( cur + amount > max )
 		amount = max - cur;
 
@@ -7152,11 +7123,11 @@ void Unit::Energize( Unit* target, uint32 SpellId, uint32 amount, uint32 type )
 
 	WorldPacket datamr( SMSG_SPELLENERGIZELOG, 30 );
 	datamr << target->GetNewGUID();
-	datamr << this->GetNewGUID();
+	datamr << GetNewGUID();
 	datamr << SpellId;
 	datamr << type;
 	datamr << amount;
-	this->SendMessageToSet( &datamr, true );
+	SendMessageToSet( &datamr, true );
 }
 /*
 void Unit::Energize( Unit* target, uint32 SpellId, uint32 amount, uint32 type )
@@ -8010,6 +7981,7 @@ void Unit::RemoveAllGuardians( bool remove_from_world )
 	std::set< Creature* >::iterator itr = m_Guardians.begin();
 	while( itr != m_Guardians.end() )
 	{
+		(*itr)->SetOwner( NULL );
 		if( remove_from_world )
 		{
 			if( (*itr)->IsInWorld() )
@@ -8017,7 +7989,6 @@ void Unit::RemoveAllGuardians( bool remove_from_world )
 			else
 				(*itr)->SafeDelete();
 		}
-		(*itr)->SetOwner( NULL );
 		m_Guardians.erase( itr++ );
 	}
 }

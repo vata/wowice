@@ -33,14 +33,15 @@ class Vehicle;
 class Charter;
 class LFGMatch;
 struct LevelInfo;
-class SpeedDetector;
+class SpeedCheatDetector;
+
 #define PLAYER_NORMAL_RUN_SPEED 7.0f
 #define PLAYER_NORMAL_SWIM_SPEED 4.722222f
 #define PLAYER_NORMAL_FLIGHT_SPEED 7.0f
 #define PLAYER_HONORLESS_TARGET_SPELL 2479
 #define MONSTER_NORMAL_RUN_SPEED 8.0f
 /* action button defines */
-#define PLAYER_ACTION_BUTTON_COUNT 132
+#define PLAYER_ACTION_BUTTON_COUNT 136
 #define PLAYER_ACTION_BUTTON_SIZE PLAYER_ACTION_BUTTON_COUNT * sizeof(ActionButton)
 
 #define MAX_SPEC_COUNT 2
@@ -868,6 +869,18 @@ struct PlayerCooldown
 	uint32 SpellId;
 };
 
+struct PlayerSpec
+{
+	std::map<uint32, uint8> talents;	// map of <talentId, talentRank>
+	uint16 glyphs[GLYPHS_COUNT];
+	ActionButton mActions[PLAYER_ACTION_BUTTON_SIZE];
+	uint32 m_customTalentPointOverride;
+
+	uint32 GetFreePoints(Player * Pl);
+
+	void AddTalent(uint32 talentid, uint8 rankid);
+};
+
 //====================================================================
 //  Player
 //  Class that holds every created character on the server.
@@ -955,6 +968,7 @@ protected:
 	bool disableSummon;
 
 	// COOLDOWNS
+	uint32 m_lastPotionId;
 	PlayerCooldownMap m_cooldownMap[NUM_COOLDOWN_TYPES];
 	uint32 m_globalCooldown;
 	time_t m_unstuckCooldown; // For the Unstuck Script in ExtraScripts module
@@ -965,11 +979,13 @@ protected:
 ***********************************************************************************/
 
 public:
+	void SetLastPotion( uint32 itemid ) { m_lastPotionId = itemid; }
 	void Cooldown_AddStart(SpellEntry * pSpell);
 	void Cooldown_Add(SpellEntry * pSpell, Item * pItemCaster);
 	void Cooldown_AddItem(ItemPrototype * pProto, uint32 x);
 	bool Cooldown_CanCast(SpellEntry * pSpell);
 	bool Cooldown_CanCast(ItemPrototype * pProto, uint32 x);
+	void UpdatePotionCooldown();
 
 protected:
 	void _Cooldown_Add(uint32 Type, uint32 Misc, uint32 Time, uint32 SpellId, uint32 ItemId);
@@ -1003,6 +1019,7 @@ public:
 	void SendMeetingStoneQueue(uint32 DungeonId, uint8 Status);
 	void SendDungeonDifficulty();
 	void SendRaidDifficulty();
+	void SendExploreXP( uint32 areaid, uint32 xp );
 
 	void AddToWorld();
 	void AddToWorld(MapMgr * pMapMgr);
@@ -1139,7 +1156,8 @@ public:
 	bool HasSpellwithNameHash(uint32 hash);
 	bool HasDeletedSpell(uint32 spell);
 	void smsg_InitialSpells();
-	void smsg_TalentsInfo(bool update, uint32 newTalentId, uint8 newTalentRank);
+	void smsg_TalentsInfo(bool SendPetTalents);
+	void ActivateSpec(uint8 spec);
 	void addSpell(uint32 spell_idy);
 	void removeSpellByHashName(uint32 hash);
 	bool removeSpell(uint32 SpellID, bool MoveToDeleted, bool SupercededSpell, uint32 SupercededSpellID);
@@ -1177,6 +1195,9 @@ public:
 
 	void AddShapeShiftSpell(uint32 id);
 	void RemoveShapeShiftSpell(uint32 id);
+
+	void SendAuraUpdate(uint32 AuraSlot, bool RemoveAura);
+	void SendFullAuraUpdate();
 
 
     /************************************************************************/
@@ -1348,7 +1369,7 @@ public:
     /* Item Interface                                                       */
     /************************************************************************/
 	WoWICE_INLINE ItemInterface* GetItemInterface() { return m_ItemInterface; } // Player Inventory Item storage
-	WoWICE_INLINE void			ApplyItemMods(Item *item, int8 slot, bool apply,bool justdrokedown=false) {  _ApplyItemMods(item, slot, apply,justdrokedown); }
+	WoWICE_INLINE void			ApplyItemMods(Item *item, int16 slot, bool apply,bool justdrokedown=false) {  _ApplyItemMods(item, slot, apply,justdrokedown); }
 	WoWICE_INLINE bool			HasItemCount( uint32 item, uint32 count, bool inBankAlso = false ) const;
     // item interface variables
     ItemInterface *     m_ItemInterface;
@@ -2210,7 +2231,7 @@ protected:
 	// Raid
 	uint8 m_targetIcon;
 	//Player Action Bar
-	ActionButton mActions[PLAYER_ACTION_BUTTON_SIZE];
+	// ActionButton mActions[PLAYER_ACTION_BUTTON_SIZE]; // Moved to dual spec
 	// Player Reputation
 	ReputationMap m_reputation;
 	// Pointer to this char's game client
@@ -2370,15 +2391,9 @@ public:
 	uint16 m_maxTalentPoints;
 //	uint16 GetMaxTalentPoints();
 //	void ApplySpec(uint8 spec, bool init);
-//	void ApplyTalent(uint32 spellId);
-//	void RemoveTalent(uint32 spellid);
 	uint8 m_talentSpecsCount;
 	uint8 m_talentActiveSpec;
-	struct PlayerSpec
-	{
-		std::map<uint32, uint8> talents;	// map of <talentId, talentRank>
-		uint16  glyphs[GLYPHS_COUNT];
-	};
+
 	PlayerSpec m_specs[MAX_SPEC_COUNT];
 
     /************************************************************************/

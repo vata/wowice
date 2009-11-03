@@ -361,7 +361,6 @@ mOutOfRangeIdCount(0)
 	m_globalCooldown = 0;
 	m_unstuckCooldown = 0;
 	m_lastHonorResetTime	= 0;
-	memset(&mActions, 0, PLAYER_ACTION_BUTTON_SIZE);
 	tutorialsDirty = true;
 	m_TeleportState = 1;
 	m_beingPushed = false;
@@ -407,6 +406,13 @@ mOutOfRangeIdCount(0)
 	m_maxTalentPoints = 0; //VLack: 3 Aspire values initialized
 	m_talentActiveSpec = 0;
 	m_talentSpecsCount = 1;
+	for (uint8 s = 0; s < MAX_SPEC_COUNT; ++s)
+	{
+		m_specs[s].talents.clear();
+		m_specs[s].m_customTalentPointOverride = 0;
+		memset(m_specs[s].glyphs, 0, GLYPHS_COUNT);
+		memset(m_specs[s].mActions, 0, PLAYER_ACTION_BUTTON_SIZE);
+	}
 
 	m_drunkTimer = 0;
 	m_drunk = 0;
@@ -521,6 +527,7 @@ mOutOfRangeIdCount(0)
 	visiblityChangableSet.clear();
 	_splineMap.clear();
 
+	m_lastPotionId		= 0;
 	for (i=0; i<NUM_COOLDOWN_TYPES; i++) {
 		m_cooldownMap[i].clear();
 	}
@@ -567,9 +574,9 @@ Player::~Player ( )
 	DismissActivePet();
 	mTradeTarget = 0;
 
-	if(DuelingWith != 0)
-		DuelingWith->DuelingWith = 0;
-	DuelingWith = 0;
+	if( DuelingWith != NULL )
+		DuelingWith->DuelingWith = NULL;
+	DuelingWith = NULL;
 
 	CleanupGossipMenu();
 	ASSERT(!IsInWorld());
@@ -1808,7 +1815,7 @@ void Player::GiveXP(uint32 xp, const uint64 &guid, bool allowbonus)
 #endif
 
 		//VLack: 3.1.3, as a final step, send the player's talents, this will set the talent points right too...
-		smsg_TalentsInfo(false, 0, 0);
+		smsg_TalentsInfo(false);
 	}
 
 	// Set the update bit
@@ -1907,87 +1914,116 @@ void Player::smsg_InitialSpells()
 	//Log::getSingleton( ).outDetail( "CHARACTER: Sent Initial Spells" );
 }
 
-void Player::smsg_TalentsInfo(bool update, uint32 newTalentId, uint8 newTalentRank)
+void Player::smsg_TalentsInfo(bool SendPetTalents)
 {
-        WorldPacket data(SMSG_TALENTS_INFO, 1000);
-        update = false;
-        data << uint8(update);
-        if(update)      // send just the update
+	WorldPacket data(SMSG_TALENTS_INFO, 1000);
+	data << uint8(SendPetTalents ? 1 : 0);
+    if(SendPetTalents)
+    {
+		if(GetSummon())
+			GetSummon()->SendTalentsToOwner();
+		return;
+	}
+	else
+    {
+        //data << uint32(GetUInt32Value(PLAYER_CHARACTER_POINTS1)); // Wrong, calculate the amount of talent points per spec
+		data << uint32(m_specs[m_talentActiveSpec].GetFreePoints(this));
+        data << uint8(m_talentSpecsCount);
+        data << uint8(m_talentActiveSpec);
+        for(uint8 s = 0; s < m_talentSpecsCount; s++)
         {
-                uint8 count = 1;
-                data << uint32(GetUInt32Value(PLAYER_CHARACTER_POINTS1)); // Unspent talents
-                data << uint8(count);
-                for(uint8 i = 0; i < count; i++)
-                {
-                        data << uint32(newTalentId); // unk     talentid?
-                        data << uint8(1); // unk        rank?
-                }
-        } else  // initialize sending all info
-        {
-                data << uint32(GetUInt32Value(PLAYER_CHARACTER_POINTS1)); // Unspent talents
-                data << uint8(m_talentSpecsCount);
-                data << uint8(m_talentActiveSpec); // unk
-                for(uint8 s = 0; s < m_talentSpecsCount; s++)
-                {
-                        PlayerSpec spec = m_specs[s];
-                        // Send Talents
-/*                        data << uint8(spec.talents.size());
-                        std::map<uint32, uint8>::iterator itr;
-                        for(itr = spec.talents.begin(); itr != spec.talents.end(); itr++)
-                        {
-                                data << uint32(itr->first);     // TalentId
-                                data << uint8(itr->second);     // TalentRank
-                        }*/
+            PlayerSpec spec = m_specs[s];
+			data << uint8(spec.talents.size());
+            std::map<uint32, uint8>::iterator itr;
+            for(itr = spec.talents.begin(); itr != spec.talents.end(); itr++)
+            {
+				data << uint32(itr->first);     // TalentId
+				data << uint8(itr->second);     // TalentRank
+            }
 
-			uint8 talent_count = 0;
-			size_t pos = data.wpos();
-			data << uint8(talent_count); //fake value, will be overwritten at the end
-
-			for( uint32 i = 0; i < 3; ++i )
+			// Send Glyph info
+			data << uint8(GLYPHS_COUNT);
+			for(uint8 i = 0; i < GLYPHS_COUNT; i++)
 			{
-				uint32 talent_tab_id = sWorld.InspectTalentTabPages[getClass()][i];
-
-				for( uint32 j = 0; j < dbcTalent.GetNumRows(); ++j )
-				{
-					TalentEntry const* talent_info = dbcTalent.LookupRow( j );
-					if( talent_info == NULL )
-						continue;
-
-					if( talent_info->TalentTree != talent_tab_id ) // we can skip this tree
-						continue;
-
-					int32 talent_maxrank = -1;
-					for( int32 k = 4; k > -1; --k )
-					{
-						if( talent_info->RankID[k] && HasSpell(talent_info->RankID[k]) )
-						{
-							talent_maxrank = k;
-							break;
-						}
-					}
-
-					if( talent_maxrank < 0 ) // player doesn't have this talent, don't send it
-						continue;
-
-					data << uint32(talent_info->TalentID);
-					data << uint8(talent_maxrank);
-
-					++talent_count;
-				}
+				data << uint16(spec.glyphs[i]);
 			}
+		}
+    }
+    GetSession()->SendPacket(&data);
+}
 
-			data.put<uint8>(pos, talent_count);
+void Player::ActivateSpec(uint8 spec)
+{
+	if(spec > MAX_SPEC_COUNT || m_talentActiveSpec > MAX_SPEC_COUNT)
+		return;
 
+	uint8 OldSpec = m_talentActiveSpec;
+	m_talentActiveSpec = spec;
 
-                        // Send Glyph info
-                        data << uint8(GLYPHS_COUNT);
-                        for(uint8 i = 0; i < GLYPHS_COUNT; i++)
-                        {
-                                data << uint16(spec.glyphs[i]);
-                        }
-                }
-        }
-        GetSession()->SendPacket(&data);
+	// remove old glyphs
+	for (uint8 i = 0; i < GLYPHS_COUNT; ++i)
+	{
+		GlyphPropertyEntry * glyph = dbcGlyphProperty.LookupEntry(m_specs[OldSpec].glyphs[i]);
+		if (glyph == NULL)
+			continue;
+
+		RemoveAura(glyph->SpellID);
+	}
+
+	// remove old talents
+	for (std::map<uint32, uint8>::iterator itr = m_specs[OldSpec].talents.begin(); itr != m_specs[OldSpec].talents.end(); ++itr)
+	{
+		TalentEntry * talentInfo = dbcTalent.LookupEntryForced(itr->first);
+		if(talentInfo == NULL)
+			continue;
+
+		removeSpell(talentInfo->RankID[itr->second], true, false, 0);
+	}
+
+	// add new glyphs
+	for (uint8 i = 0; i < GLYPHS_COUNT; ++i)
+	{
+		GlyphPropertyEntry * glyph = dbcGlyphProperty.LookupEntry(m_specs[m_talentActiveSpec].glyphs[i]);
+		if(glyph == NULL)
+			continue;
+
+		CastSpell(this, glyph->SpellID, true);
+	}
+
+	//add talents from new spec
+	for (std::map<uint32, uint8>::iterator itr= m_specs[m_talentActiveSpec].talents.begin();
+		itr != m_specs[m_talentActiveSpec].talents.end(); ++itr)
+	{
+		TalentEntry* talentInfo = dbcTalent.LookupEntryForced(itr->first);
+		if(talentInfo == NULL)
+			continue;
+
+		addSpell(talentInfo->RankID[itr->second]);
+	}
+	smsg_TalentsInfo(false);
+}
+
+uint32 PlayerSpec::GetFreePoints(Player * Pl)
+{
+	uint32 Lvl = Pl->getLevel();
+	uint32 FreePoints = 0;
+
+	if(Lvl > 9)
+	{
+		FreePoints = m_customTalentPointOverride > 0 ? m_customTalentPointOverride : Lvl - 9; // compensate for additional given talentpoints
+		for (std::map<uint32, uint8>::iterator itr = talents.begin(); itr != talents.end(); ++itr)
+			FreePoints -= (itr->second+1);
+	}
+	return FreePoints;
+}
+
+void PlayerSpec::AddTalent(uint32 talentid, uint8 rankid)
+{
+	std::map<uint32, uint8>::iterator itr = talents.find(talentid);
+	if(itr != talents.end())
+		itr->second = rankid;
+	else
+		talents.insert(make_pair(talentid, rankid));
 }
 
 void Player::_SavePet(QueryBuffer * buf)
@@ -2573,10 +2609,7 @@ void Player::SaveToDB(bool bNewCharacter /* =false */)
 		ss << m_uint32Values[PLAYER_AMMO_ID] << ",";
 	ss << m_uint32Values[PLAYER_CHARACTER_POINTS2] << ",";
 
-	if (m_uint32Values[PLAYER_CHARACTER_POINTS1] > 71 &&  ! GetSession()->HasGMPermissions())
-            SetUInt32Value(PLAYER_CHARACTER_POINTS1, 71);
-	ss << m_uint32Values[PLAYER_CHARACTER_POINTS1] << ","
-	<< load_health << ","
+	ss << load_health << ","
 	<< load_mana << ","
 	<< uint32(GetPVPRank()) << ","
 	<< m_uint32Values[PLAYER_BYTES] << ","
@@ -2698,13 +2731,16 @@ void Player::SaveToDB(bool bNewCharacter /* =false */)
 	ss << "','";
 
 	// Add player action bars
-	for(uint32 i = 0; i < 120; ++i)
+	for (uint8 s = 0; s < MAX_SPEC_COUNT; ++s)
 	{
-		ss << uint32(mActions[i].Action) << ","
-			<< uint32(mActions[i].Misc) << ","
-			<< uint32(mActions[i].Type) << ",";
+		for(uint32 i = 0; i < PLAYER_ACTION_BUTTON_COUNT; ++i)
+		{
+			ss	<< uint32(m_specs[s].mActions[i].Action) << ","
+				<< uint32(m_specs[s].mActions[i].Misc) << ","
+				<< uint32(m_specs[s].mActions[i].Type) << ",";
+		}
+		ss << "','";
 	}
-	ss << "','";
 
 	if(!bNewCharacter)
 		SaveAuras(ss);
@@ -2736,12 +2772,19 @@ void Player::SaveToDB(bool bNewCharacter /* =false */)
 
 	ss << (m_uint32Values[PLAYER_BYTES_3] & 0xFFFE) << ", ";
 
-	// dump glyphs
-	ss << "'";
-
-	for(uint32 i = 0; i < GLYPHS_COUNT; ++i)
-		ss << m_uint32Values[PLAYER_FIELD_GLYPHS_1 + i] << ",";
-
+	for (uint8 s = 0; s < MAX_SPEC_COUNT; ++s)
+	{
+		ss << "'";
+		for (uint8 i = 0; i < GLYPHS_COUNT; ++i)
+			ss << m_specs[s].glyphs[i] << ",";
+		ss << "','";
+		for (std::map<uint32, uint8>::iterator itr = m_specs[s].talents.begin(); itr != m_specs[s].talents.end(); ++itr)
+			ss << itr->first << "," << uint32(itr->second) << ",";
+		ss << "',";
+	}
+	ss << uint32(m_talentSpecsCount) << ", " << uint32(m_talentActiveSpec);
+	ss << ", '";
+	ss << uint32(m_specs[SPEC_PRIMARY].m_customTalentPointOverride) << " " << uint32(m_specs[SPEC_SECONDARY].m_customTalentPointOverride);
 	ss << "', ";
 
 	ss << m_phase << ")";
@@ -2905,10 +2948,10 @@ void Player::LoadFromDBProc(QueryResultVector & results)
 		return;
 	}
 
-	if( result->GetFieldCount() != 85 )
+	if( result->GetFieldCount() != 91 )
 	{
 		Log.Error ("Player::LoadFromDB",
-				"Expected 85 fields from the database, "
+				"Expected 91 fields from the database, "
 				"but received %u!  You may need to update your character database.",
 				(unsigned int) result->GetFieldCount ());
 		RemovePendingPlayer();
@@ -3151,7 +3194,6 @@ void Player::LoadFromDBProc(QueryResultVector & results)
 	m_uint32Values[ PLAYER_FIELD_COINAGE ]					= get_next_field.GetUInt32();
 	m_uint32Values[ PLAYER_AMMO_ID ]						= get_next_field.GetUInt32();
 	m_uint32Values[ PLAYER_CHARACTER_POINTS2 ]				= get_next_field.GetUInt32();
-	m_uint32Values[ PLAYER_CHARACTER_POINTS1 ]				= get_next_field.GetUInt32();
 	load_health												= get_next_field.GetUInt32();
 	load_mana												= get_next_field.GetUInt32();
 	SetUInt32Value( UNIT_FIELD_HEALTH, load_health );
@@ -3427,25 +3469,28 @@ void Player::LoadFromDBProc(QueryResultVector & results)
 		_InitialReputation();
 
 	// Load saved actionbars
-	start =  (char*)get_next_field.GetString();
-	Counter =0;
-	while(Counter < 120)
+	for (uint8 s = 0; s < MAX_SPEC_COUNT; ++s)
 	{
-		end = strchr(start,',');
-		if(!end)break;
-		*end=0;
-		mActions[Counter].Action = (uint16)atol(start);
-		start = end +1;
-		end = strchr(start,',');
-		if(!end)break;
-		*end=0;
-		mActions[Counter].Misc = (uint8)atol(start);
-		start = end +1;
-		end = strchr(start,',');
-		if(!end)break;
-		*end=0;
-		mActions[Counter++].Type = (uint8)atol(start);
-		start = end +1;
+		start =  (char*)get_next_field.GetString();
+		Counter =0;
+		while(Counter < PLAYER_ACTION_BUTTON_COUNT)
+		{
+			end = strchr(start,',');
+			if(!end)break;
+			*end=0;
+			m_specs[s].mActions[Counter].Action = (uint16)atol(start);
+			start = end +1;
+			end = strchr(start,',');
+			if(!end)break;
+			*end=0;
+			m_specs[s].mActions[Counter].Misc = (uint8)atol(start);
+			start = end +1;
+			end = strchr(start,',');
+			if(!end)break;
+			*end=0;
+			m_specs[s].mActions[Counter++].Type = (uint8)atol(start);
+			start = end +1;
+		}
 	}
 
 	//LoadAuras = get_next_field.GetString();
@@ -3520,26 +3565,45 @@ void Player::LoadFromDBProc(QueryResultVector & results)
 		soberFactor = 1 - timediff / 900;
 	SetDrunkValue( uint16( soberFactor * get_next_field.GetUInt32() ) );
 
-	// Load Glyphs and apply their auras
-	LoadFieldsFromString(get_next_field.GetString(), PLAYER_FIELD_GLYPHS_1, GLYPHS_COUNT);
-	GlyphPropertyEntry *glyph;
-	for(uint32 i=0; i < GLYPHS_COUNT; i++)
+	for (uint8 s = 0; s < MAX_SPEC_COUNT; ++s)
 	{
-		uint32 glyphId = GetUInt32Value(PLAYER_FIELD_GLYPHS_1 + i);
-		if(glyphId == 0)
-			continue;
-		// Get info
-		glyph = dbcGlyphProperty.LookupEntry(glyphId);
-		if(!glyph || !glyph->SpellID)
-			continue;
-		LoginAura la;
-		la.id = glyph->SpellID;
-		la.dur = uint32(-1);
-		la.charges = 0;
-		la.positive = 0; //VLack: check this, as this was uninitialized, 0 is a safe bet, but glyphs should be positive, aren't they?
-		loginauras.push_back(la);
-		m_specs[0].glyphs[i] = static_cast< uint16 >( glyphId ); //VLack: TempFIX till we properly implement dual specs, make them appear in the first set!
+		start = (char*)get_next_field.GetString();
+		uint8 glyphid = 0;
+		while(glyphid < GLYPHS_COUNT)
+		{
+			end = strchr(start,',');
+			if(!end)break;
+			*end=0;
+			m_specs[s].glyphs[glyphid] = (uint16)atol(start);
+			++glyphid;
+			start = end + 1;
+		}
+
+		//Load talents for spec
+		start = (char*)get_next_field.GetString();
+		while(end != NULL)
+		{
+			end = strchr(start,',');
+			if(!end)
+				break;
+			*end=0;
+			uint32 talentid = atol(start);
+			start = end + 1;
+
+			end = strchr(start,',');
+			if(!end)
+				break;
+			*end=0;
+			uint8 rank = (uint8)atol(start);
+			start = end + 1;
+
+			m_specs[s].talents.insert(make_pair<uint32, uint8>(talentid, rank));
+		}
 	}
+
+	m_talentSpecsCount = get_next_field.GetUInt8();
+	m_talentActiveSpec = get_next_field.GetUInt8();
+	sscanf(get_next_field.GetString(), "%u %u", &m_specs[SPEC_PRIMARY].m_customTalentPointOverride, &m_specs[SPEC_SECONDARY].m_customTalentPointOverride);
 
 	m_phase = get_next_field.GetUInt32(); //Load the player's last phase
 
@@ -4021,6 +4085,7 @@ void Player::OnPushToWorld()
 
 	z_axisposition = 0.0f;
 	m_changingMaps = false;
+	SendFullAuraUpdate();
 
     this->GetItemInterface()->HandleItemDurations();
 }
@@ -5204,7 +5269,9 @@ void Player::SendInitialActions()
 	data << uint8(0);       // VLack: 3.1, some bool - 0 or 1. seems to work both ways
 	for(uint32 i = 0; i < PLAYER_ACTION_BUTTON_SIZE; ++i)
 	{
-		data << mActions[i].Action << mActions[i].Type << mActions[i].Misc; //VLack: on 3.1.3, despite the format of CMSG_SET_ACTION_BUTTON, here Type have to be sent before Misc
+		data << m_specs[m_talentActiveSpec].mActions[i].Action
+			 << m_specs[m_talentActiveSpec].mActions[i].Type
+			 << m_specs[m_talentActiveSpec].mActions[i].Misc; //VLack: on 3.1.3, despite the format of CMSG_SET_ACTION_BUTTON, here Type have to be sent before Misc
 	}
 	m_session->SendPacket(&data);
 //#endif
@@ -5212,11 +5279,11 @@ void Player::SendInitialActions()
 
 void Player::setAction(uint8 button, uint16 action, uint8 type, uint8 misc)
 {
-	if( button >= 120 )
+	if( button >= PLAYER_ACTION_BUTTON_COUNT )
 		return; //packet hack to crash server
-	mActions[button].Action = action;
-	mActions[button].Type = type;
-	mActions[button].Misc = misc;
+	m_specs[m_talentActiveSpec].mActions[button].Action = action;
+	m_specs[m_talentActiveSpec].mActions[button].Type = type;
+	m_specs[m_talentActiveSpec].mActions[button].Misc = misc;
 }
 
 // Groupcheck
@@ -6391,7 +6458,7 @@ void Player::SendLoot(uint64 guid,uint8 loot_type)
 	// add to looter set
 	pLoot->looters.insert(GetLowGUID());
 
-	WorldPacket data, data2(28);
+	WorldPacket data, data2(32);
 	data.SetOpcode (SMSG_LOOT_RESPONSE);
 
 
@@ -6568,6 +6635,7 @@ void Player::SendLoot(uint64 guid,uint8 loot_type)
 					else
 						data2 << uint32(0);
 
+					data2 << uint32(iter->iItemsCount);
 					data2 << uint32(60000); // countdown
 				}
 
@@ -7024,7 +7092,7 @@ void Player::SendInitialLogonPackets()
 	GetSession()->SendPacket(&data);
 
 	//3.1: Send the talents
-	smsg_TalentsInfo(false, 0, 0);
+	smsg_TalentsInfo(false);
 
 	//Initial Spells
 	smsg_InitialSpells();
@@ -7241,7 +7309,8 @@ void Player::Reset_Talents()
 		ResetDualWield2H();
 	}
 
-	smsg_TalentsInfo(false, 0, 0); //VLack: should we send this as Aspire? Yes...
+	m_specs[m_talentActiveSpec].talents.clear();
+	smsg_TalentsInfo(false); //VLack: should we send this as Aspire? Yes...
 }
 
 void Player::Reset_ToLevel1()
@@ -9084,7 +9153,7 @@ void Player::ApplyLevelInfo(LevelInfo* Info, uint32 Level)
 	GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_REACH_LEVEL);
 #endif
 	//VLack: 3.1.3, as a final step, send the player's talents, this will set the talent points right too...
-	smsg_TalentsInfo(false, 0, 0);
+	smsg_TalentsInfo(false);
 
 	sLog.outDetail("Player %s set parameters to level %u", GetName(), Level);
 }
@@ -10072,7 +10141,7 @@ void Player::ModifyBonuses( uint32 type, int32 val, bool apply )
 			}break;
 		case SPELL_HEALING_DONE:
 			{
-				for(uint32 school=1;school < 7; ++school)
+				for( uint8 school = 1; school < SCHOOL_COUNT; ++school )
 				{
 					HealDoneMod[school] += val;
 				}
@@ -10080,7 +10149,7 @@ void Player::ModifyBonuses( uint32 type, int32 val, bool apply )
 			}break;
 		case SPELL_DAMAGE_DONE:
 			{
-				for(uint32 school=1;school < 7; ++school)
+				for( uint8 school = 1; school < SCHOOL_COUNT; ++school )
 				{
 					ModUnsigned32Value( PLAYER_FIELD_MOD_DAMAGE_DONE_POS + school, val );
 				}
@@ -10971,8 +11040,12 @@ void Player::_LearnSkillSpells(uint32 SkillLine, uint32 curr_sk)
 					se = dbcSpell.LookupEntry( *itr );
 					if( (se->NameHash == sp->NameHash) && (se->RankNumber >= sp->RankNumber) )
 					{
-						// Player already has this spell, or a higher rank. Don't add it.
-						addThisSpell = false;
+						// Stupid profession related spells for "skinning" having the same namehash and not ranked
+						if( sp->Id != 32605 && sp->Id != 32606 && sp->Id != 49383 )
+						{
+							// Player already has this spell, or a higher rank. Don't add it.
+							addThisSpell = false;
+						}
 					}
 				}
 				if( addThisSpell )
@@ -11407,7 +11480,7 @@ void Player::save_Actions()
 
 	for(uint32 i = 0; i < 120; ++i)
 	{
-		p += sprintf(&buffer[p], "%u,%u,%u,", mActions[i].Action, mActions[i].Misc, mActions[i].Type);
+		p += sprintf(&buffer[p], "%u,%u,%u,", m_specs[m_talentActiveSpec].mActions[i].Action, m_specs[m_talentActiveSpec].mActions[i].Misc, m_specs[m_talentActiveSpec].mActions[i].Type);
 	}
 
 	ASSERT(p < 2048);
@@ -11873,7 +11946,122 @@ void Player::RemoveShapeShiftSpell(uint32 id)
 	RemoveAura( id );
 }
 
+void Player::SendAuraUpdate(uint32 AuraSlot, bool RemoveAura)
+{
+	ASSERT(AuraSlot <= MAX_TOTAL_AURAS_END);
+	Aura * VisualAura = m_auras[AuraSlot];
+	if(VisualAura == NULL)
+	{
+		sLog.outDebug("Aura Update not sent due to invalid or no aura id in slot %u", AuraSlot);
+		return;
+	}
+
+	if(RemoveAura)
+	{
+		WorldPacket data(SMSG_AURA_UPDATE, 20);
+		FastGUIDPack(data, GetGUID());
+		data << (uint8)VisualAura->m_visualSlot;
+		data << (uint32)0;
+		SendMessageToSet(&data, true);
+		sLog.outDebug("Aura Update: GUID: "I64FMT" - AuraSlot: %u - AuraID: 0", GetGUID(), AuraSlot);
+		return;
+	}
+	WorldPacket data(SMSG_AURA_UPDATE, 20);
+	FastGUIDPack(data, GetGUID());
+	data << (uint8)VisualAura->m_visualSlot;
+	data << (uint32)VisualAura->GetSpellId(); // Client will ignore rest of packet if visual aura is 0
+	uint8 Flags = (uint8)VisualAura->GetAuraFlags();
+	if(VisualAura->IsPositive())
+		Flags |= AFLAG_POSTIVE | AFLAG_SET;
+	else
+		Flags |= AFLAG_NEGATIVE | AFLAG_SET;
+
+	if(VisualAura->GetDuration() > 0)
+		Flags |= AFLAG_DURATION; // Display duration
+	if(VisualAura->GetCasterGUID())
+		Flags |= AFLAG_NOT_CASTER;
+	data << (uint8)Flags;
+	data << (uint8)getLevel();
+	data << (uint8)m_auraStackCount[VisualAura->m_visualSlot];
+	if( !(Flags & AFLAG_NOT_CASTER) )
+		data << WoWGuid(VisualAura->GetCasterGUID());
+	if(Flags & AFLAG_DURATION)
+	{
+		data << (uint32)VisualAura->GetDuration();
+		data << (uint32)VisualAura->GetTimeLeft();
+	}
+	sLog.outDebug("Aura Update: GUID: "I64FMT" - AuraSlot: %u - AuraID: %u - Flags: %u", GetGUID(), AuraSlot, VisualAura->GetSpellId(), Flags);
+	SendMessageToSet(&data, true);
+}
+
+void Player::SendFullAuraUpdate()
+{
+	WorldPacket data;
+	data.Initialize(SMSG_AURA_UPDATE_ALL);
+	FastGUIDPack(data, GetGUID());
+	uint32 Updates = 0;
+	for (uint32 i = MAX_TOTAL_AURAS_START; i < MAX_TOTAL_AURAS_END; ++i)
+	{
+		if(Aura * aur = m_auras[i])
+		{
+			data << (uint8)aur->m_visualSlot;
+			data << (uint32)aur->GetSpellId(); // Client will ignore rest of packet if visual aura is 0
+			uint8 Flags = (uint8)aur->GetAuraFlags();
+			if(aur->IsPositive())
+				Flags |= AFLAG_POSTIVE | AFLAG_SET;
+			else
+				Flags |= AFLAG_NEGATIVE | AFLAG_SET;
+
+			if(aur->GetDuration() > 0)
+				Flags |= AFLAG_DURATION; // Display duration
+			if(aur->GetCasterGUID())
+				Flags |= AFLAG_NOT_CASTER;
+			data << (uint8)Flags;
+			data << (uint8)getLevel();
+			data << (uint8)m_auraStackCount[aur->m_visualSlot];
+			if( !(Flags & AFLAG_NOT_CASTER) )
+				data << WoWGuid(aur->GetCasterGUID());
+			if(Flags & AFLAG_DURATION)
+			{
+				data << (uint32)aur->GetDuration();
+				data << (uint32)aur->GetTimeLeft();
+			}
+			++Updates;
+		}
+	}
+	sLog.outDebug("Full Aura Update: GUID: "I64FMT" - Updates: %u", GetGUID(), Updates);
+	SendMessageToSet(&data, true);
+}
+
 // COOLDOWNS
+void Player::UpdatePotionCooldown()
+{
+	if( m_lastPotionId == 0 || CombatStatus.IsInCombat() )
+		return;
+
+	ItemPrototype *proto = ItemPrototypeStorage.LookupEntry( m_lastPotionId );
+	if( proto != NULL )
+	{
+		for( uint8 i = 0; i < 5; ++i )
+		{
+			if( proto->Spells[i].Id && proto->Spells[i].Trigger == USE )
+			{
+				SpellEntry *spellInfo = dbcSpell.LookupEntry(proto->Spells[i].Id );
+				if( spellInfo != NULL )
+				{
+					Cooldown_AddItem( proto, i );
+					packetSMSG_COOLDOWN_EVENT cd;
+					cd.spellid = spellInfo->Id;
+					cd.guid = GetGUID();
+					GetSession()->OutPacket( SMSG_COOLDOWN_EVENT, sizeof( packetSMSG_COOLDOWN_EVENT ), &cd );
+				}
+			}
+		}
+	}
+
+	m_lastPotionId = 0;
+}
+
 void Player::_Cooldown_Add(uint32 Type, uint32 Misc, uint32 Time, uint32 SpellId, uint32 ItemId)
 {
 	PlayerCooldownMap::iterator itr = m_cooldownMap[Type].find( Misc );

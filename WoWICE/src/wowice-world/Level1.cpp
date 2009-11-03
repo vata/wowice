@@ -277,7 +277,7 @@ bool ChatHandler::HandleAddInvItemCommand(const char *args, WorldSession *m_sess
 {
 	uint32 itemid, count=1;
 	int32 randomprop=0;
-	uint32 numadded = 0;
+	int32 numadded = 0;
 
 	if(strlen(args) < 1)
 	{
@@ -300,15 +300,15 @@ bool ChatHandler::HandleAddInvItemCommand(const char *args, WorldSession *m_sess
 	ItemPrototype* it = ItemPrototypeStorage.LookupEntry(itemid);
 	if(it)
 	{
+		numadded -= chr->GetItemInterface()->GetItemCount( itemid );
         bool result = false;
-
         result = chr->GetItemInterface()->AddItemById( itemid, count, randomprop );
-
+		numadded += chr->GetItemInterface()->GetItemCount( itemid );
         if( result == true ){
             if( count == 0 ){
                 sGMLog.writefromsession(m_session, "used add item command, item id %u [%s], quantity %u, to %s", it->ItemId, it->Name1, numadded, chr->GetName());
             }else{
-                sGMLog.writefromsession(m_session, "used add item command, item id %u [%s], quantity %u (only %lu added due to full inventory), to %s", it->ItemId, it->Name1, count + numadded, numadded, chr->GetName());
+                sGMLog.writefromsession(m_session, "used add item command, item id %u [%s], quantity %u (only %lu added due to full inventory), to %s", it->ItemId, it->Name1, numadded, numadded, chr->GetName());
             }
             
             char messagetext[512];
@@ -924,6 +924,35 @@ bool ChatHandler::HandleNpcSpawnLinkCommand(const char* args, WorldSession *m_se
 
 	return true;
 }
+
+bool ChatHandler::HandleModifyTPsCommand(const char* args, WorldSession *m_session)
+{
+	if(!args)
+		return false;
+
+	Player * Pl = getSelectedChar(m_session, false);
+	if(!Pl)
+	{
+		SystemMessage(m_session, "Invalid or no target provided, please target a player to modify its talentpoints.");
+		return true;
+	}
+
+	uint32 TP1 = 0;
+	uint32 TP2 = 0;
+	if(sscanf(args, "%u %u", &TP1, &TP2) != 2)
+	{
+		SystemMessage(m_session, "Enter two amounts to modify your target's both specs to (enter 0 to that spec at default).");
+		return true;
+	}
+
+	if(TP1)
+		Pl->m_specs[SPEC_PRIMARY].m_customTalentPointOverride = TP1;
+	if(TP2)
+		Pl->m_specs[SPEC_SECONDARY].m_customTalentPointOverride = TP2;
+	Pl->smsg_TalentsInfo(false);
+	return true;
+}
+
 #ifdef ENABLE_ACHIEVEMENTS
 /**
 	Handles .achieve complete

@@ -294,6 +294,7 @@ RegType<Unit> UnitMethods[] = {
 	{ "RemoveAurasByMechanic", &luaUnit_RemoveAurasByMechanic },
 	{ "RemoveAurasType", &luaUnit_RemoveAurasType },
 	{ "IsGM", &luaUnit_IsGM },
+	{ "SetEquip", &luaUnit_SetEquip },
 	//{ "AddAuraVisual", &luaUnit_AddAuraVisual }, N33D F1X
 	{ "AddAuraVisual", NULL },
 
@@ -737,7 +738,7 @@ void LuaEngine::OnUnitEvent(Unit * pUnit, const char * FunctionName, uint32 Even
 	lua_gettable(L, LUA_GLOBALSINDEX);
 	if(lua_isnil(L,-1))
 	{
-		printf("Tried to call invalid LUA function '%s' from Arcemu (Unit)!\n", FunctionName);
+		printf("Tried to call invalid LUA function '%s' from WoWICE (Unit)!\n", FunctionName);
 		m_Lock.Release();
 		return;
 	}
@@ -767,7 +768,7 @@ void LuaEngine::OnQuestEvent(Player * QuestOwner, const char * FunctionName, uin
 	lua_gettable(L, LUA_GLOBALSINDEX);
 	if(lua_isnil(L,-1))
 	{
-		printf("Tried to call invalid LUA function '%s' from Arcemu (Quest)!\n", FunctionName);
+		printf("Tried to call invalid LUA function '%s' from WoWICE (Quest)!\n", FunctionName);
 		m_Lock.Release();
 		return;
 	}
@@ -799,7 +800,7 @@ void LuaEngine::CallFunction(Unit * pUnit, const char * FuncName)
 	lua_gettable(L, LUA_GLOBALSINDEX);
 	if(lua_isnil(L,-1))
 	{
-		printf("Tried to call invalid LUA function '%s' from Arcemu (Unit)!\n", FuncName);
+		printf("Tried to call invalid LUA function '%s' from WoWICE (Unit)!\n", FuncName);
 		m_Lock.Release();
 		return;
 	}
@@ -822,7 +823,7 @@ void LuaEngine::OnGameObjectEvent(GameObject * pGameObject, const char * Functio
 	lua_gettable(L, LUA_GLOBALSINDEX);
 	if(lua_isnil(L,-1))
 	{
-		printf("Tried to call invalid LUA function '%s' from Arcemu! (GO)\n", FunctionName);
+		printf("Tried to call invalid LUA function '%s' from WoWICE! (GO)\n", FunctionName);
 		m_Lock.Release();
 		return;
 	}
@@ -850,7 +851,7 @@ void LuaEngine::OnGossipEvent(Object * pObject, const char * FunctionName, uint3
 	lua_gettable(L, LUA_GLOBALSINDEX);
 	if(lua_isnil(L, -1))
 	{
-		printf("Tried to call invalid LUA function '%s' from Arcemu (Gossip)!\n", FunctionName);
+		printf("Tried to call invalid LUA function '%s' from WoWICE (Gossip)!\n", FunctionName);
 		m_Lock.Release();
 		return;
 	}
@@ -2849,9 +2850,10 @@ int luaUnit_TeleportUnit(lua_State * L, Unit * ptr)
 	float posX = (float)luaL_checknumber(L, 2);
 	float posY = (float)luaL_checknumber(L, 3);
 	float posZ = (float)luaL_checknumber(L, 4);
+    float Orientation = luaL_optinteger(L, 5, 0);
 	if(!posX || !posY || !posZ)
 		return 0;
-	LocationVector vec(posX,posY,posZ);
+	LocationVector vec(posX,posY,posZ,Orientation);
 	static_cast<Player*>( ptr ) ->SafeTeleport(mapId,0,vec);
 	return 0;
 }
@@ -4295,6 +4297,28 @@ int luaUnit_IsGM( lua_State * L, Unit * ptr )
 	return 1;
 }
 
+int luaUnit_SetEquip( lua_State * L, Unit * ptr )
+{
+	CHECK_TYPEID( TYPEID_UNIT );
+	
+	uint32 equip;
+	ItemPrototype * ItemProvided;
+
+	for( uint8 i = 0; i < 3; ++i )
+	{
+		equip = luaL_checkint(L, i + 1);
+		if( equip > 0 )
+		{
+			ItemProvided = ItemPrototypeStorage.LookupEntry( equip );
+			if( ItemProvided != NULL )
+				ptr->SetUInt32Value( UNIT_VIRTUAL_ITEM_SLOT_ID + i, equip );
+		}
+		else
+			ptr->SetUInt32Value( UNIT_VIRTUAL_ITEM_SLOT_ID + i, 0 );
+	}
+	return 1;
+}
+
 /*
 int luaUnit_AddAuraVisual(lua_State * L, Unit * ptr)
 {
@@ -4375,9 +4399,10 @@ int luaGameObject_Teleport(lua_State * L, GameObject * ptr)
 	double posX = luaL_checknumber(L, 3);
 	double posY = luaL_checknumber(L, 4);
 	double posZ = luaL_checknumber(L, 5);
+	double Orientation = luaL_optinteger(L, 6, 0);
 	if(!mapId || !posX || !posY || !posZ)
 		return 0;
-	LocationVector vec((float)posX, (float)posY, (float)posZ);
+	LocationVector vec((float)posX, (float)posY, (float)posZ, (float)Orientation);
 	((Player*)target)->SafeTeleport((uint32)mapId, 0, vec);
 	return 0;
 }
@@ -4805,10 +4830,9 @@ int luaGameObject_CastSpell(lua_State * L, GameObject * ptr)
 	uint32 sp = luaL_checkint(L,1);
 	if( !ptr || !sp|| sp == 0) return 0;
 	
-	Spell * spp = SpellPool.PooledNew();
+	Spell * spp = new Spell(ptr,dbcSpell.LookupEntry(sp),true, NULL);
 	if (!spp)
 		return 0;
-	spp->Init(ptr,dbcSpell.LookupEntry(sp),true, NULL);
 	SpellCastTargets tar(ptr->GetGUID());
 	spp->prepare(&tar);
 	return 0;
@@ -4819,10 +4843,9 @@ int luaGameObject_FullCastSpell(lua_State * L, GameObject * ptr)
 	uint32 sp = luaL_checkint(L,1);
 	if( !ptr || !sp|| sp == 0) return 0;
 	
-	Spell * nspell = SpellPool.PooledNew();
+	Spell * nspell = new Spell(ptr,dbcSpell.LookupEntry(sp),false,NULL);
 	if (!nspell)
 		return 0;
-	nspell->Init(ptr,dbcSpell.LookupEntry(sp),false,NULL);
 	SpellCastTargets tar(ptr->GetGUID());
 	nspell->prepare(&tar);
 	return 0;
@@ -4834,10 +4857,9 @@ int luaGameObject_CastSpellOnTarget(lua_State * L, GameObject * ptr)
 	Unit * target = Lunar<Unit>::check(L,2);
 	if( !ptr || !sp || sp == 0) return 0;
 
-	Spell * nspell = SpellPool.PooledNew();
+	Spell * nspell = new Spell(ptr,dbcSpell.LookupEntry(sp),true,NULL);
 	if (nspell)
 		return 0;
-	nspell->Init(ptr,dbcSpell.LookupEntry(sp),true,NULL);
 	SpellCastTargets tar(target->GetGUID());
 	nspell->prepare(&tar);
 	return 0;
@@ -4848,10 +4870,9 @@ int luaGameObject_FullCastSpellOnTarget(lua_State * L, GameObject * ptr)
 	uint32 sp = luaL_checkint(L,1);
 	Unit * target = Lunar<Unit>::check(L,2);
 	if( !ptr || !sp || sp == 0) return 0;
-	Spell * nspell = SpellPool.PooledNew();
+	Spell * nspell = new Spell(ptr,dbcSpell.LookupEntry(sp),false,NULL);
 	if (!nspell)
 		return 0;
-	nspell->Init(ptr,dbcSpell.LookupEntry(sp),false,NULL);
 	SpellCastTargets tar(target->GetGUID());
 	nspell->prepare(&tar);
 	return 0;

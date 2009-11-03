@@ -307,21 +307,13 @@ public:
 				float posy = _unit->GetPositionY();
 				float posz = _unit->GetPositionZ();
 				float orientation = _unit->GetOrientation();
-				summon = _unit->GetMapMgr()->GetInterface()->SpawnCreature(CN_PURE_SPAWN_OF_HYDROSS, 
-					posx+6.93f, posy-11.25f, posz, orientation,
-					false, false, 0, 0);
+				summon = _unit->GetMapMgr()->GetInterface()->SpawnCreature(CN_PURE_SPAWN_OF_HYDROSS, posx+6.93f, posy-11.25f, posz, orientation, true, false, 0, 0);
 				if(summon) summon->SchoolImmunityList[SCHOOL_FROST] = 1;
-				summon = _unit->GetMapMgr()->GetInterface()->SpawnCreature(CN_PURE_SPAWN_OF_HYDROSS, 
-					posx-6.93f, posy+11.25f, posz, orientation,
-					false, false, 0, 0);
+				summon = _unit->GetMapMgr()->GetInterface()->SpawnCreature(CN_PURE_SPAWN_OF_HYDROSS, posx-6.93f, posy+11.25f, posz, orientation, true, false, 0, 0);
 				if(summon) summon->SchoolImmunityList[SCHOOL_FROST] = 1;
-				summon = _unit->GetMapMgr()->GetInterface()->SpawnCreature(CN_PURE_SPAWN_OF_HYDROSS, 
-					posx-12.57f, posy-4.72f, posz, orientation,
-					false, false, 0, 0);
+				summon = _unit->GetMapMgr()->GetInterface()->SpawnCreature(CN_PURE_SPAWN_OF_HYDROSS, posx-12.57f, posy-4.72f, posz, orientation, true, false, 0, 0);
 				if(summon) summon->SchoolImmunityList[SCHOOL_FROST] = 1;
-				summon = _unit->GetMapMgr()->GetInterface()->SpawnCreature(CN_PURE_SPAWN_OF_HYDROSS, 
-					posx+12.57f, posy+4.72f, posz, orientation,
-					false, false, 0, 0);
+				summon = _unit->GetMapMgr()->GetInterface()->SpawnCreature(CN_PURE_SPAWN_OF_HYDROSS, posx+12.57f, posy+4.72f, posz, orientation, true, false, 0, 0);
 				if(summon) summon->SchoolImmunityList[SCHOOL_FROST] = 1;
 			}
 		}

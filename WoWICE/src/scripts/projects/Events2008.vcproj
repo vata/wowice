@@ -68,7 +68,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="arcemu-world.lib"
+				AdditionalDependencies="wowice-world.lib"
 				OutputFile="../../../bin/debug/script_bin/WoWICEEventScripts.dll"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="..\..\..\bin\debug"
