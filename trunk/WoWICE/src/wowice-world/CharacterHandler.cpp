@@ -114,6 +114,8 @@ void WorldSession::CharacterEnumProc(QueryResult * result)
 		uint32 enchantment; // added in 2.4
 	};
 
+    uint32 start_time = getMSTime();
+
 	player_item items[20];
 	int8 slot;
 	int8 containerslot;
@@ -126,12 +128,20 @@ void WorldSession::CharacterEnumProc(QueryResult * result)
 	has_dk = false;
 	_side = -1; // side should be set on every enumeration for safety
 
+    uint32 numchar;
+
+    if( result )
+        numchar = result->GetRowCount();
+    else
+        numchar = 1;
+
 	// should be more than enough.. 200 bytes per char..
-	WorldPacket data(SMSG_CHAR_ENUM, (result ? result->GetRowCount() * 200 : 1));	
+	WorldPacket data(SMSG_CHAR_ENUM, numchar * 200 );	
 
 	// parse m_characters and build a mighty packet of
 	// characters to send to the client.
-	data << num;
+	data << uint8( num );
+
 	if( result )
 	{
 		uint64 guid;
@@ -143,6 +153,7 @@ void WorldSession::CharacterEnumProc(QueryResult * result)
 		do
 		{
 			fields = result->Fetch();
+
 			guid = fields[0].GetUInt64();
 			bytes2 = fields[6].GetUInt32();
 			Class = fields[3].GetUInt8();			
@@ -163,43 +174,37 @@ void WorldSession::CharacterEnumProc(QueryResult * result)
 		has_dk = has_dk || (Class == 6);
 
 			/* build character enum, w0000t :p */
-			data << guid;						// guid
+			data << uint64( guid );						// guid
 			data << fields[7].GetString();		// name
-			data << race;						// race
-			data << Class;						// class
-			data << fields[4].GetUInt8();		// gender
-			data << fields[5].GetUInt32();		// PLAYER_BYTES
-			data << uint8(bytes2 & 0xFF);		// facial hair
-			data << fields[1].GetUInt8();		// Level
-			data << fields[12].GetUInt32();		// zoneid
-			data << fields[11].GetUInt32();		// Mapid
-			data << fields[8].GetFloat();		// X
-			data << fields[9].GetFloat();		// Y
-			data << fields[10].GetFloat();		// Z
-			data << fields[18].GetUInt32();		// GuildID
+			data << uint8( race );						// race
+			data << uint8( Class );						// class
+			data << uint8( fields[4].GetUInt8() );		// gender
+			data << uint32( fields[5].GetUInt32() );		// PLAYER_BYTES
+			data << uint8( bytes2 & 0xFF );		// facial hair
+			data << uint8( fields[1].GetUInt8() );		// Level
+			data << uint32( fields[12].GetUInt32() );		// zoneid
+			data << uint32( fields[11].GetUInt32() );		// Mapid
+			data << float( fields[8].GetFloat() );		// X
+			data << float( fields[9].GetFloat() );		// Y
+			data << float( fields[10].GetFloat() );		// Z
+			data << uint32( fields[18].GetUInt32() );		// GuildID
 
 			banned = fields[13].GetUInt32();
-			if(banned && (banned<10 || banned > (uint32)UNIXTIME))
-				data << uint32(0x01A04040);
-			else
-			{
-			if(fields[16].GetUInt32() != 0)
-				data << uint32(0x00A04342);
-			else if(fields[15].GetUInt32() != 0)
-				data << (uint32)8704; // Dead (displaying as Ghost)
-			else
-				data << uint32(1);		// alive
+			
+            if( banned && (banned<10 || banned > uint32( UNIXTIME ) ))
+				data << uint32( 0x01A04040 );
+			else{
+                if( fields[16].GetUInt32() != 0 )       data << uint32( 0x00A04342 );
+                else if( fields[15].GetUInt32() != 0 )  data << uint32( 8704 ); // Dead (displaying as Ghost)
+			    else                                    data << uint32( 1 );	// alive
 			}
 
-			data << uint32(0); //Added in 3.0.2 - if 1, faction change at logon...
-
-			// data << fields[14].GetUInt8();		// Rest State
-
-			data << uint8(0); //3.2.0
+			data << uint32( 0 ); //Added in 3.0.2 - if 1, faction change at logon...
+			data << uint8( 0 ); //3.2.0
 
 			if( Class == WARLOCK || Class == HUNTER )
 			{
-				res = CharacterDatabase.Query("SELECT entry FROM playerpets WHERE ownerguid="I64FMTD" AND ( active MOD 10 ) =1", guid);
+				res = CharacterDatabase.Query("SELECT entry FROM playerpets WHERE ownerguid = %u AND MOD( active, 10 ) = 1;", GUID_LOPART( guid ) );
 
 				if(res)
 				{
@@ -207,15 +212,20 @@ void WorldSession::CharacterEnumProc(QueryResult * result)
 					delete res;
 				}
 				else
-					info= NULL;
+					info = NULL;
 			}
 			else
-				info= NULL;
+				info = NULL;
 
-			if(info)  //PET INFO uint32 displayid,	uint32 level,		 uint32 familyid
-				data << uint32(info->Male_DisplayID) << uint32(10) << uint32(info->Family);
-			else
-				data << uint32(0) << uint32(0) << uint32(0);
+            if(info){
+				data << uint32( info->Male_DisplayID );
+                data << uint32( 10 );
+                data << uint32( info->Family );
+            }else{
+				data << uint32( 0 ); 
+                data << uint32( 0 );
+                data << uint32( 0 );
+            }
 
 			res = CharacterDatabase.Query("SELECT containerslot, slot, entry, enchantments FROM playeritems WHERE ownerguid=%u", GUID_LOPART(guid));
 
@@ -238,14 +248,15 @@ void WorldSession::CharacterEnumProc(QueryResult * result)
 							{
 								items[slot].displayid = proto->DisplayInfoID;
 								items[slot].invtype = static_cast<uint8>( proto->InventoryType );
-								// weapon glows
+								
+                                // weapon glows
 								if( slot == EQUIPMENT_SLOT_MAINHAND || slot == EQUIPMENT_SLOT_OFFHAND )
 								{
 									// get enchant visual ID
 									const char * enchant_field = res->Fetch()[3].GetString();	
 									if( sscanf( enchant_field , "%u,0,0;" , (unsigned int *)&enchantid ) == 1 && enchantid > 0 )
 									{
-										enc = dbcEnchant.LookupEntry( enchantid );
+										enc = dbcEnchant.LookupEntryForced( enchantid );
 										if( enc != NULL )
 											items[slot].enchantment = enc->visual;
 										else
@@ -259,12 +270,10 @@ void WorldSession::CharacterEnumProc(QueryResult * result)
 				delete res;
 			}
 
-			for( i = 0; i < EQUIPMENT_SLOT_END + 1; ++i )
-			{
-				// 2.4.0 added a uint32 here, it's obviously one of the itemtemplate fields,
-				// we just gotta figure out which one :P
-//				data << items[i].displayid << items[i].invtype << uint32(0);
-				data << items[i].displayid << items[i].invtype << uint32(items[i].enchantment);
+            for( i = 0; i < EQUIPMENT_SLOT_END + 1; ++i ){
+                data << uint32( items[i].displayid );
+                data << uint8( items[i].invtype );
+                data << uint32( items[i].enchantment );
 			}
 
 			num++;
@@ -272,9 +281,9 @@ void WorldSession::CharacterEnumProc(QueryResult * result)
 		while( result->NextRow() );
 	}
 
-	data.put<uint8>(0, num);
+	data.put< uint8 >(0, num);
 
-	//Log.Debug("Character Enum", "Built in %u ms.", getMSTime() - start_time);
+	Log.Debug("Character Enum", "Built in %u ms.", getMSTime() - start_time);
 	SendPacket( &data );
 }
 
@@ -447,8 +456,8 @@ void WorldSession::HandleCharCreateOpcode( WorldPacket & recv_data )
 	pn->race = pNewChar->getRace();
 	pn->gender = pNewChar->getGender();
 	pn->acct = GetAccountId();
-	pn->m_Group=0;
-	pn->subGroup=0;
+	pn->m_Group= 0;
+	pn->subGroup= 0;
 	pn->m_loggedInPlayer= NULL;
 	pn->team = pNewChar->GetTeam ();
 	pn->guild= NULL;
@@ -655,20 +664,21 @@ void WorldSession::HandlePlayerLoginOpcode( WorldPacket & recv_data )
 void WorldSession::FullLogin(Player * plr)
 {
 	Log.Debug("WorldSession", "Fully loading player %u", plr->GetLowGUID());
-	SetPlayer(plr); 
+	
+    SetPlayer(plr); 
 	m_MoverWoWGuid.Init(plr->GetGUID());
 
 	MapMgr *mgr = sInstanceMgr.GetInstance(static_cast< Object* >( plr ));  
 	if (mgr && mgr->m_battleground)
 	{
-		/* Don't allow player to login into a bg that has ended or is full */
+		// Don't allow player to login into a bg that has ended or is full
 		if (mgr->m_battleground->HasEnded() == true ||
 			mgr->m_battleground->HasFreeSlots(plr->GetTeamInitial(), mgr->m_battleground->GetType() == false)) {
 				mgr = NULL;
 		}
 	}
 
-	/* Trying to log to an instance that doesn't exists anymore? */
+	// Trying to log to an instance that doesn't exists anymore?
 	if (!mgr)
 	{
 		if(!IS_INSTANCE(plr->m_bgEntryPointMap))
@@ -693,88 +703,94 @@ void WorldSession::FullLogin(Player * plr)
 	movement_packet[0] = m_MoverWoWGuid.GetNewGuidMask();
 	memcpy(&movement_packet[1], m_MoverWoWGuid.GetNewGuid(), m_MoverWoWGuid.GetNewGuidLen());
 
-	//VLack: send dungeon difficulty and MOTD, as seen in the 3.1.1 packet dump
-	WorldPacket datadd(MSG_SET_DUNGEON_DIFFICULTY, 20);
-	datadd << plr->iInstanceType;
-	datadd << uint32(0x01);
-	datadd << uint32(0x00);
-	SendPacket(&datadd);
+    // world preload
+    uint32 VMapId;
+    float VO;
+    float VX;
+    float VY;
+    float VZ;
 
-	WorldPacket datamo(SMSG_MOTD, 100);
-	datamo << uint32(0x04);
-	datamo << sWorld.GetMotd();
-	SendPacket(&datamo);
-
-	/* world preload */
-	packetSMSG_LOGIN_VERIFY_WORLD vwpck;
-	if (HasGMPermissions() && plr->m_FirstLogin && sWorld.gamemaster_startonGMIsland)
-	/* GMs should start on GM Island and be bound there - Confirmed by Euro WoW GM "We're bound to our starting location" */
+    // GMs should start on GM Island and be bound there
+	if ( HasGMPermissions() && plr->m_FirstLogin && sWorld.gamemaster_startonGMIsland )
 	{
-		vwpck.MapId = 1;
-		vwpck.O = 0;
-		vwpck.X = 16222.6f;
-		vwpck.Y = 16265.9f;
-		vwpck.Z = 14.2085f;
-		plr->m_position.x = 16222.6f;
-		plr->m_position.y = 16265.9f;
-		plr->m_position.z = 14.2085f;
-		plr->m_position.o = 0;
-		plr->m_mapId = 1;
-		plr->SetBindPoint(plr->GetPositionX(), plr->GetPositionY(), plr->GetPositionZ(), plr->GetMapId(), plr->GetZoneId());
+		VMapId = 1;
+		VO = 0;
+		VX = 16222.6f;
+		VY = 16265.9f;
+		VZ = 14.2085f;
+
+        plr->m_position.x = VX;
+		plr->m_position.y = VY;
+		plr->m_position.z = VZ;
+		plr->m_position.o = VO;
+		plr->m_mapId = VMapId;
+		
+        plr->SetBindPoint(plr->GetPositionX(), plr->GetPositionY(), plr->GetPositionZ(), plr->GetMapId(), plr->GetZoneId());
 	} 
 	else
 	{
-		vwpck.MapId = plr->GetMapId();
-		vwpck.O = plr->GetOrientation();
-		vwpck.X = plr->GetPositionX();
-		vwpck.Y = plr->GetPositionY();
-		vwpck.Z = plr->GetPositionZ();
+		VMapId = plr->GetMapId();
+		VO = plr->GetOrientation();
+		VX = plr->GetPositionX();
+		VY = plr->GetPositionY();
+		VZ = plr->GetPositionZ();
 	}
-		
-	OutPacket( SMSG_LOGIN_VERIFY_WORLD, sizeof(packetSMSG_LOGIN_VERIFY_WORLD), &vwpck );
 
+    plr->SendLoginVerifyWorld( VMapId, VX, VY, VZ, VO );
+
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////
 	// send voicechat state - active/inactive
-	/*
-	{SERVER} Packet: (0x03C7) UNKNOWN PacketSize = 2
-	|------------------------------------------------|----------------|
-	|00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F |0123456789ABCDEF|
-	|------------------------------------------------|----------------|
-	|02 01							               |..              |
-	-------------------------------------------------------------------
-	*/
+    //
+	// {SERVER} Packet: (0x03C7) UNKNOWN PacketSize = 2
+	// |------------------------------------------------|----------------|
+	// |00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F |0123456789ABCDEF|
+	// |------------------------------------------------|----------------|
+	// |02 01							                |..              |
+	// -------------------------------------------------------------------
+    //
+    //
+    // Old packetdump is OLD. This is probably from 2.2.0 (that was the patch when it was added to wow)!
+    //
+	//////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-#ifndef USING_BIG_ENDIAN
 	StackWorldPacket<20> datab(SMSG_FEATURE_SYSTEM_STATUS);
-#else
-	WorldPacket datab(SMSG_FEATURE_SYSTEM_STATUS, 20);
-#endif
+
 
 #ifdef VOICE_CHAT
 	datab.Initialize(SMSG_FEATURE_SYSTEM_STATUS);
-	datab << uint8(2) << uint8(sVoiceChatHandler.CanUseVoiceChat() ? 1 : 0);
+	
+    datab << uint8(2);
+
+    if( sVoiceChatHandler.CanUseVoiceChat() )
+        datab << uint8( 1 );
+    else
+        datab << uint8( 0 );
+
 	SendPacket(&datab);
 #else
+
 	datab.Initialize(SMSG_FEATURE_SYSTEM_STATUS);
-	datab << uint8(2) << uint8(0);
-	SendPacket(&datab); //VLack: send this f.ckin' packet, will ya'?
+
+	datab << uint8( 2 );
+    datab << uint8( 0 );
+
+	SendPacket(&datab);
+
 #endif
 
-	//VLack: Mangos sends this packet on 3.1:
 	WorldPacket dataldm(SMSG_LEARNED_DANCE_MOVES, 4+4);
-	dataldm << uint32(0);
-	dataldm << uint32(0);
+
+	dataldm << uint32( 0 );
+	dataldm << uint32( 0 );
+
 	SendPacket(&dataldm);
 
 	plr->UpdateAttackSpeed();
-	/*if(plr->getLevel()>PLAYER_LEVEL_CAP_70)
-		plr->SetUInt32Value(UNIT_FIELD_LEVEL,PLAYER_LEVEL_CAP_70);*/
-
-	// enable trigger cheat by default
-	// plr->TriggerpassCheat = HasGMPermissions();
 
 	// Make sure our name exists (for premade system)
 	PlayerInfo * info = objmgr.GetPlayerInfo(plr->GetLowGUID());
+
 	if(info == NULL)
 	{
 		info = new PlayerInfo;
@@ -827,16 +843,20 @@ void WorldSession::FullLogin(Player * plr)
 			float c_tposx = pTrans->GetPositionX() + plr->m_TransporterX;
 			float c_tposy = pTrans->GetPositionY() + plr->m_TransporterY;
 			float c_tposz = pTrans->GetPositionZ() + plr->m_TransporterZ;
-			if(plr->GetMapId() != pTrans->GetMapId())	   // loaded wrong map
+			
+            if(plr->GetMapId() != pTrans->GetMapId())	   // loaded wrong map
 			{
 				plr->SetMapId(pTrans->GetMapId());
-#ifndef USING_BIG_ENDIAN
-				StackWorldPacket<20> dataw(SMSG_NEW_WORLD);
-#else
-				WorldPacket dataw(SMSG_NEW_WORLD, 20);
-#endif
-				dataw << pTrans->GetMapId() << c_tposx << c_tposy << c_tposz << plr->GetOrientation();
-				SendPacket(&dataw);
+
+                StackWorldPacket<20> dataw(SMSG_NEW_WORLD);
+				
+                dataw << pTrans->GetMapId();
+                dataw << c_tposx;
+                dataw << c_tposy;
+                dataw << c_tposz;
+                dataw << plr->GetOrientation();
+
+                SendPacket(&dataw);
 
 				// shit is sent in worldport ack.
 				enter_world = false;
@@ -856,10 +876,7 @@ void WorldSession::FullLogin(Player * plr)
 	{
 		uint32 introid = plr->info->introid;
 
-#ifdef USING_BIG_ENDIAN
-		swap32(&introid);
-#endif
-		OutPacket(SMSG_TRIGGER_CINEMATIC, 4, &introid);
+		OutPacket( SMSG_TRIGGER_CINEMATIC, 4, &introid);
 
 		if ( sWorld.m_AdditionalFun ) //cebernic: tells people who 's newbie :D
 		{
@@ -873,25 +890,27 @@ void WorldSession::FullLogin(Player * plr)
 	sLog.outDetail( "WORLD: Created new player for existing players (%s)", plr->GetName() );
 
 	// Login time, will be used for played time calc
-	plr->m_playedtime[2] = (uint32)UNIXTIME;
+	plr->m_playedtime[2] = uint32( UNIXTIME );
 
 	//Issue a message telling all guild members that this player has signed on
-	if(plr->IsInGuild())
+	if( plr->IsInGuild() )
 	{
 		Guild *pGuild = plr->m_playerInfo->guild;
 		if(pGuild)
 		{
-			WorldPacket data(50);
-			data.Initialize(SMSG_GUILD_EVENT);
-			data << uint8(GUILD_EVENT_MOTD);
-			data << uint8(0x01);
-			if(pGuild->GetMOTD())
+			WorldPacket data(SMSG_GUILD_EVENT, 50 );
+			
+			data << uint8( GUILD_EVENT_MOTD );
+			data << uint8( 1 );
+
+			if( pGuild->GetMOTD() )
 				data << pGuild->GetMOTD();
 			else
-				data << uint8(0);
+				data << uint8( 0 );
+
 			SendPacket(&data);
 
-			pGuild->LogGuildEvent(GUILD_EVENT_HASCOMEONLINE, 1, plr->GetName());
+			pGuild->LogGuildEvent( GUILD_EVENT_HASCOMEONLINE, 1, plr->GetName());
 		}
 	}
 
@@ -899,6 +918,9 @@ void WorldSession::FullLogin(Player * plr)
 	_player->Social_TellFriendsOnline();
 	// send friend list (for ignores)
 	_player->Social_SendFriendList(7);
+
+    plr->SendDungeonDifficulty();
+    plr->SendRaidDifficulty();
 
 #ifndef GM_TICKET_MY_MASTER_COMPATIBLE
 	GM_Ticket * ticket = objmgr.GetGMTicketByPlayer(_player->GetGUID());
@@ -937,15 +959,18 @@ void WorldSession::FullLogin(Player * plr)
 	// Shows Server uptime
 	_player->BroadcastMessage("Server Uptime: |r%s", sWorld.GetUptimeString().c_str());
 
+    // server Message Of The Day
+    SendMOTD();
+
 	//Set current RestState
 	if( plr->m_isResting)
 		// We are resting at an inn , turn on Zzz
 		plr->ApplyPlayerRestState(true);
 
 	//Calculate rest bonus if there is time between lastlogoff and now
-	if( plr->m_timeLogoff > 0 && plr->GetUInt32Value(UNIT_FIELD_LEVEL) < plr->GetUInt32Value(PLAYER_FIELD_MAX_LEVEL))	// if timelogoff = 0 then it's the first login
+    if( plr->m_timeLogoff > 0 && plr->getLevel() < plr->GetMaxLevel() )	// if timelogoff = 0 then it's the first login
 	{
-		uint32 currenttime = (uint32)UNIXTIME;
+		uint32 currenttime = uint32( UNIXTIME );
 		uint32 timediff = currenttime - plr->m_timeLogoff;
 
 		//Calculate rest bonus
@@ -963,8 +988,6 @@ void WorldSession::FullLogin(Player * plr)
 
 	objmgr.AddPlayer(_player);
 
-	if(info->m_Group == NULL)
-		plr->SendDungeonDifficulty();
 }
 
 bool ChatHandler::HandleRenameCommand(const char * args, WorldSession * m_session)

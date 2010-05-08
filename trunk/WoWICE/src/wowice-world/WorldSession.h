@@ -31,6 +31,28 @@ class MovementInfo;
 struct TrainerSpell;
 
 //#define SESSION_CAP 5
+#define CHECK_INWORLD_RETURN if(_player == NULL || !_player->IsInWorld()) { return; }
+
+/////////////////////////////////////////
+// Does nothing on release builds
+////////////////////////////////////////
+#ifdef _DEBUG
+#define CHECK_INWORLD_ASSERT Arcemu::Util::ARCEMU_ASSERT(   _player || _player->IsInWorld())
+#else
+#define CHECK_INWORLD_ASSERT CHECK_INWORLD_RETURN
+#endif
+
+#define CHECK_GUID_EXISTS(guidx) if(_player == NULL || _player->GetMapMgr() == NULL || _player->GetMapMgr()->GetUnit((guidx)) == NULL) { return; }
+#define CHECK_PACKET_SIZE(pckp, ssize) if(ssize && pckp.size() < ssize) { Disconnect(); return; }
+
+/**********************************************************************************
+* Worldsocket related
+**********************************************************************************/
+#define WORLDSOCKET_TIMEOUT		 120
+#define PLAYER_LOGOUT_DELAY (20*1000) // 20 seconds should be more than enough to gank ya.
+
+#define NOTIFICATION_MESSAGE_NO_PERMISSION "You do not have permission to perform that function."
+//#define CHECK_PACKET_SIZE(x, y) if(y > 0 && x.size() < y) { _socket->Disconnect(); return; }
 
 // MovementFlags Contribution by Tenshi
 enum MovementFlags
@@ -166,13 +188,6 @@ public:
 	void write(WorldPacket & data);
 };
 
-#define CHECK_INWORLD_RETURN if(_player == NULL || !_player->IsInWorld()) { return; }
-#define CHECK_GUID_EXISTS(guidx) if(_player == NULL || _player->GetMapMgr() == NULL || _player->GetMapMgr()->GetUnit((guidx)) == NULL) { return; }
-#define CHECK_PACKET_SIZE(pckp, ssize) if(ssize && pckp.size() < ssize) { Disconnect(); return; }
-
-#define NOTIFICATION_MESSAGE_NO_PERMISSION "You do not have permission to perform that function."
-//#define CHECK_PACKET_SIZE(x, y) if(y > 0 && x.size() < y) { _socket->Disconnect(); return; }
-
 void EncodeHex(const char* source, char* dest, uint32 size);
 void DecodeHex(const char* source, char* dest, uint32 size);
 
@@ -187,19 +202,19 @@ public:
 	~WorldSession();
 
 	Player * m_loggingInPlayer;
-	WoWICE_INLINE void SendPacket(WorldPacket* packet)
+	void SendPacket(WorldPacket* packet)
 	{
 		if(_socket && _socket->IsConnected())
 			_socket->SendPacket(packet);
 	}
 
-	WoWICE_INLINE void SendPacket(StackBufferBase * packet)
+	void SendPacket(StackBufferBase * packet)
 	{
 		if(_socket && _socket->IsConnected())
 			_socket->SendPacket(packet);
 	}
 
-	WoWICE_INLINE void OutPacket(uint16 opcode)
+	void OutPacket(uint16 opcode)
 	{
 		if(_socket && _socket->IsConnected())
 			_socket->OutPacket(opcode, 0, NULL);
@@ -212,8 +227,8 @@ public:
 	uint32 m_currMsTime;
 	uint32 m_lastPing;
 
-	WoWICE_INLINE uint32 GetAccountId() const { return _accountId; }
-	WoWICE_INLINE Player* GetPlayer() { return _player; }
+	uint32 GetAccountId() const { return _accountId; }
+	Player* GetPlayer() { return _player; }
 	
 	/* Acct flags */
 	void SetAccountFlags(uint32 flags) { _accountFlags = flags; }
@@ -222,10 +237,10 @@ public:
 	/* GM Permission System */
 	void LoadSecurity(std::string securitystring);
 	void SetSecurity(std::string securitystring);
-	WoWICE_INLINE char* GetPermissions() { return permissions; }
-	WoWICE_INLINE int GetPermissionCount() { return permissioncount; }
-	WoWICE_INLINE bool HasPermissions() { return (permissioncount > 0) ? true : false; }
-	WoWICE_INLINE bool HasGMPermissions()
+	char* GetPermissions() { return permissions; }
+	int GetPermissionCount() { return permissioncount; }
+	bool HasPermissions() { return (permissioncount > 0) ? true : false; }
+	bool HasGMPermissions()
 	{
 		if(!permissioncount)
 			return false;
@@ -236,15 +251,15 @@ public:
 	bool CanUseCommand(char cmdstr);
 
 	
-	WoWICE_INLINE void SetSocket(WorldSocket *sock)
+	void SetSocket(WorldSocket *sock)
 	{
 		_socket = sock;
 	}
-	WoWICE_INLINE void SetPlayer(Player *plr) { _player = plr; }
+	void SetPlayer(Player *plr) { _player = plr; }
 	
-	WoWICE_INLINE void SetAccountData(uint32 index, char* data, bool initial,uint32 sz)
+	void SetAccountData(uint32 index, char* data, bool initial,uint32 sz)
 	{
-		ASSERT(index < 8);
+		Wowice::Util::WoWICE_ASSERT(   index < 8);
 		if(sAccountData[index].data)
 			delete [] sAccountData[index].data;
 		sAccountData[index].data = data;
@@ -255,9 +270,9 @@ public:
 			sAccountData[index].bIsDirty = false;
 	}
 	
-	WoWICE_INLINE AccountDataEntry* GetAccountData(uint32 index)
+	AccountDataEntry* GetAccountData(uint32 index)
 	{
-		ASSERT(index < 8);
+		Wowice::Util::WoWICE_ASSERT(   index < 8);
 		return &sAccountData[index];
 	}
 
@@ -269,7 +284,7 @@ public:
 
 	void LogoutPlayer(bool Save);
 
-	WoWICE_INLINE void QueuePacket(WorldPacket* packet)
+	void QueuePacket(WorldPacket* packet)
 	{
 		m_lastPing = (uint32)UNIXTIME;
 		_recvQueue.Push(packet);
@@ -281,7 +296,7 @@ public:
 			_socket->OutPacket(opcode, len, data);
 	}
 
-	WoWICE_INLINE WorldSocket* GetSocket() { return _socket; }
+	WorldSocket* GetSocket() { return _socket; }
 	
 	void Disconnect()
 	{
@@ -289,28 +304,26 @@ public:
 			_socket->Disconnect();
 	}
 
-	int __fastcall Update(uint32 InstanceID);
+	int  Update(uint32 InstanceID);
 
-	void SendItemPushResult(Item * pItem, bool Created, bool Received, bool SendToSet, bool NewItem, uint8 DestBagSlot, uint32 DestSlot, uint32 AddCount);
 	void SendBuyFailed(uint64 guid, uint32 itemid, uint8 error);
 	void SendSellItem(uint64 vendorguid, uint64 itemid, uint8 error);
 	void SendNotification(const char *message, ...);
 	void SendAuctionPlaceBidResultPacket(uint32 itemId, uint32 error);
-
     void SendRefundInfo( uint64 GUID );
 
-	WoWICE_INLINE void SetInstance(uint32 Instance) { instanceId = Instance; }
-	WoWICE_INLINE uint32 GetLatency() { return _latency; }
-	WoWICE_INLINE string GetAccountName() { return _accountName; }
-	WoWICE_INLINE const char * GetAccountNameS() { return _accountName.c_str(); }
+	void SetInstance(uint32 Instance) { instanceId = Instance; }
+	uint32 GetLatency() { return _latency; }
+	string GetAccountName() { return _accountName; }
+	const char * GetAccountNameS() { return _accountName.c_str(); }
 	const char * LocalizedWorldSrv(uint32 id);
 	const char * LocalizedMapName(uint32 id);
 	const char * LocalizedBroadCast(uint32 id);
 
-	WoWICE_INLINE uint32 GetClientBuild() { return client_build; }
-	WoWICE_INLINE void SetClientBuild(uint32 build) { client_build = build; }
+	uint32 GetClientBuild() { return client_build; }
+	void SetClientBuild(uint32 build) { client_build = build; }
 	bool bDeleted;
-	WoWICE_INLINE uint32 GetInstance() { return instanceId; }
+	uint32 GetInstance() { return instanceId; }
 	Mutex deleteMutex;
 	void _HandleAreaTriggerOpcode(uint32 id);//real handle
 	int32 m_moveDelayTime;
@@ -318,10 +331,10 @@ public:
 
 	void CharacterEnumProc(QueryResult * result);
 	void LoadAccountDataProc(QueryResult * result);
-	WoWICE_INLINE bool IsLoggingOut() { return _loggingOut; }
+	bool IsLoggingOut() { return _loggingOut; }
 
 	// Vehicles
-	WoWICE_INLINE void SetActiveMover(WoWGuid guid)
+	void SetActiveMover(WoWGuid guid)
 	{
 		m_MoverWoWGuid = guid;
 		movement_packet[0] = m_MoverWoWGuid.GetNewGuidMask();
@@ -523,8 +536,9 @@ protected:
 	/// Skill opcodes (SkillHandler.spp)
 	//void HandleSkillLevelUpOpcode(WorldPacket& recvPacket);
 	void HandleLearnTalentOpcode(WorldPacket& recvPacket);
+    void HandleLearnMultipleTalentsOpcode( WorldPacket& recvPacket);
 	void HandleUnlearnTalents( WorldPacket & recv_data );
-
+    
 	/// Quest opcodes (QuestHandler.cpp)
 	void HandleQuestgiverStatusQueryOpcode(WorldPacket& recvPacket);
 	void HandleQuestgiverHelloOpcode(WorldPacket& recvPacket);
@@ -747,6 +761,7 @@ public:
 	void SendSpiritHealerRequest(Creature* pCreature);
 	void SendAccountDataTimes(uint32 mask);
 	void FullLogin(Player * plr);
+    void SendMOTD();
 
 	float m_wLevel; // Level of water the player is currently in
 	bool m_bIsWLevelSet; // Does the m_wLevel variable contain up-to-date information about water level?
@@ -785,7 +800,7 @@ private:
 	uint32 instanceId;
 	uint8 _updatecount;
 public:
-	WoWICE_INLINE MovementInfo* GetMovementInfo() { return &movement_info; }
+	MovementInfo* GetMovementInfo() { return &movement_info; }
 	static void InitPacketHandlerTable();
 	uint32 floodLines;
 	time_t floodTime;

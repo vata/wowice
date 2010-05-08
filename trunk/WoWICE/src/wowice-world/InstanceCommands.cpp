@@ -23,10 +23,23 @@ const char * GetDifficultyString(uint8 difficulty)
 		return "normal";
 	case MODE_HEROIC:
 		return "heroic";
-	case MODE_EPIC:
-		return "epic";
 	default:
 		return "unknown";
+	}
+}
+
+const char *GetRaidDifficultyString( uint8 diff ){
+	switch( diff ){
+		case MODE_NORMAL_10MEN:
+			return "normal 10men";
+		case MODE_NORMAL_25MEN:
+			return "normal 25men";
+		case MODE_HEROIC_10MEN:
+			return "heroic 10men";
+		case MODE_HEROIC_25MEN:
+			return "heroic 25men";
+		default:
+			return "unknown";
 	}
 }
 
@@ -42,7 +55,7 @@ const char * GetMapTypeString(uint8 type)
 		return "Non-Raid";
 	case INSTANCE_BATTLEGROUND:
 		return "PvP";
-	case INSTANCE_ARENA:
+	case INSTANCE_MULTIMODE:
 		return "MultiMode";
 	default:
 		return "Unknown";
@@ -53,7 +66,7 @@ bool ChatHandler::HandleResetAllInstancesCommand(const char* args, WorldSession 
 {
 
 	Player * plr;
-	if(strlen(args)==0)
+	if(strlen(args)== 0)
 		plr = getSelectedChar(m_session, true);
 	else
 		plr = objmgr.GetPlayer(args, false);;
@@ -121,7 +134,7 @@ bool ChatHandler::HandleResetInstanceCommand(const char* args, WorldSession *m_s
 		{
 			bool foundSomething = false;
 			plr->getPlayerInfo()->savedInstanceIdsLock.Acquire();
-			for(int difficulty=0; difficulty<NUM_INSTANCE_MODES; difficulty++)
+			for(int difficulty= 0; difficulty<NUM_INSTANCE_MODES; difficulty++)
 			{
 				PlayerInstanceMap::iterator itr = plr->getPlayerInfo()->savedInstanceIds[difficulty].find(instance->m_mapId);
 				if(itr == plr->getPlayerInfo()->savedInstanceIds[difficulty].end() || (*itr).second != instance->m_instanceId)
@@ -252,10 +265,16 @@ bool ChatHandler::HandleGetInstanceInfoCommand(const char* args, WorldSession *m
 	if(instance->m_mapInfo != NULL)
 	{
 		ss << "Type: " << MSG_COLOR_CYAN << GetMapTypeString( static_cast<uint8>( instance->m_mapInfo->type )) << "|r";
-		if(instance->m_mapInfo->type == INSTANCE_ARENA)
+		
+		if(instance->m_mapInfo->type == INSTANCE_MULTIMODE)
 		{
 			ss << " (" << MSG_COLOR_CYAN << GetDifficultyString( static_cast<uint8>( instance->m_difficulty )) << "|r)";
 		}
+
+		if( instance->m_mapInfo->type == INSTANCE_RAID ){
+			ss << " (" << MSG_COLOR_CYAN << GetRaidDifficultyString( static_cast<uint8>( instance->m_difficulty )) << "|r)";
+		}
+
 		ss << "\n";
 	}
 	ss << "Created: " << MSG_COLOR_CYAN << ConvertTimeStampToDataTime((uint32)instance->m_creation) << "|r\n";
@@ -276,27 +295,10 @@ bool ChatHandler::HandleGetInstanceInfoCommand(const char* args, WorldSession *m
 	else
 	{
 		ss << "Status: " << MSG_COLOR_GREEN << "In use|r (" << MSG_COLOR_GREEN << (uint32)instance->m_mapMgr->GetPlayerCount() << MSG_COLOR_CYAN << " players inside|r)\n";
-		//ss << "Playerlist:\n";
-		//int cnt = 0;
-		////TODO: Implement lock...
-		//for(PlayerStorageMap::iterator itr = instance->m_mapMgr->m_PlayerStorage.begin(); itr != instance->m_mapMgr->m_PlayerStorage.end(); ++itr)
-		//{
-		//	if(cnt > 0)
-		//		ss << ", ";
-		//	if((*itr).second->GetSession()->GetPermissionCount() > 0)
-		//		ss << MSG_COLOR_LIGHTRED << (*itr).second->GetName() << "|r";
-		//	else
-		//		ss << MSG_COLOR_CYAN << (*itr).second->GetName() << "|r";
 
-		//	cnt++;
-		//	if(cnt >= 5)
-		//	{
-		//		cnt = 0;
-		//		ss << "\n";
-		//	}
-		//}
 	}
 	SendMultilineMessage(m_session, ss.str().c_str());
+
 	return true;
 }
 
@@ -354,7 +356,7 @@ bool ChatHandler::HandleShowInstancesCommand(const char* args, WorldSession* m_s
 	std::stringstream ss;
 	ss << "Show persistent instances of " << MSG_COLOR_CYAN << plr->GetName() << "|r\n";
 	plr->getPlayerInfo()->savedInstanceIdsLock.Acquire();
-	for(int difficulty=0; difficulty<NUM_INSTANCE_MODES; difficulty++)
+	for(int difficulty= 0; difficulty<NUM_INSTANCE_MODES; difficulty++)
 	{
 		for(PlayerInstanceMap::iterator itr = plr->getPlayerInfo()->savedInstanceIds[difficulty].begin(); itr != plr->getPlayerInfo()->savedInstanceIds[difficulty].end(); ++itr)
 		{
@@ -369,7 +371,7 @@ bool ChatHandler::HandleShowInstancesCommand(const char* args, WorldSession* m_s
 			else
 			{
 				ss << " [" << GetMapTypeString( static_cast<uint8>( pInstance->m_mapInfo->type )) << "]";
-				if(pInstance->m_mapInfo->type == INSTANCE_ARENA)
+				if(pInstance->m_mapInfo->type == INSTANCE_MULTIMODE)
 				{
 					ss << " [" << GetDifficultyString( static_cast<uint8>( pInstance->m_difficulty )) << "]";
 				}

@@ -59,8 +59,8 @@ public:
 		oldguid = 0;
 		guidmask = 0;
 
-		*((uint32*)guidfields)=0;
-		*((uint32*)&guidfields[4])=0;
+		*((uint32*)guidfields)= 0;
+		*((uint32*)&guidfields[4])= 0;
 		compiled = false;
 		fieldcount = 0;
 	}
@@ -137,20 +137,15 @@ private:
 
 	void _CompileByOld()
 	{
-#ifdef USING_BIG_ENDIAN
-		uint64 t = swap64(oldguid);
-#endif
 		ASSERT(!compiled);
 
 		fieldcount = 0;
 
-		for(uint32 x=0;x<8;x++)
+		for(uint32 x= 0;x<8;x++)
 		{
-#ifdef USING_BIG_ENDIAN
-			uint8 p = ((uint8*)&t)[x];
-#else
+
 			uint8 p =((uint8*)&oldguid)[x];
-#endif
+
 			if(p)
 			{
 				guidfields[fieldcount++]=p;

@@ -35,6 +35,10 @@ AH_TEMPLATE([NO_DBLAYER_MYSQL], Define this if you want to disable mysql support
 AH_TEMPLATE([ENABLE_DATABASE_POSTGRES], Define this if you want postgres support.)
 AH_TEMPLATE([ENABLE_DATABASE_SQLITE], Define this if you want sqlite support.)
 
+# Reset 
+CFLAGS=""
+CXXFLAGS=""
+
 # Default prefix
 AC_PREFIX_DEFAULT(`pwd`)
 test "$prefix" = "NONE" && prefix=`pwd`
@@ -148,9 +152,9 @@ AC_ARG_ENABLE(gcov,
 )
 
 AC_ARG_ENABLE(debug,
-     AC_HELP_STRING([--disable-debug],[disable debug]),
-	 [enable_debug=$enableval],
-	 [enable_debug=yes]
+     AC_HELP_STRING([--enable-debug],[enable debug]),
+	 [enable_debug=yes],
+	 [enable_debug=no]
 )
 
 if test "x$enable_debug" = "xyes" ; then
@@ -160,7 +164,7 @@ fi
 
 AC_ARG_ENABLE(optimize,
      AC_HELP_STRING([--enable-optimize],[enable code optimization]),
-	 [enable_optimize=$enableval],
+	 [enable_optimize=yes],
 	 [enable_optimize=no]
 )
 
@@ -277,7 +281,7 @@ AC_CONFIG_FILES([
    src/scripts/src/InstanceScripts/Makefile
    src/scripts/src/ServerStatusPlugin/Makefile
    src/scripts/src/SpellHandlers/Makefile
-   src/scripts/src/LUAScripting/Makefile
+   src/scripts/src/LUAEngine/Makefile
    src/scripts/src/QuestScripts/Makefile
    src/scripts/src/EventScripts/Makefile
    src/collision/Makefile

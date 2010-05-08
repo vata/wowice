@@ -203,20 +203,20 @@ enum GuildRankRights
 
 enum GuildEvent
 {
-	GUILD_EVENT_PROMOTION			=0x0,
-	GUILD_EVENT_DEMOTION			=0x1,
-	GUILD_EVENT_MOTD				=0x2,
-	GUILD_EVENT_JOINED				=0x3,
-	GUILD_EVENT_LEFT				=0x4,
-	GUILD_EVENT_REMOVED				=0x5,
-	GUILD_EVENT_LEADER_IS			=0x6,
-	GUILD_EVENT_LEADER_CHANGED		=0x7,
-	GUILD_EVENT_DISBANDED			=0x8,
-	GUILD_EVENT_TABARDCHANGE		=0x9,
-	GUILD_EVENT_UNK1				=0xA,
-	GUILD_EVENT_UNK2				=0xB,
-	GUILD_EVENT_HASCOMEONLINE		=0xC,
-	GUILD_EVENT_HASGONEOFFLINE		=0xD,
+	GUILD_EVENT_PROMOTION			= 0x0,
+	GUILD_EVENT_DEMOTION			= 0x1,
+	GUILD_EVENT_MOTD				= 0x2,
+	GUILD_EVENT_JOINED				= 0x3,
+	GUILD_EVENT_LEFT				= 0x4,
+	GUILD_EVENT_REMOVED				= 0x5,
+	GUILD_EVENT_LEADER_IS			= 0x6,
+	GUILD_EVENT_LEADER_CHANGED		= 0x7,
+	GUILD_EVENT_DISBANDED			= 0x8,
+	GUILD_EVENT_TABARDCHANGE		= 0x9,
+	GUILD_EVENT_UNK1				= 0xA,
+	GUILD_EVENT_UNK2				= 0xB,
+	GUILD_EVENT_HASCOMEONLINE		= 0xC,
+	GUILD_EVENT_HASGONEOFFLINE		= 0xD,
 	GUILD_EVENT_BANKTABBOUGHT		= 0xF,
 	GUILD_EVENT_SETNEWBALANCE		= 0x11,
 	GUILD_EVENT_TABINFO				= 0x13,
@@ -237,6 +237,7 @@ enum GuildBankLogEvents
 	GUILD_BANK_LOG_EVENT_WITHDRAW_ITEM	= 2,
 	GUILD_BANK_LOG_EVENT_DEPOSIT_MONEY	= 4,
 	GUILD_BANK_LOG_EVENT_WITHDRAW_MONEY	= 5,
+	GUILD_BANK_LOG_EVENT_REPAIR         = 6,
 };
 
 #define ITEM_ENTRY_GUILD_CHARTER 5863
@@ -282,6 +283,7 @@ struct SERVER_DECL GuildMember
 	void OnItemWithdraw(uint32 tabid);
 	
 	uint32 CalculateAvailableAmount();
+	bool RepairItem(uint32 cost);
 	void OnMoneyWithdraw(uint32 amt);
 };
 
@@ -472,6 +474,10 @@ public:
 	/** Withdraws money from the guild bank, usable by members with that permission.
 	 */
 	void WithdrawMoney(WorldSession * pClient, uint32 uAmount);
+
+	/** Decrease the guild balance of uAmount
+	 */
+	void SpendMoney(uint32 uAmount);
 
 	/** Retrieves a guild rank for editing
 	 */

@@ -16,6 +16,8 @@
 #ifndef __UPDATEMASK_H
 #define __UPDATEMASK_H
 
+#include "WUtil.h"
+
 class UpdateMask
 {
 	uint32 *mUpdateMask;
@@ -34,21 +36,21 @@ public:
 
 	void SetBit( const uint32 index )
 	{
-		ASSERT(index < mCount);
+		Wowice::Util::WoWICE_ASSERT(   index < mCount);
 		( (uint8 *)mUpdateMask )[ index >> 3 ] |= 1 << ( index & 0x7 );
 		// ( (uint8 *)mUpdateMask )[ index / 8 ] |= 1 * pow( 2, index % 8 );
 	}
 
 	void UnsetBit( const uint32 index )
 	{
-		ASSERT(index < mCount);
+		Wowice::Util::WoWICE_ASSERT(   index < mCount);
 		( (uint8 *)mUpdateMask )[ index >> 3 ] &= (0xff ^ (1 <<  ( index & 0x7 ) ) );
 		// ( (uint8 *)mUpdateMask )[ index / 8 ] &= 255 - ( 1 * pow( 2, index % 8 ) ) );
 	}
 
 	bool GetBit( const uint32 index ) const
 	{
-		ASSERT(index < mCount);
+		Wowice::Util::WoWICE_ASSERT(   index < mCount);
 		return ( ( (uint8 *)mUpdateMask)[ index >> 3 ] & ( 1 << ( index & 0x7 ) )) != 0;
 		//actually int->bool conversion is not needed here
 	}
@@ -98,21 +100,21 @@ public:
 
 	void operator &= ( const UpdateMask& mask )
 	{
-		ASSERT(mask.mCount <= mCount);
+		Wowice::Util::WoWICE_ASSERT(   mask.mCount <= mCount);
 		for(uint32 i = 0; i < mBlocks; i++)
 			mUpdateMask[i] &= mask.mUpdateMask[i];
 	}
 
 	void operator |= ( const UpdateMask& mask )
 	{
-		ASSERT(mask.mCount <= mCount);
+		Wowice::Util::WoWICE_ASSERT(   mask.mCount <= mCount);
 		for(uint32 i = 0; i < mBlocks; i++)
 			mUpdateMask[i] |= mask.mUpdateMask[i];
 	}
 
 	UpdateMask operator & ( const UpdateMask& mask ) const
 	{
-		ASSERT(mask.mCount <= mCount);
+		Wowice::Util::WoWICE_ASSERT(   mask.mCount <= mCount);
 
 		UpdateMask newmask;
 		newmask = *this;
@@ -123,7 +125,7 @@ public:
 
 	UpdateMask operator | ( const UpdateMask& mask ) const
 	{
-		ASSERT(mask.mCount <= mCount);
+		Wowice::Util::WoWICE_ASSERT(   mask.mCount <= mCount);
 
 		UpdateMask newmask;
 		newmask = *this;

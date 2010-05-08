@@ -27,6 +27,9 @@
 #define OBJECT_FIELD_PADDING                      0x0005 // Size: 1, Type: INT, Flags: NONE
 #define OBJECT_END                                0x0006
 
+#define LOWGUID                                   OBJECT_FIELD_GUID
+#define HIGHGUID                                  ( OBJECT_FIELD_GUID + 1 )
+
 //ItemFields
 #define ITEM_FIELD_OWNER                          OBJECT_END + 0x0000 // Size: 2, Type: LONG, Flags: PUBLIC
 #define ITEM_FIELD_CONTAINED                      OBJECT_END + 0x0002 // Size: 2, Type: LONG, Flags: PUBLIC

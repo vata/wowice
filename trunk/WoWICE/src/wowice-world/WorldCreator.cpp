@@ -173,28 +173,95 @@ uint32 InstanceMgr::PreTeleport(uint32 mapid, Player * plr, uint32 instanceid)
 	}
 
 	// shouldn't happen
-	if(inf->type==INSTANCE_BATTLEGROUND)
+	if(inf->type == INSTANCE_BATTLEGROUND)
 		return INSTANCE_ABORT_NOT_FOUND;
 
 	pGroup = plr->GetGroup();
 
 	// players without groups cannot enter raids and heroic instances
-	if(pGroup == NULL && (inf->type == INSTANCE_RAID || (inf->type == INSTANCE_ARENA && plr->iInstanceType >= MODE_HEROIC)) && !plr->TriggerpassCheat)
+	
+	if( pGroup == NULL &&
+		inf->type == INSTANCE_RAID &&
+		!plr->TriggerpassCheat )
 		return INSTANCE_ABORT_NOT_IN_RAID_GROUP;
+
+	if( pGroup == NULL &&
+		( inf->type == INSTANCE_NONRAID && plr->iInstanceType == MODE_HEROIC ) &&
+		!plr->TriggerpassCheat )
+		return INSTANCE_ABORT_NOT_IN_RAID_GROUP;
+		
 
 	// players without raid groups cannot enter raid instances
 	if(pGroup != NULL && pGroup->GetGroupType() != GROUP_TYPE_RAID && inf->type == INSTANCE_RAID && !plr->TriggerpassCheat)
 		return INSTANCE_ABORT_NOT_IN_RAID_GROUP;
 
-	// check that heroic mode is available if the player has requested it.
-	if(plr->iInstanceType && inf->type != INSTANCE_ARENA)
-		return INSTANCE_ABORT_HEROIC_MODE_NOT_AVAILABLE;
+	// We deny transfer if we requested a heroic instance of a map that has no heroic mode
+	// We are trying to enter into a non-multi instance with a heroic group, downscaling
+	if( inf->type == INSTANCE_NONRAID && plr->GetDungeonDifficulty() == MODE_HEROIC){
+		plr->SetDungeonDifficulty( MODE_NORMAL );
+		plr->SendDungeonDifficulty();
+		
+		Group *grp = plr->GetGroup();
+		if( grp != NULL )
+			grp->SetDungeonDifficulty( MODE_NORMAL );
+	}
 
-	// if we are here, it means:
-	// 1) we're a non-raid instance
-	// 2) we're a raid instance, and the person is in a group.
-	// so, first we have to check if they have an instance on this map already, if so, allow them to teleport to that.
-	// otherwise, we can create them a new one.
+	// if it's not a normal / 10men normal then check if we even have this mode
+	if( inf->type == INSTANCE_RAID && plr->GetRaidDifficulty() != MODE_NORMAL_10MEN ){
+		uint32 typeflag = plr->GetRaidDifficulty() << 5;
+		uint32 newtype = 0;
+
+		if( !inf->HasFlag( typeflag ) ){
+			// no it doesn't so we will downscale it
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// This part is totally speculative, if you know how this is done actually then do change it
+//
+			switch( plr->GetRaidDifficulty() ){
+				case MODE_NORMAL_25MEN:
+				case MODE_HEROIC_10MEN:{
+					newtype = MODE_NORMAL_10MEN;
+									   break;}
+
+				case MODE_HEROIC_25MEN:{
+					newtype = MODE_NORMAL_25MEN;
+									   break;}
+			}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+			// check if we have this mode
+			if( !inf->HasFlag( newtype << 5 ) ){
+				
+				//appearantly we don't so we set to 10men normal, which is the default for old raids too
+				//regardless of their playerlimit
+				newtype = MODE_NORMAL_10MEN;
+			}
+
+			// Setting the new mode on us and our group
+			if( plr->GetRaidDifficulty() != newtype ){
+				
+				plr->SetRaidDifficulty( newtype );
+				plr->SendRaidDifficulty();
+
+				Group *grp = plr->GetGroup();
+				if( grp != NULL )
+					grp->SetRaidDifficulty( newtype );
+			}
+		}
+	}	
+	
+	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	// If we are here, it means:
+	// 1.) We're a simple non-raid and non-heroic dungeon
+	// 2.) We're a multi-dungeon set to heroic and we are in a group
+	// 3.) We're a raid, and we are in a raid group
+	// 4.) We're a raid, we are in a raid group, and we have the right mode set
+	//
+	// So, first we have to check if they have an instance on this map already, if so, allow them to teleport to that.
+	// Otherwise, we will try to create them a new one.
+	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 	m_mapLock.Acquire();
 	instancemap = m_instances[mapid];
 
@@ -916,7 +983,7 @@ void InstanceMgr::CheckForExpiredInstances()
 				++itr;
 
 				// use a "soft" delete here.
-				if(in->m_mapInfo->type != INSTANCE_NONRAID && !(in->m_mapInfo->type == INSTANCE_ARENA && in->m_difficulty == MODE_NORMAL) && HasInstanceExpired(in))
+				if(in->m_mapInfo->type != INSTANCE_NONRAID && !(in->m_mapInfo->type == INSTANCE_MULTIMODE && in->m_difficulty == MODE_NORMAL) && HasInstanceExpired(in))
 					_DeleteInstance(in, false);
 			}
 
@@ -994,10 +1061,18 @@ void InstanceMgr::BuildRaidSavedInstancesForPlayer(Player * plr)
 
 				if(in->m_persistent && PlayerOwnsInstance(in, plr))
 				{
-					data << in->m_mapId;
-					data << uint32(in->m_expiration - UNIXTIME);
-					data << in->m_instanceId;
-					data << ++counter;
+					data << uint32( in->m_mapId );						// obviously the mapid
+					data << uint32( in->m_difficulty );					// instance difficulty
+					data << uint64( in->m_instanceId );					// self-explanatory
+					data << uint8( 1 );									// expired = 0
+					data << uint8( 0 );									// extended = 1
+					
+					if( in->m_expiration > UNIXTIME  )
+						data << uint32( in->m_expiration - UNIXTIME );
+					else
+						data << uint32( 0 );
+
+					++counter;
 				}
 			}
 		}
@@ -1009,6 +1084,7 @@ void InstanceMgr::BuildRaidSavedInstancesForPlayer(Player * plr)
 #else
 	*(uint32*)&data.contents()[0] = counter;
 #endif
+
 	plr->GetSession()->SendPacket(&data);
 }
 

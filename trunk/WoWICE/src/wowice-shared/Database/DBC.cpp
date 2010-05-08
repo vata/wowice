@@ -41,12 +41,6 @@ void DBC::Load(const char *filename) {
 	fread(&weird2, 4, 1, f);
 	//int percol = weird2/cols;
 	fread(&dblength, 4, 1, f);
-#ifdef USING_BIG_ENDIAN
-	swap32(&rows);
-	swap32(&cols);
-	swap32(&weird2);
-	swap32(&dblength);
-#endif
 
 	tbl = new unsigned int[rows * cols];
 	db = new char[dblength];
@@ -54,12 +48,6 @@ void DBC::Load(const char *filename) {
 	strcpy(name,filename);
 	fread(tbl,rows*cols*4,1,f);
 	fread(db,dblength,1,f);
-
-#ifdef USING_BIG_ENDIAN
-	/* burlex: this is a real hack. it'll mess up floats. i'm gonna rewrite the dbc interface soon :P */
-	for(int i = 0; i < (rows*cols); ++i)
-		tbl[i] = swap32((uint32)tbl[i]);
-#endif
 
 	fclose(f);
 	loaded = true;
@@ -98,9 +86,9 @@ void DBC::CSV(char* filename, bool info)
 	fprintf(out,"DBlength:%u\x0d\x0a",dblength);
 	fprintf(out,"\x0d\x0a");
 
-	for(int i=0; i < rows; i++)
+	for(int i= 0; i < rows; i++)
 	{
-		for(int j=0; j < cols; j++)
+		for(int j= 0; j < cols; j++)
 		{
 			char* str = new char[65535];
 			Lookup(str,i,j);
@@ -130,11 +118,11 @@ void DBC::FormatCSV(const char* filename, bool info)
 	fprintf(out,"\x0d\x0a");
 	
 	printf("Writing file (%s): 0%%",name);
-	int percent=0,npercent;
+	int percent= 0,npercent;
 	int fst;
-	for(int i=0; i < rows; i++)
+	for(int i= 0; i < rows; i++)
 	{
-		for(int j=0; j < cols; j++)
+		for(int j= 0; j < cols; j++)
 		{
 			/*char* str = new char[512];
 			LookupFormat(str,i,j);
@@ -168,9 +156,9 @@ void DBC::GuessFormat()
 	floats = new int[cols]; memset(floats,0x00,sizeof(int)*cols);
 	strings = new int[cols]; memset(strings,0x00,sizeof(int)*cols);
 	printf("Guessing format (%s): 0%%",name);
-	int percent=0,npercent;
-	for(int i=0;i<rows;i++)
-		for(int j=0;j<cols;j++)
+	int percent= 0,npercent;
+	for(int i= 0;i<rows;i++)
+		for(int j= 0;j<cols;j++)
 		{
 			DBCFmat f = GuessFormat(i,j);
 			if(f == F_STRING) strings[j]++;
@@ -184,7 +172,7 @@ void DBC::GuessFormat()
 			}
 		}
 	
-	for(int j=0;j<cols;j++)
+	for(int j= 0;j<cols;j++)
 	{
 		if(strings[j] > ints[j])
 		{

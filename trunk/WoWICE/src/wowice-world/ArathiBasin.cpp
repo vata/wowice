@@ -19,8 +19,10 @@
 #define RESOURCES_WARNING_THRESHOLD 1800
 #define RESOURCES_WINVAL 2000
 #define RESOURCES_WARNINGVAL 1800
-uint32 buffentrys[3] = {180380,180362,180146};
-// AB define's
+
+uint32 buffentries[3] = {180380,180362,180146};
+
+// AB defines
 #define AB_CAPTURED_STABLES_ALLIANCE		0x6E7 //1767
 #define AB_CAPTURED_STABLES_HORDE		   0x6E8 //1768
 #define AB_CAPTURING_STABLES_ALLIANCE	   0x6E9 //1769
@@ -142,11 +144,11 @@ uint32 buffentrys[3] = {180380,180362,180146};
 
 	static uint32 ResourceUpdateIntervals[6] = {
 		0,
-		12000,
-		9000,
-		6000,
-		3000,
-		1000,
+		12000, // 12 secnods
+		9000, // 9 seconds
+		6000, // 6 seconds
+		3000, // 3 seconds
+		1000, // 1 second
 	};
 
 	static uint32 PointBonusPerUpdate[6] = {
@@ -170,7 +172,7 @@ static uint32 resourcesToGainBR = 200;
 
 void ArathiBasin::SpawnBuff(uint32 x)
 {
-	uint32 chosen_buffid = buffentrys[RandomUInt(2)];
+	uint32 chosen_buffid = buffentries[RandomUInt(2)];
 	GameObjectInfo * goi = GameObjectNameStorage.LookupEntry(chosen_buffid);
 	if(goi == NULL)
 		return;
@@ -196,7 +198,7 @@ void ArathiBasin::SpawnBuff(uint32 x)
 		if(chosen_buffid != m_buffs[x]->GetEntry())
 		{
 			m_buffs[x]->SetNewGuid(m_mapMgr->GenerateGameobjectGuid());
-			m_buffs[x]->SetUInt32Value(OBJECT_FIELD_ENTRY, chosen_buffid);
+			m_buffs[x]->SetEntry(  chosen_buffid);
 			m_buffs[x]->SetInfo(goi);
 		}
 
@@ -253,7 +255,7 @@ void ArathiBasin::SpawnControlPoint(uint32 Id, uint32 Type)
 
 		// assign it a new guid (client needs this to see the entry change?)
 		m_controlPoints[Id]->SetNewGuid(m_mapMgr->GenerateGameobjectGuid());
-		m_controlPoints[Id]->SetUInt32Value(OBJECT_FIELD_ENTRY, gi->ID);
+		m_controlPoints[Id]->SetEntry(  gi->ID);
 		m_controlPoints[Id]->SetUInt32Value(GAMEOBJECT_DISPLAYID, gi->DisplayID);
 		m_controlPoints[Id]->SetByte(GAMEOBJECT_BYTES_1, 1, static_cast<uint8>( gi->Type ));
 
@@ -307,7 +309,7 @@ void ArathiBasin::SpawnControlPoint(uint32 Id, uint32 Type)
 
 		// re-spawn the aura
 		m_controlPointAuras[Id]->SetNewGuid(m_mapMgr->GenerateGameobjectGuid());
-		m_controlPointAuras[Id]->SetUInt32Value(OBJECT_FIELD_ENTRY, gi_aura->ID);
+		m_controlPointAuras[Id]->SetEntry(  gi_aura->ID);
 		m_controlPointAuras[Id]->SetUInt32Value(GAMEOBJECT_DISPLAYID, gi_aura->DisplayID);
 		m_controlPointAuras[Id]->SetInfo(gi_aura);
 		m_controlPointAuras[Id]->PushToWorld(m_mapMgr);
@@ -428,7 +430,7 @@ ArathiBasin::ArathiBasin(MapMgr * mgr, uint32 id, uint32 lgroup, uint32 t) : CBa
 {
 	int i;
 
-	for (i=0; i<2; i++) {
+	for (i= 0; i<2; i++) {
 		m_players[i].clear();
 		m_pendPlayers[i].clear();
 	}
@@ -473,14 +475,12 @@ ArathiBasin::~ArathiBasin()
 		// buffs may not be spawned, so delete them if they're not
 		if(m_buffs[i] != NULL)
 		{
-			m_buffs[i]->m_battleground = NULL;
 			if( !m_buffs[i]->IsInWorld() )
 				delete m_buffs[i];
 		}
 
 		if(m_controlPoints[i] != NULL)
 		{
-			m_controlPoints[i]->m_battleground = NULL;
 			if( !m_controlPoints[i]->IsInWorld() )
 			{
 				delete m_controlPoints[i];
@@ -490,7 +490,6 @@ ArathiBasin::~ArathiBasin()
 
 		if(m_controlPointAuras[i] != NULL)
 		{
-			m_controlPointAuras[i]->m_battleground = NULL;
 			if( !m_controlPointAuras[i]->IsInWorld() )
 			{
 				delete m_controlPointAuras[i];
@@ -509,7 +508,6 @@ ArathiBasin::~ArathiBasin()
 	{
 		if((*itr) != NULL)
 		{
-			(*itr)->m_battleground = NULL;
 			if( !(*itr)->IsInWorld() )
 				delete (*itr);
 		}
@@ -587,7 +585,7 @@ void ArathiBasin::EventUpdateResources(uint32 Team)
 		m_nextPvPUpdateTime = 0;
 
 		sEventMgr.RemoveEvents(this);
-		sEventMgr.AddEvent(((CBattleground*)this), &CBattleground::Close, EVENT_BATTLEGROUND_CLOSE, 120000, 1,0);
+		sEventMgr.AddEvent(((CBattleground*)this), &CBattleground::Close, EVENT_BATTLEGROUND_CLOSE, 120000, 1, EVENT_FLAG_DO_NOT_EXECUTE_IN_WORLD_CONTEXT);
 
 		/* add the marks of honor to all players */
 		SpellEntry * winner_spell = dbcSpell.LookupEntry(24953);
@@ -683,7 +681,7 @@ LocationVector ArathiBasin::GetStartingCoords(uint32 Team)
 
 void ArathiBasin::HookOnAreaTrigger(Player * plr, uint32 id)
 {
-	uint32 spellid=0;
+	uint32 spellid= 0;
 	int32 buffslot = -1;
 	switch(id)
 	{
@@ -741,8 +739,6 @@ void ArathiBasin::HookOnAreaTrigger(Player * plr, uint32 id)
 		if(sp)
 		{
 			Spell * pSpell = new Spell(plr, sp, true, NULL);
-			if (!pSpell)
-				return;
 			SpellCastTargets targets(plr->GetGUID());
 			pSpell->prepare(&targets);
 		}
@@ -920,7 +916,7 @@ void ArathiBasin::AssaultControlPoint(Player * pPlayer, uint32 Id)
 		SetWorldState(OwnedFields[Id][Owner], 0);
 
 		// modify the resource update time period
-		if(m_capturedBases[Owner]==0)
+		if(m_capturedBases[Owner]== 0)
 			this->event_RemoveEvents(EVENT_AB_RESOURCES_UPDATE_TEAM_0+Owner);
 		else
 			this->event_ModifyTime(EVENT_AB_RESOURCES_UPDATE_TEAM_0 + Owner, ResourceUpdateIntervals[m_capturedBases[Owner]]);
@@ -1055,7 +1051,7 @@ void ArathiBasin::AssaultControlPoint(Player * pPlayer, uint32 Id)
 				}break;
 			}
 		}
-		sEventMgr.AddEvent(this, &ArathiBasin::CaptureControlPoint, Id, Team, EVENT_AB_CAPTURE_CP_1 + Id, 60000, 1, EVENT_FLAG_DO_NOT_EXECUTE_IN_WORLD_CONTEXT);
+		sEventMgr.AddEvent(this, &ArathiBasin::CaptureControlPoint, Id, Team, EVENT_AB_CAPTURE_CP_1 + Id, TIME_MINUTE, 1, EVENT_FLAG_DO_NOT_EXECUTE_IN_WORLD_CONTEXT);
 		pPlayer->m_bgScore.MiscData[BG_SCORE_AB_BASES_ASSAULTED]++;
 		UpdatePvPData();
 	}
@@ -1065,7 +1061,7 @@ void ArathiBasin::AssaultControlPoint(Player * pPlayer, uint32 Id)
 		SendChatMessage(Team ? CHAT_MSG_BG_EVENT_HORDE : CHAT_MSG_BG_EVENT_ALLIANCE, pPlayer->GetGUID(), "$N claims the %s! If left unchallenged, the %s will control it in 1 minute!", ControlPointNames[Id],
 		Team ? "Horde" : "Alliance");
 		PlaySoundToAll(8192);
-		sEventMgr.AddEvent(this, &ArathiBasin::CaptureControlPoint, Id, Team, EVENT_AB_CAPTURE_CP_1 + Id, 60000, 1, EVENT_FLAG_DO_NOT_EXECUTE_IN_WORLD_CONTEXT);
+		sEventMgr.AddEvent(this, &ArathiBasin::CaptureControlPoint, Id, Team, EVENT_AB_CAPTURE_CP_1 + Id, TIME_MINUTE, 1, EVENT_FLAG_DO_NOT_EXECUTE_IN_WORLD_CONTEXT);
 	}
 }
 

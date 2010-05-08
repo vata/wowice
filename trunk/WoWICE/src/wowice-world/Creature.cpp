@@ -17,6 +17,133 @@
 
 #define M_PI	   3.14159265358979323846
 
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// float CalcHPCoefficient( MapInfo *mi, uint32 mode, bool boss )
+//  Returns the HP coefficient that is suited for the map, mode, and creature
+//
+// Parameters:
+//  MapInfo *mi		-		pointer to the mapinfo structure
+//	uint32  mode	-		numeric representation of the version of the map (normal, heroic, 10-25 men, etc )
+//	bool	boss	-		true if the creature is a boss, false if not
+//
+// Return Values:
+//	Returns the hp coefficient in a float
+//
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+float CalcHPCoefficient( MapInfo *mi, uint32 mode, bool boss ){
+	float coeff = 1.0f;
+
+	if( mi == NULL )
+		return 1.0f;
+
+	// This calculation is purely speculation as we have no way of finding out how Blizzard generates these values
+	// These cases are based on simple observation of trash/boss hp values for different modes
+	// If you know they are wrong AND you know a better calculation formula then DO change it.
+
+	// raid
+	if( mi->type == INSTANCE_RAID ){
+		bool hasheroic = false;
+
+		// check if we have heroic mode avaiable
+		if( mi->HasFlag( WMI_INSTANCE_HAS_HEROIC_10MEN ) && mi->HasFlag( WMI_INSTANCE_HAS_HEROIC_25MEN ) )
+			hasheroic = true;
+		
+		// boss hp coeff calculations 
+		if( boss == true ){
+
+			switch( mode ){
+				case MODE_NORMAL_10MEN:
+					coeff = 1.0f; break;
+
+				case MODE_HEROIC_10MEN:
+					coeff = 1.25f; break;
+
+				case MODE_NORMAL_25MEN:
+					if( hasheroic )
+						coeff = 5.0f;
+					else
+						coeff = 3.0f;
+					break;
+
+				case MODE_HEROIC_25MEN:
+					coeff = 5.0f * 1.25f;
+			}
+
+			// trash hp coeff calculation
+		}else{
+			switch( mode ){
+				case MODE_NORMAL_10MEN:
+					coeff = 1.0f; break;
+
+				case MODE_HEROIC_10MEN:
+					coeff = 1.5f; break;
+
+				case MODE_NORMAL_25MEN:
+					coeff = 2.0f; break;
+
+				case MODE_HEROIC_25MEN:
+					coeff = 2.5f; break;
+			}
+		}
+	}
+
+	// heroic dungeon
+	if( mi->type == INSTANCE_MULTIMODE ){
+		
+		if( mode > 0 )
+			coeff = 1.5f;
+		else
+			coeff = 1.0f;
+	}
+
+	return coeff;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// float CalcDMGCoefficient( MapInfo *mi, uint32 mode )
+//  Calculates the creature damage coefficient that is suitable for the map type and difficulty
+//
+// Parameters:
+//  MapInfo *mi		-		pointer to the MapInfo structure
+//  uint32 mode		-		numeric representation of the version of the map (normal, heroic, 10-25 men, etc )
+//
+// Return Value:
+//  Returns the suitable damage coefficient in a float
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+float CalcDMGCoefficient( MapInfo *mi, uint32 mode ){
+	
+	// This calculation is purely speculation as we have no way of finding out how Blizzard generates these values
+	// These cases are based on simple observation of trash/boss damage values for different modes
+	// If you know they are wrong AND you know a better calculation formula then DO change it.
+
+	if( mi == NULL )
+		return 1.0f;
+
+	switch( mode ){
+		case MODE_NORMAL_10MEN:
+			return 1.0f; break;
+
+		case MODE_NORMAL_25MEN:
+			if( mi->type == INSTANCE_MULTIMODE )
+				return 1.5f;
+			else
+				return 2.0;
+
+			break;
+
+		case MODE_HEROIC_10MEN:
+			return 1.5f; break;
+
+		case MODE_HEROIC_25MEN:
+			return 2.5f; break;
+	}
+
+	return 1.0f;
+}
+
 Creature::Creature(uint64 guid)
 {
 	proto = 0;
@@ -26,17 +153,17 @@ Creature::Creature(uint64 guid)
 	memset(m_uint32Values, 0,(UNIT_END)*sizeof(uint32));
 	m_updateMask.SetCount(UNIT_END);
 	SetUInt32Value( OBJECT_FIELD_TYPE,TYPE_UNIT|TYPE_OBJECT);
-	SetUInt64Value( OBJECT_FIELD_GUID,guid);
+    SetGUID( guid );
 	m_wowGuid.Init(GetGUID());
 
 
 	m_quests = NULL;
 	proto = NULL;
-	spawnid=0;
+	spawnid= 0;
 
 	creature_info= NULL;
-	m_H_regenTimer=0;
-	m_P_regenTimer=0;
+	m_H_regenTimer= 0;
+	m_P_regenTimer= 0;
 	m_useAI = true;
 	mTaxiNode = 0;
 
@@ -48,20 +175,20 @@ Creature::Creature(uint64 guid)
     m_enslaveCount = 0;
 	m_enslaveSpell = 0;
 
-	for(uint32 x=0;x<7;x++)
+	for(uint32 x= 0;x<7;x++)
 	{
-		FlatResistanceMod[x]=0;
-		BaseResistanceModPct[x]=0;
-		ResistanceModPct[x]=0;
-		ModDamageDone[x]=0;
+		FlatResistanceMod[x]= 0;
+		BaseResistanceModPct[x]= 0;
+		ResistanceModPct[x]= 0;
+		ModDamageDone[x]= 0;
 		ModDamageDonePct[x]=1.0;
 	}
 
-	for(uint32 x=0;x<5;x++)
+	for(uint32 x= 0;x<5;x++)
 	{
-		TotalStatModPct[x]=0;
-		StatModPct[x]=0;
-		FlatStatMod[x]=0;
+		TotalStatModPct[x]= 0;
+		StatModPct[x]= 0;
+		FlatStatMod[x]= 0;
 	}
 
 	totemOwner = NULL;
@@ -95,7 +222,7 @@ Creature::Creature(uint64 guid)
 	m_base_runSpeed = m_runSpeed;
 	m_base_walkSpeed = m_walkSpeed;
 	m_noRespawn=false;
-	m_respawnTimeOverride=0;
+	m_respawnTimeOverride= 0;
     m_canRegenerateHP = true;
 	m_transportGuid = 0;
 	m_transportPosition = NULL;
@@ -296,7 +423,10 @@ void Creature::generateLoot()
 	if ( !loot.items.empty() )
 		return;
 
-	lootmgr.FillCreatureLoot(&loot,GetEntry(), m_mapMgr ? (m_mapMgr->iInstanceMode > 0 ? true : false) : false);
+	if( m_mapMgr != NULL )
+		lootmgr.FillCreatureLoot( &loot, GetEntry(), m_mapMgr->iInstanceMode );
+	else
+		lootmgr.FillCreatureLoot( &loot, GetEntry(), 0 );
 
 	loot.gold = proto ? proto->money : 0;
 
@@ -405,7 +535,7 @@ void Creature::SaveToDB()
 		spawnid = objmgr.GenerateCreatureSpawnID();
 
 	std::stringstream ss;
-	ss << "REPLACE INTO creature_spawns VALUES("
+	ss << "INSERT INTO creature_spawns VALUES("
 		<< spawnid << ","
 		<< GetEntry() << ","
 		<< GetMapId() << ","
@@ -421,8 +551,7 @@ void Creature::SaveToDB()
 		<< m_uint32Values[UNIT_FIELD_BYTES_1] << ","
 		<< m_uint32Values[UNIT_FIELD_BYTES_2] << ","
 		<< m_uint32Values[UNIT_NPC_EMOTESTATE] << ",0,";
-		/*<< ((this->m_spawn ? m_spawn->respawnNpcLink : uint32(0))) << ",";*/
-
+		
 	if ( m_spawn )
 		ss << m_spawn->channel_spell << "," << m_spawn->channel_target_go << "," << m_spawn->channel_target_creature << ",";
 	else
@@ -444,41 +573,6 @@ void Creature::SaveToDB()
 	WorldDatabase.Execute(ss.str().c_str());
 }
 
-void Creature::SaveToFile(std::stringstream & name)
-{
-/*	FILE * OutFile;
-
-	OutFile = fopen(name.str().c_str(), "wb");
-	if (!OutFile) return;
-
-	uint32 creatureEntry = GetUInt32Value(OBJECT_FIELD_ENTRY);
-	if (!m_sqlid)
-		m_sqlid = objmgr.GenerateLowGuid(HIGHGUID_UNIT);
-
-	std::stringstream ss;
-	ss << "DELETE FROM creatures WHERE id=" << m_sqlid;
-	fwrite(ss.str().c_str(),1,ss.str().size(),OutFile);
-
-	ss.rdbuf()->str("");
-	ss << "\nINSERT INTO creatures (id, mapId, zoneId, name_id, positionX, positionY, positionZ, orientation, moverandom, running, data) VALUES ( "
-		<< m_sqlid << ", "
-		<< GetMapId() << ", "
-		<< GetZoneId() << ", "
-		<< GetUInt32Value(OBJECT_FIELD_ENTRY) << ", "
-		<< m_position.x << ", "
-		<< m_position.y << ", "
-		<< m_position.z << ", "
-		<< m_position.o << ", "
-		<< GetAIInterface()->getMoveType() << ", "
-		<< GetAIInterface()->getMoveRunFlag() << ", '";
-	for( uint16 index = 0; index < m_valuesCount; index ++ )
-		ss << GetUInt32Value(index) << " ";
-
-	ss << "' )";
-	fwrite(ss.str().c_str(),1,ss.str().size(),OutFile);
-	fclose(OutFile);*/
-}
-
 
 void Creature::LoadScript()
 {
@@ -490,8 +584,8 @@ void Creature::DeleteFromDB()
 	if ( !GetSQL_id() )
 		return;
 
-	WorldDatabase.Execute("DELETE FROM creature_spawns WHERE id=%u", GetSQL_id() );
-	WorldDatabase.Execute("DELETE FROM creature_waypoints WHERE spawnid=%u",GetSQL_id() );
+	WorldDatabase.Execute("DELETE FROM creature_spawns WHERE id = %u", GetSQL_id() );
+	WorldDatabase.Execute("DELETE FROM creature_waypoints WHERE spawnid = %u",GetSQL_id() );
 }
 
 
@@ -634,7 +728,8 @@ bool Creature::CanAddToWorld()
 
 void Creature::RemoveFromWorld( bool addrespawnevent, bool free_guid )
 {
-	//remove ai stuff
+
+    //remove ai stuff
 	sEventMgr.RemoveEvents( this, EVENT_CREATURE_AISPELL );
 
 	if( GetScript() != NULL )
@@ -840,7 +935,7 @@ void Creature::CalcStat(uint32 type)
 	case STAT_AGILITY:
 		{
 			//Ranged Attack Power (Does any creature use this?)
-			int32 RAP = GetUInt32Value( UNIT_FIELD_LEVEL ) + GetUInt32Value( UNIT_FIELD_STAT1 ) - 10;
+			int32 RAP = getLevel() + GetUInt32Value( UNIT_FIELD_STAT1 ) - 10;
 			if( RAP < 0 ) RAP = 0;
 			SetUInt32Value( UNIT_FIELD_RANGED_ATTACK_POWER, RAP );
 		}break;
@@ -975,7 +1070,7 @@ void Creature::ModAvItemAmount(uint32 itemid, uint32 value)
 			{
 				if(value > itr->available_amount)	// shouldn't happen
 				{
-					itr->available_amount=0;
+					itr->available_amount= 0;
 					return;
 				}
 				else
@@ -994,8 +1089,8 @@ void Creature::UpdateItemAmount(uint32 itemid)
 	{
 		if(itr->itemid == itemid)
 		{
-			if (itr->max_amount==0)		// shouldn't happen
-				itr->available_amount=0;
+			if (itr->max_amount== 0)		// shouldn't happen
+				itr->available_amount= 0;
 			else
 			{
 				itr->available_amount = itr->max_amount;
@@ -1014,6 +1109,14 @@ void Creature::TotemExpire()
 		if(GetUInt32Value(UNIT_CREATED_BY_SPELL) == 6495) // sentry totem
 			pOwner->RemoveAura(6495);
 		totemOwner->m_TotemSlots[totemSlot] = 0;
+
+        std::set< Creature* >::iterator itr;
+
+        for( itr = m_Guardians.begin(); itr != m_Guardians.end(); ++itr ){
+            Creature *c = (*itr);
+
+            pOwner->RemoveGuardianRef( c );
+        }
 	}
 
 	totemSlot = -1;
@@ -1185,8 +1288,8 @@ bool Creature::Load(CreatureSpawn *spawn, uint32 mode, MapInfo *info)
 	m_flySpeed = proto->fly_speed;
 
 	//Set fields
-	SetUInt32Value(OBJECT_FIELD_ENTRY,proto->Id);
-	SetFloatValue(OBJECT_FIELD_SCALE_X,proto->Scale);
+	SetEntry( proto->Id);
+	SetScale( proto->Scale);
 
 	//SetUInt32Value(UNIT_FIELD_HEALTH, (mode ? long2int32(proto->Health * 1.5)  : proto->Health));
 	//SetUInt32Value(UNIT_FIELD_BASE_HEALTH, (mode ? long2int32(proto->Health * 1.5)  : proto->Health));
@@ -1198,8 +1301,18 @@ bool Creature::Load(CreatureSpawn *spawn, uint32 mode, MapInfo *info)
 	}
 
 	uint32 health = proto->MinHealth + RandomUInt(proto->MaxHealth - proto->MinHealth);
-	if(mode)
-		health = long2int32(double(health) * 1.5);
+	
+	// difficutly coefficient
+	float diff_coeff = 1.0f;
+	
+	if( creature_info->Rank == ELITE_WORLDBOSS )
+		diff_coeff = CalcHPCoefficient( info, mode, true );
+	else
+	if( creature_info->Type != UNIT_TYPE_CRITTER )
+		diff_coeff = CalcHPCoefficient( info, mode, false );
+
+	health = static_cast< uint32 >( health * diff_coeff );
+
 	SetUInt32Value(UNIT_FIELD_HEALTH, health);
 	SetUInt32Value(UNIT_FIELD_MAXHEALTH, health);
 	SetUInt32Value(UNIT_FIELD_BASE_HEALTH, health);
@@ -1224,17 +1337,20 @@ bool Creature::Load(CreatureSpawn *spawn, uint32 mode, MapInfo *info)
 
 	EventModelChange();
 
-    //SetUInt32Value(UNIT_FIELD_LEVEL, (mode ? proto->Level + (info ? info->lvl_mod_a : 0) : proto->Level));
-	SetUInt32Value(UNIT_FIELD_LEVEL, proto->MinLevel + (RandomUInt(proto->MaxLevel - proto->MinLevel)));
-	if(mode && info)
+    SetUInt32Value(UNIT_FIELD_LEVEL, proto->MinLevel + (RandomUInt(proto->MaxLevel - proto->MinLevel)));
+	
+	if( mode && info )
 		ModUnsigned32Value(UNIT_FIELD_LEVEL, min(73 - GetUInt32Value(UNIT_FIELD_LEVEL), info->lvl_mod_a));
 
 	for(uint32 i = 0; i < 7; ++i)
 		SetUInt32Value(UNIT_FIELD_RESISTANCES+i,proto->Resistances[i]);
 
 	SetUInt32Value(UNIT_FIELD_BASEATTACKTIME,proto->AttackTime);
-	SetFloatValue(UNIT_FIELD_MINDAMAGE, (mode ? proto->MinDamage * 1.5f  : proto->MinDamage));
-	SetFloatValue(UNIT_FIELD_MAXDAMAGE, (mode ? proto->MaxDamage * 1.5f  : proto->MaxDamage));
+
+	float dmg_coeff = CalcDMGCoefficient( info, mode );
+
+	SetFloatValue(UNIT_FIELD_MINDAMAGE, (mode ? proto->MinDamage * dmg_coeff  : proto->MinDamage ) );
+	SetFloatValue(UNIT_FIELD_MAXDAMAGE, (mode ? proto->MaxDamage * dmg_coeff  : proto->MaxDamage ) );
 
 	SetUInt32Value(UNIT_FIELD_RANGEDATTACKTIME,proto->RangedAttackTime);
 	SetFloatValue(UNIT_FIELD_MINRANGEDDAMAGE,proto->RangedMinDamage);
@@ -1258,7 +1374,7 @@ bool Creature::Load(CreatureSpawn *spawn, uint32 mode, MapInfo *info)
 
 	m_aiInterface->timed_emotes = objmgr.GetTimedEmoteList(spawn->id);
 
-	m_faction = dbcFactionTemplate.LookupEntry(spawn->factionid);
+	m_faction = dbcFactionTemplate.LookupEntryForced(spawn->factionid);
 	if(m_faction)
 	{
 		m_factionDBC = dbcFaction.LookupEntry(m_faction->Faction);
@@ -1297,9 +1413,9 @@ bool Creature::Load(CreatureSpawn *spawn, uint32 mode, MapInfo *info)
 	 m_aiInterface->m_waypoints=objmgr.GetWayPointMap(spawn->id);
 
 	//load resistances
-	for(uint32 x=0;x<7;x++)
+	for(uint32 x= 0;x<7;x++)
 		BaseResistance[x]=GetUInt32Value(UNIT_FIELD_RESISTANCES+x);
-	for(uint32 x=0;x<5;x++)
+	for(uint32 x= 0;x<5;x++)
 		BaseStats[x]=GetUInt32Value(UNIT_FIELD_STAT0+x);
 
 	BaseDamage[0]=GetFloatValue(UNIT_FIELD_MINDAMAGE);
@@ -1320,10 +1436,13 @@ bool Creature::Load(CreatureSpawn *spawn, uint32 mode, MapInfo *info)
 	// kek
 	for(list<AI_Spell*>::iterator itr = proto->spells.begin(); itr != proto->spells.end(); ++itr)
 	{
-		m_aiInterface->addSpellToList(*itr);
+		// Load all spells that are not bound to a specific difficulty, OR mathces this maps' difficulty
+		if( (*itr)->instance_mode == mode || (*itr)->instance_mode == AISPELL_ANY_DIFFICULTY )
+			m_aiInterface->addSpellToList(*itr);
 	}
-	//m_aiInterface->m_canCallForHelp = proto->m_canCallForHelp;
-	//m_aiInterface->m_CallForHelpHealth = proto->m_callForHelpHealth;
+
+	// m_aiInterface->m_canCallForHelp = proto->m_canCallForHelp;
+	// m_aiInterface->m_CallForHelpHealth = proto->m_callForHelpHealth;
 	m_aiInterface->m_canFlee = proto->m_canFlee;
 	m_aiInterface->m_FleeHealth = proto->m_fleeHealth;
 	m_aiInterface->m_FleeDuration = proto->m_fleeDuration;
@@ -1332,11 +1451,13 @@ bool Creature::Load(CreatureSpawn *spawn, uint32 mode, MapInfo *info)
 	GetAIInterface()->setMoveType(0);
 	GetAIInterface()->setMoveRunFlag(0);
 
-	if(isattackable(spawn) && !(proto->isTrainingDummy) )
+    if(isattackable(spawn) && !(proto->isTrainingDummy) ){
 	  GetAIInterface()->SetAllowedToEnterCombat(true);
-	  else GetAIInterface()->SetAllowedToEnterCombat(false);
-
-
+    }else{
+        GetAIInterface()->SetAllowedToEnterCombat(false);
+        GetAIInterface()->SetAIType( AITYPE_PASSIVE );
+        Root();
+    }
 	 
 	// load formation data
 	if( spawn->form != NULL )
@@ -1356,11 +1477,6 @@ bool Creature::Load(CreatureSpawn *spawn, uint32 mode, MapInfo *info)
 
 	myFamily = dbcCreatureFamily.LookupEntry(creature_info->Family);
 
-
-// PLACE FOR DIRTY FIX BASTARDS
-	// HACK! set call for help on civ health @ 100%
-	if(creature_info->Civilian >= 1)
-		m_aiInterface->m_CallForHelpHealth = 100;
 
  //HACK!
 	if(m_uint32Values[UNIT_FIELD_DISPLAYID] == 17743 ||
@@ -1430,21 +1546,21 @@ void Creature::Load(CreatureProto * proto_, float x, float y, float z, float o)
 	if(!creature_info)
 		return;
 
-	if( proto_->isTrainingDummy == 0)
+    if( proto_->isTrainingDummy == 0){
 		GetAIInterface()->SetAllowedToEnterCombat( true );
-	else
-		GetAIInterface()->SetAllowedToEnterCombat( false );
+    }else{
+        GetAIInterface()->SetAllowedToEnterCombat( false );
+        GetAIInterface()->SetAIType( AITYPE_PASSIVE );
+        Root();
+    }
 
 	m_walkSpeed = m_base_walkSpeed = proto->walk_speed; //set speeds
 	m_runSpeed = m_base_runSpeed = proto->run_speed; //set speeds
 
 	//Set fields
-	SetUInt32Value(OBJECT_FIELD_ENTRY,proto->Id);
-	SetFloatValue(OBJECT_FIELD_SCALE_X,proto->Scale);
+	SetEntry( proto->Id);
+	SetScale( proto->Scale);
 
-	//SetUInt32Value(UNIT_FIELD_HEALTH, (mode ? long2int32(proto->Health * 1.5)  : proto->Health));
-	//SetUInt32Value(UNIT_FIELD_BASE_HEALTH, (mode ? long2int32(proto->Health * 1.5)  : proto->Health));
-	//SetUInt32Value(UNIT_FIELD_MAXHEALTH, (mode ? long2int32(proto->Health * 1.5)  : proto->Health));
 	uint32 health = proto->MinHealth + RandomUInt(proto->MaxHealth - proto->MinHealth);
 
 	SetUInt32Value(UNIT_FIELD_HEALTH, health);
@@ -1489,7 +1605,7 @@ void Creature::Load(CreatureProto * proto_, float x, float y, float z, float o)
 
 	m_position.ChangeCoords( x, y, z, o );
 	m_spawnLocation.ChangeCoords(x, y, z, o);
-	m_faction = dbcFactionTemplate.LookupEntry(proto->Faction);
+	m_faction = dbcFactionTemplate.LookupEntryForced(proto->Faction);
 
 	if(m_faction)
 	{
@@ -1526,9 +1642,9 @@ void Creature::Load(CreatureProto * proto_, float x, float y, float z, float o)
 		auctionHouse = sAuctionMgr.GetAuctionHouse(GetEntry());
 
 	//load resistances
-	for(uint32 x=0;x<7;x++)
+	for(uint32 x= 0;x<7;x++)
 		BaseResistance[x]=GetUInt32Value(UNIT_FIELD_RESISTANCES+x);
-	for(uint32 x=0;x<5;x++)
+	for(uint32 x= 0;x<5;x++)
 		BaseStats[x]=GetUInt32Value(UNIT_FIELD_STAT0+x);
 
 	BaseDamage[0]=GetFloatValue(UNIT_FIELD_MINDAMAGE);
@@ -1546,7 +1662,9 @@ void Creature::Load(CreatureProto * proto_, float x, float y, float z, float o)
 	// kek
 	for(list<AI_Spell*>::iterator itr = proto->spells.begin(); itr != proto->spells.end(); ++itr)
 	{
-		m_aiInterface->addSpellToList(*itr);
+		// Load all spell that are not set for a specific difficulty
+		if( (*itr)->instance_mode == AISPELL_ANY_DIFFICULTY )
+			m_aiInterface->addSpellToList(*itr);
 	}
 	m_aiInterface->m_canCallForHelp = proto->m_canCallForHelp;
 	m_aiInterface->m_CallForHelpHealth = proto->m_callForHelpHealth;
@@ -1567,11 +1685,6 @@ void Creature::Load(CreatureProto * proto_, float x, float y, float z, float o)
 
 	myFamily = dbcCreatureFamily.LookupEntry( creature_info->Family );
 
-
-	// PLACE FOR DIRTY FIX BASTARDS
-	// HACK! set call for help on civ health @ 100%
-	if(creature_info->Civilian >= 1)
-		m_aiInterface->m_CallForHelpHealth = 100;
 
 	//HACK!
 	if( m_uint32Values[ UNIT_FIELD_DISPLAYID ] == 17743 ||
@@ -1623,8 +1736,8 @@ void Creature::OnPushToWorld()
 		SpellEntry * sp;
 		for(; itr != proto->start_auras.end(); ++itr)
 		{
-			sp = dbcSpell.LookupEntry((*itr));
-			if(sp == 0) continue;
+			sp = dbcSpell.LookupEntryForced((*itr));
+			if(sp == NULL) continue;
 
 			CastSpell(this, sp, 0);
 		}
@@ -1665,7 +1778,7 @@ void Creature::OnPushToWorld()
 		for(std::vector<CreatureItem>::iterator itr = m_SellItems->begin(); itr != m_SellItems->end(); ++itr)
 		{
 				if (itr->max_amount == 0)
-					itr->available_amount=0;
+					itr->available_amount= 0;
 				else if (itr->available_amount<itr->max_amount)
 					sEventMgr.AddEvent(this, &Creature::UpdateItemAmount, itr->itemid, EVENT_ITEM_UPDATE, VENDOR_ITEMS_UPDATE_TIME, 1,0);
 		}
@@ -1677,12 +1790,12 @@ void Creature::OnPushToWorld()
 void Creature::AISpellUpdate()
 {
 	//lower cooldowns
-	for (int i=0; i<4; i++)
+	for (int i= 0; i<4; i++)
 	{
 		if (AISpellsCooldown[i]>=500)
 			AISpellsCooldown[i]-=500;
 		else
-			AISpellsCooldown[i]=0;
+			AISpellsCooldown[i]= 0;
 	}
 
 	if (!IsInWorld() || !isAlive())
@@ -1692,7 +1805,7 @@ void Creature::AISpellUpdate()
 	if (s != NULL) //check everythings going well on current spells
 	{
 
-		SpellRange* range=dbcSpellRange.LookupEntry(s->GetProto()->rangeIndex);
+		SpellRange* range=dbcSpellRange.LookupEntryForced(s->GetProto()->rangeIndex);
 
 		if (s->GetUnitTarget() != NULL && range != NULL && (CalcDistance(s->GetUnitTarget()) > range->maxRange || CalcDistance(s->GetUnitTarget()) < range->minRange))
 			s->cancel();
@@ -1719,15 +1832,15 @@ void Creature::AISpellUpdate()
 			GCD=1500;
 
 		//do we have a spell to use?
-		for (int i=0; i<4; i++)
+		for (int i= 0; i<4; i++)
 		{
 			if (this->GetProto()->AISpellsFlags & CREATURE_AI_FLAG_RANDOMCAST && !random_chosen)
 			{
 				//find the max spell
-				uint32 maxindex=0;
-				for (int j=0; j<4; j++)
+				uint32 maxindex= 0;
+				for (int j= 0; j<4; j++)
 				{
-					if (this->GetProto()->AISpells[j]==0)
+					if (this->GetProto()->AISpells[j]== 0)
 						break;
 					else
 						maxindex=j;
@@ -1740,17 +1853,15 @@ void Creature::AISpellUpdate()
 				random_chosen=true;
 			}
 
-			if (this->GetProto()->AISpells[i]==0)
+			if (this->GetProto()->AISpells[i]== 0)
 				continue;
 
-			if (AISpellsCooldown[i]==0) //we can cast?
+			if (AISpellsCooldown[i]== 0) //we can cast?
 			{
 				//get the spell
 				SpellEntry* newspell=dbcSpell.LookupEntry(this->GetProto()->AISpells[i]);
 				SpellCastTime* casttime=dbcSpellCastTime.LookupEntry(newspell->CastingTimeIndex);
 				Spell* spell = new Spell(this, newspell, false, 0);
-				if (!spell)
-					return;
 				SpellCastTargets t(0);
 				spell->GenerateTargets(&t);
 
@@ -1790,7 +1901,7 @@ void Creature::AISpellUpdate()
 
 
 				//weve cast, set GCD
-				for (int j=0; j<4; j++)
+				for (int j= 0; j<4; j++)
 					if (AISpellsCooldown[j] < GCD)
 						AISpellsCooldown[j] = GCD;
 			}

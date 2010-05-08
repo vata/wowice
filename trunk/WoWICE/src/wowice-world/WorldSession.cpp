@@ -19,9 +19,6 @@
 
 #include "StdAfx.h"
 
-#define WORLDSOCKET_TIMEOUT		 120
-#define PLAYER_LOGOUT_DELAY (20*1000)		/* 20 seconds should be more than enough to gank ya. */
-
 OpcodeHandler WorldPacketHandlers[NUM_MSG_TYPES];
 
 WorldSession::WorldSession(uint32 id, string Name, WorldSocket *sock)
@@ -82,7 +79,7 @@ WorldSession::~WorldSession()
 	while((packet = _recvQueue.Pop()) != 0)
 		delete packet;
 
-	for(uint32 x=0;x<8;x++)
+	for(uint32 x= 0;x<8;x++)
 	{
 		if(sAccountData[x].data)
 			delete [] sAccountData[x].data;
@@ -141,7 +138,7 @@ int WorldSession::Update(uint32 InstanceID)
 
 	while ((packet = _recvQueue.Pop()) != 0)
 	{
-		ASSERT(packet);
+		Arcemu::Util::ARCEMU_ASSERT(   packet != NULL );
 
 		if(packet->GetOpcode() >= NUM_MSG_TYPES)
 			sLog.outError("[Session] Received out of range packet with opcode 0x%.4X", packet->GetOpcode());
@@ -365,7 +362,7 @@ void WorldSession::LogoutPlayer(bool Save)
 		{
 			std::stringstream ss;
 			ss << "UPDATE account_data SET ";
-			for(uint32 ui=0;ui<8;ui++)
+			for(uint32 ui= 0;ui<8;ui++)
 			{
 				if(sAccountData[ui].bIsDirty)
 				{
@@ -460,7 +457,7 @@ void WorldSession::SetSecurity(std::string securitystring)
 	LoadSecurity(securitystring);
 
 	// update db
-	CharacterDatabase.Execute("UPDATE accounts SET gm=\"%s\" WHERE acct=%u", CharacterDatabase.EscapeString(string(permissions)).c_str(), _accountId);
+	CharacterDatabase.Execute("UPDATE accounts SET gm=\'%s\' WHERE acct=%u", CharacterDatabase.EscapeString(string(permissions)).c_str(), _accountId);
 }
 
 bool WorldSession::CanUseCommand(char cmdstr)
@@ -734,6 +731,7 @@ void WorldSession::InitPacketHandlerTable()
 	WorldPacketHandlers[CMSG_CANCEL_AUTO_REPEAT_SPELL].handler				  = &WorldSession::HandleCancelAutoRepeatSpellOpcode;
 	WorldPacketHandlers[CMSG_TOTEM_DESTROYED].handler							= &WorldSession::HandleCancelTotem;
 	WorldPacketHandlers[CMSG_LEARN_TALENT].handler							  = &WorldSession::HandleLearnTalentOpcode;
+    WorldPacketHandlers[CMSG_LEARN_TALENTS_MULTIPLE].handler                   = &WorldSession::HandleLearnMultipleTalentsOpcode;
 	WorldPacketHandlers[CMSG_UNLEARN_TALENTS].handler						   = &WorldSession::HandleUnlearnTalents;
 	WorldPacketHandlers[MSG_TALENT_WIPE_CONFIRM].handler						= &WorldSession::HandleUnlearnTalents;
 	
@@ -982,7 +980,6 @@ void WorldSession::SystemMessage(const char * format, ...)
 
 void WorldSession::SendChatPacket(WorldPacket * data, uint32 langpos, int32 lang, WorldSession * originator)
 {
-#ifndef USING_BIG_ENDIAN
 	if(lang == -1)
 		*(uint32*)&data->contents()[langpos] = lang;
 	else
@@ -992,51 +989,8 @@ void WorldSession::SendChatPacket(WorldPacket * data, uint32 langpos, int32 lang
 		else
 			*(uint32*)&data->contents()[langpos] = lang;
 	}
-#else
-	if(lang == -1)
-		*(uint32*)&data->contents()[langpos] = swap32(lang);
-	else
-	{
-		if(CanUseCommand('c') || (originator && originator->CanUseCommand('c')))
-			*(uint32*)&data->contents()[langpos] = swap32(uint32(LANG_UNIVERSAL));
-		else
-			*(uint32*)&data->contents()[langpos] = swap32(lang);
-	}
-#endif
 
 	SendPacket(data);
-}
-
-void WorldSession::SendItemPushResult(Item * pItem, bool Created, bool Received, bool SendToSet, bool NewItem, uint8 DestBagSlot, uint32 DestSlot, uint32 AddCount)
-{
-	packetSMSG_ITEM_PUSH_RESULT data;
-	data.guid = _player->GetGUID();
-	data.received = uint32(0); 
-	// cebernic: 2.4.3 temp 0 forced.
-	// guys from party will always see the looter what item he has been taken.
-	// I will check more on packets back around.
-	data.created = Created;
-	data.unk1 = 1;
-	data.destbagslot = DestBagSlot;
-	data.destslot = NewItem ? DestSlot : 0xFFFFFFFF;
-	data.entry = pItem->GetEntry();
-	data.suffix = pItem->GetItemRandomSuffixFactor();
-	data.randomprop = pItem->GetUInt32Value( ITEM_FIELD_RANDOM_PROPERTIES_ID );
-	data.count = AddCount;
-	data.stackcount = pItem->GetUInt32Value(ITEM_FIELD_STACK_COUNT);
-
-	if(SendToSet)
-	{
-
-		if( _player->GetGroup() )
-			_player->GetGroup()->OutPacketToAll( SMSG_ITEM_PUSH_RESULT, sizeof( packetSMSG_ITEM_PUSH_RESULT ), &data );
-		else
-			OutPacket( SMSG_ITEM_PUSH_RESULT, sizeof( packetSMSG_ITEM_PUSH_RESULT ), &data );
-	}
-	else
-	{
-		OutPacket( SMSG_ITEM_PUSH_RESULT, sizeof( packetSMSG_ITEM_PUSH_RESULT ), &data );
-	}
 }
 
 void WorldSession::Delete()
@@ -1134,7 +1088,7 @@ void WorldSession::SendRefundInfo( uint64 GUID ){
         if( RefundEntry.first == 0 || RefundEntry.second == 0)
             return;
 
-        ItemExtendedCostEntry *ex = dbcItemExtendedCost.LookupEntry( RefundEntry.second );
+        ItemExtendedCostEntry *ex = dbcItemExtendedCost.LookupEntryForced( RefundEntry.second );
         if( ex == NULL)
             return;
 
@@ -1214,4 +1168,107 @@ void WorldSession::SendAccountDataTimes(uint32 mask)
 			data << uint32( 0 );
 		}
     SendPacket(&data);
+}
+
+
+void WorldSession::HandleLearnTalentOpcode( WorldPacket & recv_data )
+{
+	if(!_player->IsInWorld()) return;
+ 	 
+	uint32 talent_id, requested_rank, unk;
+	recv_data >> talent_id >> requested_rank >> unk;
+
+    _player->LearnTalent( talent_id, requested_rank );
+
+}
+
+void WorldSession::HandleUnlearnTalents( WorldPacket & recv_data )
+{
+	if( !_player->IsInWorld() )
+		return;
+	
+	uint32 price = GetPlayer()->CalcTalentResetCost(GetPlayer()->GetTalentResetTimes());
+	if( !GetPlayer()->HasGold(price) )
+		return;
+
+	GetPlayer()->SetTalentResetTimes( GetPlayer()->GetTalentResetTimes() + 1 );
+	GetPlayer()->ModGold( -(int32)price );
+	GetPlayer()->Reset_Talents();
+}
+
+void WorldSession::HandleUnlearnSkillOpcode(WorldPacket& recv_data)
+{
+	if(!_player->IsInWorld()) return;
+	
+    uint32 skill_line;
+	uint32 points_remaining=_player->GetUInt32Value(PLAYER_CHARACTER_POINTS2);
+	recv_data >> skill_line;
+
+	// Cheater detection
+	// if(!_player->HasSkillLine(skill_line)) return;
+
+	// Remove any spells within that line that the player has
+	_player->RemoveSpellsFromLine(skill_line);
+	
+	// Finally, remove the skill line.
+	_player->_RemoveSkillLine(skill_line);
+
+	//added by Zack : This is probably wrong or already made elsewhere : restore skill learnability
+	if(points_remaining==_player->GetUInt32Value(PLAYER_CHARACTER_POINTS2))
+	{
+		//we unlearned a skill so we enable a new one to be learned
+		skilllineentry *sk=dbcSkillLine.LookupEntryForced(skill_line);
+		if(!sk)
+			return;
+		if(sk->type==SKILL_TYPE_PROFESSION && points_remaining<2)
+			_player->SetUInt32Value(PLAYER_CHARACTER_POINTS2,points_remaining+1);
+	}
+}
+
+void WorldSession::HandleLearnMultipleTalentsOpcode(WorldPacket &recvPacket){
+    uint32 talentcount;
+    uint32 talentid;
+    uint32 rank;
+
+	sLog.outDebug("Recieved packet CMSG_LEARN_TALENTS_MULTIPLE.");
+
+    if( !_player->IsInWorld() )
+        return;
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    // 0x04C1 CMSG_LEARN_TALENTS_MULTIPLE
+    //  As of 3.2.2.10550 the client sends this packet when clicking "learn" on the talent interface (in preview talents mode)
+    //  This packet tells the server which talents to learn
+    //
+    // Structure:
+    //
+    // struct talentdata{
+    //  uint32 talentid;                - unique numeric identifier of the talent (index of talent.dbc)
+    //  uint32 talentrank;              - rank of the talent
+    //  };
+    //
+    // uint32 talentcount;              - number of talentid-rank pairs in the packet
+    // talentdata[ talentcount ];
+    //  
+    //
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    recvPacket >> talentcount;
+
+    for( uint32 i = 0; i < talentcount; ++i ){
+        recvPacket >> talentid;
+        recvPacket >> rank;
+
+        _player->LearnTalent( talentid, rank, true );
+    }
+}
+
+void WorldSession::SendMOTD(){
+
+    WorldPacket data( SMSG_MOTD, 100 );
+
+    data << uint32( 4 );
+    data << sWorld.GetMotd();
+
+    SendPacket( &data );
 }

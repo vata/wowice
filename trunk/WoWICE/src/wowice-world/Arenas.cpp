@@ -26,7 +26,7 @@ Arena::Arena(MapMgr * mgr, uint32 id, uint32 lgroup, uint32 t, uint32 players_pe
 {
 	int i;
 
-	for (i=0; i<2; i++) {
+	for (i= 0; i<2; i++) {
 		m_players[i].clear();
 		m_pendPlayers[i].clear();
 	}
@@ -76,7 +76,6 @@ Arena::~Arena()
 	{
 		if((*itr) != NULL)
 		{
-			(*itr)->m_battleground = NULL;
 			if( !(*itr)->IsInWorld() )
 				delete (*itr);
 		}
@@ -129,8 +128,6 @@ void Arena::OnAddPlayer(Player * plr)
 
 	/* Add the green/gold team flag */
 	Aura * aura = new Aura(dbcSpell.LookupEntry((plr->GetTeamInitial()) ? 35775-plr->m_bgTeam : 32725-plr->m_bgTeam), -1, plr, plr, true);
-	if (!aura)
-		return;
 	plr->AddAura(aura);
 
 	/* Set FFA PvP Flag */
@@ -183,7 +180,7 @@ void Arena::HookOnHK(Player * plr)
 
 void Arena::HookOnPlayerDeath(Player * plr)
 {
-	ASSERT(plr != NULL);
+	Wowice::Util::WoWICE_ASSERT(   plr != NULL);
 
 	if( plr->m_isGmInvisible == true ) return;
 
@@ -393,7 +390,7 @@ void Arena::OnStart()
 		}
 	}
 
-	for (i=0; i<2; i++) {
+	for (i= 0; i<2; i++) {
 		if (m_teams[i] == NULL) continue;
 
 		m_teams[i]->m_stat_gamesplayedseason++;
@@ -417,7 +414,7 @@ void Arena::OnStart()
 	PlaySoundToAll(SOUND_BATTLEGROUND_BEGIN);
 
 	sEventMgr.RemoveEvents(this, EVENT_ARENA_SHADOW_SIGHT);
-	sEventMgr.AddEvent(((CBattleground*)this), &CBattleground::HookOnShadowSight, EVENT_ARENA_SHADOW_SIGHT, 90000, 1,0);
+	sEventMgr.AddEvent(((CBattleground*)this), &CBattleground::HookOnShadowSight, EVENT_ARENA_SHADOW_SIGHT, 90000, 1, EVENT_FLAG_DO_NOT_EXECUTE_IN_WORLD_CONTEXT);
 }
 
 void Arena::UpdatePlayerCounts()
@@ -538,7 +535,7 @@ void Arena::Finish()
 	PlaySoundToAll(m_winningteam ? SOUND_ALLIANCEWINS : SOUND_HORDEWINS);
 
 	sEventMgr.RemoveEvents(this, EVENT_BATTLEGROUND_CLOSE);
-	sEventMgr.AddEvent(((CBattleground*)this), &CBattleground::Close, EVENT_BATTLEGROUND_CLOSE, 120000, 1,0);
+	sEventMgr.AddEvent(((CBattleground*)this), &CBattleground::Close, EVENT_BATTLEGROUND_CLOSE, 120000, 1, EVENT_FLAG_DO_NOT_EXECUTE_IN_WORLD_CONTEXT);
 
 	for(int i = 0; i < 2; i++)
 	{
@@ -654,7 +651,7 @@ void Arena::HookOnAreaTrigger(Player * plr, uint32 id)
 {
 	int32 buffslot = -1;
 
-	ASSERT(plr != NULL);
+	Wowice::Util::WoWICE_ASSERT(   plr != NULL);
 
 	switch (id)
 	{
@@ -675,12 +672,10 @@ void Arena::HookOnAreaTrigger(Player * plr, uint32 id)
 		if(m_buffs[buffslot] != NULL && m_buffs[buffslot]->IsInWorld())
 		{
 			/* apply the buff */
-			SpellEntry * sp = dbcSpell.LookupEntry(m_buffs[buffslot]->GetInfo()->sound3);
-			ASSERT(sp != NULL);
+			SpellEntry * sp = dbcSpell.LookupEntryForced(m_buffs[buffslot]->GetInfo()->sound3);
+			Wowice::Util::WoWICE_ASSERT(   sp != NULL);
 
 			Spell * s = new Spell(plr, sp, true, 0);
-			if (!s)
-				return;
 			SpellCastTargets targets(plr->GetGUID());
 			s->prepare(&targets);
 

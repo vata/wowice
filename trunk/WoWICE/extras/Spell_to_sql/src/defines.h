@@ -13,15 +13,15 @@
 
 #define SERVER_DECL __declspec(dllexport)
 
-#define SPELL_DBC_CLIENT_BUILD 10314 // 3.2
+#define SPELL_DBC_CLIENT_BUILD 11403 // 3.3.2
 
 #define SQL_INSERTS_PER_QUERY 1000
 
 //this might change from 1 version to another of the DBC
-#define SPELL_COLUMN_COUNT 239
+#define SPELL_COLUMN_COUNT 240
 //last column is "skip_this_for_sql"
 
-const char sql_translation_table[SPELL_COLUMN_COUNT][3][300] = 
+const char sql_translation_table[SPELL_COLUMN_COUNT][3][SPELL_COLUMN_COUNT] = 
 {
 	{"uint32",	"Id", "0"},								//1
 	{"uint32",	"Category", "0"},						//2
@@ -252,7 +252,7 @@ const char sql_translation_table[SPELL_COLUMN_COUNT][3][300] =
 	{"uint32",	"MinReputation", "0"},				 	//227 - only one spellid:6994 has this value = 4 UNUSED
 	{"uint32",	"RequiredAuraVision", "0"},				//228 - 3 spells 1 or 2
 	{"uint32",	"TotemCategory_1", "0"},				//229
-	{"uint32",	"TotemCategory_2]", "0"},				//230
+	{"uint32",	"TotemCategory_2", "0"},				//230
 	{"int32",	"RequiresAreaId", "0"},					//231
 	{"uint32",	"School", "0"},							//232
 	{"uint32",	"RuneCostID", "0"},						//233
@@ -262,4 +262,5 @@ const char sql_translation_table[SPELL_COLUMN_COUNT][3][300] =
 	{"uint32",	"UNK5", "0"},							//237
 	{"uint32",	"UNK6", "0"},							//238
 	{"uint32",	"UNK7", "0"},							//239
+	{"uint32",	"UNK8", "0"},							//240
 };

@@ -32,7 +32,7 @@ class Battleground;
 
 enum Rates
 {
-	RATE_HEALTH=0,// hp regen
+	RATE_HEALTH= 0,// hp regen
 	RATE_POWER1,  // mp regen
 	RATE_POWER2,  // rage (rate unused)
 	RATE_POWER3,  // focus regen (pets)
@@ -65,7 +65,7 @@ enum Rates
 
 enum IntRates
 {
-	INTRATE_SAVE=0,
+	INTRATE_SAVE= 0,
 	INTRATE_COMPRESSION,
 	INTRATE_PVPTIMER,
 	MAX_INTRATES
@@ -99,11 +99,15 @@ enum ServerMessageType
 
 enum WorldMapInfoFlag
 {
-	WMI_INSTANCE_ENABLED   = 0x1,
-	WMI_INSTANCE_WELCOME   = 0x2,
-	WMI_INSTANCE_ARENA = 0x4,
-	WMI_INSTANCE_XPACK_01  = 0x8, //The Burning Crusade expansion
-	WMI_INSTANCE_XPACK_02  = 0x10, //Wrath of the Lich King expansion
+	WMI_INSTANCE_ENABLED			= 0x1,
+	WMI_INSTANCE_WELCOME			= 0x2,
+	WMI_INSTANCE_ARENA				= 0x4,
+	WMI_INSTANCE_XPACK_01			= 0x8, //The Burning Crusade expansion
+	WMI_INSTANCE_XPACK_02			= 0x10, //Wrath of the Lich King expansion
+	WMI_INSTANCE_HAS_NORMAL_10MEN	= 0x20,
+	WMI_INSTANCE_HAS_NORMAL_25MEN	= 0x40,
+	WMI_INSTANCE_HAS_HEROIC_10MEN	= 0x80,
+	WMI_INSTANCE_HAS_HEROIC_25MEN	= 0x100
 };
 
 enum AccountFlags
@@ -334,6 +338,8 @@ public:
 	void SendBCMessageByID(uint32 id);
 	void SendLocalizedWorldText(bool wide,const char * format, ...);
 
+    void SendZoneUnderAttackMsg( uint32 areaid, uint8 team );
+
 	WoWICE_INLINE void SetStartTime(uint32 val) { m_StartTime = val; }
 	WoWICE_INLINE uint32 GetUptime(void) { return (uint32)UNIXTIME - m_StartTime; }
 	WoWICE_INLINE uint32 GetStartTime(void) { return m_StartTime; }
@@ -362,7 +368,7 @@ public:
 					if ( found==2 ) 
 					{
 						temp += _session->LocalizedWorldSrv((uint32) atoi((char*)num.c_str()) );
-						found=0;
+						found= 0;
 						num.clear();
 					}
 				}

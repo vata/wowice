@@ -46,7 +46,7 @@ bool SendAchievementProgress(const CriteriaProgress* c)
 		// achievement not started yet, don't send progress
 		return false;
 
-	AchievementCriteriaEntry const* acEntry = dbcAchievementCriteriaStore.LookupEntry(c->id);
+	AchievementCriteriaEntry const* acEntry = dbcAchievementCriteriaStore.LookupEntryForced(c->id);
 	if( !acEntry )
 		return false;
 
@@ -202,18 +202,28 @@ void AchievementMgr::SaveToDB()
 	if( !m_completedAchievements.empty() )
 	{
 		std::ostringstream ss;
-		ss << "REPLACE INTO character_achievement (guid, achievement, date) VALUES ";
+
+        ss << "DELETE FROM character_achievement WHERE guid = ";
+        ss << m_player->GetLowGUID();
+        ss << ";";
+
+        CharacterDatabase.ExecuteNA( ss.str().c_str() );
+
+        ss.rdbuf()->str("");
+
+		ss << "INSERT INTO character_achievement VALUES ";
 		bool first = true;
 		for(CompletedAchievementMap::iterator iter = m_completedAchievements.begin(); iter!=m_completedAchievements.end(); iter++)
 		{
 			if( ss.str().length() >= 16000 )
 			{
 				// SQL query length is limited to 16384 characters
-				CharacterDatabase.Execute( ss.str().c_str() );
+				CharacterDatabase.ExecuteNA( ss.str().c_str() );
 				ss.str("");
-				ss << "REPLACE INTO character_achievement (guid, achievement, date) VALUES ";
+				ss << "INSERT INTO character_achievement VALUES ";
 				first = true;
 			}
+
 			if( !first )
 			{
 				ss << ", ";
@@ -222,15 +232,24 @@ void AchievementMgr::SaveToDB()
 			{
 				first = false;
 			}
-			ss << "("<<GetPlayer()->GetUInt32Value(OBJECT_FIELD_GUID) << ", " << iter->first << ", " << iter->second << ")";
+            ss << "(" << m_player->GetLowGUID() << ", " << iter->first << ", " << iter->second << ")";
 		}
-		CharacterDatabase.Execute( ss.str().c_str() );
+		CharacterDatabase.ExecuteNA( ss.str().c_str() );
 	}
 
 	if( !m_criteriaProgress.empty() )
 	{
 		std::ostringstream ss;
-		ss << "REPLACE INTO character_achievement_progress (guid, criteria, counter, date) VALUES ";
+
+        ss << "DELETE FROM character_achievement_progress WHERE guid = ";
+        ss << m_player->GetLowGUID();
+        ss << ";";
+
+        CharacterDatabase.ExecuteNA( ss.str().c_str() );
+
+        ss.rdbuf()->str("");
+
+		ss << "INSERT INTO character_achievement_progress VALUES ";
 		bool first = true;
 		for(CriteriaProgressMap::iterator iter = m_criteriaProgress.begin(); iter!=m_criteriaProgress.end(); ++iter)
 		{
@@ -240,9 +259,9 @@ void AchievementMgr::SaveToDB()
 				if( ss.str().length() >= 16000 )
 				{
 					// SQL query length is limited to 16384 characters
-					CharacterDatabase.Execute( ss.str().c_str() );
+					CharacterDatabase.ExecuteNA( ss.str().c_str() );
 					ss.str("");
-					ss << "REPLACE INTO character_achievement_progress (guid, criteria, counter, date) VALUES ";
+					ss << "INSERT INTO character_achievement_progress VALUES ";
 					first = true;
 				}
 				if( !first )
@@ -253,13 +272,13 @@ void AchievementMgr::SaveToDB()
 				{
 					first = false;
 				}
-				ss << "(" << GetPlayer()->GetUInt32Value(OBJECT_FIELD_GUID) << ", " << iter->first << ", " << iter->second->counter << ", " << iter->second->date << ")";
+                ss << "(" << m_player->GetLowGUID() << ", " << iter->first << ", " << iter->second->counter << ", " << iter->second->date << ")";
 			}
 		}
 		if( !first )
 		{
 			// don't execute query if there's no entries to save
-			CharacterDatabase.Execute( ss.str().c_str() );
+			CharacterDatabase.ExecuteNA( ss.str().c_str() );
 		}
 	}
 }
@@ -419,17 +438,20 @@ void AchievementMgr::SendAchievementEarned(AchievementEntry const* achievement)
 			grp->Unlock();
 		}
 		// Send Achievement message to nearby players
-		std::set<Player*>::iterator inRangeItr = GetPlayer()->GetInRangePlayerSetBegin();
-		std::set<Player*>::iterator inRangeItrLast = GetPlayer()->GetInRangePlayerSetEnd();
+		std::set<Object*>::iterator inRangeItr = GetPlayer()->GetInRangePlayerSetBegin();
+		std::set<Object*>::iterator inRangeItrLast = GetPlayer()->GetInRangePlayerSetEnd();
 		for(; inRangeItr != inRangeItrLast; ++inRangeItr)
 		{
-			if( (*inRangeItr) && (*inRangeItr)->GetSession() &&  !(*inRangeItr)->Social_IsIgnoring( GetPlayer()->GetLowGUID() ) )
+
+            Player *p = static_cast< Player* >( (*inRangeItr) );
+
+			if( p && p->GetSession() &&  !p->Social_IsIgnoring( GetPlayer()->GetLowGUID() ) )
 			{
 				// check if achievement message has already been sent to this player (in guild or group)
 				alreadySent = false;
 				for(guidIndex = 0; guidIndex < guidCount; ++guidIndex)
 				{
-					if( guidList[guidIndex] == (*inRangeItr)->GetLowGUID() )
+					if( guidList[guidIndex] == p->GetLowGUID() )
 					{
 						alreadySent = true;
 						guidIndex = guidCount;
@@ -437,8 +459,8 @@ void AchievementMgr::SendAchievementEarned(AchievementEntry const* achievement)
 				}
 				if( !alreadySent )
 				{
-					(*inRangeItr)->GetSession()->SendPacket(&cdata);
-					guidList[guidCount++] = (*inRangeItr)->GetLowGUID();
+					p->GetSession()->SendPacket(&cdata);
+					guidList[guidCount++] = p->GetLowGUID();
 				}
 			}
 		}
@@ -504,7 +526,7 @@ void AchievementMgr::SendCriteriaUpdate(CriteriaProgress* progress)
 */
 void AchievementMgr::CheckAllAchievementCriteria()
 {
-	for(uint32 i=0; i<ACHIEVEMENT_CRITERIA_TYPE_TOTAL; i++)
+	for(uint32 i= 0; i<ACHIEVEMENT_CRITERIA_TYPE_TOTAL; i++)
 		UpdateAchievementCriteria(AchievementCriteriaTypes(i));
 }
 
@@ -538,7 +560,7 @@ void AchievementMgr::UpdateAchievementCriteria(AchievementCriteriaTypes type, in
 			continue;
 		}
 
-		AchievementEntry const *achievement = dbcAchievementStore.LookupEntry(achievementCriteria->referredAchievement);
+		AchievementEntry const *achievement = dbcAchievementStore.LookupEntryForced(achievementCriteria->referredAchievement);
 		if( !achievement )
 		{
 			// referred achievement not found (shouldn't normally happen)
@@ -599,6 +621,13 @@ void AchievementMgr::UpdateAchievementCriteria(AchievementCriteriaTypes type, in
 				// Vanity pets owned - miscvalue1==778
 				// Number of mounts  - miscvalue1==777
 				if( achievementCriteria->number_of_mounts.unknown == static_cast<uint32>( miscvalue1 ))
+				{
+					UpdateCriteriaProgress(achievementCriteria, 1);
+				}
+				break;
+			case ACHIEVEMENT_CRITERIA_TYPE_BE_SPELL_TARGET:
+			case ACHIEVEMENT_CRITERIA_TYPE_BE_SPELL_TARGET2:
+				if( achievementCriteria->be_spell_target.spellID == static_cast<uint32>( miscvalue1))
 				{
 					UpdateCriteriaProgress(achievementCriteria, 1);
 				}
@@ -1186,7 +1215,7 @@ void AchievementMgr::UpdateAchievementCriteria(AchievementCriteriaTypes type)
 	{
 		AchievementCriteriaEntry const *achievementCriteria = (*i);
 
-		AchievementEntry const *achievement = dbcAchievementStore.LookupEntry(achievementCriteria->referredAchievement);
+		AchievementEntry const *achievement = dbcAchievementStore.LookupEntryForced(achievementCriteria->referredAchievement);
 		if( !achievement //|| IsCompletedCriteria(achievementCriteria)
 			|| (achievement->flags & ACHIEVEMENT_FLAG_COUNTER)
 			|| (achievement->factionFlag == ACHIEVEMENT_FACTION_FLAG_HORDE && m_player->GetTeam() != HORDE)
@@ -1264,7 +1293,7 @@ void AchievementMgr::UpdateAchievementCriteria(AchievementCriteriaTypes type)
 				uint32 nm = 0;
 				while(sl != GetPlayer()->mSpells.end())
 				{
-					SpellEntry* sp = dbcSpell.LookupEntry(*sl);
+					SpellEntry* sp = dbcSpell.LookupEntryForced(*sl);
 					if( achievementCriteria->number_of_mounts.unknown == 777 && sp && sp->MechanicsType == MECHANIC_MOUNTED )
 					{
 						// mount spell
@@ -1311,7 +1340,7 @@ bool AchievementMgr::IsCompletedCriteria(AchievementCriteriaEntry const* achieve
 	{
 		return false;
 	}
-	AchievementEntry const* achievement = dbcAchievementStore.LookupEntry(achievementCriteria->referredAchievement);
+	AchievementEntry const* achievement = dbcAchievementStore.LookupEntryForced(achievementCriteria->referredAchievement);
 	if( achievement == NULL )
 	{
 		return false;
@@ -1391,6 +1420,9 @@ bool AchievementMgr::IsCompletedCriteria(AchievementCriteriaEntry const* achieve
 			return progresscounter >= achievementCriteria->gain_exalted_reputation.numberOfExaltedFactions;
 		case ACHIEVEMENT_CRITERIA_TYPE_NUMBER_OF_MOUNTS:
 			return progresscounter >= achievementCriteria->number_of_mounts.mountCount;
+		case ACHIEVEMENT_CRITERIA_TYPE_BE_SPELL_TARGET:
+		case ACHIEVEMENT_CRITERIA_TYPE_BE_SPELL_TARGET2:
+			return progresscounter >= achievementCriteria->be_spell_target.spellCount;
 		case ACHIEVEMENT_CRITERIA_TYPE_KILL_CREATURE:
 			return progresscounter >= achievementCriteria->kill_creature.creatureCount;
 		case ACHIEVEMENT_CRITERIA_TYPE_REACH_SKILL_LEVEL:
@@ -1470,7 +1502,7 @@ AchievementCompletionState AchievementMgr::GetAchievementCompletionState(Achieve
 	bool foundOutstanding = false;
 	for ( uint32 rowId = 0; rowId<dbcAchievementCriteriaStore.GetNumRows(); ++rowId )
 	{
-		AchievementCriteriaEntry const* criteria = dbcAchievementCriteriaStore.LookupRow(rowId);
+		AchievementCriteriaEntry const* criteria = dbcAchievementCriteriaStore.LookupRowForced(rowId);
 		if( criteria == NULL || criteria->referredAchievement!= entry->ID )
 		{
 			continue;
@@ -1648,12 +1680,12 @@ void AchievementMgr::SendAllAchievementData(Player* player)
 		data << int32(-1);
 		for(; progressIter != m_criteriaProgress.end() && !packetFull; ++progressIter)
 		{
-			acEntry = dbcAchievementCriteriaStore.LookupEntry(progressIter->first);
+			acEntry = dbcAchievementCriteriaStore.LookupEntryForced(progressIter->first);
 			if( !acEntry )
 			{
 				continue;
 			}
-			achievement = dbcAchievementStore.LookupEntry(acEntry->referredAchievement);
+			achievement = dbcAchievementStore.LookupEntryForced(acEntry->referredAchievement);
 			if( !achievement )
 			{
 				continue;
@@ -1957,7 +1989,7 @@ void AchievementMgr::GiveAchievementReward(AchievementEntry const* entry)
 					GetPlayer()->GetSession()->SendNotification("Unable to create item with id %lu!", r.itemId);
 					return;
 				}
-				item->SetUInt32Value(ITEM_FIELD_STACK_COUNT, 1);
+				item->SetStackCount(  1);
 				if( it->Bonding==ITEM_BIND_ON_PICKUP )
 				{
 					if( it->Flags & ITEM_FLAG_ACCOUNTBOUND )
@@ -2009,7 +2041,7 @@ bool AchievementMgr::GMCompleteAchievement(WorldSession* gmSession, int32 achiev
 		AchievementEntry const* ach;
 		for(uint32 i = 0; i < nr; ++i)
 		{
-			ach = dbcAchievementStore.LookupRow(i);
+			ach = dbcAchievementStore.LookupRowForced(i);
 			if( ach == NULL )
 			{
 				m_player->GetSession()->SystemMessage("Achievement %lu entry not found.", i);
@@ -2035,7 +2067,7 @@ bool AchievementMgr::GMCompleteAchievement(WorldSession* gmSession, int32 achiev
 		gmSession->SystemMessage("Player has already completed that achievement.");
 		return false;
 	}
-	AchievementEntry const* achievement = dbcAchievementStore.LookupEntry(achievementID);
+	AchievementEntry const* achievement = dbcAchievementStore.LookupEntryForced(achievementID);
 	if( !achievement )
 	{
 		gmSession->SystemMessage("Achievement %lu entry not found.", achievementID);
@@ -2065,7 +2097,7 @@ bool AchievementMgr::GMCompleteCriteria(WorldSession* gmSession, int32 criteriaI
 		AchievementCriteriaEntry const* crt;
 		for(uint32 i = 0, j = 0; j < nr; ++i)
 		{
-			crt = dbcAchievementCriteriaStore.LookupRow(i);
+			crt = dbcAchievementCriteriaStore.LookupRowForced(i);
 			if( crt == NULL )
 			{
 				sLog.outError("Achievement Criteria %lu entry not found.", i);
@@ -2081,7 +2113,7 @@ bool AchievementMgr::GMCompleteCriteria(WorldSession* gmSession, int32 criteriaI
 		m_player->GetSession()->SystemMessage("All achievement criteria completed.");
 		return true;
 	}
-	AchievementCriteriaEntry const* criteria = dbcAchievementCriteriaStore.LookupEntry(criteriaID);
+	AchievementCriteriaEntry const* criteria = dbcAchievementCriteriaStore.LookupEntryForced(criteriaID);
 	if( !criteria )
 	{
 		gmSession->SystemMessage("Achievement criteria %lu not found.", criteriaID);
@@ -2092,7 +2124,7 @@ bool AchievementMgr::GMCompleteCriteria(WorldSession* gmSession, int32 criteriaI
 		gmSession->SystemMessage("Achievement criteria %lu already completed.", criteriaID);
 		return false;
 	}
-	AchievementEntry const* achievement = dbcAchievementStore.LookupEntry(criteria->referredAchievement);
+	AchievementEntry const* achievement = dbcAchievementStore.LookupEntryForced(criteria->referredAchievement);
 	if( !achievement )
 	{
 		// achievement not found

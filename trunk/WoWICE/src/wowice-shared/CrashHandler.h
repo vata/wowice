@@ -29,7 +29,6 @@ void OutputCrashLogLine(const char* format, ...);
 
 #ifdef WIN32
 
-//#include <Windows.h>
 #include <DbgHelp.h>
 #include "StackWalker.h"
 #include "CircularQueue.h"
@@ -52,31 +51,13 @@ void OnCrash(bool Terminate);
 typedef struct _EXCEPTION_POINTERS EXCEPTION_POINTERS, *PEXCEPTION_POINTERS;
 int __cdecl HandleCrash(PEXCEPTION_POINTERS pExceptPtrs);
 
-#define THREAD_TRY_EXECUTION __try 
-#define THREAD_HANDLE_CRASH  __except(HandleCrash(GetExceptionInformation())) {}
-
-#define THREAD_TRY_EXECUTION2 __try {
-#define THREAD_HANDLE_CRASH2  } __except(HandleCrash(GetExceptionInformation())) {}
-
-#define THREAD_TRY_EXECUTION_MapMgr __try {
-#define THREAD_HANDLE_CRASH_MapMgr  } __except(HandleCrash(GetExceptionInformation())) { KillThreadWithCleanup(); }
+#define THREAD_TRY_EXECUTION __try{
+#define THREAD_HANDLE_CRASH  }__except( HandleCrash( GetExceptionInformation() ) ) {}
 
 #else
 
-// We dont wanna confuse nix ;p
-#define THREAD_TRY_EXECUTION 
-#define THREAD_HANDLE_CRASH 
-
-#define THREAD_TRY_EXECUTION2 ;
-#define THREAD_HANDLE_CRASH2 ;
-
-#ifndef FORCED_SERVER_KEEPALIVE
-	#define THREAD_TRY_EXECUTION_MapMgr ;
-	#define THREAD_HANDLE_CRASH_MapMgr ;
-#else
-	#define THREAD_TRY_EXECUTION_MapMgr try {
-	#define THREAD_HANDLE_CRASH_MapMgr } catch (int error) { KillThreadWithCleanup(); }
-#endif
+#define THREAD_TRY_EXECUTION ;
+#define THREAD_HANDLE_CRASH ;
 
 #endif
 

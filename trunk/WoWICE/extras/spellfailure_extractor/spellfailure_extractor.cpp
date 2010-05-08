@@ -1,5 +1,4 @@
 // spellfailure_extractor.cpp : Defines the entry point for the console application.
-//
 
 #include <cstring>
 #include <cstdio>

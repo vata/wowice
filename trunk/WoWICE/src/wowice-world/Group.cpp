@@ -75,8 +75,8 @@ Group::Group(bool Assign)
 	m_disbandOnNoMembers = true;
 	memset(m_targetIcons, 0, sizeof(uint64) * 8);
 	m_isqueued=false;
-	m_difficulty=0;
-	m_raiddifficulty=0;
+	m_difficulty= 0;
+	m_raiddifficulty= 0;
 	m_assistantLeader=m_mainAssist=m_mainTank= NULL;
 #ifdef VOICE_CHAT
 	m_voiceChannelRequested = false;
@@ -845,7 +845,16 @@ void Group::SaveToDB()
 	//uint32 i = 0;
 	uint32 fillers = 8 - m_SubGroupCount;
 
-	ss << "REPLACE INTO groups VALUES("
+
+    ss << "DELETE FROM groups WHERE group_id = ";
+    ss << m_Id;
+    ss << ";";
+
+    CharacterDatabase.Execute( ss.str().c_str() );
+
+    ss.rdbuf()->str("");
+
+	ss << "INSERT INTO groups VALUES("
 		<< m_Id << ","
 		<< uint32(m_GroupType) << ","
 		<< uint32(m_SubGroupCount) << ","
@@ -885,9 +894,9 @@ void Group::SaveToDB()
 		ss << "0,0,0,0,0,";
 
 	ss << (uint32)UNIXTIME << ",'";
-	for(int i=0; i<NUM_MAPS; i++)
+	for(int i= 0; i<NUM_MAPS; i++)
 	{
-		for(int j=0; j<NUM_INSTANCE_MODES; j++)
+		for(int j= 0; j<NUM_INSTANCE_MODES; j++)
 		{
 			if(m_instanceIds[i][j] > 0)
 			{
@@ -1476,3 +1485,41 @@ void Group::VoiceSessionReconnected()
 	m_groupLock.Release();
 }
 #endif
+
+void Group::SetDungeonDifficulty(uint32 diff){
+	m_difficulty = static_cast<uint8>( diff );
+
+    Lock();
+	for(uint32 i = 0; i < GetSubGroupCount(); ++i)
+	{
+		for(GroupMembersSet::iterator itr = GetSubGroup(i)->GetGroupMembersBegin(); itr != GetSubGroup(i)->GetGroupMembersEnd(); ++itr)
+		{
+			if((*itr)->m_loggedInPlayer)
+			{
+				(*itr)->m_loggedInPlayer->SetDungeonDifficulty( diff );
+				(*itr)->m_loggedInPlayer->SendDungeonDifficulty();
+			}
+		}
+	}
+	Unlock();
+}
+
+void Group::SetRaidDifficulty(uint32 diff){
+	m_raiddifficulty = static_cast< uint8 >( diff );
+
+	Lock();
+	
+	for(uint32 i = 0; i < GetSubGroupCount(); ++i)
+	{
+		for(GroupMembersSet::iterator itr = GetSubGroup(i)->GetGroupMembersBegin(); itr != GetSubGroup(i)->GetGroupMembersEnd(); ++itr)
+		{
+			if((*itr)->m_loggedInPlayer)
+			{
+				(*itr)->m_loggedInPlayer->SetRaidDifficulty( diff );
+				(*itr)->m_loggedInPlayer->SendRaidDifficulty();
+			}
+		}
+	}
+	
+	Unlock();
+}

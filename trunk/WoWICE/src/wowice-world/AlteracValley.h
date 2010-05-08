@@ -81,6 +81,7 @@ struct AVNodeTemplate
 class AlteracValley;
 class AVNode
 {
+
 	AlteracValley &m_bg;
 	AVNodeTemplate *m_template;
 
@@ -121,7 +122,7 @@ public:
 	AVNode(AlteracValley &parent, AVNodeTemplate *tmpl, uint32 node_id);
 	~AVNode();
 
-	// initial spawn
+    // initial spawn
 	void Spawn();
 
 	// assault

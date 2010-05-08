@@ -56,6 +56,21 @@ enum BattleGroundTypes
 	BATTLEGROUND_NUM_TYPES			= 33, //Based on BattlemasterList.dbc, make the storage arrays big enough! On 3.1.3 the last one was 11 The Ring of Valor, so 12 was enough here, but on 3.2.0 there is 32 All Battlegrounds!
 };
 
+enum BattleGroundMasterTypes
+{
+	BGMASTER_CREATURE		= 1,
+	BGMASTER_OBJECT			= 2,
+	BGMASTER_ITEM			= 3,
+};
+
+enum BattleGroundStatus
+{
+	BGSTATUS_NOFLAGS		= 0, // wtfbbq, why aren't there any flags?
+	BGSTATUS_INQUEUE		= 1, // Battleground has a queue, player is now in queue
+	BGSTATUS_READY		= 2, // Battleground is ready to join
+	BGSTATUS_TIME		= 3, // Ex. Wintergrasp time remaining 
+};
+
 struct BGScore
 {
 	uint32 KillingBlows;
@@ -201,7 +216,7 @@ public:
 	~CBattlegroundManager();
 
 	/* Packet Handlers */
-	void HandleBattlegroundListPacket(WorldSession * m_session, uint32 BattlegroundType, uint8 from=0);
+	void HandleBattlegroundListPacket(WorldSession * m_session, uint32 BattlegroundType, uint8 from= 0);
 	void HandleArenaJoin(WorldSession * m_session, uint32 BattlegroundType, uint8 as_group, uint8 rated_match);
 
 	/* Player Logout Handler */

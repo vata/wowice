@@ -20,7 +20,6 @@
 #include <map>
 #include <sstream>
 #include <string>
-//#include <fstream>
 
 #include "Common.h"
 #include <Network/Network.h>
@@ -38,7 +37,6 @@
 #include "../wowice-shared/Auth/BigNumber.h"
 #include "../wowice-shared/Auth/Sha1.h"
 #include "../wowice-shared/Auth/WowCrypt.h"
-#include "../wowice-shared/CrashHandler.h"
 
 #include "LogonOpcodes.h"
 #include "../wowice-logonserver/Main.h"
@@ -48,7 +46,6 @@
 #include "../wowice-logonserver/AutoPatcher.h"
 #include "../wowice-logonserver/AuthSocket.h"
 #include "../wowice-logonserver/AuthStructs.h"
-//#include "../wowice-logonserver/LogonOpcodes.h"
 #include "../wowice-logonserver/LogonCommServer.h"
 #include "../wowice-logonserver/LogonConsole.h"
 #include "../wowice-shared/WorldPacket.h"

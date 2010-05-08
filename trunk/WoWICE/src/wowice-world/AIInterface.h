@@ -59,6 +59,7 @@ enum AIType
 	AITYPE_PET,
 	AITYPE_TOTEM,
 	AITYPE_GUARDIAN, //we got a master but he cannot control us, we follow and battle opposite factions
+    AITYPE_PASSIVE
 };
 
 enum MovementType
@@ -163,10 +164,13 @@ enum AiEvents
 struct SpellEntry;
 //enum MOD_TYPES;
 
+const uint32 AISPELL_ANY_DIFFICULTY = 4;
+
 struct AI_Spell
 {
 	~AI_Spell() { autocast_type=(uint32)-1; }
 	uint32 entryId;
+	uint32 instance_mode;
 	uint16 agent;
 	uint32 procChance;
 	//int32 procCount;
@@ -238,6 +242,7 @@ public:
 	void setCreatureState(CreatureState state){ m_creatureState = state; }
 	WoWICE_INLINE uint8 getAIState() { return static_cast<uint8>( m_AIState ); }
 	WoWICE_INLINE uint8 getAIType() { return static_cast<uint8>( m_AIType ); }
+    void SetAIType( AIType at ){ m_AIType = at; }
 	WoWICE_INLINE uint8 getCurrentAgent() { return static_cast<uint8>( m_aiCurrentAgent ); }
 	void setCurrentAgent(AI_Agent agent) { m_aiCurrentAgent = agent; }
 	uint32	getThreatByGUID(uint64 guid);

@@ -124,13 +124,92 @@ public:
 	virtual ~Item();
 	void Create( uint32 itemid, Player* owner );
 
-	WoWICE_INLINE ItemPrototype* GetProto() const { return m_itemProto; }
-	WoWICE_INLINE void SetProto( ItemPrototype* pr ) { m_itemProto = pr; }
+	ItemPrototype* GetProto() const { return m_itemProto; }
+	void SetProto( ItemPrototype* pr ) { m_itemProto = pr; }
 
-	WoWICE_INLINE Player* GetOwner() const { return m_owner; }
+	Player* GetOwner() const { return m_owner; }
 	void SetOwner( Player* owner );
 
-	WoWICE_INLINE bool IsContainer(){ return ( m_objectTypeId == TYPEID_CONTAINER ) ? true : false; }
+    void SetOWnerGUID( uint64 GUID ){ SetUInt64Value( ITEM_FIELD_OWNER, GUID );   }
+    uint64 GetOwnerGUID(){ return GetUInt64Value( ITEM_FIELD_OWNER );  }
+    
+    void SetContainerGUID( uint64 GUID ){ SetUInt64Value( ITEM_FIELD_CONTAINED, GUID );   }
+    uint64 GetContainerGUID(){ return GetUInt64Value( ITEM_FIELD_CONTAINED );   }
+    
+    void SetCreatorGUID( uint64 GUID ){ SetUInt64Value( ITEM_FIELD_CREATOR, GUID ); }
+    void SetGiftCreatorGUID( uint64 GUID ){ SetUInt64Value( ITEM_FIELD_GIFTCREATOR, GUID ); }
+    
+    uint64 GetCreatorGUID(){ return GetUInt64Value( ITEM_FIELD_CREATOR ); }
+    uint64 GetGiftCreatorGUID(){ return GetUInt64Value( ITEM_FIELD_GIFTCREATOR ); }
+	
+    void SetStackCount( uint32 amt ) { SetUInt32Value( ITEM_FIELD_STACK_COUNT,  amt ); }
+    uint32 GetStackCount(){ return GetUInt32Value( ITEM_FIELD_STACK_COUNT ); }
+    void ModStackCount( int32 val ){ ModUnsigned32Value( ITEM_FIELD_STACK_COUNT, val ); }
+    
+    void SetDuration( uint32 durationseconds ){ SetUInt32Value( ITEM_FIELD_DURATION, durationseconds ); }
+    uint32 GetDuration(){ return GetUInt32Value( ITEM_FIELD_DURATION ); }
+    
+    void SetCharges( uint32 index, uint32 charges ){ SetUInt32Value( ITEM_FIELD_SPELL_CHARGES + index, charges ); }
+    void ModCharges( uint32 index, int32 val ){ ModUnsigned32Value( ITEM_FIELD_SPELL_CHARGES + index, val ); }
+    uint32 GetCharges( uint32 index ){ return GetUInt32Value( ITEM_FIELD_SPELL_CHARGES + index ); }
+
+    /////////////////////////////////////////////////// FLAGS ////////////////////////////////////////////////////////////
+
+	void SoulBind(){ SetFlag( ITEM_FIELD_FLAGS, ITEM_FLAG_SOULBOUND ); }
+	bool IsSoulbound(){ return HasFlag( ITEM_FIELD_FLAGS, ITEM_FLAG_QUEST | ITEM_FLAG_SOULBOUND ); }
+	
+    void AccountBind(){ SetFlag( ITEM_FIELD_FLAGS, ITEM_FLAG_ACCOUNTBOUND ); }
+	bool IsAccountbound(){ return HasFlag( ITEM_FIELD_FLAGS, ITEM_FLAG_ACCOUNTBOUND );  }
+   
+    void MakeConjured(){ SetFlag( ITEM_FIELD_FLAGS, ITEM_FLAG_CONJURED ); }
+    bool IsConjured(){ return HasFlag( ITEM_FIELD_FLAGS, ITEM_FLAG_CONJURED ); }
+
+    void Lock(){ RemoveFlag( ITEM_FIELD_FLAGS, ITEM_FLAG_LOOTABLE  ); }
+    void UnLock(){ SetFlag( ITEM_FIELD_FLAGS, ITEM_FLAG_LOOTABLE  ); }
+
+    void Wrap(){ SetFlag( ITEM_FIELD_FLAGS, ITEM_FLAG_WRAPPED ); }
+    void UnWrap(){ RemoveFlag( ITEM_FIELD_FLAGS, ITEM_FLAG_WRAPPED ); }
+
+    void ClearFlags(){ SetFlag( ITEM_FIELD_FLAGS, 0 ); }
+
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+	uint32 GetItemRandomPropertyId() const { return m_uint32Values[ITEM_FIELD_RANDOM_PROPERTIES_ID]; }
+	uint32 GetItemRandomSuffixFactor() { return m_uint32Values[ITEM_FIELD_PROPERTY_SEED]; }
+    void SetItemRandomPropertyId( uint32 id ){ SetUInt32Value( ITEM_FIELD_RANDOM_PROPERTIES_ID, id ); }
+    void SetItemRandomSuffixFactor( uint32 factor ){ SetUInt32Value( ITEM_FIELD_PROPERTY_SEED, factor ); }
+
+	void SetRandomProperty( uint32 id )
+	{
+		SetUInt32Value( ITEM_FIELD_RANDOM_PROPERTIES_ID, id );
+		random_prop = id;
+	}
+
+	void SetRandomSuffix( uint32 id )
+	{
+		int32 r_id = -(int32(id));
+		uint32 v = Item::GenerateRandomSuffixFactor( m_itemProto );
+		SetUInt32Value( ITEM_FIELD_RANDOM_PROPERTIES_ID, (uint32)r_id );
+		SetUInt32Value( ITEM_FIELD_PROPERTY_SEED, v );
+		random_suffix = id;
+	}
+
+	void SetDurability( uint32 Value ) { SetUInt32Value(ITEM_FIELD_DURABILITY, Value ); };
+    void SetDurabilityMax( uint32 Value ) { SetUInt32Value(ITEM_FIELD_MAXDURABILITY, Value ); };
+	void SetDurabilityToMax() { SetUInt32Value( ITEM_FIELD_DURABILITY, GetUInt32Value( ITEM_FIELD_MAXDURABILITY ) ); }
+	uint32 GetDurability() { return GetUInt32Value( ITEM_FIELD_DURABILITY ); }
+	uint32 GetDurabilityMax() { return GetUInt32Value( ITEM_FIELD_MAXDURABILITY ); }
+
+    uint32 GetEnchantmentId( uint32 index ){ return GetUInt32Value( ITEM_FIELD_ENCHANTMENT_1_1 + 3 * index ); }
+    void SetEnchantmentId( uint32 index, uint32 value ){ SetUInt32Value( ITEM_FIELD_ENCHANTMENT_1_1 + 3 * index, value ); }
+
+    //////////////////////////////////////////////////////////
+    // Creation time in terms of played time
+    /////////////////////////////////////////////////////////
+    void SetCreationTime( uint32 time ){ SetUInt32Value( ITEM_FIELD_CREATE_PLAYED_TIME, time ); }
+    uint32 GetCreationTime(){ return GetUInt32Value( ITEM_FIELD_CREATE_PLAYED_TIME ); }
+
+	bool IsContainer(){ return ( m_objectTypeId == TYPEID_CONTAINER ) ? true : false; }
 	
 	//! DB Serialization
 	void LoadFromDB( Field *fields, Player* plr, bool light );
@@ -140,27 +219,7 @@ public:
 	void DeleteMe();
     bool IsEligibleForRefund();
 	
-	WoWICE_INLINE void SoulBind()
-	{
-		this->SetFlag( ITEM_FIELD_FLAGS, ITEM_FLAG_SOULBOUND );
-	}
-
-	WoWICE_INLINE bool IsSoulbound()
-	{
-		return this->HasFlag( ITEM_FIELD_FLAGS, ITEM_FLAG_QUEST | ITEM_FLAG_SOULBOUND );
-	}
-
-	WoWICE_INLINE void AccountBind()
-	{
-		this->SetFlag( ITEM_FIELD_FLAGS, ITEM_FLAG_ACCOUNTBOUND );
-	}
-
-	WoWICE_INLINE bool IsAccountbound()
-	{
-		return this->HasFlag( ITEM_FIELD_FLAGS, ITEM_FLAG_ACCOUNTBOUND );  // 134217728 = 0x8000000
-	}
-
-	WoWICE_INLINE uint32 GetChargesLeft()
+	uint32 GetChargesLeft()
 	{
 		for( uint32 x = 0; x < 5; x++ )
 			if( m_itemProto->Spells[x].Id )
@@ -168,7 +227,7 @@ public:
 		return 0;
 	}
 
-	WoWICE_INLINE time_t GetEnchantmentApplytime( uint32 slot )
+	time_t GetEnchantmentApplytime( uint32 slot )
 	{
 		EnchantmentMap::iterator itr = Enchantments.find( slot );
 		if( itr == Enchantments.end() )
@@ -228,12 +287,7 @@ public:
 	// gets the itemlink for a message to the player
 	string GetItemLink(uint32 language);
 
-	WoWICE_INLINE void SetCount( uint32 amt ) { SetUInt32Value( ITEM_FIELD_STACK_COUNT, amt ); }
-	WoWICE_INLINE void SetDurability( uint32 Value ) { SetUInt32Value(ITEM_FIELD_DURABILITY, Value ); };
-	WoWICE_INLINE void SetDurabilityToMax() { SetUInt32Value( ITEM_FIELD_DURABILITY, GetUInt32Value( ITEM_FIELD_MAXDURABILITY ) ); }
-	WoWICE_INLINE uint32 GetDurability() { return GetUInt32Value( ITEM_FIELD_DURABILITY ); }
-	WoWICE_INLINE uint32 GetDurabilityMax() { return GetUInt32Value( ITEM_FIELD_MAXDURABILITY ); }
-	WoWICE_INLINE bool IsAmmoBag() { return (m_itemProto->Class == ITEM_CLASS_QUIVER); }
+	bool IsAmmoBag() { return (m_itemProto->Class == ITEM_CLASS_QUIVER); }
 
 	uint32 CountGemsWithLimitId(uint32 Limit);
 
@@ -246,24 +300,7 @@ public:
 	EnchantmentInstance* GetEnchantment( uint32 slot );
 	bool IsGemRelated( EnchantEntry* Enchantment );
 
-	WoWICE_INLINE uint32 GetItemRandomPropertyId() const { return m_uint32Values[ITEM_FIELD_RANDOM_PROPERTIES_ID]; }
-	WoWICE_INLINE uint32 GetItemRandomSuffixFactor() { return m_uint32Values[ITEM_FIELD_PROPERTY_SEED]; }
 	static uint32 GenerateRandomSuffixFactor( ItemPrototype* m_itemProto );
-
-	WoWICE_INLINE void SetRandomProperty( uint32 id )
-	{
-		SetUInt32Value( ITEM_FIELD_RANDOM_PROPERTIES_ID, id );
-		random_prop = id;
-	}
-
-	WoWICE_INLINE void SetRandomSuffix( uint32 id )
-	{
-		int32 r_id = -(int32(id));
-		uint32 v = Item::GenerateRandomSuffixFactor( m_itemProto );
-		SetUInt32Value( ITEM_FIELD_RANDOM_PROPERTIES_ID, (uint32)r_id );
-		SetUInt32Value( ITEM_FIELD_PROPERTY_SEED, v );
-		random_suffix = id;
-	}
 
 	bool HasEnchantments() { return (Enchantments.size() > 0 ) ? true : false; }
 
@@ -273,7 +310,7 @@ public:
     void SetItemExpireTime( time_t timesec ){ ItemExpiresOn = timesec; }
     void EventRemoveItem();
     void RemoveFromRefundableMap();
-	bool RepairItem(Player * pPlayer);
+	bool RepairItem(Player * pPlayer, bool guildmoney = false, int32 * pCost = NULL);
 	uint32 RepairItemCost();
         
 protected:

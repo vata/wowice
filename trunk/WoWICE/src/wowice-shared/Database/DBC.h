@@ -39,12 +39,12 @@ public:
 	void GuessFormat();
 	DBCFmat GuessFormat(int row, int col);
 	void FormatCSV(const char *filename, bool info = false);
-	void Lookup(char* out, int row, int col,char isstr=0,bool onlystr=false);
+	void Lookup(char* out, int row, int col,char isstr= 0,bool onlystr=false);
 	void LookupFormat(char* out, int row, int col);
 	void RowToStruct(void* out, int row);
 	bool IsLoaded() { return loaded; }
-	void* __fastcall GetRow(unsigned const int index) { return (void *)&tbl[index*cols]; }
-	char* __fastcall LookupString(unsigned const int offset) { return db+offset; }
+	void*  GetRow(unsigned const int index) { return (void *)&tbl[index*cols]; }
+	char*  LookupString(unsigned const int offset) { return db+offset; }
 	int GetRows() { return rows; }
 	int GetCols() { return cols; }
 	int GetDBSize() { return dblength; }

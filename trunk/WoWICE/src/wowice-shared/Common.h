@@ -42,30 +42,24 @@ enum TimeVariables
 enum MsTimeVariables
 {
 	MSTIME_SECOND = 1000,
+	MSTIME_6SECONDS = MSTIME_SECOND * 6,
 	MSTIME_MINUTE = MSTIME_SECOND * 60,
 	MSTIME_HOUR   = MSTIME_MINUTE * 60,
 	MSTIME_DAY	  = MSTIME_HOUR * 24
 };
 
 #ifdef WIN32
-#define WoWICE_INLINE __forceinline
+#define WoWICE_FORCEINLINE __forceinline
 #else
-#define WoWICE_INLINE inline
+#define WoWICE_FORCEINLINE inline
 #endif
+#define WoWICE_INLINE inline
 
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
 
 #include "wowiceConfig.h"
-
-/* Define this if you're using a big-endian machine */
-#ifdef USING_BIG_ENDIAN
-#include <machine/byte_order.h>
-#define bswap_16(x) NXSwapShort(x)
-#define bswap_32(x) NXSwapInt(x)
-#define bswap_64(x) NXSwapLongLong(x)
-#endif
 
 #include <cstdlib>
 #include <stdio.h>
@@ -170,28 +164,17 @@ enum MsTimeVariables
 #define CONFIG "Release"
 #endif
 
-#ifdef USING_BIG_ENDIAN
-#define ARCH "PPC"
-#else
 #ifdef X64
-#define ARCH "X64"
+    #define ARCH "X64"
 #else
-#define ARCH "X86"
-#endif
+    #define ARCH "X86"
 #endif
 
-/*#if COMPILER == COMPILER_MICROSOFT
-#  pragma warning( disable : 4267 ) // conversion from 'size_t' to 'int', possible loss of data
-#  pragma warning( disable : 4311 ) // 'type cast': pointer truncation from HMODULE to uint32
-#  pragma warning( disable : 4786 ) // identifier was truncated to '255' characters in the debug information
-#  pragma warning( disable : 4146 )
-#  pragma warning( disable : 4800 )
-#endif*/
 
 #if PLATFORM == PLATFORM_WIN32
-#define STRCASECMP stricmp
+    #define STRCASECMP stricmp
 #else
-#define STRCASECMP strcasecmp
+    #define STRCASECMP strcasecmp
 #endif
 
 #if PLATFORM == PLATFORM_WIN32
@@ -368,104 +351,6 @@ typedef uint32_t DWORD;
 
 #endif
 
-/* these can be optimized into assembly */
-#ifdef USING_BIG_ENDIAN
-
-/*WoWICE_INLINE static void swap16(uint16* p) { *p = ((*p >> 8) & 0xff) | (*p << 8); }
-WoWICE_INLINE static void swap32(uint32* p) { *p = ((*p >> 24 & 0xff)) | ((*p >> 8) & 0xff00) | ((*p << 8) & 0xff0000) | (*p << 24); }
-WoWICE_INLINE static void swap64(uint64* p) { *p = ((*p >> 56)) | ((*p >> 40) & 0x000000000000ff00ULL) | ((*p >> 24) & 0x0000000000ff0000ULL) | ((*p >> 8 ) & 0x00000000ff000000ULL) |
-								((*p << 8 ) & 0x000000ff00000000ULL) | ((*p << 24) & 0x0000ff0000000000ULL) | ((*p << 40) & 0x00ff000000000000ULL) | ((*p << 56)); }*/
-
-WoWICE_INLINE static void swap16(uint16* p) { *p = bswap_16((uint16_t)*p); }
-WoWICE_INLINE static void swap32(uint32* p) { *p = bswap_32((uint32_t)*p); }
-WoWICE_INLINE static void swap64(uint64* p) { *p = bswap_64((uint64_t)*p);; }
-
-WoWICE_INLINE static float swapfloat(float p)
-{
-	union { float asfloat; uint8 asbytes[4]; } u1, u2;
-	u1.asfloat = p;
-	/* swap! */
-	u2.asbytes[0] = u1.asbytes[3];
-	u2.asbytes[1] = u1.asbytes[2];
-	u2.asbytes[2] = u1.asbytes[1];
-	u2.asbytes[3] = u1.asbytes[0];
-    
-	return u2.asfloat;
-}
-
-WoWICE_INLINE static double swapdouble(double p)
-{
-	union { double asfloat; uint8 asbytes[8]; } u1, u2;
-	u1.asfloat = p;
-	/* swap! */
-	u2.asbytes[0] = u1.asbytes[7];
-	u2.asbytes[1] = u1.asbytes[6];
-	u2.asbytes[2] = u1.asbytes[5];
-	u2.asbytes[3] = u1.asbytes[4];
-	u2.asbytes[4] = u1.asbytes[3];
-	u2.asbytes[5] = u1.asbytes[2];
-	u2.asbytes[6] = u1.asbytes[1];
-	u2.asbytes[7] = u1.asbytes[0];
-
-	return u2.asfloat;
-}
-
-WoWICE_INLINE static void swapfloat(float * p)
-{
-	union { float asfloat; uint8 asbytes[4]; } u1, u2;
-	u1.asfloat = *p;
-	/* swap! */
-	u2.asbytes[0] = u1.asbytes[3];
-	u2.asbytes[1] = u1.asbytes[2];
-	u2.asbytes[2] = u1.asbytes[1];
-	u2.asbytes[3] = u1.asbytes[0];
-	*p = u2.asfloat;
-}
-
-WoWICE_INLINE static void swapdouble(double * p)
-{
-	union { double asfloat; uint8 asbytes[8]; } u1, u2;
-	u1.asfloat = *p;
-	/* swap! */
-	u2.asbytes[0] = u1.asbytes[7];
-	u2.asbytes[1] = u1.asbytes[6];
-	u2.asbytes[2] = u1.asbytes[5];
-	u2.asbytes[3] = u1.asbytes[4];
-	u2.asbytes[4] = u1.asbytes[3];
-	u2.asbytes[5] = u1.asbytes[2];
-	u2.asbytes[6] = u1.asbytes[1];
-	u2.asbytes[7] = u1.asbytes[0];
-	*p = u2.asfloat;
-}
-
-/*WoWICE_INLINE static uint16 swap16(uint16 p) { return ((p >> 8) & 0xff) | (p << 8); }
-WoWICE_INLINE static uint32 swap32(uint32 p) { return ((p >> 24) & 0xff) | ((p >> 8) & 0xff00) | ((p << 8) & 0xff0000) | (p << 24); }
-WoWICE_INLINE static uint64 swap64(uint64 p)  { p = (((p >> 56) & 0xff)) | ((p >> 40) & 0x000000000000ff00ULL) | ((p >> 24) & 0x0000000000ff0000ULL) | ((p >> 8 ) & 0x00000000ff000000ULL) |
-								((p << 8 ) & 0x000000ff00000000ULL) | ((p << 24) & 0x0000ff0000000000ULL) | ((p << 40) & 0x00ff000000000000ULL) | ((p << 56)); }
-
-WoWICE_INLINE static void swap16(int16* p) { *p = ((*p >> 8) & 0xff) | (*p << 8); }
-WoWICE_INLINE static void swap32(int32* p) { *p = ((*p >> 24) & 0xff) | ((*p >> 8) & 0xff00) | ((*p << 8) & 0xff0000) | (*p << 24); }
-WoWICE_INLINE static void swap64(int64* p) { *p = ((*p >> 56) & 0xff) | ((*p >> 40) & 0x000000000000ff00ULL) | ((*p >> 24) & 0x0000000000ff0000ULL) | ((*p >> 8 ) & 0x00000000ff000000ULL) |
-								((*p << 8 ) & 0x000000ff00000000ULL) | ((*p << 24) & 0x0000ff0000000000ULL) | ((*p << 40) & 0x00ff000000000000ULL) | ((*p << 56)); }
-
-WoWICE_INLINE static int16 swap16(int16 p) { return ((p >> 8) & 0xff) | (p << 8); }
-WoWICE_INLINE static int32 swap32(int32 p) { return ((p >> 24) & 0xff) | ((p >> 8) & 0xff00) | ((p << 8) & 0xff0000) | (p << 24); }
-WoWICE_INLINE static int64 swap64(int64 p)  { return ((((p >> 56) & 0xff)) | ((p >> 40) & 0x000000000000ff00ULL) | ((p >> 24) & 0x0000000000ff0000ULL) | ((p >> 8 ) & 0x00000000ff000000ULL) |
-								((p << 8 ) & 0x000000ff00000000ULL) | ((p << 24) & 0x0000ff0000000000ULL) | ((p << 40) & 0x00ff000000000000ULL) | ((p << 56))); }*/
-
-WoWICE_INLINE static uint16 swap16(uint16 p) { return bswap_16((uint16_t)p); }
-WoWICE_INLINE static uint32 swap32(uint32 p) { return bswap_32((uint32_t)p); }
-WoWICE_INLINE static uint64 swap64(uint64 p)  { return bswap_64((uint64_t)p); }
-
-WoWICE_INLINE static void swap16(int16* p) { *p = bswap_16((uint16_t)*p); }
-WoWICE_INLINE static void swap32(int32* p) { *p = bswap_32((uint32_t)*p); }
-WoWICE_INLINE static void swap64(int64* p) { *p = bswap_64((uint64_t)*p); }
-
-WoWICE_INLINE static int16 swap16(int16 p) { return bswap_16((uint16_t)p); }
-WoWICE_INLINE static int32 swap32(int32 p) { return bswap_32((uint32_t)p); }
-WoWICE_INLINE static int64 swap64(int64 p)  { return bswap_64((uint64_t)p); }
-
-#endif
 /* 
 Scripting system exports/imports
 */
@@ -507,21 +392,6 @@ Scripting system exports/imports
 
 #endif
 
-#ifndef WIN32
-#ifdef USING_BIG_ENDIAN
-//#define GUID_HIPART(x) (*((uint32*)&(x)))
-//#define GUID_LOPART(x) (*(((uint32*)&(x))+1))
-#define GUID_LOPART(x) ( ( x >> 32 ) )
-#define GUID_HIPART(x) ( ( x & 0x00000000ffffffff ) )
-#else
-#define GUID_HIPART(x) ( ( x >> 32 ) )
-#define GUID_LOPART(x) ( ( x & 0x00000000ffffffff ) )
-#endif
-#else
-#define GUID_HIPART(x) (*(((uint32*)&(x))+1))
-#define GUID_LOPART(x) (*((uint32*)&(x)))
-#endif
-
 #define atol(a) strtoul( a, NULL, 10)
 
 #define STRINGIZE(a) #a
@@ -561,11 +431,7 @@ static inline int float2int32(const float value)
 	union { int asInt[2]; double asDouble; } n;
 	n.asDouble = value + 6755399441055744.0;
 
-#if USING_BIG_ENDIAN
-	return n.asInt [1];
-#else
 	return n.asInt [0];
-#endif
 #endif
 }
 
@@ -584,11 +450,7 @@ static inline int long2int32(const double value)
   union { int asInt[2]; double asDouble; } n;
   n.asDouble = value + 6755399441055744.0;
 
-#if USING_BIG_ENDIAN
-  return n.asInt [1];
-#else
   return n.asInt [0];
-#endif
 #endif
 }
 
@@ -619,25 +481,6 @@ WoWICE_INLINE uint32 now()
 #ifndef WIN32
 #define Sleep(ms) usleep(1000*ms)
 #endif
-
-/*#ifdef WIN32
-#ifndef __SHOW_STUPID_WARNINGS__
-#pragma warning(disable:4018)
-#pragma warning(disable:4244)
-#pragma warning(disable:4305) 
-#pragma warning(disable:4748)
-#pragma warning(disable:4800) 
-#pragma warning(disable:4996)
-#pragma warning(disable:4251)
-#endif	  
-#endif
-
-#undef INTEL_COMPILER
-#ifdef INTEL_COMPILER
-#pragma warning(disable:279)
-#pragma warning(disable:1744)
-#pragma warning(disable:1740)
-#endif*/
 
 #include "Util.h"
 struct WayPoint
@@ -764,14 +607,5 @@ inline static unsigned int MakeIP(const char * str)
 	res = bytes[0] | (bytes[1] << 8) | (bytes[2] << 16) | (bytes[3] << 24);
 	return res;
 }
-
-// warning, by enabling this define you are aware that you are only delaying the inevitable
-// some crashes are not recorable and those will stack up in time and lead to a full crash
-// enabling this define will make windows servers shut down only the map instance in where the crash ocured
-// during this forced shutdown players are not saved to avoid saving corrupted data
-// there might be a lot of cases where each saved crash will lead to memory leaks or unhandled cases
-// crashreports are still created and do use them to report the actaul problem that casued the crash
-// fixing the problem that causes the crash is the proper way to fix things
-//#define FORCED_SERVER_KEEPALIVE
 
 #endif

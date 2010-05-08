@@ -5,6 +5,8 @@ noinst_LIBRARIES = libshared.a
 libshared_a_SOURCES = \
     CThreads.cpp \
     CThreads.h \
+    CrashHandler.h \
+    CrashHandler.cpp \
     Log.cpp \
     MemoryLeaks.cpp \
     MersenneTwister.cpp \
@@ -33,8 +35,6 @@ libshared_a_SOURCES = \
     Storage.h \
     wowice_getopt.h \
     wowice_getopt.cpp \
-    CrashHandler.h \
-    CrashHandler.cpp \
     Auth/BigNumber.cpp \
     Auth/BigNumber.h \
     Auth/MD5.cpp \

@@ -59,21 +59,20 @@ struct CreatureInfo
 	char * Name;
 	char * SubName;
 	char * info_str;
-	uint32 QuestItems[6];
 	uint32 Flags1;
 	uint32 Type;
 	uint32 Family;
 	uint32 Rank;
-	uint32 Unknown1;
-	uint32 SpellDataID;
+	uint32 killcredit[2];
 	uint32 Male_DisplayID;
 	uint32 Female_DisplayID;
 	uint32 Male_DisplayID2;
 	uint32 Female_DisplayID2;
 	float unkfloat1;
 	float unkfloat2;
-	uint8  Civilian;
 	uint8  Leader;
+    uint32 QuestItems[6];
+    uint32 waypointid;
 
 	std::string lowercase_name;
 	GossipScript * gossip_script;
@@ -136,6 +135,7 @@ struct CreatureProto
 	uint32 modImmunities;
 	uint32 isTrainingDummy;
     uint32 guardtype;
+	uint32 summonguard;
 
 	/* AI Stuff */
 	bool m_canRangedAttack;
@@ -289,7 +289,7 @@ public:
     bool IsPet() { return m_isPet; }
 
 	bool Load(CreatureSpawn *spawn, uint32 mode, MapInfo *info);
-	void Load(CreatureProto * proto_, float x, float y, float z, float o=0);
+	void Load(CreatureProto * proto_, float x, float y, float z, float o= 0);
 
 	void AddToWorld();
 	void AddToWorld(MapMgr * pMapMgr);
@@ -361,9 +361,9 @@ public:
 			}
 		}
 		ci.amount = 0;
-		ci.max_amount=0;
-		ci.available_amount =0;
-		ci.incrtime=0;
+		ci.max_amount= 0;
+		ci.available_amount = 0;
+		ci.incrtime= 0;
 		ci.itemid = 0;
 	}
 
@@ -523,9 +523,6 @@ public:
 
 	// Serialization
 	void SaveToDB();
-	void SaveToFile(std::stringstream & name);
-	//bool LoadFromDB(uint32 guid);
-	//bool LoadFromDB(CreatureTemplate *t);
 	void LoadAIAgents(CreatureTemplate * t);
 	void LoadAIAgents();
 	void DeleteFromDB();
@@ -534,7 +531,6 @@ public:
 	void OnRemoveCorpse();
 	void OnRespawn(MapMgr * m);
 	void SafeDelete();
-	//void Despawn();
 	void SummonExpire(); // this is used for guardians. They are non respawnable creatures linked to a player
 
 
@@ -576,6 +572,8 @@ public:
 
 	WoWICE_INLINE CreatureInfo *GetCreatureInfo() { return creature_info; }
 	WoWICE_INLINE void SetCreatureInfo(CreatureInfo *ci) { creature_info = ci; }
+    void SetCreatureProto( CreatureProto *cp ){ proto = cp; }
+
 	WoWICE_INLINE Trainer* GetTrainer() { return mTrainer; }
 	void RegenerateFocus();
 

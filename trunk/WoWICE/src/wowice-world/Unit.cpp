@@ -1602,11 +1602,11 @@ uint32 Unit::HandleProc( uint32 flag, Unit* victim, SpellEntry* CastingSpell, ui
 								amount = CastingSpell->EffectBasePoints[1]+1;
 							}break;
 							default:
-								amount=0;
+								amount= 0;
 						}
 						if(!amount)
 							continue;
-						SpellEntry *spellInfo = dbcSpell.LookupEntry(spellId );
+						SpellEntry *spellInfo = dbcSpell.LookupEntryForced(spellId );
 						if(!spellInfo)
 							continue;
 						Spell *spell = new Spell(this, spellInfo ,true, NULL);
@@ -4015,7 +4015,7 @@ void Unit::Strike( Unit* pVictim, uint32 weapon_damage_type, SpellEntry* ability
 			if (dmg.school_type == SCHOOL_NORMAL)
 			{
 				abs+=dmg.resisted_damage;
-				dmg.resisted_damage=0;
+				dmg.resisted_damage= 0;
 			}
 
 			realdamage = dmg.full_damage-abs-dmg.resisted_damage-blocked_damage;
@@ -4116,15 +4116,11 @@ void Unit::Strike( Unit* pVictim, uint32 weapon_damage_type, SpellEntry* ability
 
 					// Cast.
 					cspell = new Spell(this, itr->first, true, NULL);
-					if (!cspell)
-						return;
 					cspell->prepare(&targets);
 				}
 				else
 				{
 					cspell = new Spell(this, itr->first, true, NULL);
-					if (!cspell)
-						return;
 					cspell->prepare(&targets);
 				}
 			}
@@ -8001,5 +7997,36 @@ void Unit::SetDualWield(bool enabled)
 	// Titan's grip
 	if( !enabled && IsPlayer() )
 		RemoveAllAuraById( 49152 );
+}
+
+void Unit::AddGarbageAura( Aura *aur ){
+    m_GarbageAuras.push_back( aur );
+}
+
+void Unit::AddGarbageSpell( Spell *sp ){
+    m_GarbageSpells.push_back( sp );
+}
+
+void Unit::RemoveGarbage(){
+    
+    std::list< Aura* >::iterator itr1;
+
+    for( itr1 = m_GarbageAuras.begin(); itr1 != m_GarbageAuras.end(); ++itr1 ){
+        Aura *aur = *itr1;
+
+        delete aur;
+    }
+
+    std::list< Spell* >::iterator itr2;
+
+    for( itr2 = m_GarbageSpells.begin(); itr2 != m_GarbageSpells.end(); ++itr2 ){
+        Spell *sp = *itr2;
+
+        delete sp;
+    }
+
+    m_GarbageAuras.clear();
+    m_GarbageSpells.clear();
+
 }
 

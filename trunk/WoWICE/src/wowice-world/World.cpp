@@ -58,7 +58,7 @@ World::World()
 	NameinAnnounce = false;
 	NameinWAnnounce = false;
 	announce_output = true;
-	map_unload_time=0;
+	map_unload_time= 0;
 	antiMasterLootNinja = false;
 
 	SocketSendBufSize = WORLDSOCKET_SENDBUF_SIZE;
@@ -279,7 +279,7 @@ bool World::SetInitialWorldSettings()
 
 	CharacterDatabase.WaitExecute("UPDATE characters SET online = 0 WHERE online = 1");
 	//CharacterDatabase.WaitExecute("UPDATE characters SET level = 70 WHERE level > 70");
-	CharacterDatabase.WaitExecute("UPDATE characters SET banned=0,banReason='' WHERE banned > 100 AND banned < %u", UNIXTIME);
+	CharacterDatabase.WaitExecute("UPDATE characters SET banned= 0,banReason='' WHERE banned > 100 AND banned < %u", UNIXTIME);
    
 	m_lastTick = UNIXTIME;
 
@@ -539,12 +539,12 @@ bool World::SetInitialWorldSettings()
 
     for( uint32 i = 0; i < dbcTalent.GetNumRows(); ++i )
     {
-        TalentEntry const* talent_info = dbcTalent.LookupRow( i );
+        TalentEntry const* talent_info = dbcTalent.LookupRowForced( i );
 		// Don't add invalid talents or Hunter Pet talents (trees 409, 410 and 411) to the inspect table
 		if( talent_info == NULL || talent_info->TalentTree == 409 || talent_info->TalentTree == 410 || talent_info->TalentTree == 411 )
 			continue;
 
-		TalentTabEntry const* tab_info = dbcTalentTab.LookupEntry( talent_info->TalentTree );
+		TalentTabEntry const* tab_info = dbcTalentTab.LookupEntryForced( talent_info->TalentTree );
 		if( tab_info == NULL )
 			continue;
 
@@ -564,7 +564,7 @@ bool World::SetInitialWorldSettings()
 
 	for( uint32 i = 0; i < dbcTalentTab.GetNumRows(); ++i )
 	{
-		TalentTabEntry const* tab_info = dbcTalentTab.LookupRow( i );
+		TalentTabEntry const* tab_info = dbcTalentTab.LookupRowForced( i );
 
 		// Don't add invalid TalentTabs or Hunter Pet TalentTabs (ClassMask == 0) to the InspectTalentTabPages
 		if( tab_info == NULL || tab_info->ClassMask == 0 )
@@ -583,7 +583,7 @@ bool World::SetInitialWorldSettings()
 		for( std::map< uint32, uint32 >::iterator itr = InspectTalentTabBit.begin(); itr != InspectTalentTabBit.end(); ++itr )
 		{
 			uint32 talent_id = itr->first & 0xFFFF;
-			TalentEntry const* talent_info = dbcTalent.LookupEntry( talent_id );
+			TalentEntry const* talent_info = dbcTalent.LookupEntryForced( talent_id );
 			if( talent_info == NULL )
 				continue;
 
@@ -954,7 +954,7 @@ void World::SaveAllPlayers()
 			{
 				mt = getMSTime();
 				itr->second->SaveToDB(false);
-				sLog.outString("Saved player `%s` (level %u) in %ums.", itr->second->GetName(), itr->second->GetUInt32Value(UNIT_FIELD_LEVEL), getMSTime() - mt);
+				sLog.outString("Saved player `%s` (level %u) in %ums.", itr->second->GetName(), itr->second->getLevel(), getMSTime() - mt);
 				++count;
 			}
 		}
@@ -1652,7 +1652,7 @@ void World::CleanupCheaters()
 		{
 			end = strchr(start,',');
 			if(!end)break;
-			*end=0;
+			*end= 0;
 			sp = dbcSpell.LookupEntry(atol(start));
 			start = end +1;
 
@@ -1942,7 +1942,7 @@ void World::PollCharacterInsertQueue(DatabaseConnection * con)
 			inf->guildRank= NULL;
 			inf->guildMember= NULL;
 			inf->race=f[3].GetUInt32();
-			inf->subGroup=0;
+			inf->subGroup= 0;
 			switch(inf->race)
 			{
 			case RACE_HUMAN:
@@ -1950,7 +1950,7 @@ void World::PollCharacterInsertQueue(DatabaseConnection * con)
 			case RACE_DWARF:
 			case RACE_NIGHTELF:
 			case RACE_DRAENEI:
-				inf->team=0;
+				inf->team= 0;
 				break;
 
 			default:
@@ -2152,19 +2152,19 @@ void World::SendLocalizedWorldText(bool wide,const char * format, ...) // May no
 
 			if ( wide ){
 				data.Initialize(SMSG_AREA_TRIGGER_MESSAGE);
-				data << (uint32)0 << (char*)buffer << (uint8)0x00;
-			}
-			else {
+				data << uint32( 0 );
+                data << (char*)buffer;
+                data << uint8( 0 );
+			}else {
 				data.Initialize(SMSG_MESSAGECHAT);
-				data << uint8(CHAT_MSG_SYSTEM);
-				data << uint32(LANG_UNIVERSAL);
-		
-				data << (uint64)0; // Who cares about guid when there's no nickname displayed heh ?
-				data << (uint32)0;
-				data << (uint64)0;
-				data << textLen;
+				data << uint8( CHAT_MSG_SYSTEM );
+				data << uint32( LANG_UNIVERSAL );		
+				data << uint64( 0 ); // Who cares about guid when there's no nickname displayed heh ?
+				data << uint32( 0 );
+				data << uint64( 0 );
+				data << uint32( textLen );
 				data << buffer;
-				data << uint8(0);
+				data << uint8( 0 );
 			}
 			itr->second->SendPacket(&data);
 		}
@@ -2203,4 +2203,11 @@ void World::UpdateTotalTraffic(){
     TotalTrafficOutKB += (TrafficOut / 1024.0);
 
     objmgr._playerslock.ReleaseReadLock();
+}
+
+void World::SendZoneUnderAttackMsg( uint32 areaid, uint8 team ){
+    WorldPacket data( SMSG_ZONE_UNDER_ATTACK, 4 );
+    data << uint32( areaid );
+    
+    SendFactionMessage( &data, team );
 }
