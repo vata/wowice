@@ -77,7 +77,7 @@ public:
 	}
 };
 
-class Instance
+class SERVER_DECL Instance
 {
 public:
 	uint32 m_instanceId;
@@ -109,7 +109,7 @@ public:
 
 	WoWICE_INLINE Map* GetMap(uint32 mapid)
 	{
-		if(mapid>NUM_MAPS)
+		if(mapid>=NUM_MAPS)
 			return NULL;
 		else
 			return m_maps[mapid];
@@ -196,7 +196,7 @@ public:
 		if(mapid == NUM_MAPS)
 		{
 			Instance *in;
-			for(int i= 0; i<NUM_MAPS; i++)
+			for(uint32 i=0; i<NUM_MAPS; ++i)
 			{
 				in = GetInstanceByIds(i, instanceId);
 				if(in != NULL)

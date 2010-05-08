@@ -485,6 +485,9 @@ uint32 CalculateDamage( Unit* pAttacker, Unit* pVictim, uint32 weapon_damage_typ
 	uint32 offset;
 	Item *it = NULL;
 
+if(ability && ability->NameHash == SPELL_HASH_FLAMETONGUE_WEAPON)
+                return 0;
+
 	if(pAttacker->disarmed && pAttacker->IsPlayer())
 	{
 		offset=UNIT_FIELD_MINDAMAGE;
@@ -538,11 +541,11 @@ uint32 CalculateDamage( Unit* pAttacker, Unit* pVictim, uint32 weapon_damage_typ
 					wspeed = 2000;
 			}
 			else
-				wspeed = (float)pAttacker->GetUInt32Value(UNIT_FIELD_RANGEDATTACKTIME);
+				wspeed = (float)pAttacker->GetBaseAttackTime(RANGED);
 		}
 		else
 		{
-			wspeed = (float)pAttacker->GetUInt32Value(UNIT_FIELD_BASEATTACKTIME);
+			wspeed = (float)pAttacker->GetBaseAttackTime(MELEE);
 		}
 
 		//ranged weapon normalization.
@@ -568,7 +571,7 @@ uint32 CalculateDamage( Unit* pAttacker, Unit* pVictim, uint32 weapon_damage_typ
 			}
 		}
 
-		bonus = (wspeed-pAttacker->GetUInt32Value(UNIT_FIELD_RANGEDATTACKTIME))/14000.0f*ap;
+		bonus = (wspeed-pAttacker->GetBaseAttackTime(RANGED))/14000.0f*ap;
 		min_damage += bonus;
 		max_damage += bonus;
 	}
@@ -603,11 +606,11 @@ uint32 CalculateDamage( Unit* pAttacker, Unit* pVictim, uint32 weapon_damage_typ
 					wspeed = 2000;
 			}
 			else
-				wspeed = (float)pAttacker->GetUInt32Value(UNIT_FIELD_BASEATTACKTIME);
+				wspeed = (float)pAttacker->GetBaseAttackTime(MELEE);
 		}
 		else
 		{
-			wspeed = (float)pAttacker->GetUInt32Value(UNIT_FIELD_BASEATTACKTIME);
+			wspeed = (float)pAttacker->GetBaseAttackTime(MELEE);
 		}
 
 		//Normalized weapon damage checks.
@@ -644,9 +647,9 @@ uint32 CalculateDamage( Unit* pAttacker, Unit* pVictim, uint32 weapon_damage_typ
 		}
 
 		if (offset == UNIT_FIELD_MINDAMAGE)
-			bonus = (wspeed-pAttacker->GetUInt32Value(UNIT_FIELD_BASEATTACKTIME))/14000.0f*ap;
+			bonus = (wspeed-pAttacker->GetBaseAttackTime(MELEE))/14000.0f*ap;
 		else
-			bonus = (wspeed-pAttacker->GetUInt32Value(UNIT_FIELD_BASEATTACKTIME+1))/14000.0f*ap;
+			bonus = (wspeed-pAttacker->GetBaseAttackTime(OFFHAND))/14000.0f*ap;
 		min_damage += bonus;
 		max_damage += bonus;
 	}
@@ -674,7 +677,7 @@ uint32 CalculateDamage( Unit* pAttacker, Unit* pVictim, uint32 weapon_damage_typ
 
 bool isEven (int num)
 {
-	if ((num%2)==0)
+	if ((num%2)== 0)
 	{
 		return true;
 	}

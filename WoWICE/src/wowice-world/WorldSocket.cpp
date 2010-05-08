@@ -156,7 +156,7 @@ void WorldSocket::UpdateQueuedPackets()
 		default:
 			{
 				/* kill everything in the buffer */
-				while( (pck == _queue.Pop()) != NULL )
+				while( (pck == _queue.Pop()) != 0 )
 				{
 					delete pck;
 				}
@@ -376,7 +376,7 @@ void WorldSocket::InformationRetreiveCallback(WorldPacket & recvData, uint32 req
 	if(recvData.rpos() != recvData.wpos())
 		recvData >> pSession->m_muted;
 
-	for(uint32 i = 0; i < 8; ++i)
+	for(i = 0; i < 8; ++i)
 		pSession->SetAccountData(i, NULL, true, 0);
 
 	if(sWorld.m_useAccountData)

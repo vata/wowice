@@ -14,6 +14,8 @@
  */
 
 #include "StdAfx.h"
+#include <CrashHandler.h>
+
 initialiseSingleton( World );
 
 DayWatcherThread* dw = NULL;
@@ -188,12 +190,10 @@ void World::RemoveSession(uint32 id)
 
 void World::AddSession(WorldSession* s)
 {
-	if(!s)
-		return;
+    Wowice::Util::WoWICE_ASSERT(    s != NULL );
 
 	m_sessionlock.AcquireWriteLock();
 
-	ASSERT(s);
 	m_sessions[s->GetAccountId()] = s;
 
 	if(m_sessions.size() >  PeakSessionCount)
@@ -206,8 +206,7 @@ void World::AddSession(WorldSession* s)
 
 void World::AddGlobalSession(WorldSession *session)
 {
-	if(!session)
-		return;
+    Wowice::Util::WoWICE_ASSERT(    session != NULL );
 
 	SessionsMutex.Acquire();
 	Sessions.insert(session);
@@ -216,6 +215,9 @@ void World::AddGlobalSession(WorldSession *session)
 
 void World::RemoveGlobalSession(WorldSession *session)
 {
+
+    Wowice::Util::WoWICE_ASSERT(    session != NULL );
+
 	SessionsMutex.Acquire();
 	Sessions.erase(session);
 	SessionsMutex.Release();
@@ -278,7 +280,6 @@ bool World::SetInitialWorldSettings()
 	Player::InitVisibleUpdateBits();
 
 	CharacterDatabase.WaitExecute("UPDATE characters SET online = 0 WHERE online = 1");
-	//CharacterDatabase.WaitExecute("UPDATE characters SET level = 70 WHERE level > 70");
 	CharacterDatabase.WaitExecute("UPDATE characters SET banned= 0,banReason='' WHERE banned > 100 AND banned < %u", UNIXTIME);
    
 	m_lastTick = UNIXTIME;
@@ -420,6 +421,7 @@ bool World::SetInitialWorldSettings()
 	MAKE_TASK(ObjectMgr,  LoadAIThreatToSpellId);
 	MAKE_TASK(ObjectMgr,  LoadSpellProcs);
 	MAKE_TASK(ObjectMgr,  LoadSpellEffectsOverride);
+	MAKE_TASK( ObjectMgr, LoadSpellTargetConstraints );
 	MAKE_TASK(ObjectMgr,  LoadDefaultPetSpells);
 	MAKE_TASK(ObjectMgr,  LoadPetSpellCooldowns);
 	MAKE_TASK(ObjectMgr,  LoadGuildCharters);
@@ -433,6 +435,7 @@ bool World::SetInitialWorldSettings()
 
 	MAKE_TASK(ObjectMgr, LoadExtraCreatureProtoStuff);
 	MAKE_TASK(ObjectMgr, LoadExtraItemStuff);
+	MAKE_TASK(ObjectMgr, LoadExtraGameObjectStuff);
 	MAKE_TASK(QuestMgr, LoadExtraQuestStuff);
 	MAKE_TASK(ObjectMgr, LoadArenaTeams);
 	MAKE_TASK(ObjectMgr, LoadProfessionDiscoveries);
@@ -745,6 +748,20 @@ void World::SendGMWorldText(const char* text, WorldSession *self)
 	SendGamemasterMessage(&data, self);
 }
 
+void World::SendDamageLimitTextToGM( const char *playername, const char *dmglog ){
+	string gm_ann( MSG_COLOR_GREEN );
+	
+	gm_ann += "|Hplayer:";
+	gm_ann += playername;
+	gm_ann += "|h[";
+	gm_ann += playername;
+	gm_ann += "]|h: ";
+	gm_ann += MSG_COLOR_YELLOW;
+	gm_ann += dmglog;
+	
+	sWorld.SendGMWorldText(gm_ann.c_str());
+}
+
 void World::SendWorldWideScreenText(const char *text, WorldSession *self)
 {
 	WorldPacket data(256);
@@ -1030,16 +1047,19 @@ Task * TaskList::GetTask()
 	queueLock.Acquire();
 
 	Task* t = 0;
-	for(set<Task*>::iterator itr = tasks.begin(); itr != tasks.end(); ++itr)
+
+    for(set<Task*>::iterator itr = tasks.begin(); itr != tasks.end(); ++itr)
 	{
-		if(!(*itr)->in_progress)
+	    if(!(*itr)->in_progress)
 		{
-			t = (*itr);
+		    t = (*itr);
 			t->in_progress = true;
 			break;
 		}
-	}
+    }
+
 	queueLock.Release();
+
 	return t;
 }
 
@@ -1118,8 +1138,9 @@ void Task::execute()
 bool TaskExecutor::run()
 {
 	Task * t;
-	THREAD_TRY_EXECUTION
-	{
+    
+    THREAD_TRY_EXECUTION
+
 		while(starter->running)
 		{
 			t = starter->GetTask();
@@ -1133,8 +1154,9 @@ bool TaskExecutor::run()
 			else
 				Sleep(20);
 		}
-	}
-	THREAD_HANDLE_CRASH
+
+    THREAD_HANDLE_CRASH
+
 	return true;
 }
 
@@ -1784,7 +1806,7 @@ void World::PollMailboxInsertQueue(DatabaseConnection * con)
 				pItem = objmgr.CreateItem( itemid, NULL );
 				if( pItem != NULL )
 				{
-					pItem->SetUInt32Value( ITEM_FIELD_STACK_COUNT, stackcount );
+					pItem->SetStackCount(  stackcount );
 					pItem->SaveToDB( 0, 0, true, NULL );
 				}
 			}
@@ -2104,7 +2126,7 @@ void World::SendBCMessageByID(uint32 id)
 			itr->second->GetPlayer()->IsInWorld() )
 		{
 			const char *text = itr->second->LocalizedBroadCast(id);
-			uint32 textLen = (uint32)strlen((char*)text) + 1;
+			uint32 textLen = (uint32)strlen(text) + 1;
 			WorldPacket data(textLen + 40);
 			data.Initialize(SMSG_MESSAGECHAT);
 			data << uint8(CHAT_MSG_SYSTEM);

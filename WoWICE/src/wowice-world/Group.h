@@ -32,8 +32,11 @@ enum PartyErrors
 
 enum GroupTypes
 {
-	GROUP_TYPE_PARTY					= 0,
-	GROUP_TYPE_RAID						= 1,
+	GROUP_TYPE_PARTY					= 0x0,
+	GROUP_TYPE_BG						= 0x1,
+	GROUP_TYPE_RAID						= 0x2,
+	GROUP_TYPE_BGRAID					= GROUP_TYPE_BG | GROUP_TYPE_RAID,
+	GROUP_TYPE_LFD						= 0x8,
 };
 
 enum MaxGroupCount
@@ -191,8 +194,11 @@ public:
 	
 	void SetDungeonDifficulty( uint32 diff );
 	void SetRaidDifficulty( uint32 diff );
+	void SendLootUpdates( Object *o );
 
-	//void SetDifficulty(uint8 difficulty);
+#ifdef ENABLE_ACHIEVEMENTS
+	void UpdateAchievementCriteriaForInrange( Object *o, AchievementCriteriaTypes type, int32 miscvalue1, int32 miscvalue2, uint32 time );
+#endif
 	
 	/************************************************************************/
 	/* Voicechat                                                            */

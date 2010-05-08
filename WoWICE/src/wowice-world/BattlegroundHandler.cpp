@@ -314,7 +314,7 @@ void WorldSession::HandleInspectHonorStatsOpcode( WorldPacket &recv_data )
 
     WorldPacket data( MSG_INSPECT_HONOR_STATS, 13 );
 
-    data << player->GetGUID() << (uint8)player->GetUInt32Value( PLAYER_FIELD_HONOR_CURRENCY );
+    data << player->GetGUID() << (uint8)player->GetHonorCurrency();
     data << player->GetUInt32Value( PLAYER_FIELD_KILLS );
     data << player->GetUInt32Value( PLAYER_FIELD_TODAY_CONTRIBUTION );
     data << player->GetUInt32Value( PLAYER_FIELD_YESTERDAY_CONTRIBUTION );
@@ -371,5 +371,10 @@ void WorldSession::HandlePVPLogDataOpcode(WorldPacket &recv_data)
 		_player->m_bg->SendPVPData(_player);
 }
 
-
-
+void WorldSession::SendNotInArenaTeamPacket(uint8 type)
+{
+	WorldPacket data(SMSG_ARENA_ERROR, 4+1); // 886 - You are not in a %uv%u arena team
+	data << uint32(0);                       // E_ERR_ARENA_NO_TEAM_II (1 = E_ERR_ARENA_EXPIRED_CAIS)
+	data << uint8(type);                     // team type (2=2v2,3=3v3,5=5v5), can be used for custom types...
+	SendPacket(&data);
+}

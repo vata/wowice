@@ -84,15 +84,6 @@ GameObject::~GameObject()
 		for(int i = 0; i < 4; i++)
 			if (m_summoner->m_ObjectSlots[i] == GetLowGUID())
 				m_summoner->m_ObjectSlots[i] = 0;
-
-	if( m_battleground != NULL && m_battleground->GetType() == BATTLEGROUND_ARATHI_BASIN )
-	{
-		if( bannerslot >= 0 && static_cast<ArathiBasin*>(m_battleground)->m_controlPoints[bannerslot] == this )
-			static_cast<ArathiBasin*>(m_battleground)->m_controlPoints[bannerslot] = NULL;
-
-		if( bannerauraslot >= 0 && static_cast<ArathiBasin*>(m_battleground)->m_controlPointAuras[bannerauraslot] == this )
-			static_cast<ArathiBasin*>(m_battleground)->m_controlPointAuras[bannerauraslot] = NULL;
-	}
 }
 
 bool GameObject::CreateFromProto(uint32 entry,uint32 mapid, float x, float y, float z, float ang, float r0, float r1, float r2, float r3, uint32 overrides)
@@ -109,51 +100,20 @@ bool GameObject::CreateFromProto(uint32 entry,uint32 mapid, float x, float y, fl
 //	SetFloatValue( GAMEOBJECT_POS_Z, z );
 //	SetFloatValue( GAMEOBJECT_FACING, ang );
 	SetPosition(x, y, z, ang);
-	SetFloatValue(GAMEOBJECT_PARENTROTATION, r0);
-	SetFloatValue(GAMEOBJECT_PARENTROTATION_01, r1);
-	SetFloatValue(GAMEOBJECT_PARENTROTATION_02, r2);
-	SetFloatValue(GAMEOBJECT_PARENTROTATION_03, r3);
+	SetParentRotation(0, r0);
+	SetParentRotation(1, r1);
+	SetParentRotation(2, r2);
+	SetParentRotation(3, r3);
 	UpdateRotation();
-//	SetRotation(ang);
-	 
-	//SetUInt32Value( GAMEOBJECT_TIMESTAMP, (uint32)UNIXTIME);
-	//SetUInt32Value( GAMEOBJECT_ARTKIT, 0 );		   //these must be from wdb somewhere i guess
     SetByte( GAMEOBJECT_BYTES_1, 3, 0 );
 	SetByte( GAMEOBJECT_BYTES_1, 0, 1 );
-	SetUInt32Value( GAMEOBJECT_DISPLAYID, pInfo->DisplayID );
+	SetDisplayId(pInfo->DisplayID );
 	SetByte( GAMEOBJECT_BYTES_1, 1, static_cast<uint8>( pInfo->Type ));
    
 	InitAI();
 
 	 return true;
-	/*
-	original_flags = m_uint32Values[GAMEOBJECT_FLAGS];
-	original_state = m_uint32Values[GAMEOBJECT_BYTES_1, 0];
-	*/
 }
-/*
-void GameObject::Create(uint32 mapid, float x, float y, float z, float ang)
-{
-	Object::_Create( mapid, x, y, z, ang);
-
-	SetFloatValue( GAMEOBJECT_POS_X, x);
-	SetFloatValue( GAMEOBJECT_POS_Y, y );
-	SetFloatValue( GAMEOBJECT_POS_Z, z );
-	SetFloatValue( GAMEOBJECT_FACING, ang );
-	//SetUInt32Value( GAMEOBJECT_TIMESTAMP, (uint32)time(NULL));
-}
-
-void GameObject::Create( uint32 guidlow, uint32 guidhigh,uint32 displayid, uint8 state, uint32 entryid, float scale,uint32 typeId, uint32 type,uint32 flags, uint32 mapid, float x, float y, float z, float ang )
-{
-	Object::_Create( mapid, x, y, z, ang);
-
-	SetEntry(  entryid );
-	SetScale(  scale );
-	SetUInt32Value( GAMEOBJECT_DISPLAYID, displayid );
-	SetByte( GAMEOBJECT_BYTES_1, 0, state  );
-	SetByte( GAMEOBJECT_BYTES_1, 1, typeId  );
-	SetUInt32Value( GAMEOBJECT_FLAGS, flags );
-}*/
 
 void GameObject::EventCastSpell(uint32 guid, uint32 sp, bool triggered)
 {
@@ -225,39 +185,35 @@ void GameObject::Update(uint32 p_time)
 				if( pInfo->Type == GAMEOBJECT_TYPE_TRAP )
 				{
 					if( m_summoner != NULL )
-						m_summoner->HandleProc( PROC_ON_TRAP_TRIGGER, pUnit, spell );
+						m_summoner->HandleProc( PROC_ON_TRAP_TRIGGER, reinterpret_cast< Unit* >( o ), spell );
 				} 
 
 				if(m_summonedGo)
 				{
 					ExpireAndDelete();
-					ReleaseInrangeLock();
 					return;
 				}
 
 				if(spell->EffectImplicitTargetA[0] == 16 ||
 					spell->EffectImplicitTargetB[0] == 16)
 				{
-					ReleaseInrangeLock();
 					return;	 // on area don't continue.
 				}
 			}
 		}
-		ReleaseInrangeLock();
-	}
+    }
 }
 
 void GameObject::Spawn(MapMgr * m)
 {
 	PushToWorld(m);	
-	CALL_GO_SCRIPT_EVENT(this, OnSpawn)();
 }
 
 void GameObject::Despawn(uint32 delay, uint32 respawntime)
 {
 	if(delay)
 	{
-		sEventMgr.AddEvent(this, &GameObject::Despawn, (uint32)0, respawntime, EVENT_GAMEOBJECT_EXPIRE, delay, 1,0);
+		sEventMgr.AddEvent(this, &GameObject::Despawn, (uint32)0, respawntime, EVENT_GAMEOBJECT_EXPIRE, delay, 1, EVENT_FLAG_DO_NOT_EXECUTE_IN_WORLD_CONTEXT);
 		return;
 	}
 
@@ -433,7 +389,8 @@ void GameObject::InitAI()
 		CalcFishRemaining( true );
 	}
 
-	myScript = sScriptMgr.CreateAIScriptClassForGameObject(GetEntry(), this);
+	if( myScript == NULL )
+		myScript = sScriptMgr.CreateAIScriptClassForGameObject(GetEntry(), this);
 
 	// hackfix for bad spell in BWL
 	if(!spellid || spellid == 22247)
@@ -481,23 +438,15 @@ bool GameObject::Load(GOSpawn *spawn)
 	m_phase = spawn->phase;
 	//SetRotation(spawn->o);
 	SetUInt32Value(GAMEOBJECT_FLAGS,spawn->flags);
-//	SetUInt32Value(GAMEOBJECT_LEVEL,spawn->level);
+//	SetLevel(spawn->level);
 	SetByte(GAMEOBJECT_BYTES_1, 0, static_cast<uint8>( spawn->state ));	
 	if(spawn->faction)
 	{
-		SetUInt32Value(GAMEOBJECT_FACTION,spawn->faction);
-		m_faction = dbcFactionTemplate.LookupEntryForced(spawn->faction);
-		if(m_faction)
-			m_factionDBC = dbcFaction.LookupEntry(m_faction->Faction);
+		SetFaction(spawn->faction);
 	}
 	SetScale( spawn->scale);
 	_LoadQuests();
-	CALL_GO_SCRIPT_EVENT(this, OnCreate)();
-	CALL_GO_SCRIPT_EVENT(this, OnSpawn)();
 
-	InitAI();
-
-	_LoadQuests();
 	return true;
 }
 
@@ -821,14 +770,14 @@ void GameObject::UpdateRotation()
 
 	m_rotation = rotation;
 
-	float r2=GetFloatValue(GAMEOBJECT_PARENTROTATION_02);
-	float r3=GetFloatValue(GAMEOBJECT_PARENTROTATION_03);
+	float r2=GetParentRotation(2);
+	float r3=GetParentRotation(3);
 	if(r2== 0.0f && r3== 0.0f && !(m_overrides & GAMEOBJECT_OVERRIDE_PARENTROT) )
 	{
 		r2 = (float)f_rot1;
 		r3 = (float)f_rot2;
-		SetFloatValue(GAMEOBJECT_PARENTROTATION_02, r2);
-		SetFloatValue(GAMEOBJECT_PARENTROTATION_03, r3);
+		SetParentRotation(2, r2);
+		SetParentRotation(3, r3);
 	}
 }
 

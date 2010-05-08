@@ -76,8 +76,14 @@ void CBattlegroundManager::HandleBattlegroundListPacket(WorldSession * m_session
 	if(BattlegroundType == BATTLEGROUND_ARENA_2V2 || BattlegroundType == BATTLEGROUND_ARENA_3V3 || BattlegroundType == BATTLEGROUND_ARENA_5V5)
 	{
 		WorldPacket data(SMSG_BATTLEFIELD_LIST, 18);
-		data << m_session->GetPlayer()->GetGUID() << from << uint32(6) << uint32(0xC) << uint8(0);
+		data << m_session->GetPlayer()->GetGUID();
+        data << from;
+        data << uint32( 6 );
+        data << uint32( 0xC );
+        data << uint8( 0 );
+        data << uint8( 0 );
 		m_session->SendPacket(&data);
+
 		return;
 	}
 
@@ -89,6 +95,10 @@ void CBattlegroundManager::HandleBattlegroundListPacket(WorldSession * m_session
 	data << from;
 	data << BattlegroundType;
 	data << uint8(2);
+    data << uint8( 0 );
+    
+    size_t pos = data.wpos();
+
 	data << uint32(0);      // Count
 
 	/* Append the battlegrounds */
@@ -97,13 +107,13 @@ void CBattlegroundManager::HandleBattlegroundListPacket(WorldSession * m_session
 	{
 		if(itr->second->CanPlayerJoin(m_session->GetPlayer(),BattlegroundType) && !itr->second->HasEnded() )
 		{
-			data << itr->first;
+			data << uint32( itr->first );
 			++Count;
 		}
 	}
 	m_instanceLock.Release();
 
-	*(uint32*)&data.contents()[13] = Count;
+    data.put< uint32 >( pos, Count );
 
     m_session->SendPacket(&data);
 }
@@ -274,9 +284,9 @@ void CBattlegroundManager::HandleGetBattlegroundQueueCommand(WorldSession * m_se
 						continue;
 					}
 
-					if(plr->GetTeam() == 0)
+					if( plr->IsTeamAlliance() )
 						ally++;
-					if(plr->GetTeam() == 1)
+					else
 						horde++;
 				}
 
@@ -388,7 +398,7 @@ int CBattlegroundManager::CreateArenaType(int type, Group * group1, Group * grou
 	Arena * ar = ((Arena*)CreateInstance(type, LEVEL_GROUP_70));
 	if (ar == NULL)
 	{
-		Log.Error("BattlegroundMgr", "%s (%u): Couldn't create Arena Instance", __FILE__, __LINE__);
+		sLog.outError("BattlegroundMgr", "%s (%u): Couldn't create Arena Instance", __FILE__, __LINE__);
 		m_queueLock.Release();
 		m_instanceLock.Release();
 		return -1;
@@ -567,7 +577,7 @@ void CBattlegroundManager::EventQueueUpdate(bool forceStart)
 					arena = ((Arena*)CreateInstance(i, j));
 					if ( arena == NULL )
 					{
-						Log.Error("BattlegroundMgr", "%s (%u): Couldn't create Arena Instance", __FILE__, __LINE__);
+						sLog.outError("BattlegroundMgr", "%s (%u): Couldn't create Arena Instance", __FILE__, __LINE__);
 						m_queueLock.Release();
 						m_instanceLock.Release();
  						return;
@@ -658,7 +668,7 @@ void CBattlegroundManager::EventQueueUpdate(bool forceStart)
 
 			if(itz == m_queuedGroups[i].end())
 			{
-				Log.Error("BattlegroundMgr", "Internal error at %s:%u", __FILE__, __LINE__);
+				sLog.outError("BattlegroundMgr", "Internal error at %s:%u", __FILE__, __LINE__);
 				m_queueLock.Release();
 				m_instanceLock.Release();
 				return;
@@ -705,7 +715,7 @@ void CBattlegroundManager::EventQueueUpdate(bool forceStart)
 
 				if(itz == possibleGroups.end())
 				{
-					Log.Error("BattlegroundMgr", "Internal error at %s:%u", __FILE__, __LINE__);
+					sLog.outError("BattlegroundMgr", "Internal error at %s:%u", __FILE__, __LINE__);
 					m_queueLock.Release();
 					m_instanceLock.Release();
 					return;
@@ -809,13 +819,13 @@ uint32 CBattlegroundManager::GetMinimumPlayers(uint32 dbcIndex)
 	switch(dbcIndex)
 	{
 		case BATTLEGROUND_ALTERAC_VALLEY:
-			return Config.MainConfig.GetIntDefault("Battleground", "AV_MIN", dbcBattlemasterListStore.LookupEntry(dbcIndex)->min_players_per_faction);
+			return Config.MainConfig.GetIntDefault("Battleground", "AV_MIN", 1);
 		case BATTLEGROUND_WARSONG_GULCH:
-			return Config.MainConfig.GetIntDefault("Battleground", "WS_MIN", dbcBattlemasterListStore.LookupEntry(dbcIndex)->min_players_per_faction);
+			return Config.MainConfig.GetIntDefault("Battleground", "WS_MIN", 1);
 		case BATTLEGROUND_ARATHI_BASIN:
-			return Config.MainConfig.GetIntDefault("Battleground", "AB_MIN", dbcBattlemasterListStore.LookupEntry(dbcIndex)->min_players_per_faction);
+			return Config.MainConfig.GetIntDefault("Battleground", "AB_MIN", 1);
 		case BATTLEGROUND_EYE_OF_THE_STORM:
-			return Config.MainConfig.GetIntDefault("Battleground", "EOS_MIN", dbcBattlemasterListStore.LookupEntry(dbcIndex)->min_players_per_faction);
+			return Config.MainConfig.GetIntDefault("Battleground", "EOS_MIN", 1);
 		case BATTLEGROUND_ARENA_2V2:
 			return 2;
 		case BATTLEGROUND_ARENA_3V3:
@@ -823,9 +833,9 @@ uint32 CBattlegroundManager::GetMinimumPlayers(uint32 dbcIndex)
 		case BATTLEGROUND_ARENA_5V5:
 			return 5;
 		case BATTLEGROUND_STRAND_OF_THE_ANCIENT:
-			return Config.MainConfig.GetIntDefault("Battleground", "SOTA_MIN", dbcBattlemasterListStore.LookupEntry(dbcIndex)->min_players_per_faction);
+			return Config.MainConfig.GetIntDefault("Battleground", "SOTA_MIN", 1);
 		default:
-			return dbcBattlemasterListStore.LookupEntry(dbcIndex)->min_players_per_faction;
+			return 1;
 	}
 }
 
@@ -835,13 +845,13 @@ uint32 CBattlegroundManager::GetMaximumPlayers(uint32 dbcIndex)
 	switch(dbcIndex)
 	{
 		case BATTLEGROUND_ALTERAC_VALLEY:
-			return Config.MainConfig.GetIntDefault("Battleground", "AV_MAX", dbcBattlemasterListStore.LookupEntry(dbcIndex)->min_players_per_faction);
+			return Config.MainConfig.GetIntDefault("Battleground", "AV_MAX", 1);
 		case BATTLEGROUND_WARSONG_GULCH:
-			return Config.MainConfig.GetIntDefault("Battleground", "WS_MAX", dbcBattlemasterListStore.LookupEntry(dbcIndex)->min_players_per_faction);
+			return Config.MainConfig.GetIntDefault("Battleground", "WS_MAX", 1);
 		case BATTLEGROUND_ARATHI_BASIN:
-			return Config.MainConfig.GetIntDefault("Battleground", "AB_MAX", dbcBattlemasterListStore.LookupEntry(dbcIndex)->min_players_per_faction);
+			return Config.MainConfig.GetIntDefault("Battleground", "AB_MAX", 1);
 		case BATTLEGROUND_EYE_OF_THE_STORM:
-			return Config.MainConfig.GetIntDefault("Battleground", "EOS_MAX", dbcBattlemasterListStore.LookupEntry(dbcIndex)->min_players_per_faction);
+			return Config.MainConfig.GetIntDefault("Battleground", "EOS_MAX", 1);
 		case BATTLEGROUND_ARENA_2V2:
 			return 2;
 		case BATTLEGROUND_ARENA_3V3:
@@ -849,9 +859,9 @@ uint32 CBattlegroundManager::GetMaximumPlayers(uint32 dbcIndex)
 		case BATTLEGROUND_ARENA_5V5:
 			return 5;
 		case BATTLEGROUND_STRAND_OF_THE_ANCIENT:
-			return Config.MainConfig.GetIntDefault("Battleground", "SOTA_MAX", dbcBattlemasterListStore.LookupEntry(dbcIndex)->min_players_per_faction);
+			return Config.MainConfig.GetIntDefault("Battleground", "SOTA_MAX", 1);
 		default:
-			return dbcBattlemasterListStore.LookupEntry(dbcIndex)->min_players_per_faction;
+			return 1;
 	}
 }
 
@@ -1211,7 +1221,7 @@ CBattleground * CBattlegroundManager::CreateInstance(uint32 Type, uint32 LevelGr
 		mgr = sInstanceMgr.CreateBattlegroundInstance(mapid);
 		if(mgr == NULL)
 		{
-			Log.Error("BattlegroundManager", "Arena CreateInstance() call failed for map %u, type %u, level group %u", mapid, Type, LevelGroup);
+			sLog.outError("BattlegroundManager", "Arena CreateInstance() call failed for map %u, type %u, level group %u", mapid, Type, LevelGroup);
 			return NULL;      // Shouldn't happen
 		}
 
@@ -1246,7 +1256,7 @@ CBattleground * CBattlegroundManager::CreateInstance(uint32 Type, uint32 LevelGr
 
 	if(cfunc == NULL)
 	{
-		Log.Error("BattlegroundManager", "Could not find CreateBattlegroundFunc pointer for type %u level group %u", Type, LevelGroup);
+		sLog.outError("BattlegroundManager", "Could not find CreateBattlegroundFunc pointer for type %u level group %u", Type, LevelGroup);
 		return NULL;
 	}
 
@@ -1277,7 +1287,7 @@ CBattleground * CBattlegroundManager::CreateInstance(uint32 Type, uint32 LevelGr
 	mgr = sInstanceMgr.CreateBattlegroundInstance(BGMapIds[Type]);
 	if(mgr == NULL)
 	{
-		Log.Error("BattlegroundManager", "CreateInstance() call failed for map %u, type %u, level group %u", BGMapIds[Type], Type, LevelGroup);
+		sLog.outError("BattlegroundManager", "CreateInstance() call failed for map %u, type %u, level group %u", BGMapIds[Type], Type, LevelGroup);
 		return NULL;      // Shouldn't happen
 	}
 
@@ -1351,8 +1361,7 @@ GameObject * CBattleground::SpawnGameObject(uint32 entry,uint32 MapId , float x,
 
 	go->CreateFromProto(entry, MapId, x, y, z, o);
 
-	go->SetUInt32Value(GAMEOBJECT_FACTION,faction);
-	go->_setFaction();
+	go->SetFaction(faction);
 	go->SetScale( scale);
 	go->SetUInt32Value(GAMEOBJECT_FLAGS, flags);
 	go->SetPosition(x, y, z, o);
@@ -1445,6 +1454,8 @@ void CBattlegroundManager::SendBattlefieldStatus(Player * plr, uint32 Status, ui
 			data << uint8(0xC);
 			data << uint32(6);
 			data << uint16(0x1F90);
+			data << uint8(0);                // 3.3.0
+			data << uint8(0);                // 3.3.0
 			data << uint32(11);
 			data << uint8(RatedMatch);      // 1 = rated match
 		}
@@ -1453,6 +1464,8 @@ void CBattlegroundManager::SendBattlefieldStatus(Player * plr, uint32 Status, ui
 			data << uint32(0);
 			data << uint8(0) << uint8(2);
 			data << Type;
+			data << uint8(0);                // 3.3.0
+			data << uint8(0);                // 3.3.0
 			data << uint16(0x1F90);
 			data << InstanceID;
 			data << uint8(0);
@@ -1730,44 +1743,47 @@ Creature * CBattleground::SpawnSpiritGuide(float x, float y, float z, float o, u
 	pCreature->SetEntry(  13116 + horde);
 	pCreature->SetScale(  1.0f);
 
-	pCreature->SetHealth( 100000);
-    pCreature->SetPower( POWER_TYPE_MANA, 4868 );
-    pCreature->SetPower( POWER_TYPE_FOCUS, 200 );
-    pCreature->SetPower( POWER_TYPE_HAPPINESS, 2000000 );
-
 	pCreature->SetMaxHealth( 10000);
 	pCreature->SetMaxPower( POWER_TYPE_MANA, 4868 );
 	pCreature->SetMaxPower( POWER_TYPE_FOCUS, 200 );
 	pCreature->SetMaxPower( POWER_TYPE_HAPPINESS, 2000000 );
 
-	pCreature->SetUInt32Value(UNIT_FIELD_LEVEL, 60);
-	pCreature->SetUInt32Value(UNIT_FIELD_FACTIONTEMPLATE, 84 - horde);
-	pCreature->_setFaction();
+	pCreature->SetHealth( 100000);
+    pCreature->SetPower( POWER_TYPE_MANA, 4868 );
+    pCreature->SetPower( POWER_TYPE_FOCUS, 200 );
+    pCreature->SetPower( POWER_TYPE_HAPPINESS, 2000000 );
+
+	pCreature->setLevel(60);
+	pCreature->SetFaction(84 - horde);
 
     pCreature->setRace( 0 );
     pCreature->setClass( 2 );
     pCreature->setGender( 1 );
     pCreature->SetPowerType( 0 );
 
-	pCreature->SetUInt32Value(UNIT_VIRTUAL_ITEM_SLOT_ID, 22802);
+	pCreature->SetEquippedItem(MELEE,22802);
 
 	pCreature->SetUInt32Value(UNIT_FIELD_FLAGS, UNIT_FLAG_PLUS_MOB | UNIT_FLAG_NOT_ATTACKABLE_9 | UNIT_FLAG_UNKNOWN_10 | UNIT_FLAG_PVP); // 4928
 
-	pCreature->SetUInt32Value(UNIT_FIELD_BASEATTACKTIME, 2000);
-	pCreature->SetUInt32Value(UNIT_FIELD_BASEATTACKTIME+1, 2000);
-	pCreature->SetFloatValue(UNIT_FIELD_BOUNDINGRADIUS, 0.208f);
-	pCreature->SetFloatValue(UNIT_FIELD_COMBATREACH, 1.5f);
+	pCreature->SetBaseAttackTime(MELEE,2000);
+	pCreature->SetBaseAttackTime(OFFHAND,2000);
+	pCreature->SetBoundingRadius(0.208f);
+	pCreature->SetCombatReach(1.5f);
 
-	pCreature->SetUInt32Value(UNIT_FIELD_DISPLAYID, 13337 + horde);
-	pCreature->SetUInt32Value(UNIT_FIELD_NATIVEDISPLAYID, 13337 + horde);
+	pCreature->SetDisplayId(13337 + horde);
+	pCreature->SetNativeDisplayId(13337 + horde);
 
-	pCreature->SetChannelSpellId(  22011);
-	pCreature->SetFloatValue(UNIT_MOD_CAST_SPEED, 1.0f);
+	pCreature->SetChannelSpellId(22011);
+	pCreature->SetCastSpeedMod(1.0f);
 
 	pCreature->SetUInt32Value(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_SPIRITGUIDE);
 	pCreature->SetUInt32Value(UNIT_FIELD_BYTES_2, 1 | (0x10 << 8));
 
 	pCreature->DisableAI();
+
+	pCreature->SetCreatureInfo( pInfo );
+	pCreature->SetCreatureProto( CreatureProtoStorage.LookupEntry( pInfo->Id ) );
+
 	pCreature->PushToWorld(m_mapMgr);
 	return pCreature;
 }
@@ -1904,7 +1920,7 @@ void CBattlegroundManager::HandleArenaJoin(WorldSession * m_session, uint32 Batt
 
 			if(pGroup->GetLeader()->m_loggedInPlayer && pGroup->GetLeader()->m_loggedInPlayer->m_arenaTeams[type] == NULL)
 			{
-				m_session->SystemMessage( m_session->LocalizedWorldSrv(57));
+				m_session->SendNotInArenaTeamPacket(uint8(maxplayers));
 				return;
 			}
 

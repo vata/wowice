@@ -233,12 +233,38 @@ public:
 	Unit *GetUnit() { return m_Unit; }
 	Unit *GetPetOwner() { return m_PetOwner; }
 	void DismissPet();
-	void SetUnitToFollow(Unit* un) { UnitToFollow = un; };
-	void SetUnitToFear(Unit* un)  { UnitToFear = un; };
+	void SetUnitToFollow(Unit* un)
+	{ 
+		if(un == NULL)
+			m_UnitToFollow = 0;
+		else
+			m_UnitToFollow = un->GetGUID(); 
+	};
+	void SetUnitToFollow(uint64 guid) { m_UnitToFollow = guid; };
+	void ResetUnitToFollow(){ m_UnitToFollow = 0; };
+	void SetUnitToFear(Unit* un)
+	{ 
+		if(un == NULL)
+			m_UnitToFear = 0;
+		else
+			m_UnitToFear = un->GetGUID(); 
+	};
+	void SetUnitToFear(uint64 guid)  { m_UnitToFear = guid; };
+	void ResetUnitToFear(){ m_UnitToFear = 0; };
+	void SetUnitToFollowBackup(Unit* un)
+	{ 
+		if(un == NULL)
+			m_UnitToFollow_backup = 0;
+		else
+			m_UnitToFollow_backup = un->GetGUID(); 
+	};
+	void SetUnitToFollowBackup(uint64 guid) { m_UnitToFollow = guid; };
 	void SetFollowDistance(float dist) { FollowDistance = dist; };
 	void SetUnitToFollowAngle(float angle) { m_fallowAngle = angle; }
 	bool setInFront(Unit* target);
-	WoWICE_INLINE Unit* getUnitToFollow() { return UnitToFollow; }
+	Unit* getUnitToFollow();
+	Unit* getUnitToFollowBackup();
+	Unit* getUnitToFear();
 	void setCreatureState(CreatureState state){ m_creatureState = state; }
 	WoWICE_INLINE uint8 getAIState() { return static_cast<uint8>( m_AIState ); }
 	WoWICE_INLINE uint8 getAIType() { return static_cast<uint8>( m_AIType ); }
@@ -488,9 +514,11 @@ protected:
 	float m_lastFollowX;
 	float m_lastFollowY;
 	//typedef std::map<uint32, WayPoint*> WayPointMap;
-	Unit *UnitToFollow;
-	Unit *UnitToFollow_backup;//used only when forcing creature to wander (blind spell) so when effect wears off we can follow our master again (guardian)
-	Unit *UnitToFear;
+
+	uint64 m_UnitToFollow;
+	uint64 m_UnitToFollow_backup;//used unly when forcing creature to wander (blind spell) so when effect wears off we can follow our master again (guardian)
+	uint64 m_UnitToFear;
+
 	uint32 m_timeToMove;
 	uint32 m_timeMoved;
 	uint32 m_moveTimer;
