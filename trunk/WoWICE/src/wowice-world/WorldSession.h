@@ -37,7 +37,7 @@ struct TrainerSpell;
 // Does nothing on release builds
 ////////////////////////////////////////
 #ifdef _DEBUG
-#define CHECK_INWORLD_ASSERT Arcemu::Util::ARCEMU_ASSERT(   _player || _player->IsInWorld())
+#define CHECK_INWORLD_ASSERT Wowice::Util::WoWICE_ASSERT( _player != NULL && _player->IsInWorld() )
 #else
 #define CHECK_INWORLD_ASSERT CHECK_INWORLD_RETURN
 #endif
@@ -311,6 +311,7 @@ public:
 	void SendNotification(const char *message, ...);
 	void SendAuctionPlaceBidResultPacket(uint32 itemId, uint32 error);
     void SendRefundInfo( uint64 GUID );
+	void SendNotInArenaTeamPacket(uint8 type);
 
 	void SetInstance(uint32 Instance) { instanceId = Instance; }
 	uint32 GetLatency() { return _latency; }
@@ -349,6 +350,7 @@ protected:
 	uint8 DeleteCharacter(uint32 guid);
 	void HandleCharCreateOpcode(WorldPacket& recvPacket);
 	void HandlePlayerLoginOpcode(WorldPacket& recvPacket);
+	void HandleRealmStateRequestOpcode(WorldPacket& recvPacket);
 
 	/// Authentification and misc opcodes (MiscHandler.cpp):
 	void HandlePingOpcode(WorldPacket& recvPacket);
@@ -365,7 +367,7 @@ protected:
 	void HandlePlayerLogoutOpcode(WorldPacket& recvPacket);
 	void HandleLogoutCancelOpcode(WorldPacket& recvPacket);
 	void HandleZoneUpdateOpcode(WorldPacket& recvPacket);
-	void HandleSetTargetOpcode(WorldPacket& recvPacket);
+	//void HandleSetTargetOpcode(WorldPacket& recvPacket);
 	void HandleSetSelectionOpcode(WorldPacket& recvPacket);
 	void HandleStandStateChangeOpcode(WorldPacket& recvPacket);
 	void HandleDismountOpcode(WorldPacket & recvPacket);
@@ -482,6 +484,7 @@ protected:
 	void HandleAuctionListOwnerItems( WorldPacket & recv_data );
 	void HandleAuctionPlaceBid( WorldPacket & recv_data );
 	void HandleCancelAuction( WorldPacket & recv_data);
+	void HandleAuctionListPendingSales( WorldPacket & recv_data);
 
 	// Mail opcodes
 	void HandleGetMail( WorldPacket & recv_data );
@@ -556,8 +559,10 @@ protected:
 
 	/// Chat opcodes (Chat.cpp)
 	void HandleMessagechatOpcode(WorldPacket& recvPacket);
+	void HandleEmoteOpcode(WorldPacket& recvPacket);
 	void HandleTextEmoteOpcode(WorldPacket& recvPacket);
 	void HandleReportSpamOpcode(WorldPacket& recvPacket);
+	void HandleChatIgnoredOpcode(WorldPacket& recvPacket);
 
 	/// Corpse opcodes (Corpse.cpp)
 	void HandleCorpseReclaimOpcode( WorldPacket& recvPacket );
@@ -627,6 +632,7 @@ protected:
 	void HandleCharterQuery(WorldPacket & recv_data);
 	void HandleCharterOffer(WorldPacket & recv_data);
 	void HandleCharterSign(WorldPacket &recv_data);
+	void HandleCharterDecline(WorldPacket &recv_data);
 	void HandleCharterRename(WorldPacket & recv_data);
 	void HandleSetGuildInformation(WorldPacket & recv_data);
 	void HandleGuildLog(WorldPacket & recv_data);
@@ -745,6 +751,7 @@ protected:
 
 	//MISC
 	void HandleWorldStateUITimerUpdate( WorldPacket & recv_data );
+	void HandleSetTaxiBenchmarkOpcode( WorldPacket & recv_data );
 
 public:
 
@@ -760,6 +767,7 @@ public:
 	void SendAuctionList(Creature* pCreature);
 	void SendSpiritHealerRequest(Creature* pCreature);
 	void SendAccountDataTimes(uint32 mask);
+	void SendStabledPetList(uint64 npcguid);
 	void FullLogin(Player * plr);
     void SendMOTD();
 

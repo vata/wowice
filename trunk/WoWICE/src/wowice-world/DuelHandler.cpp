@@ -43,7 +43,7 @@ void WorldSession::HandleDuelAccepted(WorldPacket & recv_data)
 
 	_player->m_duelCountdownTimer = 3000;
 
-	sEventMgr.AddEvent(_player, &Player::DuelCountdown, EVENT_PLAYER_DUEL_COUNTDOWN, 1000, 3,0);
+	sEventMgr.AddEvent(_player, &Player::DuelCountdown, EVENT_PLAYER_DUEL_COUNTDOWN, 1000, 3, EVENT_FLAG_DO_NOT_EXECUTE_IN_WORLD_CONTEXT);
 }
 
 void WorldSession::HandleDuelCancelled(WorldPacket & recv_data)
@@ -63,7 +63,7 @@ void WorldSession::HandleDuelCancelled(WorldPacket & recv_data)
 	SendPacket( &data );
 	_player->DuelingWith->m_session->SendPacket( &data );
 
-	GameObject* arbiter = _player->GetMapMgr() ? _player->GetMapMgr()->GetGameObject( _player->GetUInt32Value( PLAYER_DUEL_ARBITER ) ) : NULL;
+	GameObject* arbiter = _player->GetMapMgr() ? _player->GetMapMgr()->GetGameObject( GET_LOWGUID_PART(_player->GetDuelArbiter()) ) : NULL;
 	if( arbiter != NULL )
 	{
 		arbiter->RemoveFromWorld( true );
@@ -72,14 +72,14 @@ void WorldSession::HandleDuelCancelled(WorldPacket & recv_data)
 
 	if (_player->DuelingWith->GetMapMgr() == _player->GetMapMgr())
 	{
-		_player->DuelingWith->SetUInt64Value( PLAYER_DUEL_ARBITER, 0 );
-		_player->DuelingWith->SetUInt32Value( PLAYER_DUEL_TEAM, 0 );
+		_player->DuelingWith->SetDuelArbiter(0 );
+		_player->DuelingWith->SetDuelTeam(0 );
 		_player->DuelingWith->m_duelState = DUEL_STATE_FINISHED;
 		_player->DuelingWith->m_duelCountdownTimer = 0;
 		_player->DuelingWith->DuelingWith = NULL;
 	}
-	_player->SetUInt64Value( PLAYER_DUEL_ARBITER, 0 );
-	_player->SetUInt32Value( PLAYER_DUEL_TEAM, 0);
+	_player->SetDuelArbiter(0 );
+	_player->SetDuelTeam(0);
 	_player->m_duelState = DUEL_STATE_FINISHED;
 	_player->m_duelCountdownTimer = 0;
 	_player->DuelingWith = NULL;
@@ -91,10 +91,13 @@ void WorldSession::HandleDuelCancelled(WorldPacket & recv_data)
 			_player->m_auras[x]->Remove();
 		}
 	}
-    Pet * pPet = _player->GetSummon();;
-	if(pPet && pPet->isAlive())
+	std::list<Pet*> summons = _player->GetSummons();
+	for(std::list<Pet*>::iterator itr = summons.begin(); itr != summons.end(); ++itr)
 	{
-	    pPet->SetPetAction(PET_ACTION_STAY);
-		pPet->SetPetAction(PET_ACTION_FOLLOW);
+		if((*itr)->isAlive())
+		{
+			(*itr)->SetPetAction(PET_ACTION_STAY);
+			(*itr)->SetPetAction(PET_ACTION_FOLLOW);
+		}
 	}
 }

@@ -40,7 +40,6 @@
 #include <map>
 #include <sstream>
 #include <string>
-//#include <fstream>
 
 #include "../wowice-shared/Common.h"
 #include "../wowice-shared/MersenneTwister.h"
@@ -65,7 +64,6 @@
 #include "../wowice-shared/Auth/BigNumber.h"
 #include "../wowice-shared/Auth/Sha1.h"
 #include "../wowice-shared/Auth/WowCrypt.h"
-#include "../wowice-shared/CrashHandler.h"
 #include "../wowice-shared/FastQueue.h"
 #include "../wowice-shared/CircularQueue.h"
 #include "../wowice-shared/Threading/RWLock.h"
@@ -74,17 +72,12 @@
 
 #ifdef WIN32
 #include "printStackTrace.h"
-//#include "StackTrace.h"
-//#include "MapFile.h"
 #endif
 
 #include "UpdateFields.h"
 #include "UpdateMask.h"
 #include "Opcodes.h"
 #include "AuthCodes.h"
-
-#include "Packets.h"
-
 #include "../wowice-shared/CallBack.h"
 #include "WordFilter.h"
 #include "EventMgr.h"
@@ -93,9 +86,12 @@
 #include "LootMgr.h"
 #include "Unit.h"
 
+#include "WUtil.h"
+
 #ifdef ENABLE_ACHIEVEMENTS
 #include "AchievementMgr.h"
 #endif
+
 #include "AddonMgr.h"
 #include "AIInterface.h"
 #include "AreaTrigger.h"
@@ -151,23 +147,17 @@
 #include "WorldCreator.h"
 #include "ObjectContainer.h"
 #include "Vehicle.h"
-
-
 #include "ObjectMgr.h"
-
 #include "CThreads.h"
 #include "ScriptMgr.h"
-
 #include "Channel.h"
 #include "ChannelMgr.h"
 #include "ArenaTeam.h"
 #include "Arenas.h"
-
 #include "LogonCommClient.h"
 #include "LogonCommHandler.h"
 #include "MainServerDefines.h"
 #include "WorldRunnable.h"
-
 #include "../wowice-shared/Storage.h"
 #include "ObjectStorage.h"
 #include "DatabaseCleaner.h"
@@ -175,16 +165,13 @@
 #include "CommonScheduleThread.h"
 #include "VoiceChatHandler.h"
 #include "LocalizationMgr.h"
-
 #include "CollideInterface.h"
-
 #include "Master.h"
 #include "BaseConsole.h"
 #include "CConsole.h"
-//#define COLLECTION_OF_UNTESTED_STUFF_AND_TESTERS 1
 #include "SpeedDetector.h"
-//#define PVP_REALM_MEANS_CONSTANT_PVP
 #include "ProcCondHandler.h"
+#include "WorldStates.h"
 #endif
 
 #define RECRUITING "Info: |cff00FF7FWoWICE is recruiting developers."

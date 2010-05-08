@@ -122,14 +122,14 @@ void Vehicle::SendFarsightPacket(Player * player, bool enabled)
 {
 	if (enabled)
 	{
-		player->SetUInt64Value(PLAYER_FARSIGHT, GetGUID());
+		player->SetFarsightTarget(GetGUID());
 		WorldPacket ack(0x49D, 0);
 		if (player->GetSession() != NULL)
 			player->GetSession()->SendPacket(&ack);
 	}
 	else
 	{
-		player->SetUInt64Value(PLAYER_FARSIGHT, 0);
+		player->SetFarsightTarget(0);
 		player->SetCharmedUnitGUID( 0 );
 	}
 }
@@ -205,10 +205,9 @@ void Vehicle::AddPassenger(Player * player, int8 seat)
         player->SendPacket(&data);
 		
         m_controller = player;
-		player->SetUInt64Value( UNIT_FIELD_CHARM, GetGUID());
-		SetUInt64Value(UNIT_FIELD_CHARMEDBY, player->GetGUID());
+		player->SetCharmedUnitGUID(GetGUID());
+		SetCharmedByGUID(player->GetGUID());
 		SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PLAYER_CONTROLLED_CREATURE);
-
 
 		 //set active mover
 		player->GetSession()->SetActiveMover(GetNewGUID());
@@ -324,6 +323,8 @@ bool ChatHandler::HandleVehicleSpawn(const char * args, WorldSession * m_session
 	sp->Item1SlotDisplay = 0;
 	sp->Item2SlotDisplay = 0;
 	sp->Item3SlotDisplay = 0;
+	sp->CanFly = 0;
+	sp->phase = m_session->GetPlayer()->GetPhase();
 
 
 	Creature * p = m_session->GetPlayer()->GetMapMgr()->CreateCreature(entry, true);

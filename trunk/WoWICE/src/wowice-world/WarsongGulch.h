@@ -57,4 +57,5 @@ public:
 	void OnStart();
 
 	void SetIsWeekend(bool isweekend);
+	void DespawnGates(uint32 delay);
 };

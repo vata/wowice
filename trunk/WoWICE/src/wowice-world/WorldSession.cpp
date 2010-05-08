@@ -331,9 +331,9 @@ void WorldSession::LogoutPlayer(bool Save)
 		
 		// Save HP/Mana
 		_player->load_health = _player->GetUInt32Value( UNIT_FIELD_HEALTH );
-		_player->load_mana = _player->GetUInt32Value( UNIT_FIELD_POWER1 );
+		_player->load_mana = _player->GetPower(POWER_TYPE_MANA);
 
-		_player->DismissActivePet();
+		_player->DismissActivePets();
 		_player->RemoveAllGuardians();
 
 		//_player->SaveAuras();
@@ -512,6 +512,9 @@ void WorldSession::InitPacketHandlerTable()
 	WorldPacketHandlers[CMSG_PLAYER_LOGIN].handler							  = &WorldSession::HandlePlayerLoginOpcode; 
 	WorldPacketHandlers[CMSG_PLAYER_LOGIN].status							   = STATUS_AUTHED;
 
+	WorldPacketHandlers[CMSG_REALM_SPLIT].handler							  = &WorldSession::HandleRealmStateRequestOpcode; 
+	WorldPacketHandlers[CMSG_REALM_SPLIT].status							   = STATUS_AUTHED;
+
 	// Queries
 	WorldPacketHandlers[MSG_CORPSE_QUERY].handler							   = &WorldSession::HandleCorpseQueryOpcode;
 	WorldPacketHandlers[CMSG_NAME_QUERY].handler								= &WorldSession::HandleNameQueryOpcode;
@@ -570,6 +573,8 @@ void WorldSession::InitPacketHandlerTable()
 	WorldPacketHandlers[CMSG_MOVE_SET_CAN_FLY_ACK].handler							= &WorldSession::HandleAcknowledgementOpcodes;
 	WorldPacketHandlers[MSG_MOVE_START_DESCEND].handler							= &WorldSession::HandleMovementOpcodes;
 	
+	WorldPacketHandlers[CMSG_FORCE_FLIGHT_SPEED_CHANGE_ACK].handler             = &WorldSession::HandleAcknowledgementOpcodes;
+
 	// Action Buttons
 	WorldPacketHandlers[CMSG_SET_ACTION_BUTTON].handler						 = &WorldSession::HandleSetActionButtonOpcode;
 	WorldPacketHandlers[CMSG_REPOP_REQUEST].handler							 = &WorldSession::HandleRepopRequestOpcode;
@@ -588,7 +593,7 @@ void WorldSession::InitPacketHandlerTable()
 	WorldPacketHandlers[CMSG_PLAYER_LOGOUT].handler							 = &WorldSession::HandlePlayerLogoutOpcode;
 	WorldPacketHandlers[CMSG_LOGOUT_CANCEL].handler							 = &WorldSession::HandleLogoutCancelOpcode;
 	WorldPacketHandlers[CMSG_ZONEUPDATE].handler								= &WorldSession::HandleZoneUpdateOpcode;
-	WorldPacketHandlers[CMSG_SET_TARGET_OBSOLETE].handler					   = &WorldSession::HandleSetTargetOpcode;
+	//WorldPacketHandlers[CMSG_SET_TARGET_OBSOLETE].handler					   = &WorldSession::HandleSetTargetOpcode;
 	WorldPacketHandlers[CMSG_SET_SELECTION].handler							 = &WorldSession::HandleSetSelectionOpcode;
 	WorldPacketHandlers[CMSG_STANDSTATECHANGE].handler						  = &WorldSession::HandleStandStateChangeOpcode;
 	WorldPacketHandlers[CMSG_CANCEL_MOUNT_AURA].handler								= &WorldSession::HandleDismountOpcode;	
@@ -620,6 +625,7 @@ void WorldSession::InitPacketHandlerTable()
 	WorldPacketHandlers[CMSG_PLAYED_TIME].handler							   = &WorldSession::HandlePlayedTimeOpcode;
 	WorldPacketHandlers[CMSG_SETSHEATHED].handler							   = &WorldSession::HandleSetSheathedOpcode;
 	WorldPacketHandlers[CMSG_MESSAGECHAT].handler							   = &WorldSession::HandleMessagechatOpcode;
+	WorldPacketHandlers[CMSG_EMOTE].handler										= &WorldSession::HandleEmoteOpcode;
 	WorldPacketHandlers[CMSG_TEXT_EMOTE].handler								= &WorldSession::HandleTextEmoteOpcode;
 	WorldPacketHandlers[CMSG_INSPECT].handler									= &WorldSession::HandleInspectOpcode;
 	WorldPacketHandlers[SMSG_BARBER_SHOP_RESULT].handler						= &WorldSession::HandleBarberShopResult;
@@ -777,6 +783,7 @@ void WorldSession::InitPacketHandlerTable()
 	WorldPacketHandlers[CMSG_AUCTION_LIST_OWNER_ITEMS].handler				  = &WorldSession::HandleAuctionListOwnerItems;
 	WorldPacketHandlers[CMSG_AUCTION_PLACE_BID].handler						 = &WorldSession::HandleAuctionPlaceBid;
 	WorldPacketHandlers[CMSG_AUCTION_REMOVE_ITEM].handler					   = &WorldSession::HandleCancelAuction;
+	WorldPacketHandlers[CMSG_AUCTION_LIST_PENDING_SALES].handler					   = &WorldSession::HandleAuctionListPendingSales;
 	
 	// Mail System
 	WorldPacketHandlers[CMSG_GET_MAIL_LIST].handler							 = &WorldSession::HandleGetMail;
@@ -819,6 +826,7 @@ void WorldSession::InitPacketHandlerTable()
 	WorldPacketHandlers[CMSG_PETITION_QUERY].handler						= &WorldSession::HandleCharterQuery;
 	WorldPacketHandlers[CMSG_OFFER_PETITION].handler						= &WorldSession::HandleCharterOffer;
 	WorldPacketHandlers[CMSG_PETITION_SIGN].handler							= &WorldSession::HandleCharterSign;
+	WorldPacketHandlers[MSG_PETITION_DECLINE].handler						= &WorldSession::HandleCharterDecline;
 	WorldPacketHandlers[MSG_PETITION_RENAME].handler						= &WorldSession::HandleCharterRename;
 	WorldPacketHandlers[MSG_SAVE_GUILD_EMBLEM].handler						= &WorldSession::HandleSaveGuildEmblem;
 	WorldPacketHandlers[CMSG_GUILD_INFO_TEXT].handler						= &WorldSession::HandleSetGuildInformation;
@@ -898,13 +906,14 @@ void WorldSession::InitPacketHandlerTable()
 	WorldPacketHandlers[CMSG_TOGGLE_CLOAK].handler							  = &WorldSession::HandleToggleCloakOpcode;
 	WorldPacketHandlers[CMSG_TOGGLE_HELM].handler							   = &WorldSession::HandleToggleHelmOpcode;
 	WorldPacketHandlers[CMSG_SET_TITLE].handler							= &WorldSession::HandleSetVisibleRankOpcode;
-	WorldPacketHandlers[CMSG_COMMENTATOR_GET_PLAYER_INFO].handler								= &WorldSession::HandleReportSpamOpcode;
+	WorldPacketHandlers[CMSG_COMPLAIN].handler								= &WorldSession::HandleReportSpamOpcode;
 	WorldPacketHandlers[CMSG_GAMEOBJ_REPORT_USE].handler = &WorldSession::HandleGameobjReportUseOpCode;
+	WorldPacketHandlers[CMSG_CHAT_IGNORED].handler							  = &WorldSession::HandleChatIgnoredOpcode;
 
 	WorldPacketHandlers[CMSG_PET_CAST_SPELL].handler				= &WorldSession::HandlePetCastSpell;
 
 	WorldPacketHandlers[CMSG_WORLD_STATE_UI_TIMER_UPDATE].handler				= &WorldSession::HandleWorldStateUITimerUpdate;
-
+	WorldPacketHandlers[CMSG_SET_TAXI_BENCHMARK_MODE].handler				= &WorldSession::HandleSetTaxiBenchmarkOpcode;
 
 	// Arenas
 	WorldPacketHandlers[CMSG_ARENA_TEAM_QUERY].handler = &WorldSession::HandleArenaTeamQueryOpcode;
@@ -1093,8 +1102,6 @@ void WorldSession::SendRefundInfo( uint64 GUID ){
             return;
 
         ItemPrototype *proto = itm->GetProto();
-        if( proto == NULL)
-            return;
 
         //////////////////////////////////////////////////////////////////////////////////////////
         //  As of 3.2.0a the server sends this packet to provide refund info on an item
@@ -1201,7 +1208,7 @@ void WorldSession::HandleUnlearnSkillOpcode(WorldPacket& recv_data)
 	if(!_player->IsInWorld()) return;
 	
     uint32 skill_line;
-	uint32 points_remaining=_player->GetUInt32Value(PLAYER_CHARACTER_POINTS2);
+	uint32 points_remaining=_player->GetTalentPoints(SPEC_SECONDARY);
 	recv_data >> skill_line;
 
 	// Cheater detection
@@ -1214,14 +1221,14 @@ void WorldSession::HandleUnlearnSkillOpcode(WorldPacket& recv_data)
 	_player->_RemoveSkillLine(skill_line);
 
 	//added by Zack : This is probably wrong or already made elsewhere : restore skill learnability
-	if(points_remaining==_player->GetUInt32Value(PLAYER_CHARACTER_POINTS2))
+	if(points_remaining==_player->GetTalentPoints(SPEC_SECONDARY))
 	{
 		//we unlearned a skill so we enable a new one to be learned
 		skilllineentry *sk=dbcSkillLine.LookupEntryForced(skill_line);
 		if(!sk)
 			return;
 		if(sk->type==SKILL_TYPE_PROFESSION && points_remaining<2)
-			_player->SetUInt32Value(PLAYER_CHARACTER_POINTS2,points_remaining+1);
+			_player->SetTalentPoints(SPEC_SECONDARY, points_remaining+1);
 	}
 }
 

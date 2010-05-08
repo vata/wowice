@@ -16,43 +16,10 @@
 #include "StdAfx.h"
 
 #define BASE_RESOURCES_GAIN 10
-#define RESOURCES_WARNING_THRESHOLD 1800
-#define RESOURCES_WINVAL 2000
-#define RESOURCES_WARNINGVAL 1800
+#define RESOURCES_WARNING_THRESHOLD 1400
+#define RESOURCES_WINVAL 1600
 
 uint32 buffentries[3] = {180380,180362,180146};
-
-// AB defines
-#define AB_CAPTURED_STABLES_ALLIANCE		0x6E7 //1767
-#define AB_CAPTURED_STABLES_HORDE		   0x6E8 //1768
-#define AB_CAPTURING_STABLES_ALLIANCE	   0x6E9 //1769
-#define AB_CAPTURING_STABLES_HORDE		  0x6EA //1770
-// 0x6EB is unknown
-#define AB_CAPTURED_FARM_ALLIANCE		   0x6EC //1772 // 1 is captured by the alliance
-#define AB_CAPTURED_FARM_HORDE			  0x6ED // 1773 / 1 is captured by the horde
-#define AB_CAPTURING_FARM_ALLIANCE		  0x6EE // 1774 1 is capturing by the alliance
-#define AB_CAPTURING_FARM_HORDE			 0x6EF // 1775 1 is capturing by the horde
-
-#define AB_CAPTURED_BLACKSMITH_ALLIANCE	 0x6F6 // 1782
-#define AB_CAPTURED_BLACKSMITH_HORDE		0x6F7 //1783
-#define AB_CAPTURING_BLACKSMITH_ALLIANCE	0x6F8 //1784
-#define AB_CAPTURING_BLACKSMITH_HORDE	   0x6F9 //1785
-// 0x6FA is unknown
-#define AB_CAPTURED_GOLDMINE_ALLIANCE	   0x6FB //1787
-#define AB_CAPTURED_GOLDMINE_HORDE		  0x6FC//1788
-#define AB_CAPTURING_GOLDMINE_ALLIANCE	  0x6FD//1789
-#define AB_CAPTURING_GOLDMINE_HORDE		 0x6FE//1790
-// 0x6FF is unknown
-#define AB_CAPTURED_LUMBERMILL_ALLIANCE	 0x700//1792
-#define AB_CAPTURED_LUMBERMILL_HORDE		0x701//1793
-#define AB_CAPTURING_LUMBERMILL_ALLIANCE	0x702//1794
-#define AB_CAPTURING_LUMBERMILL_HORDE	   0x703//1795
-
-#define AB_SHOW_STABLE_ICON				 0x732//1842
-#define AB_SHOW_GOLDMINE_ICON			   0x733//1843
-#define AB_SHOW_LUMBERMILL_ICON			 0x734//1844
-#define AB_SHOW_FARM_ICON				   0x735//1845
-#define AB_SHOW_BACKSMITH_ICON			  0x736//1846
 
 /* AB Battleground Data */
 
@@ -160,13 +127,8 @@ uint32 buffentries[3] = {180380,180362,180146};
 		30,
 	};
 
-//								<10 <20 <30 <40 <50 <60 <70  70  <70 80 
-static int resHonorTable[10] = { 0,  0,  4,  7,  11, 19, 20, 20, 30, 30 };
-static int winHonorTable[10] = { 0,  0,  4,  7,  11, 19, 20, 20, 30, 30 };
-
-
-static uint32 resourcesToGainBH = 330;
-static uint32 resourcesToGainBR = 200;
+static uint32 resourcesToGainBH = 260;
+static uint32 resourcesToGainBR = 160;
 
 /* End BG Data */
 
@@ -182,8 +144,8 @@ void ArathiBasin::SpawnBuff(uint32 x)
 		m_buffs[x] = SpawnGameObject(chosen_buffid, m_mapMgr->GetMapId(), BuffCoordinates[x][0], BuffCoordinates[x][1], BuffCoordinates[x][2],
 			BuffCoordinates[x][3], 0, 114, 1);
 
-		m_buffs[x]->SetFloatValue(GAMEOBJECT_PARENTROTATION_02, BuffRotations[x][0]);
-		m_buffs[x]->SetFloatValue(GAMEOBJECT_PARENTROTATION_03, BuffRotations[x][1]);
+		m_buffs[x]->SetParentRotation(2, BuffRotations[x][0]);
+		m_buffs[x]->SetParentRotation(3, BuffRotations[x][1]);
 		m_buffs[x]->SetByte(GAMEOBJECT_BYTES_1, 0, 1);
 		m_buffs[x]->SetByte(GAMEOBJECT_BYTES_1, 1, 6);
 		m_buffs[x]->SetByte(GAMEOBJECT_BYTES_1, 3, 100);
@@ -220,28 +182,28 @@ void ArathiBasin::SpawnControlPoint(uint32 Id, uint32 Type)
 		m_controlPoints[Id] = SpawnGameObject(gi->ID, m_mapMgr->GetMapId(), ControlPointCoordinates[Id][0], ControlPointCoordinates[Id][1],
 			ControlPointCoordinates[Id][2], ControlPointCoordinates[Id][3], 0, 35, 1.0f);
 
-		m_controlPoints[Id]->SetFloatValue(GAMEOBJECT_PARENTROTATION_02, ControlPointRotations[Id][0]);
-		m_controlPoints[Id]->SetFloatValue(GAMEOBJECT_PARENTROTATION_03, ControlPointRotations[Id][1]);
+		m_controlPoints[Id]->SetParentRotation(2, ControlPointRotations[Id][0]);
+		m_controlPoints[Id]->SetParentRotation(3, ControlPointRotations[Id][1]);
 		m_controlPoints[Id]->SetByte(GAMEOBJECT_BYTES_1, 0, 1);
 		m_controlPoints[Id]->SetByte(GAMEOBJECT_BYTES_1, 1, static_cast<uint8>( gi->Type ));
 		m_controlPoints[Id]->SetByte(GAMEOBJECT_BYTES_1, 3, 100);
 		m_controlPoints[Id]->SetUInt32Value(GAMEOBJECT_DYNAMIC, 1);
-		m_controlPoints[Id]->SetUInt32Value(GAMEOBJECT_DISPLAYID, gi->DisplayID);
+		m_controlPoints[Id]->SetDisplayId(gi->DisplayID);
 
 		switch(Type)
 		{
 		case AB_SPAWN_TYPE_ALLIANCE_ASSAULT:
 		case AB_SPAWN_TYPE_ALLIANCE_CONTROLLED:
-			m_controlPoints[Id]->SetUInt32Value(GAMEOBJECT_FACTION, 2);
+			m_controlPoints[Id]->SetFaction(2);
 			break;
 
 		case AB_SPAWN_TYPE_HORDE_ASSAULT:
 		case AB_SPAWN_TYPE_HORDE_CONTROLLED:
-			m_controlPoints[Id]->SetUInt32Value(GAMEOBJECT_FACTION, 1);
+			m_controlPoints[Id]->SetFaction(1);
 			break;
 
 		default:
-			m_controlPoints[Id]->SetUInt32Value(GAMEOBJECT_FACTION, 35);		// neutral
+			m_controlPoints[Id]->SetFaction(35);		// neutral
 			break;
 		}
 
@@ -256,23 +218,23 @@ void ArathiBasin::SpawnControlPoint(uint32 Id, uint32 Type)
 		// assign it a new guid (client needs this to see the entry change?)
 		m_controlPoints[Id]->SetNewGuid(m_mapMgr->GenerateGameobjectGuid());
 		m_controlPoints[Id]->SetEntry(  gi->ID);
-		m_controlPoints[Id]->SetUInt32Value(GAMEOBJECT_DISPLAYID, gi->DisplayID);
+		m_controlPoints[Id]->SetDisplayId(gi->DisplayID);
 		m_controlPoints[Id]->SetByte(GAMEOBJECT_BYTES_1, 1, static_cast<uint8>( gi->Type ));
 
 		switch(Type)
 		{
 		case AB_SPAWN_TYPE_ALLIANCE_ASSAULT:
 		case AB_SPAWN_TYPE_ALLIANCE_CONTROLLED:
-			m_controlPoints[Id]->SetUInt32Value(GAMEOBJECT_FACTION, 2);
+			m_controlPoints[Id]->SetFaction(2);
 			break;
 
 		case AB_SPAWN_TYPE_HORDE_ASSAULT:
 		case AB_SPAWN_TYPE_HORDE_CONTROLLED:
-			m_controlPoints[Id]->SetUInt32Value(GAMEOBJECT_FACTION, 1);
+			m_controlPoints[Id]->SetFaction(1);
 			break;
 
 		default:
-			m_controlPoints[Id]->SetUInt32Value(GAMEOBJECT_FACTION, 35);		// neutral
+			m_controlPoints[Id]->SetFaction(35);		// neutral
 			break;
 		}
 
@@ -294,8 +256,8 @@ void ArathiBasin::SpawnControlPoint(uint32 Id, uint32 Type)
 		m_controlPointAuras[Id] = SpawnGameObject(gi_aura->ID, m_mapMgr->GetMapId(), ControlPointCoordinates[Id][0], ControlPointCoordinates[Id][1],
 			ControlPointCoordinates[Id][2], ControlPointCoordinates[Id][3], 0, 35, 1.0f);
 
-		m_controlPointAuras[Id]->SetFloatValue(GAMEOBJECT_PARENTROTATION_02, ControlPointRotations[Id][0]);
-		m_controlPointAuras[Id]->SetFloatValue(GAMEOBJECT_PARENTROTATION_03, ControlPointRotations[Id][1]);
+		m_controlPointAuras[Id]->SetParentRotation(2, ControlPointRotations[Id][0]);
+		m_controlPointAuras[Id]->SetParentRotation(3, ControlPointRotations[Id][1]);
 		m_controlPointAuras[Id]->SetByte(GAMEOBJECT_BYTES_1, 0, 1);
 		m_controlPointAuras[Id]->SetByte(GAMEOBJECT_BYTES_1, 1, 6);
 		m_controlPointAuras[Id]->SetByte(GAMEOBJECT_BYTES_1, 3, 100);
@@ -310,7 +272,7 @@ void ArathiBasin::SpawnControlPoint(uint32 Id, uint32 Type)
 		// re-spawn the aura
 		m_controlPointAuras[Id]->SetNewGuid(m_mapMgr->GenerateGameobjectGuid());
 		m_controlPointAuras[Id]->SetEntry(  gi_aura->ID);
-		m_controlPointAuras[Id]->SetUInt32Value(GAMEOBJECT_DISPLAYID, gi_aura->DisplayID);
+		m_controlPointAuras[Id]->SetDisplayId(gi_aura->DisplayID);
 		m_controlPointAuras[Id]->SetInfo(gi_aura);
 		m_controlPointAuras[Id]->PushToWorld(m_mapMgr);
 	}	
@@ -544,7 +506,7 @@ void ArathiBasin::EventUpdateResources(uint32 Team)
 		m_mainLock.Acquire();
 		for(set<Player*>::iterator itr = m_players[Team].begin(); itr != m_players[Team].end(); ++itr)
 		{
-			uint32 fact = (*itr)->GetTeam() ? 510 : 509; //The Defilers : The League of Arathor
+			uint32 fact = (*itr)->IsTeamHorde() ? 510 : 509; //The Defilers : The League of Arathor
 			(*itr)->ModStanding(fact, 10);
 		}
 		m_mainLock.Release();
@@ -716,7 +678,7 @@ void ArathiBasin::HookOnAreaTrigger(Player * plr, uint32 id)
 		return;
 		break;
 	default:
-		Log.Error("ArathiBasin", "Encountered unhandled areatrigger id %u", id);
+		sLog.outError("ArathiBasin", "Encountered unhandled areatrigger id %u", id);
 		return;
 		break;
 	}
@@ -1051,7 +1013,7 @@ void ArathiBasin::AssaultControlPoint(Player * pPlayer, uint32 Id)
 				}break;
 			}
 		}
-		sEventMgr.AddEvent(this, &ArathiBasin::CaptureControlPoint, Id, Team, EVENT_AB_CAPTURE_CP_1 + Id, TIME_MINUTE, 1, EVENT_FLAG_DO_NOT_EXECUTE_IN_WORLD_CONTEXT);
+		sEventMgr.AddEvent(this, &ArathiBasin::CaptureControlPoint, Id, Team, EVENT_AB_CAPTURE_CP_1 + Id, MSTIME_MINUTE, 1, EVENT_FLAG_DO_NOT_EXECUTE_IN_WORLD_CONTEXT);
 		pPlayer->m_bgScore.MiscData[BG_SCORE_AB_BASES_ASSAULTED]++;
 		UpdatePvPData();
 	}
@@ -1061,7 +1023,7 @@ void ArathiBasin::AssaultControlPoint(Player * pPlayer, uint32 Id)
 		SendChatMessage(Team ? CHAT_MSG_BG_EVENT_HORDE : CHAT_MSG_BG_EVENT_ALLIANCE, pPlayer->GetGUID(), "$N claims the %s! If left unchallenged, the %s will control it in 1 minute!", ControlPointNames[Id],
 		Team ? "Horde" : "Alliance");
 		PlaySoundToAll(8192);
-		sEventMgr.AddEvent(this, &ArathiBasin::CaptureControlPoint, Id, Team, EVENT_AB_CAPTURE_CP_1 + Id, TIME_MINUTE, 1, EVENT_FLAG_DO_NOT_EXECUTE_IN_WORLD_CONTEXT);
+		sEventMgr.AddEvent(this, &ArathiBasin::CaptureControlPoint, Id, Team, EVENT_AB_CAPTURE_CP_1 + Id, MSTIME_MINUTE, 1, EVENT_FLAG_DO_NOT_EXECUTE_IN_WORLD_CONTEXT);
 	}
 }
 
@@ -1101,13 +1063,13 @@ void ArathiBasin::SetIsWeekend(bool isweekend)
 {
 	if (isweekend)
 	{
-		resourcesToGainBH = 200;
+		resourcesToGainBH = 160;
 		resourcesToGainBR = 150;
 	}
 	else
 	{
-		resourcesToGainBH = 330;
-		resourcesToGainBR = 200;
+		resourcesToGainBH = 260;
+		resourcesToGainBR = 160;
 	}
 }
 

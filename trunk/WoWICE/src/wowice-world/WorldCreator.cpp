@@ -89,7 +89,7 @@ void InstanceMgr::Load(TaskList * l)
 	l->wait();
 
 	// load reset times
-	result = CharacterDatabase.Query("SELECT `setting_id`, `setting_value` FROM `server_settings` WHERE `setting_id` LIKE 'next_instance_reset_%%'");
+	result = CharacterDatabase.Query("SELECT setting_id, setting_value FROM server_settings WHERE setting_id LIKE 'next_instance_reset_%%'");
 	if(result)
 	{
 		do
@@ -99,7 +99,7 @@ void InstanceMgr::Load(TaskList * l)
 			if(strlen(id) <= 20)
 				continue;
 			uint32 mapId = atoi(id + 20);
-			if(mapId > NUM_MAPS)
+			if(mapId >= NUM_MAPS)
 				continue;
 			m_nextInstanceReset[mapId] = value;
 		}while(result->NextRow());
@@ -132,7 +132,7 @@ void InstanceMgr::Shutdown()
 			}
 
 			delete m_instances[i];
-			m_instances[i]= NULL;
+			m_instances[i] = NULL;
 		}
 
 		if(m_singleMaps[i] != NULL)
@@ -140,13 +140,13 @@ void InstanceMgr::Shutdown()
 			MapMgr * ptr = m_singleMaps[i];
 			ptr->KillThread();
 			delete ptr;
-			m_singleMaps[i]= NULL;
+			m_singleMaps[i] = NULL;
 		}
 
 		if(m_maps[i] != NULL)
 		{
 			delete m_maps[i];
-			m_maps[i]= NULL;
+			m_maps[i] = NULL;
 		}
 	}
 
@@ -156,12 +156,12 @@ void InstanceMgr::Shutdown()
 uint32 InstanceMgr::PreTeleport(uint32 mapid, Player * plr, uint32 instanceid)
 {
 	// preteleport is where all the magic happens :P instance creation, etc.
-	MapInfo * inf = WorldMapInfoStorage.LookupEntry(mapid);
-	Group * pGroup;
-	InstanceMap * instancemap;
-	Instance * in;
+	MapInfo *inf = WorldMapInfoStorage.LookupEntry(mapid);
+	Group *pGroup;
+	InstanceMap *instancemap;
+	Instance *in;
 
-	if(inf == NULL || mapid>=NUM_MAPS)
+	if(inf == NULL || mapid >= NUM_MAPS)
 		return INSTANCE_ABORT_NOT_FOUND;
 
 	// main continent check.
@@ -265,6 +265,7 @@ uint32 InstanceMgr::PreTeleport(uint32 mapid, Player * plr, uint32 instanceid)
 	m_mapLock.Acquire();
 	instancemap = m_instances[mapid];
 
+	// If there are no instances of this map yet, we need to create the map
 	if(instancemap == NULL)
 	{
 		if(instanceid != 0)
@@ -273,7 +274,6 @@ uint32 InstanceMgr::PreTeleport(uint32 mapid, Player * plr, uint32 instanceid)
 			return INSTANCE_ABORT_NOT_FOUND;
 		}
 
-		// gotta create the hashmap.
 		m_instances[mapid] = new InstanceMap;
 		instancemap = m_instances[mapid];
 	}
@@ -281,6 +281,7 @@ uint32 InstanceMgr::PreTeleport(uint32 mapid, Player * plr, uint32 instanceid)
 	{
 		InstanceMap::iterator itr;
 
+		// this is the case when we enter an already existing instance ( with summons for example )
 		if(instanceid != 0)
 		{
 			itr = instancemap->find(instanceid);
@@ -309,18 +310,29 @@ uint32 InstanceMgr::PreTeleport(uint32 mapid, Player * plr, uint32 instanceid)
 				return INSTANCE_ABORT_NOT_FOUND;
 			}
 		}
-		else
+		else  // this is the case when we enter the normal way (e.g. we enter thru the portal )
 		{
 			in = NULL;
-			if(pGroup != NULL)
+			if(pGroup != NULL) // we are in a group
 			{
-				if((inf->type == INSTANCE_ARENA && pGroup->m_difficulty >= MODE_HEROIC) || inf->type == INSTANCE_RAID)
+
+				uint32 grpdiff;
+
+				// We want to use the raid difficulty for raids, and dungeon difficulty for dungeons
+				if( inf->type == INSTANCE_RAID )
+					grpdiff = pGroup->m_raiddifficulty;
+				else
+					grpdiff = pGroup->m_difficulty;
+				
+				if( (inf->type == INSTANCE_MULTIMODE && grpdiff == MODE_HEROIC) || inf->type == INSTANCE_RAID )
 				{
-					if(plr->GetPersistentInstanceId(mapid, pGroup->m_difficulty) == 0)
+					// This is the case when we don't have this map on this difficulty saved yet for the player entering
+					if( plr->GetPersistentInstanceId(mapid, grpdiff ) == 0)
 					{
-						if(pGroup->m_instanceIds[mapid][pGroup->m_difficulty] != 0)
+						// The group has this instance saved already so we will use it
+						if(pGroup->m_instanceIds[mapid][ grpdiff ] != 0)
 						{
-							in = sInstanceMgr.GetInstanceByIds(mapid, pGroup->m_instanceIds[mapid][pGroup->m_difficulty]);
+							in = sInstanceMgr.GetInstanceByIds(mapid, pGroup->m_instanceIds[mapid][ grpdiff ]);
 						}
 						else if(sWorld.instance_TakeGroupLeaderID)
 						{
@@ -328,8 +340,8 @@ uint32 InstanceMgr::PreTeleport(uint32 mapid, Player * plr, uint32 instanceid)
 							if(pLeaderInfo)
 							{
 								pLeaderInfo->savedInstanceIdsLock.Acquire();
-								PlayerInstanceMap::iterator itrLeader = pLeaderInfo->savedInstanceIds[pGroup->m_difficulty].find(mapid);
-								if(itrLeader != pLeaderInfo->savedInstanceIds[pGroup->m_difficulty].end())
+								PlayerInstanceMap::iterator itrLeader = pLeaderInfo->savedInstanceIds[ grpdiff ].find(mapid);
+								if(itrLeader != pLeaderInfo->savedInstanceIds[ grpdiff ].end())
 								{
 									in = sInstanceMgr.GetInstanceByIds(mapid, (*itrLeader).second);
 								}
@@ -338,33 +350,45 @@ uint32 InstanceMgr::PreTeleport(uint32 mapid, Player * plr, uint32 instanceid)
 						}
 					}
 
-					if(in == NULL && plr->GetPersistentInstanceId(mapid, pGroup->m_difficulty) != 0)
+					// If we have it saved to the player then use that
+					if(in == NULL && plr->GetPersistentInstanceId(mapid, grpdiff ) != 0)
 					{
-						in = sInstanceMgr.GetInstanceByIds(mapid, plr->GetPersistentInstanceId(mapid, pGroup->m_difficulty));
+						in = sInstanceMgr.GetInstanceByIds(mapid, plr->GetPersistentInstanceId(mapid, grpdiff ));
 					}
 				}
 				else
 				{
-					if(pGroup->m_instanceIds[mapid][pGroup->m_difficulty] != 0)
+					if(pGroup->m_instanceIds[mapid][ grpdiff ] != 0)
 					{
-						in = sInstanceMgr.GetInstanceByIds(mapid, pGroup->m_instanceIds[mapid][pGroup->m_difficulty]);
+						in = sInstanceMgr.GetInstanceByIds(mapid, pGroup->m_instanceIds[mapid][ grpdiff ]);
 					}
 				}
 			}
 
 			if(in == NULL)
 			{
-				// search the instance and see if we have one here.
+				// We are not in a group, so we will look for an instance that we own and has the right difficulty
+
+				uint32 diff;
+
+				if( inf->type == INSTANCE_RAID )
+					diff = plr->GetRaidDifficulty();
+				else
+					diff = plr->GetDungeonDifficulty();
+
 				for(itr = instancemap->begin(); itr != instancemap->end();)
 				{
 					in = itr->second;
 					++itr;
-					if(in->m_difficulty == plr->iInstanceType && PlayerOwnsInstance(in, plr))
-						break;						
+
+					if(in->m_difficulty == diff && PlayerOwnsInstance(in, plr))
+						break;
+					
 					in = NULL;
 				}
 			}
 
+			// We've found an instance!
 			if(in != NULL)
 			{
 				m_mapLock.Release();
@@ -404,7 +428,16 @@ uint32 InstanceMgr::PreTeleport(uint32 mapid, Player * plr, uint32 instanceid)
 	// if we're here, it means we need to create a new instance.
 	in = new Instance;
 	in->m_creation = UNIXTIME;
-	in->m_difficulty = pGroup ? pGroup->m_difficulty : plr->iInstanceType;
+
+	switch( inf->type ){
+		case INSTANCE_NONRAID:
+		case INSTANCE_MULTIMODE:
+			in->m_difficulty = plr->GetDungeonDifficulty(); break;
+
+		case INSTANCE_RAID:
+			in->m_difficulty = plr->GetRaidDifficulty(); break;
+	}
+
 	in->m_instanceId = GenerateInstanceID();
 	in->m_mapId = mapid;
 	in->m_mapInfo = inf;
@@ -413,16 +446,17 @@ uint32 InstanceMgr::PreTeleport(uint32 mapid, Player * plr, uint32 instanceid)
 	in->m_persistent = IS_PERSISTENT_INSTANCE(in) && objmgr.m_InstanceBossInfoMap[mapid] == NULL;
 	in->m_creatorGuid = pGroup ? 0 : plr->GetLowGUID();		// creator guid is 0 if its owned by a group.
 	in->m_creatorGroup = pGroup ? pGroup->GetID() : 0;
+	
 	if(sWorld.instance_SlidingExpiration)
 	{
-		if(inf->type == INSTANCE_ARENA && in->m_difficulty >= MODE_HEROIC)
+		if(inf->type == INSTANCE_MULTIMODE && in->m_difficulty == MODE_HEROIC)
 			in->m_expiration = UNIXTIME + TIME_DAY;
 		else
-			in->m_expiration = (inf->type == INSTANCE_NONRAID || (inf->type == INSTANCE_ARENA && in->m_difficulty == MODE_NORMAL)) ? 0 : UNIXTIME + inf->cooldown;
+			in->m_expiration = (inf->type == INSTANCE_NONRAID || (inf->type == INSTANCE_MULTIMODE && in->m_difficulty == MODE_NORMAL)) ? 0 : UNIXTIME + inf->cooldown;
 	}
 	else
 	{
-		if(inf->type == INSTANCE_ARENA && in->m_difficulty >= MODE_HEROIC)
+		if(inf->type == INSTANCE_MULTIMODE && in->m_difficulty >= MODE_HEROIC)
 		{
 			in->m_expiration = UNIXTIME - (UNIXTIME % TIME_DAY) + ( (UNIXTIME % TIME_DAY) > (sWorld.instance_DailyHeroicInstanceResetHour * TIME_HOUR) ? 82800 : -3600 ) + ((sWorld.instance_DailyHeroicInstanceResetHour - sWorld.GMTTimeZone) * TIME_HOUR);
 		}
@@ -431,7 +465,8 @@ uint32 InstanceMgr::PreTeleport(uint32 mapid, Player * plr, uint32 instanceid)
 			if(m_nextInstanceReset[in->m_mapId] == 0)
 			{
 				m_nextInstanceReset[in->m_mapId] = UNIXTIME - (UNIXTIME % TIME_DAY) - ((sWorld.GMTTimeZone + 1) * TIME_HOUR) + (in->m_mapInfo->cooldown == 0 ? TIME_DAY : in->m_mapInfo->cooldown);
-				CharacterDatabase.Execute("REPLACE INTO `server_settings` (`setting_id`, `setting_value`) VALUES ('next_instance_reset_%u', '%u')", in->m_mapId, m_nextInstanceReset[in->m_mapId]);
+                CharacterDatabase.Execute("DELETE FROM server_settings WHERE setting_id LIKE 'next_instance_reset_%u';", in->m_mapId );
+				CharacterDatabase.Execute("INSERT INTO server_settings VALUES ('next_instance_reset_%u', '%u')", in->m_mapId, m_nextInstanceReset[in->m_mapId]);
 			}
 			if(m_nextInstanceReset[in->m_mapId] + (TIME_MINUTE * 15) < UNIXTIME)
 			{
@@ -441,13 +476,14 @@ uint32 InstanceMgr::PreTeleport(uint32 mapid, Player * plr, uint32 instanceid)
 					if(tmp + (TIME_MINUTE * 15) < UNIXTIME)
 						m_nextInstanceReset[in->m_mapId] = tmp + (in->m_mapInfo->cooldown == 0 ? TIME_DAY : in->m_mapInfo->cooldown);
 				} while(m_nextInstanceReset[in->m_mapId] + (TIME_MINUTE * 15) < UNIXTIME);
-				CharacterDatabase.Execute("REPLACE INTO `server_settings` (`setting_id`, `setting_value`) VALUES ('next_instance_reset_%u', '%u')", in->m_mapId, m_nextInstanceReset[in->m_mapId]);
+                CharacterDatabase.Execute("DELETE FROM server_settings WHERE setting_id LIKE 'next_instance_reset_%u';", in->m_mapId );
+				CharacterDatabase.Execute("INSERT INTO server_settings VALUES ('next_instance_reset_%u', '%u')", in->m_mapId, m_nextInstanceReset[in->m_mapId]);
 			}
 			in->m_expiration = m_nextInstanceReset[in->m_mapId];
 		}
 		else
 		{
-			in->m_expiration = (inf->type == INSTANCE_NONRAID || (inf->type == INSTANCE_ARENA && in->m_difficulty == MODE_NORMAL)) ? 0 : UNIXTIME + inf->cooldown;
+			in->m_expiration = (inf->type == INSTANCE_NONRAID || (inf->type == INSTANCE_MULTIMODE && in->m_difficulty == MODE_NORMAL)) ? 0 : UNIXTIME + inf->cooldown;
 		}
 	}
 	plr->SetInstanceID(in->m_instanceId);
@@ -464,6 +500,7 @@ uint32 InstanceMgr::PreTeleport(uint32 mapid, Player * plr, uint32 instanceid)
 
 	// instance created ok, i guess? return the ok for him to transport.
 	m_mapLock.Release();
+	
 	return INSTANCE_OK;
 }
 
@@ -577,37 +614,37 @@ MapMgr * InstanceMgr::GetInstance(Object* obj)
 MapMgr * InstanceMgr::_CreateInstance(uint32 mapid, uint32 instanceid)
 {
 	MapInfo * inf = WorldMapInfoStorage.LookupEntry(mapid);
-	MapMgr * ret;
-
-	ASSERT(inf && inf->type == INSTANCE_NULL);
-	ASSERT(mapid < NUM_MAPS && m_maps[mapid] != NULL);
+	   
+	Wowice::Util::WoWICE_ASSERT(    inf != NULL && inf->type == INSTANCE_NULL );
+	Wowice::Util::WoWICE_ASSERT(    mapid < NUM_MAPS && m_maps[ mapid ] != NULL );
 
 	Log.Notice("InstanceMgr", "Creating continent %s.", m_maps[mapid]->GetName());
 
-	ret = new MapMgr(m_maps[mapid], mapid, instanceid);
-	ASSERT(ret);
+	MapMgr *newMap = new MapMgr( m_maps[mapid], mapid, instanceid );
 
-	// start its thread
-	ThreadPool.ExecuteTask(ret);
-    
-	// assign pointer
-	m_singleMaps[mapid] = ret;
-	return ret;
+	Wowice::Util::WoWICE_ASSERT(    newMap != NULL );
+
+	// Scheduling the new map for running
+	ThreadPool.ExecuteTask( newMap );
+	m_singleMaps[mapid] = newMap;
+
+	return newMap;
 }
 
 MapMgr * InstanceMgr::_CreateInstance(Instance * in)
 {
-	if (!m_maps[in->m_mapId])
+	if ( m_maps[ in->m_mapId ] == 0 )
 		return NULL;
 
 	Log.Notice("InstanceMgr", "Creating saved instance %u (%s)", in->m_instanceId, m_maps[in->m_mapId]->GetName());
-	ASSERT(in->m_mapMgr== NULL);
+	Wowice::Util::WoWICE_ASSERT(    in->m_mapMgr == NULL );
 
 	// we don't have to check for world map info here, since the instance wouldn't have been saved if it didn't have any.
 	in->m_mapMgr = new MapMgr(m_maps[in->m_mapId], in->m_mapId, in->m_instanceId);
 	in->m_mapMgr->pInstance = in;
 	in->m_mapMgr->iInstanceMode = in->m_difficulty;
 	in->m_mapMgr->InactiveMoveTime = 60+UNIXTIME;
+
 	ThreadPool.ExecuteTask(in->m_mapMgr);
 	return in->m_mapMgr;
 }
@@ -738,11 +775,11 @@ void InstanceMgr::_LoadInstances()
 
 	// clear any instances that have expired.
 	Log.Notice("InstanceMgr", "Deleting Expired Instances...");
-	CharacterDatabase.WaitExecute("DELETE FROM `instances` WHERE `expiration` > 0 AND `expiration` <= %u", UNIXTIME);
-	CharacterDatabase.Execute("DELETE FROM `instanceids` WHERE `instanceid` NOT IN (SELECT `id` FROM `instances`)");
+	CharacterDatabase.WaitExecute("DELETE FROM instances WHERE expiration > 0 AND expiration <= %u", UNIXTIME);
+	CharacterDatabase.Execute("DELETE FROM instanceids WHERE instanceid NOT IN ( SELECT id FROM instances )");
 	
 	// load saved instances
-	result = CharacterDatabase.Query("SELECT `id`, `mapid`, `creation`, `expiration`, `killed_npc_guids`, `difficulty`, `creator_group`, `creator_guid`, `persistent` FROM instances");
+	result = CharacterDatabase.Query("SELECT id, mapid, creation, expiration, killed_npc_guids, difficulty, creator_group, creator_guid, persistent FROM instances");
 	Log.Notice("InstanceMgr", "Loading %u saved instances." , result ? result->GetRowCount() : 0);
 
 	if(result)
@@ -752,7 +789,7 @@ void InstanceMgr::_LoadInstances()
 			inf = WorldMapInfoStorage.LookupEntry(result->Fetch()[1].GetUInt32());
 			if(inf == NULL || result->Fetch()[1].GetUInt32() >= NUM_MAPS)
 			{
-				CharacterDatabase.Execute("DELETE FROM `instances` WHERE `mapid` = %u", result->Fetch()[1].GetUInt32());
+				CharacterDatabase.Execute("DELETE FROM instances WHERE mapid = %u", result->Fetch()[1].GetUInt32());
 				continue;
 			}
 
@@ -944,9 +981,8 @@ bool InstanceMgr::_DeleteInstance(Instance * in, bool ForcePlayersOut)
 
 	// delete the instance pointer.
 	delete in;
-	in = NULL;
 
-	m_mapLock.Release();
+    m_mapLock.Release();
 	
 	return true;
 }
@@ -954,13 +990,13 @@ bool InstanceMgr::_DeleteInstance(Instance * in, bool ForcePlayersOut)
 void Instance::DeleteFromDB()
 {
 	// cleanup all the corpses on this instance
-	CharacterDatabase.Execute("DELETE FROM `corpses` WHERE `instanceid` = %u", m_instanceId);
+	CharacterDatabase.Execute("DELETE FROM corpses WHERE instanceid = %u", m_instanceId);
 
 	// delete from the database
-	CharacterDatabase.Execute("DELETE FROM `instances` WHERE `id` = %u", m_instanceId);
+	CharacterDatabase.Execute("DELETE FROM instances WHERE id = %u", m_instanceId);
 
 	// Delete all instance assignments
-	CharacterDatabase.Execute("DELETE FROM `instanceids` WHERE `mapId` = %u AND `instanceId` = %u AND `mode` = %u", m_mapId, m_instanceId, m_difficulty);
+	CharacterDatabase.Execute("DELETE FROM instanceids WHERE mapId = %u AND instanceId = %u AND mode = %u", m_mapId, m_instanceId, m_difficulty);
 }
 
 void InstanceMgr::CheckForExpiredInstances()
@@ -1079,11 +1115,8 @@ void InstanceMgr::BuildRaidSavedInstancesForPlayer(Player * plr)
 	}
 	m_mapLock.Release();
 
-#ifdef USING_BIG_ENDIAN
-	*(uint32*)&data.contents()[0] = swap32(counter);
-#else
+
 	*(uint32*)&data.contents()[0] = counter;
-#endif
 
 	plr->GetSession()->SendPacket(&data);
 }
@@ -1095,9 +1128,16 @@ void Instance::SaveToDB()
 		return;
 
 	std::stringstream ss;
+
+    ss << "DELETE FROM instances WHERE id = " << m_instanceId << ";";
+    
+    CharacterDatabase.Execute( ss.str().c_str() );
+
+    ss.rdbuf()->str("");
+
 	set<uint32>::iterator itr;
 
-	ss << "REPLACE INTO `instances` (`id`, `mapid`, `creation`, `expiration`, `killed_npc_guids`, `difficulty`, `creator_group`, `creator_guid`, `persistent`) VALUES("
+	ss << "INSERT INTO instances VALUES("
 		<< m_instanceId << ","
 		<< m_mapId << ","
 		<< (uint32)m_creation << ","
@@ -1112,7 +1152,7 @@ void Instance::SaveToDB()
 		<< m_creatorGuid << ","
 		<< m_persistent << ")";
 
-	CharacterDatabase.Execute(ss.str().c_str());
+	CharacterDatabase.Execute( ss.str().c_str() );
 }
 
 void InstanceMgr::PlayerLeftGroup(Group * pGroup, Player * pPlayer)

@@ -295,7 +295,7 @@ void AchievementMgr::LoadFromDB(QueryResult *achievementResult, QueryResult *cri
 		{
 			Field *fields = achievementResult->Fetch();
 			uint32 id = fields[0].GetUInt32();
-			if( m_completedAchievements[id] == NULL )
+			if( m_completedAchievements[id] == 0 )
 				m_completedAchievements[id] = fields[1].GetUInt32();
 			else 
 				sLog.outError("Duplicate completed achievement %u for player %u, skipping", id, (uint32)m_player->GetGUID() );
@@ -567,8 +567,8 @@ void AchievementMgr::UpdateAchievementCriteria(AchievementCriteriaTypes type, in
 			continue;
 		}
 
-		if( (achievement->factionFlag == ACHIEVEMENT_FACTION_FLAG_HORDE && GetPlayer()->GetTeam() != HORDE) ||
-			(achievement->factionFlag == ACHIEVEMENT_FACTION_FLAG_ALLIANCE && GetPlayer()->GetTeam() != ALLIANCE) )
+		if( (achievement->factionFlag == ACHIEVEMENT_FACTION_FLAG_HORDE && !GetPlayer()->IsTeamHorde() ) ||
+			(achievement->factionFlag == ACHIEVEMENT_FACTION_FLAG_ALLIANCE && !GetPlayer()->IsTeamAlliance() ) )
 		{
 			// achievement requires a faction of which the player is not a member
 			continue;
@@ -1218,8 +1218,8 @@ void AchievementMgr::UpdateAchievementCriteria(AchievementCriteriaTypes type)
 		AchievementEntry const *achievement = dbcAchievementStore.LookupEntryForced(achievementCriteria->referredAchievement);
 		if( !achievement //|| IsCompletedCriteria(achievementCriteria)
 			|| (achievement->flags & ACHIEVEMENT_FLAG_COUNTER)
-			|| (achievement->factionFlag == ACHIEVEMENT_FACTION_FLAG_HORDE && m_player->GetTeam() != HORDE)
-			|| (achievement->factionFlag == ACHIEVEMENT_FACTION_FLAG_ALLIANCE && m_player->GetTeam() != ALLIANCE) )
+			|| (achievement->factionFlag == ACHIEVEMENT_FACTION_FLAG_HORDE && !m_player->IsTeamHorde() )
+			|| (achievement->factionFlag == ACHIEVEMENT_FACTION_FLAG_ALLIANCE && !m_player->IsTeamAlliance() ) )
 		{
 			continue;
 		}
@@ -1378,30 +1378,30 @@ bool AchievementMgr::IsCompletedCriteria(AchievementCriteriaEntry const* achieve
 	switch(achievementCriteria->requiredType)
 	{
 		case ACHIEVEMENT_CRITERIA_TYPE_REACH_LEVEL:
-			if( achievement->ID == 467 && GetPlayer()->getClass() != SHAMAN ||
-				achievement->ID == 466 && GetPlayer()->getClass() != DRUID ||
-				achievement->ID == 465 && GetPlayer()->getClass() != PALADIN ||
-				achievement->ID == 464 && GetPlayer()->getClass() != PRIEST ||
-				achievement->ID == 463 && GetPlayer()->getClass() != WARLOCK ||
-				achievement->ID == 462 && GetPlayer()->getClass() != HUNTER ||
-				achievement->ID == 461 && GetPlayer()->getClass() != DEATHKNIGHT ||
-				achievement->ID == 460 && GetPlayer()->getClass() != MAGE ||
-				achievement->ID == 459 && GetPlayer()->getClass() != WARRIOR ||
-				achievement->ID == 458 && GetPlayer()->getClass() != ROGUE ||
-				achievement->ID == 1404 && GetPlayer()->getRace() != RACE_GNOME ||
-				achievement->ID == 1405 && GetPlayer()->getRace() != RACE_BLOODELF ||
-				achievement->ID == 1406 && GetPlayer()->getRace() != RACE_DRAENEI ||
-				achievement->ID == 1407 && GetPlayer()->getRace() != RACE_DWARF ||
-				achievement->ID == 1408 && GetPlayer()->getRace() != RACE_HUMAN ||
-				achievement->ID == 1409 && GetPlayer()->getRace() != RACE_NIGHTELF ||
-				achievement->ID == 1410 && GetPlayer()->getRace() != RACE_ORC ||
-				achievement->ID == 1411 && GetPlayer()->getRace() != RACE_TAUREN ||
-				achievement->ID == 1412 && GetPlayer()->getRace() != RACE_TROLL ||
-				achievement->ID == 1413 && GetPlayer()->getRace() != RACE_UNDEAD )
+			if( ( achievement->ID == 467 && GetPlayer()->getClass() != SHAMAN ) ||
+				( achievement->ID == 466 && GetPlayer()->getClass() != DRUID ) ||
+				( achievement->ID == 465 && GetPlayer()->getClass() != PALADIN ) ||
+				( achievement->ID == 464 && GetPlayer()->getClass() != PRIEST ) ||
+				( achievement->ID == 463 && GetPlayer()->getClass() != WARLOCK ) ||
+				( achievement->ID == 462 && GetPlayer()->getClass() != HUNTER ) ||
+				( achievement->ID == 461 && GetPlayer()->getClass() != DEATHKNIGHT ) ||
+				( achievement->ID == 460 && GetPlayer()->getClass() != MAGE ) ||
+				( achievement->ID == 459 && GetPlayer()->getClass() != WARRIOR ) ||
+				( achievement->ID == 458 && GetPlayer()->getClass() != ROGUE ) ||
+				( achievement->ID == 1404 && GetPlayer()->getRace() != RACE_GNOME ) ||
+				( achievement->ID == 1405 && GetPlayer()->getRace() != RACE_BLOODELF ) ||
+				( achievement->ID == 1406 && GetPlayer()->getRace() != RACE_DRAENEI ) ||
+				( achievement->ID == 1407 && GetPlayer()->getRace() != RACE_DWARF ) ||
+				( achievement->ID == 1408 && GetPlayer()->getRace() != RACE_HUMAN ) ||
+				( achievement->ID == 1409 && GetPlayer()->getRace() != RACE_NIGHTELF ) ||
+				( achievement->ID == 1410 && GetPlayer()->getRace() != RACE_ORC ) ||
+				( achievement->ID == 1411 && GetPlayer()->getRace() != RACE_TAUREN ) ||
+				( achievement->ID == 1412 && GetPlayer()->getRace() != RACE_TROLL ) ||
+				( achievement->ID == 1413 && GetPlayer()->getRace() != RACE_UNDEAD ) )
 			{
 				return false;
 			}
-			return progresscounter >= (int32)achievementCriteria->reach_level.level;
+			return progresscounter >= achievementCriteria->reach_level.level;
 			break;
 		case ACHIEVEMENT_CRITERIA_TYPE_LOOT_ITEM:
 		case ACHIEVEMENT_CRITERIA_TYPE_OWN_ITEM:
@@ -1926,7 +1926,7 @@ void AchievementMgr::GiveAchievementReward(AchievementEntry const* entry)
 				break;
 			case 0x00000d7d: // Title Reward: Of the Horde or Of the Alliance
 				r.type = ACHIEVEMENT_REWARDTYPE_TITLE;
-				r.rankId = (GetPlayer()->GetTeam()==HORDE) ? /* Horde */ PVPTITLE_OF_THE_HORDE : /* Alliance */ PVPTITLE_OF_THE_ALLIANCE;
+				r.rankId = GetPlayer()->IsTeamHorde() ? /* Horde */ PVPTITLE_OF_THE_HORDE : /* Alliance */ PVPTITLE_OF_THE_ALLIANCE;
 				break;
 			case 0x00000da5: // Reward: Tabard of the Explorer
 				r.type = ACHIEVEMENT_REWARDTYPE_ITEM;
@@ -1973,7 +1973,7 @@ void AchievementMgr::GiveAchievementReward(AchievementEntry const* entry)
 		if( r.type & ACHIEVEMENT_REWARDTYPE_TITLE )
 		{
 			GetPlayer()->SetKnownTitle(static_cast< RankTitles >(r.rankId), true);
-			GetPlayer()->SetUInt32Value( PLAYER_CHOSEN_TITLE, 0 );
+			GetPlayer()->SetChosenTitle(0 );
 		}
 		if( r.type & ACHIEVEMENT_REWARDTYPE_ITEM )
 		{
@@ -2050,8 +2050,8 @@ bool AchievementMgr::GMCompleteAchievement(WorldSession* gmSession, int32 achiev
 			{
 				if( !(ach->flags & ACHIEVEMENT_FLAG_COUNTER) )
 				{
-					if( (ach->factionFlag == ACHIEVEMENT_FACTION_FLAG_HORDE && m_player->GetTeam() != HORDE) ||
-						(ach->factionFlag == ACHIEVEMENT_FACTION_FLAG_ALLIANCE && m_player->GetTeam() != ALLIANCE) )
+					if( (ach->factionFlag == ACHIEVEMENT_FACTION_FLAG_HORDE && !m_player->IsTeamHorde() ) ||
+						(ach->factionFlag == ACHIEVEMENT_FACTION_FLAG_ALLIANCE && !m_player->IsTeamAlliance() ) )
 					{
 						continue;
 					}

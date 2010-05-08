@@ -15,91 +15,6 @@
 
 #include "StdAfx.h"
 
-/**
-* AV World States
-*/
-
-#define WORLDSTATE_AV_ALLIANCE_SCORE								3127
-#define WORLDSTATE_AV_HORDE_SCORE									3128
-#define WORLDSTATE_AV_ALLIANCE_SCORE_DISPLAY						3133
-#define WORLDSTATE_AV_HORDE_SCORE_DISPLAY							3134
-
-#define WORLDSTATE_AV_STORMPIKE_AID_STATION_ALLIANCE_CONTROLLED		1325
-#define WORLDSTATE_AV_STORMPIKE_AID_STATION_HORDE_CONTROLLED		1327
-#define WORLDSTATE_AV_STORMPIKE_AID_STATION_ALLIANCE_ASSAULTING		1326
-#define WORLDSTATE_AV_STORMPIKE_AID_STATION_HORDE_ASSAULTING		1328
-
-#define WORLDSTATE_AV_STORMPIKE_GRAVE_ALLIANCE_CONTROLLED			1333
-#define WORLDSTATE_AV_STORMPIKE_GRAVE_HORDE_CONTROLLED				1334
-#define WORLDSTATE_AV_STORMPIKE_GRAVE_ALLIANCE_ASSAULTING			1335
-#define WORLDSTATE_AV_STORMPIKE_GRAVE_HORDE_ASSAULTING				1336
-
-#define WORLDSTATE_AV_STONEHEARTH_GRAVE_ALLIANCE_CONTROLLED			1302
-#define WORLDSTATE_AV_STONEHEARTH_GRAVE_HORDE_CONTROLLED			1301
-#define WORLDSTATE_AV_STONEHEARTH_GRAVE_ALLIANCE_ASSAULTING			1304
-#define WORLDSTATE_AV_STONEHEARTH_GRAVE_HORDE_ASSAULTING			1303
-
-#define WORLDSTATE_AV_SNOWFALL_GRAVE_NEUTRAL_CONTROLLED				1966
-#define WORLDSTATE_AV_SNOWFALL_GRAVE_ALLIANCE_CONTROLLED			1341
-#define WORLDSTATE_AV_SNOWFALL_GRAVE_HORDE_CONTROLLED				1342
-#define WORLDSTATE_AV_SNOWFALL_GRAVE_ALLIANCE_ASSAULTING			1343
-#define WORLDSTATE_AV_SNOWFALL_GRAVE_HORDE_ASSAULTING				1344
-
-#define WORLDSTATE_AV_IRONDEEP_MINE_ALLIANCE_CONTROLLED				1358
-#define WORLDSTATE_AV_IRONDEEP_MINE_HORDE_CONTROLLED				1359
-#define WORLDSTATE_AV_IRONDEEP_MINE_TROGG_CONTROLLED				1360
-
-#define WORLDSTATE_AV_COLDTOOTH_MINE_ALLIANCE_CONTROLLED			1355
-#define WORLDSTATE_AV_COLDTOOTH_MINE_HORDE_CONTROLLED				1356
-#define WORLDSTATE_AV_COLDTOOTH_MINE_KOBOLD_CONTROLLED				1357
-
-#define WORLDSTATE_AV_ICEBLOOD_GRAVE_ALLIANCE_CONTROLLED			1346
-#define WORLDSTATE_AV_ICEBLOOD_GRAVE_HORDE_CONTROLLED				1347
-#define WORLDSTATE_AV_ICEBLOOD_GRAVE_ALLIANCE_ASSAULTING			1348
-#define WORLDSTATE_AV_ICEBLOOD_GRAVE_HORDE_ASSAULTING				1349
-
-#define WORLDSTATE_AV_FROSTWOLF_GRAVE_ALLIANCE_CONTROLLED			1337
-#define WORLDSTATE_AV_FROSTWOLF_GRAVE_HORDE_CONTROLLED				1338
-#define WORLDSTATE_AV_FROSTWOLF_GRAVE_ALLIANCE_ASSAULTING			1339
-#define WORLDSTATE_AV_FROSTWOLF_GRAVE_HORDE_ASSAULTING				1340
-
-#define WORLDSTATE_AV_FROSTWOLF_RELIEF_HUT_ALLIANCE_CONTROLLED		1329
-#define WORLDSTATE_AV_FROSTWOLF_RELIEF_HUT_HORDE_CONTROLLED			1330
-#define WORLDSTATE_AV_FROSTWOLF_RELIEF_HUT_ALLIANCE_ASSAULTING		1331
-#define WORLDSTATE_AV_FROSTWOLF_RELIEF_HUT_HORDE_ASSAULTING			1332
-
-#define WORLDSTATE_AV_DUN_BALDAR_SOUTH_BUNKER_CONTROLLED			1362
-#define WORLDSTATE_AV_DUN_BALDAR_SOUTH_BUNKER_DESTROYED				1371
-#define WORLDSTATE_AV_DUN_BALDAR_SOUTH_BUNKER_ASSAULTING			1379
-
-#define WORLDSTATE_AV_DUN_BALDAR_NORTH_BUNKER_CONTROLLED			1361
-#define WORLDSTATE_AV_DUN_BALDAR_NORTH_BUNKER_DESTROYED				1370
-#define WORLDSTATE_AV_DUN_BALDAR_NORTH_BUNKER_ASSAULTING			1378
-
-#define WORLDSTATE_AV_ICEWING_BUNKER_CONTROLLED						1363
-#define WORLDSTATE_AV_ICEWING_BUNKER_DESTROYED						1372
-#define WORLDSTATE_AV_ICEWING_BUNKER_ASSAULTING						1380
-
-#define WORLDSTATE_AV_STONEHEARTH_BUNKER_CONTROLLED					1364
-#define WORLDSTATE_AV_STONEHEARTH_BUNKER_DESTROYED					1373
-#define WORLDSTATE_AV_STONEHEARTH_BUNKER_ASSAULTING					1381
-
-#define WORLDSTATE_AV_ICEBLOOD_TOWER_CONTROLLED						1385
-#define WORLDSTATE_AV_ICEBLOOD_TOWER_DESTROYED						1368
-#define WORLDSTATE_AV_ICEBLOOD_TOWER_ASSAULTING						1390
-
-#define WORLDSTATE_AV_TOWERPOINT_CONTROLLED							1384
-#define WORLDSTATE_AV_TOWERPOINT_DESTROYED							1367
-#define WORLDSTATE_AV_TOWERPOINT_ASSAULTING							1389
-
-#define WORLDSTATE_AV_FROSTWOLF_EAST_TOWER_CONTROLLED				1383
-#define WORLDSTATE_AV_FROSTWOLF_EAST_TOWER_DESTROYED				1366
-#define WORLDSTATE_AV_FROSTWOLF_EAST_TOWER_ASSAULTING				1388
-
-#define WORLDSTATE_AV_FROSTWOLF_WEST_TOWER_CONTROLLED				1382
-#define WORLDSTATE_AV_FROSTWOLF_WEST_TOWER_DESTROYED				1365
-#define WORLDSTATE_AV_FROSTWOLF_WEST_TOWER_ASSAULTING				1387
-
 //////////////////////////////////////////////////////////////////////////
 // Fire Locations
 //////////////////////////////////////////////////////////////////////////
@@ -260,10 +175,6 @@ y: -311.846893
 z: 6.667575
 o: 2.295235
 */
-
-static uint32 g_unitWaypoints[4][2] = {
-	{  },
-};
 
 //////////////////////////////////////////////////////////////////////////
 // Initial Guard Locations
@@ -431,11 +342,13 @@ static AVNodeTemplate g_nodeTemplates[AV_NUM_CONTROL_POINTS] = {
 		5,						{ 0, 0, 0 },				NULL,				{ 0.0f, 0.0f, 0.0f },		0,
 
 		//	world state fields
-		0,
-		WORLDSTATE_AV_STORMPIKE_AID_STATION_ALLIANCE_ASSAULTING,
-		WORLDSTATE_AV_STORMPIKE_AID_STATION_ALLIANCE_CONTROLLED,
-		WORLDSTATE_AV_STORMPIKE_AID_STATION_HORDE_ASSAULTING,
-		WORLDSTATE_AV_STORMPIKE_AID_STATION_HORDE_CONTROLLED,
+		{
+			0,
+			WORLDSTATE_AV_STORMPIKE_AID_STATION_ALLIANCE_ASSAULTING,
+			WORLDSTATE_AV_STORMPIKE_AID_STATION_ALLIANCE_CONTROLLED,
+			WORLDSTATE_AV_STORMPIKE_AID_STATION_HORDE_ASSAULTING,
+			WORLDSTATE_AV_STORMPIKE_AID_STATION_HORDE_CONTROLLED,
+		},
 
 		// default state
 		AV_NODE_STATE_ALLIANCE_CONTROLLED,
@@ -463,11 +376,13 @@ static AVNodeTemplate g_nodeTemplates[AV_NUM_CONTROL_POINTS] = {
 		5,						{ 0, 0, 0 },				NULL,				{ 0.0f, 0.0f, 0.0f },		0,
 
 		//	world state fields
-		0,
-		WORLDSTATE_AV_STORMPIKE_GRAVE_ALLIANCE_ASSAULTING,
-		WORLDSTATE_AV_STORMPIKE_GRAVE_ALLIANCE_CONTROLLED,
-		WORLDSTATE_AV_STORMPIKE_GRAVE_HORDE_ASSAULTING,
-		WORLDSTATE_AV_STORMPIKE_GRAVE_HORDE_CONTROLLED,
+		{
+			0,
+			WORLDSTATE_AV_STORMPIKE_GRAVE_ALLIANCE_ASSAULTING,
+			WORLDSTATE_AV_STORMPIKE_GRAVE_ALLIANCE_CONTROLLED,
+			WORLDSTATE_AV_STORMPIKE_GRAVE_HORDE_ASSAULTING,
+			WORLDSTATE_AV_STORMPIKE_GRAVE_HORDE_CONTROLLED,
+		},
 
 		// default state
 		AV_NODE_STATE_ALLIANCE_CONTROLLED,
@@ -495,11 +410,13 @@ static AVNodeTemplate g_nodeTemplates[AV_NUM_CONTROL_POINTS] = {
 		5,						{ 0, 0, 0 },				NULL,				{ 0.0f, 0.0f, 0.0f },		0,
 
 		//	world state fields
-		0,
-		WORLDSTATE_AV_STONEHEARTH_GRAVE_ALLIANCE_ASSAULTING,
-		WORLDSTATE_AV_STONEHEARTH_GRAVE_ALLIANCE_CONTROLLED,
-		WORLDSTATE_AV_STONEHEARTH_GRAVE_HORDE_ASSAULTING,
-		WORLDSTATE_AV_STONEHEARTH_GRAVE_HORDE_CONTROLLED,
+		{
+			0,
+			WORLDSTATE_AV_STONEHEARTH_GRAVE_ALLIANCE_ASSAULTING,
+			WORLDSTATE_AV_STONEHEARTH_GRAVE_ALLIANCE_CONTROLLED,
+			WORLDSTATE_AV_STONEHEARTH_GRAVE_HORDE_ASSAULTING,
+			WORLDSTATE_AV_STONEHEARTH_GRAVE_HORDE_CONTROLLED,
+		},
 
 		// default state
 		AV_NODE_STATE_ALLIANCE_CONTROLLED,
@@ -527,11 +444,13 @@ static AVNodeTemplate g_nodeTemplates[AV_NUM_CONTROL_POINTS] = {
 		5,						{ 0, 0, 0 },				NULL,				{ 0.0f, 0.0f, 0.0f },		0,
 
 		//	world state fields
-		WORLDSTATE_AV_SNOWFALL_GRAVE_NEUTRAL_CONTROLLED,
-		WORLDSTATE_AV_SNOWFALL_GRAVE_ALLIANCE_ASSAULTING,
-		WORLDSTATE_AV_SNOWFALL_GRAVE_ALLIANCE_CONTROLLED,
-		WORLDSTATE_AV_SNOWFALL_GRAVE_HORDE_ASSAULTING,
-		WORLDSTATE_AV_SNOWFALL_GRAVE_HORDE_CONTROLLED,
+		{
+			WORLDSTATE_AV_SNOWFALL_GRAVE_NEUTRAL_CONTROLLED,
+			WORLDSTATE_AV_SNOWFALL_GRAVE_ALLIANCE_ASSAULTING,
+			WORLDSTATE_AV_SNOWFALL_GRAVE_ALLIANCE_CONTROLLED,
+			WORLDSTATE_AV_SNOWFALL_GRAVE_HORDE_ASSAULTING,
+			WORLDSTATE_AV_SNOWFALL_GRAVE_HORDE_CONTROLLED,
+		},
 
 		// default state
 		AV_NODE_STATE_NEUTRAL_CONTROLLED,
@@ -559,11 +478,13 @@ static AVNodeTemplate g_nodeTemplates[AV_NUM_CONTROL_POINTS] = {
 		0,						{ 0, 0, 0 },				NULL,				{ 0.0f, 0.0f, 0.0f },		0,
 
 		//	world state fields
-		WORLDSTATE_AV_COLDTOOTH_MINE_KOBOLD_CONTROLLED,
-		0,
-		WORLDSTATE_AV_COLDTOOTH_MINE_ALLIANCE_CONTROLLED,
-		0,
-		WORLDSTATE_AV_COLDTOOTH_MINE_HORDE_CONTROLLED,
+		{
+			WORLDSTATE_AV_COLDTOOTH_MINE_KOBOLD_CONTROLLED,
+			0,
+			WORLDSTATE_AV_COLDTOOTH_MINE_ALLIANCE_CONTROLLED,
+			0,
+			WORLDSTATE_AV_COLDTOOTH_MINE_HORDE_CONTROLLED,
+		},
 
 		// default state
 		AV_NODE_STATE_NEUTRAL_CONTROLLED,
@@ -591,11 +512,13 @@ static AVNodeTemplate g_nodeTemplates[AV_NUM_CONTROL_POINTS] = {
 		0,						{ 0, 0, 0 },				NULL,				{ 0.0f, 0.0f, 0.0f },		0,
 
 		//	world state fields
-		WORLDSTATE_AV_IRONDEEP_MINE_TROGG_CONTROLLED,
-		0,
-		WORLDSTATE_AV_IRONDEEP_MINE_ALLIANCE_CONTROLLED,
-		0,
-		WORLDSTATE_AV_IRONDEEP_MINE_HORDE_CONTROLLED,
+		{
+			WORLDSTATE_AV_IRONDEEP_MINE_TROGG_CONTROLLED,
+			0,
+			WORLDSTATE_AV_IRONDEEP_MINE_ALLIANCE_CONTROLLED,
+			0,
+			WORLDSTATE_AV_IRONDEEP_MINE_HORDE_CONTROLLED,
+		},
 
 		// default state
 		AV_NODE_STATE_NEUTRAL_CONTROLLED,
@@ -623,11 +546,13 @@ static AVNodeTemplate g_nodeTemplates[AV_NUM_CONTROL_POINTS] = {
 		5,						{ 0, 0, 0 },				NULL,				{ 0.0f, 0.0f, 0.0f },		0,
 
 		//	world state fields
-		0,
-		WORLDSTATE_AV_ICEBLOOD_GRAVE_ALLIANCE_ASSAULTING,
-		WORLDSTATE_AV_ICEBLOOD_GRAVE_ALLIANCE_CONTROLLED,
-		WORLDSTATE_AV_ICEBLOOD_GRAVE_HORDE_ASSAULTING,
-		WORLDSTATE_AV_ICEBLOOD_GRAVE_HORDE_CONTROLLED,
+		{
+			0,
+			WORLDSTATE_AV_ICEBLOOD_GRAVE_ALLIANCE_ASSAULTING,
+			WORLDSTATE_AV_ICEBLOOD_GRAVE_ALLIANCE_CONTROLLED,
+			WORLDSTATE_AV_ICEBLOOD_GRAVE_HORDE_ASSAULTING,
+			WORLDSTATE_AV_ICEBLOOD_GRAVE_HORDE_CONTROLLED,
+		},
 
 		// default state
 		AV_NODE_STATE_HORDE_CONTROLLED,
@@ -655,11 +580,13 @@ static AVNodeTemplate g_nodeTemplates[AV_NUM_CONTROL_POINTS] = {
 		5,						{ 0, 0, 0 },				NULL,				{ 0.0f, 0.0f, 0.0f },		0,
 
 		//	world state fields
-		0,
-		WORLDSTATE_AV_FROSTWOLF_GRAVE_ALLIANCE_ASSAULTING,
-		WORLDSTATE_AV_FROSTWOLF_GRAVE_ALLIANCE_CONTROLLED,
-		WORLDSTATE_AV_FROSTWOLF_GRAVE_HORDE_ASSAULTING,
-		WORLDSTATE_AV_FROSTWOLF_GRAVE_HORDE_CONTROLLED,
+		{
+			0,
+			WORLDSTATE_AV_FROSTWOLF_GRAVE_ALLIANCE_ASSAULTING,
+			WORLDSTATE_AV_FROSTWOLF_GRAVE_ALLIANCE_CONTROLLED,
+			WORLDSTATE_AV_FROSTWOLF_GRAVE_HORDE_ASSAULTING,
+			WORLDSTATE_AV_FROSTWOLF_GRAVE_HORDE_CONTROLLED,
+		},
 
 		// default state
 		AV_NODE_STATE_HORDE_CONTROLLED,
@@ -687,11 +614,13 @@ static AVNodeTemplate g_nodeTemplates[AV_NUM_CONTROL_POINTS] = {
 		5,						{ 0, 0, 0 },				NULL,				{ 0.0f, 0.0f, 0.0f },		0,
 
 		//	world state fields
-		0,
-		WORLDSTATE_AV_FROSTWOLF_RELIEF_HUT_ALLIANCE_ASSAULTING,
-		WORLDSTATE_AV_FROSTWOLF_RELIEF_HUT_ALLIANCE_CONTROLLED,
-		WORLDSTATE_AV_FROSTWOLF_RELIEF_HUT_HORDE_ASSAULTING,
-		WORLDSTATE_AV_FROSTWOLF_RELIEF_HUT_HORDE_CONTROLLED,
+		{
+			0,
+			WORLDSTATE_AV_FROSTWOLF_RELIEF_HUT_ALLIANCE_ASSAULTING,
+			WORLDSTATE_AV_FROSTWOLF_RELIEF_HUT_ALLIANCE_CONTROLLED,
+			WORLDSTATE_AV_FROSTWOLF_RELIEF_HUT_HORDE_ASSAULTING,
+			WORLDSTATE_AV_FROSTWOLF_RELIEF_HUT_HORDE_CONTROLLED,
+		},
 
 		// default state
 		AV_NODE_STATE_HORDE_CONTROLLED,
@@ -719,11 +648,13 @@ static AVNodeTemplate g_nodeTemplates[AV_NUM_CONTROL_POINTS] = {
 		0,						{ 0, 0, 0 },				NULL,				{ 0.0f, 0.0f, 0.0f },		13358,
 
 		//	world state fields
-		0,
-		0,
-		WORLDSTATE_AV_DUN_BALDAR_NORTH_BUNKER_CONTROLLED,
-		WORLDSTATE_AV_DUN_BALDAR_NORTH_BUNKER_ASSAULTING,
-		WORLDSTATE_AV_DUN_BALDAR_NORTH_BUNKER_DESTROYED,
+		{
+			0,
+			0,
+			WORLDSTATE_AV_DUN_BALDAR_NORTH_BUNKER_CONTROLLED,
+			WORLDSTATE_AV_DUN_BALDAR_NORTH_BUNKER_ASSAULTING,
+			WORLDSTATE_AV_DUN_BALDAR_NORTH_BUNKER_DESTROYED,
+		},
 
 		// default state
 		AV_NODE_STATE_ALLIANCE_CONTROLLED,
@@ -751,11 +682,13 @@ static AVNodeTemplate g_nodeTemplates[AV_NUM_CONTROL_POINTS] = {
 		0,						{ 0, 0, 0 },				NULL,				{ 0.0f, 0.0f, 0.0f },		13358,
 
 		//	world state fields
-		0,
-		0,
-		WORLDSTATE_AV_DUN_BALDAR_SOUTH_BUNKER_CONTROLLED,
-		WORLDSTATE_AV_DUN_BALDAR_SOUTH_BUNKER_ASSAULTING,
-		WORLDSTATE_AV_DUN_BALDAR_SOUTH_BUNKER_DESTROYED,
+		{
+			0,
+			0,
+			WORLDSTATE_AV_DUN_BALDAR_SOUTH_BUNKER_CONTROLLED,
+			WORLDSTATE_AV_DUN_BALDAR_SOUTH_BUNKER_ASSAULTING,
+			WORLDSTATE_AV_DUN_BALDAR_SOUTH_BUNKER_DESTROYED,
+		},
 
 		// default state
 		AV_NODE_STATE_ALLIANCE_CONTROLLED,
@@ -783,11 +716,13 @@ static AVNodeTemplate g_nodeTemplates[AV_NUM_CONTROL_POINTS] = {
 		0,						{ 0, 0, 0 },				NULL,				{ 0.0f, 0.0f, 0.0f },		13358,
 
 		//	world state fields
-		0,
-		0,
-		WORLDSTATE_AV_ICEWING_BUNKER_CONTROLLED,
-		WORLDSTATE_AV_ICEWING_BUNKER_ASSAULTING,
-		WORLDSTATE_AV_ICEWING_BUNKER_DESTROYED,
+		{
+			0,
+			0,
+			WORLDSTATE_AV_ICEWING_BUNKER_CONTROLLED,
+			WORLDSTATE_AV_ICEWING_BUNKER_ASSAULTING,
+			WORLDSTATE_AV_ICEWING_BUNKER_DESTROYED,
+		},
 
 		// default state
 		AV_NODE_STATE_ALLIANCE_CONTROLLED,
@@ -815,11 +750,13 @@ static AVNodeTemplate g_nodeTemplates[AV_NUM_CONTROL_POINTS] = {
 		0,						{ 0, 0, 0 },				NULL,				{ 0.0f, 0.0f, 0.0f },		13358,
 
 		//	world state fields
-		0,
-		0,
-		WORLDSTATE_AV_STONEHEARTH_BUNKER_CONTROLLED,
-		WORLDSTATE_AV_STONEHEARTH_BUNKER_ASSAULTING,
-		WORLDSTATE_AV_STONEHEARTH_BUNKER_DESTROYED,
+		{
+			0,
+			0,
+			WORLDSTATE_AV_STONEHEARTH_BUNKER_CONTROLLED,
+			WORLDSTATE_AV_STONEHEARTH_BUNKER_ASSAULTING,
+			WORLDSTATE_AV_STONEHEARTH_BUNKER_DESTROYED,
+		},
 
 		// default state
 		AV_NODE_STATE_ALLIANCE_CONTROLLED,
@@ -847,11 +784,13 @@ static AVNodeTemplate g_nodeTemplates[AV_NUM_CONTROL_POINTS] = {
 		0,						{ 0, 0, 0 },				NULL,				{ 0.0f, 0.0f, 0.0f },		13359,
 
 		//	world state fields
-		0,
-		WORLDSTATE_AV_ICEBLOOD_TOWER_ASSAULTING,
-		WORLDSTATE_AV_ICEBLOOD_TOWER_DESTROYED,
-		0,
-		WORLDSTATE_AV_ICEBLOOD_TOWER_CONTROLLED,
+		{
+			0,
+			WORLDSTATE_AV_ICEBLOOD_TOWER_ASSAULTING,
+			WORLDSTATE_AV_ICEBLOOD_TOWER_DESTROYED,
+			0,
+			WORLDSTATE_AV_ICEBLOOD_TOWER_CONTROLLED,
+		},
 
 		// default state
 		AV_NODE_STATE_HORDE_CONTROLLED,
@@ -879,11 +818,13 @@ static AVNodeTemplate g_nodeTemplates[AV_NUM_CONTROL_POINTS] = {
 		0,						{ 0, 0, 0 },				NULL,				{ 0.0f, 0.0f, 0.0f },		13359,
 
 		//	world state fields
-		0,
-		WORLDSTATE_AV_TOWERPOINT_ASSAULTING,
-		WORLDSTATE_AV_TOWERPOINT_DESTROYED,
-		0,
-		WORLDSTATE_AV_TOWERPOINT_CONTROLLED,
+		{
+			0,
+			WORLDSTATE_AV_TOWERPOINT_ASSAULTING,
+			WORLDSTATE_AV_TOWERPOINT_DESTROYED,
+			0,
+			WORLDSTATE_AV_TOWERPOINT_CONTROLLED,
+		},
 
 		// default state
 		AV_NODE_STATE_HORDE_CONTROLLED,
@@ -911,11 +852,13 @@ static AVNodeTemplate g_nodeTemplates[AV_NUM_CONTROL_POINTS] = {
 		0,						{ 0, 0, 0 },				NULL,				{ 0.0f, 0.0f, 0.0f },		13359,
 
 		//	world state fields
-		0,
-		WORLDSTATE_AV_FROSTWOLF_EAST_TOWER_ASSAULTING,
-		WORLDSTATE_AV_FROSTWOLF_EAST_TOWER_DESTROYED,
-		0,
-		WORLDSTATE_AV_FROSTWOLF_EAST_TOWER_CONTROLLED,
+		{
+			0,
+			WORLDSTATE_AV_FROSTWOLF_EAST_TOWER_ASSAULTING,
+			WORLDSTATE_AV_FROSTWOLF_EAST_TOWER_DESTROYED,
+			0,
+			WORLDSTATE_AV_FROSTWOLF_EAST_TOWER_CONTROLLED,
+		},
 
 		// default state
 		AV_NODE_STATE_HORDE_CONTROLLED,
@@ -943,11 +886,13 @@ static AVNodeTemplate g_nodeTemplates[AV_NUM_CONTROL_POINTS] = {
 		0,						{ 0, 0, 0 },				NULL,				{ 0.0f, 0.0f, 0.0f },		13359,
 
 		//	world state fields
-		0,
-		WORLDSTATE_AV_FROSTWOLF_WEST_TOWER_ASSAULTING,
-		WORLDSTATE_AV_FROSTWOLF_WEST_TOWER_DESTROYED,
-		0,
-		WORLDSTATE_AV_FROSTWOLF_WEST_TOWER_CONTROLLED,
+		{
+			0,
+			WORLDSTATE_AV_FROSTWOLF_WEST_TOWER_ASSAULTING,
+			WORLDSTATE_AV_FROSTWOLF_WEST_TOWER_DESTROYED,
+			0,
+			WORLDSTATE_AV_FROSTWOLF_WEST_TOWER_CONTROLLED,
+		},
 
 		// default state
 		AV_NODE_STATE_HORDE_CONTROLLED,
@@ -1040,21 +985,21 @@ void AVNode::Assault(Player *plr)
 	// player assaulted the control point.
 	// safety check
 	Log.Debug("AlteracValley", "AVNode::Assault(%s) : entering", m_template->m_name);
-	if( plr->GetTeam() == 0 && ( m_state == AV_NODE_STATE_ALLIANCE_ASSAULTING || m_state == AV_NODE_STATE_ALLIANCE_CONTROLLED ) )
+	if( plr->IsTeamAlliance() && ( m_state == AV_NODE_STATE_ALLIANCE_ASSAULTING || m_state == AV_NODE_STATE_ALLIANCE_CONTROLLED ) )
 		return;
 
-	if( plr->GetTeam() == 1 && ( m_state == AV_NODE_STATE_HORDE_ASSAULTING || m_state == AV_NODE_STATE_HORDE_CONTROLLED ) )
+	if( plr->IsTeamHorde() && ( m_state == AV_NODE_STATE_HORDE_ASSAULTING || m_state == AV_NODE_STATE_HORDE_CONTROLLED ) )
 		return;
 
 	if( m_destroyed )
 		return;
 
 	// are we returning the node to us? 
-	if( ( plr->GetTeam() == 0 && m_lastState == AV_NODE_STATE_ALLIANCE_CONTROLLED ) ||
-		( plr->GetTeam() == 1 && m_lastState == AV_NODE_STATE_HORDE_CONTROLLED ) )
+	if( ( plr->IsTeamAlliance() && m_lastState == AV_NODE_STATE_ALLIANCE_CONTROLLED ) ||
+		( plr->IsTeamHorde() && m_lastState == AV_NODE_STATE_HORDE_CONTROLLED ) )
 	{
 		// set the state for capture
-		m_state = (plr->GetTeam() == 0) ? AV_NODE_STATE_ALLIANCE_ASSAULTING : AV_NODE_STATE_HORDE_ASSAULTING;
+		m_state = plr->IsTeamAlliance() ? AV_NODE_STATE_ALLIANCE_ASSAULTING : AV_NODE_STATE_HORDE_ASSAULTING;
 
 		// no timer delay
 		Capture();
@@ -1077,20 +1022,20 @@ void AVNode::Assault(Player *plr)
 #endif
 
 	// update state
-	ChangeState(plr->GetTeam() ? AV_NODE_STATE_HORDE_ASSAULTING : AV_NODE_STATE_ALLIANCE_ASSAULTING);
+	ChangeState(plr->IsTeamHorde() ? AV_NODE_STATE_HORDE_ASSAULTING : AV_NODE_STATE_ALLIANCE_ASSAULTING);
 
 	// pvp data
 	if( m_template->m_isGraveyard )
 	{
 		// send message
 		m_bg.SendChatMessage(CHAT_MSG_BG_EVENT_ALLIANCE + plr->GetTeam(), 0, "%s claims the %s! If left unchallenged, the %s will control it!", plr->GetName(), m_template->m_name,
-			plr->GetTeam() ? "Horde" : "Alliance");
+			plr->IsTeamHorde() ? "Horde" : "Alliance");
 		
 		plr->m_bgScore.MiscData[BG_SCORE_AV_GRAVEYARDS_ASSAULTED]++;
 	}
 	else
 	{
-		m_bg.Herald("%s is under attack! If left unchecked the %s will destroy it!", m_template->m_name , plr->GetTeam() ? "Horde" : "Alliance");
+		m_bg.Herald("%s is under attack! If left unchecked the %s will destroy it!", m_template->m_name , plr->IsTeamHorde() ? "Horde" : "Alliance");
 		plr->m_bgScore.MiscData[BG_SCORE_AV_TOWERS_ASSAULTED]++;
 	}
 }
@@ -1119,7 +1064,7 @@ void AVNode::Spawn()
 			// initial spawn
 			m_flag = m_bg.SpawnGameObject(g->id[m_state], m_bg.GetMapMgr()->GetMapId(), g->x, g->y, g->z, g->o, 0, 0, 1.0f);
 			m_flag->bannerslot = static_cast<int8>( m_nodeId );
-			m_flag->SetUInt32Value(GAMEOBJECT_FACTION, g_gameObjectFactions[m_state]);
+			m_flag->SetFaction(g_gameObjectFactions[m_state]);
 			m_flag->SetByte(GAMEOBJECT_BYTES_1, 3, 100);
 			m_flag->SetUInt32Value(GAMEOBJECT_DYNAMIC, 1);
 			m_flag->PushToWorld(m_bg.GetMapMgr());
@@ -1134,9 +1079,9 @@ void AVNode::Spawn()
 				m_flag->SetEntry( g->id[m_state] );
 				m_flag->SetNewGuid(m_bg.GetMapMgr()->GenerateGameobjectGuid());
 				m_flag->SetInfo(goi);
-				m_flag->SetUInt32Value(GAMEOBJECT_DISPLAYID, goi->DisplayID);
+				m_flag->SetDisplayId(goi->DisplayID);
 				m_flag->SetByte(GAMEOBJECT_BYTES_1, 1, static_cast<uint8>( goi->Type ));
-				m_flag->SetUInt32Value(GAMEOBJECT_FACTION, g_gameObjectFactions[m_state]);
+				m_flag->SetFaction(g_gameObjectFactions[m_state]);
 				m_flag->SetByte(GAMEOBJECT_BYTES_1, 3, 100);
 				m_flag->SetUInt32Value(GAMEOBJECT_DYNAMIC, 1);
 				m_flag->PushToWorld(m_bg.GetMapMgr());
@@ -1164,7 +1109,7 @@ void AVNode::Spawn()
 		{
 			// initial spawn
 			m_aura = m_bg.SpawnGameObject(g->id[m_state], m_bg.GetMapMgr()->GetMapId(), g->x, g->y, g->z, g->o, 0, 0, 3.0f);
-			m_aura->SetUInt32Value(GAMEOBJECT_FACTION, g_gameObjectFactions[m_state]);
+			m_aura->SetFaction(g_gameObjectFactions[m_state]);
 			m_aura->SetByte(GAMEOBJECT_BYTES_1, 3, 100);
 			m_aura->SetUInt32Value(GAMEOBJECT_FLAGS, 1);
 			m_aura->SetByte(GAMEOBJECT_BYTES_1, 0, 1);
@@ -1180,9 +1125,9 @@ void AVNode::Spawn()
 				m_aura->SetEntry( g->id[m_state]);
 				m_aura->SetNewGuid(m_bg.GetMapMgr()->GenerateGameobjectGuid());
 				m_aura->SetInfo(goi);
-				m_aura->SetUInt32Value(GAMEOBJECT_DISPLAYID, goi->DisplayID);
+				m_aura->SetDisplayId(goi->DisplayID);
 				m_aura->SetByte(GAMEOBJECT_BYTES_1, 1, static_cast<uint8>( goi->Type ));
-				m_aura->SetUInt32Value(GAMEOBJECT_FACTION, g_gameObjectFactions[m_state]);
+				m_aura->SetFaction(g_gameObjectFactions[m_state]);
 				m_aura->SetByte(GAMEOBJECT_BYTES_1, 3, 100);
 				m_aura->SetUInt32Value(GAMEOBJECT_FLAGS, 1);
 				m_aura->SetByte(GAMEOBJECT_BYTES_1, 0, 1);
@@ -1211,7 +1156,7 @@ void AVNode::Spawn()
 		{
 			// initial spawn
 			m_glow = m_bg.SpawnGameObject(g->id[m_state], m_bg.GetMapMgr()->GetMapId(), g->x, g->y, g->z, g->o, 0, 0, 1.0f);
-			m_glow->SetUInt32Value(GAMEOBJECT_FACTION, g_gameObjectFactions[m_state]);
+			m_glow->SetFaction(g_gameObjectFactions[m_state]);
 			m_glow->SetByte(GAMEOBJECT_BYTES_1, 3, 100);
 			m_glow->SetUInt32Value(GAMEOBJECT_FLAGS, 1);
 			m_glow->SetByte(GAMEOBJECT_BYTES_1, 0, 1);
@@ -1231,9 +1176,9 @@ void AVNode::Spawn()
 				m_glow->SetEntry(  g->id[m_state]);
 				m_glow->SetNewGuid(m_bg.GetMapMgr()->GenerateGameobjectGuid());
 				m_glow->SetInfo(goi);
-				m_glow->SetUInt32Value(GAMEOBJECT_DISPLAYID, goi->DisplayID);
+				m_glow->SetDisplayId(goi->DisplayID);
 				m_glow->SetByte(GAMEOBJECT_BYTES_1, 1, static_cast<uint8>( goi->Type ));
-				m_glow->SetUInt32Value(GAMEOBJECT_FACTION, g_gameObjectFactions[m_state]);
+				m_glow->SetFaction(g_gameObjectFactions[m_state]);
 				m_glow->SetByte(GAMEOBJECT_BYTES_1, 3, 100);
 				m_glow->SetUInt32Value(GAMEOBJECT_FLAGS, 1);
 				m_glow->SetByte(GAMEOBJECT_BYTES_1, 0, 1);
@@ -1460,7 +1405,7 @@ void AVNode::Capture()
 	else
 	{
 		// captured message
-		m_bg.Herald("The %s has taken the %s.", (m_state == AV_NODE_STATE_ALLIANCE_CONTROLLED) ? "Horde" : "Alliance", m_template->m_name);
+		m_bg.Herald("The %s has taken the %s.", (m_state == AV_NODE_STATE_ALLIANCE_CONTROLLED) ? "Alliance" : "Horde", m_template->m_name);
 	}
 }
 
@@ -1518,7 +1463,7 @@ bool AlteracValley::HookHandleRepop(Player * plr)
 	float dist = 999999.0f;
 	float dt;
 	LocationVector dest_pos;
-	if( plr->GetTeam() == 1 )
+	if( plr->IsTeamHorde() )
 		dest_pos.ChangeCoords(-1433.550903f, -608.329529f, 51.149689f);
 	else
 		dest_pos.ChangeCoords(876.434448f, -489.599579f, 96.517174f);
@@ -1532,8 +1477,8 @@ bool AlteracValley::HookHandleRepop(Player * plr)
 				continue;
 
 			// make sure they're owned by us
-			if( ( plr->GetTeam() == 0 && m_nodes[x]->m_state == AV_NODE_STATE_ALLIANCE_CONTROLLED ) ||
-				( plr->GetTeam() == 1 && m_nodes[x]->m_state == AV_NODE_STATE_HORDE_CONTROLLED ) )
+			if( ( plr->IsTeamAlliance() && m_nodes[x]->m_state == AV_NODE_STATE_ALLIANCE_CONTROLLED ) ||
+				( plr->IsTeamHorde() && m_nodes[x]->m_state == AV_NODE_STATE_HORDE_CONTROLLED ) )
 			{
 				dt = plr->GetPositionNC().Distance2DSq(m_nodes[x]->m_template->m_graveyardLocation.x, m_nodes[x]->m_template->m_graveyardLocation.y);
 				if( dt < dist )
@@ -1572,15 +1517,15 @@ void AlteracValley::OnCreate()
 
 	// Alliance Gate
 	GameObject *gate = SpawnGameObject(AV_GAMEOBJECT_GATE, GetMapMgr()->GetMapId(), 780.487f, -493.024f, 99.9553f, 3.0976f, 32, 114, 3.000000f);
-	gate->SetFloatValue(GAMEOBJECT_PARENTROTATION_02,0.0129570f);
-	gate->SetFloatValue(GAMEOBJECT_PARENTROTATION_03,-0.0602880f);
+	gate->SetParentRotation(2, 0.0129570f);
+	gate->SetParentRotation(3, -0.0602880f);
 	gate->PushToWorld(m_mapMgr);
 	m_gates.push_back(gate);
 
 	// Horde gate
 	gate = SpawnGameObject(AV_GAMEOBJECT_GATE, GetMapMgr()->GetMapId(), -1375.73f, -538.966f, 55.3006f, 0.791198f, 32, 114, 3.000000f);
-	gate->SetFloatValue(GAMEOBJECT_PARENTROTATION_02, 0.36f);
-	gate->SetFloatValue(GAMEOBJECT_PARENTROTATION_03, 0.922766f);
+	gate->SetParentRotation(2, 0.36f);
+	gate->SetParentRotation(3, 0.922766f);
 	gate->PushToWorld(m_mapMgr);
 	m_gates.push_back(gate);
 
@@ -1637,7 +1582,7 @@ void AlteracValley::OnAddPlayer(Player * plr)
 	if(!m_started)
 		plr->CastSpell(plr, BG_PREPARATION, true);
 
-	if( plr->GetTeam() )
+	if( plr->IsTeamHorde() )
 	{
 		plr->SetAtWar( 730, true );
 		plr->SetStanding( 730, -9000);
@@ -1707,6 +1652,7 @@ void AlteracValley::HookOnUnitKill(Player * plr, Unit * pVictim)
 	if(pVictim->IsPlayer())
 		return;
 
+	Player * plr2;
 	if(pVictim->GetEntry() == AV_NPC_GENERAL_VANNDAR_STORMPIKE) 
 	{
 		Herald("The Stormpike General is dead!");
@@ -1714,10 +1660,10 @@ void AlteracValley::HookOnUnitKill(Player * plr, Unit * pVictim)
 
 		for(set<Player*>::iterator itx = m_players[1].begin(); itx != m_players[1].end(); ++itx)
 		{
-			Player * plr = (*itx);
-			if(!plr) continue;
+			plr2 = (*itx);
+			if(!plr2) continue;
 
-			HonorHandler::AddHonorPointsToPlayer( plr, 62);
+			HonorHandler::AddHonorPointsToPlayer( plr2, 62);
 		}
 	}
 	else if(pVictim->GetEntry() == AV_NPC_GENERAL_DREK_THAR)
@@ -1727,10 +1673,10 @@ void AlteracValley::HookOnUnitKill(Player * plr, Unit * pVictim)
 
 		for(set<Player*>::iterator itx = m_players[0].begin(); itx != m_players[0].end(); ++itx)
 		{
-			Player * plr = (*itx);
-			if(!plr) continue;
+			plr2 = (*itx);
+			if(!plr2) continue;
 
-			HonorHandler::AddHonorPointsToPlayer( plr, AV_HONOR_ON_KILL_BOSS );
+			HonorHandler::AddHonorPointsToPlayer( plr2, AV_HONOR_ON_KILL_BOSS );
 		}
 	}
 	else if(pVictim->GetEntry() == AV_NPC_CAPTAIN_GALVANGAR)
@@ -1738,10 +1684,10 @@ void AlteracValley::HookOnUnitKill(Player * plr, Unit * pVictim)
 		RemoveReinforcements( 1, AV_POINTS_ON_KILL_CAPTAIN );
 		for(set<Player*>::iterator itx = m_players[0].begin(); itx != m_players[0].end(); ++itx)
 		{
-			Player * plr = (*itx);
-			if(!plr) continue;
+			plr2 = (*itx);
+			if(!plr2) continue;
 
-			HonorHandler::AddHonorPointsToPlayer( plr, AV_HONOR_ON_KILL_BOSS);
+			HonorHandler::AddHonorPointsToPlayer( plr2, AV_HONOR_ON_KILL_BOSS);
 		}
 	}
 	else if(pVictim->GetEntry() == AV_NPC_CAPTAIN_BALINDA_STONEHEARTH)
@@ -1749,10 +1695,10 @@ void AlteracValley::HookOnUnitKill(Player * plr, Unit * pVictim)
 		RemoveReinforcements( 0, AV_POINTS_ON_KILL_CAPTAIN );
 		for(set<Player*>::iterator itx = m_players[1].begin(); itx != m_players[1].end(); ++itx)
 		{
-			Player * plr = (*itx);
-			if(!plr) continue;
+			plr2 = (*itx);
+			if(!plr2) continue;
 
-			HonorHandler::AddHonorPointsToPlayer( plr, AV_HONOR_ON_KILL_BOSS);
+			HonorHandler::AddHonorPointsToPlayer( plr2, AV_HONOR_ON_KILL_BOSS);
 		}
 	}
 	/*else if(pVictim->GetEntry() == AV_NPC_TASKMASTER_SNIVVLE)

@@ -194,7 +194,7 @@ enum AchievementCriteriaTypes
 	ACHIEVEMENT_CRITERIA_TYPE_EARN_HONORABLE_KILL = 113,
 	ACHIEVEMENT_CRITERIA_TYPE_ACCEPTED_SUMMONINGS = 114,
 	// 0..114 => 115 criteria types total
-	ACHIEVEMENT_CRITERIA_TYPE_TOTAL = 115,
+	ACHIEVEMENT_CRITERIA_TYPE_TOTAL = 120,
 };
 
 /**
@@ -258,7 +258,7 @@ Achievement Working List:
 \todo Time limits on achievements
 \todo Special conditions for achievements (group size, nobody in raid die during fight, etc.)
 */
-class AchievementMgr
+class SERVER_DECL AchievementMgr
 {
 public:
 	AchievementMgr(Player* pl);
