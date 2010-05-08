@@ -121,7 +121,7 @@ void ArenaTeam::Destroy()
 	SendPacket(data);
 	delete data;
 
-	for(i=0; i < m_memberCount; ++i)
+	for(i= 0; i < m_memberCount; ++i)
 	{
 		if(m_members[i].Info)
 			tokill.push_back(m_members[i].Info);
@@ -176,7 +176,7 @@ bool ArenaTeam::RemoveMember(PlayerInfo * info)
 			if(info->m_loggedInPlayer)
 			{
 				info->m_loggedInPlayer->SetUInt32Value(PLAYER_FIELD_ARENA_TEAM_INFO_1_1 + (m_type*7), 0);
-				info->m_loggedInPlayer->m_arenaTeams[m_type]=0;
+				info->m_loggedInPlayer->m_arenaTeams[m_type]= 0;
 			}
 			return true;
 		}
@@ -244,7 +244,16 @@ void ArenaTeam::SaveToDB()
 {
 	std::stringstream ss;
 	uint32 i;
-	ss << "REPLACE INTO arenateams VALUES("
+
+    ss << "DELETE FROM arenateams WHERE id = ";
+    ss << m_id;
+    ss << ";";
+
+    CharacterDatabase.ExecuteNA( ss.str().c_str() );
+
+    ss.rdbuf()->str("");
+
+	ss << "INSERT INTO arenateams VALUES("
 		<< m_id << ","
 		<< m_type << ","
 		<< m_leader << ",'"
@@ -498,7 +507,7 @@ void WorldSession::HandleArenaTeamInviteAcceptOpcode(WorldPacket & recv_data)
 	}
 
 	team = objmgr.GetArenaTeamById(_player->m_arenateaminviteguid);
-	_player->m_arenateaminviteguid=0;
+	_player->m_arenateaminviteguid= 0;
 	if(team == 0)
 	{
 		SystemMessage("That arena team no longer exists.");
@@ -542,7 +551,7 @@ void WorldSession::HandleArenaTeamInviteDenyOpcode(WorldPacket & recv_data)
 	}
 
 	team = objmgr.GetArenaTeamById(_player->m_arenateaminviteguid);
-	_player->m_arenateaminviteguid=0;
+	_player->m_arenateaminviteguid= 0;
 	if(team == NULL)
 		return;
 

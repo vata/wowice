@@ -1131,7 +1131,7 @@ void AVNode::Spawn()
 			{
 				GameObjectInfo *goi = GameObjectNameStorage.LookupEntry(g->id[m_state]);
 				m_flag->RemoveFromWorld(false);
-				m_flag->SetUInt32Value(OBJECT_FIELD_ENTRY, g->id[m_state]);
+				m_flag->SetEntry( g->id[m_state] );
 				m_flag->SetNewGuid(m_bg.GetMapMgr()->GenerateGameobjectGuid());
 				m_flag->SetInfo(goi);
 				m_flag->SetUInt32Value(GAMEOBJECT_DISPLAYID, goi->DisplayID);
@@ -1177,7 +1177,7 @@ void AVNode::Spawn()
 			{
 				GameObjectInfo *goi = GameObjectNameStorage.LookupEntry(g->id[m_state]);
 				m_aura->RemoveFromWorld(false);
-				m_aura->SetUInt32Value(OBJECT_FIELD_ENTRY, g->id[m_state]);
+				m_aura->SetEntry( g->id[m_state]);
 				m_aura->SetNewGuid(m_bg.GetMapMgr()->GenerateGameobjectGuid());
 				m_aura->SetInfo(goi);
 				m_aura->SetUInt32Value(GAMEOBJECT_DISPLAYID, goi->DisplayID);
@@ -1216,9 +1216,9 @@ void AVNode::Spawn()
 			m_glow->SetUInt32Value(GAMEOBJECT_FLAGS, 1);
 			m_glow->SetByte(GAMEOBJECT_BYTES_1, 0, 1);
 			if(m_glow->GetEntry() == 180422 || m_glow->GetEntry() == 180423)
-				m_glow->SetFloatValue(OBJECT_FIELD_SCALE_X, 10.0f);
+				m_glow->SetScale(  10.0f);
 			else
-				m_glow->SetFloatValue(OBJECT_FIELD_SCALE_X, 2.0f);
+				m_glow->SetScale(  2.0f);
 			m_glow->PushToWorld(m_bg.GetMapMgr());
 		}
 		else
@@ -1228,7 +1228,7 @@ void AVNode::Spawn()
 			{
 				GameObjectInfo *goi = GameObjectNameStorage.LookupEntry(g->id[m_state]);
 				m_glow->RemoveFromWorld(false);
-				m_glow->SetUInt32Value(OBJECT_FIELD_ENTRY, g->id[m_state]);
+				m_glow->SetEntry(  g->id[m_state]);
 				m_glow->SetNewGuid(m_bg.GetMapMgr()->GenerateGameobjectGuid());
 				m_glow->SetInfo(goi);
 				m_glow->SetUInt32Value(GAMEOBJECT_DISPLAYID, goi->DisplayID);
@@ -1238,9 +1238,9 @@ void AVNode::Spawn()
 				m_glow->SetUInt32Value(GAMEOBJECT_FLAGS, 1);
 				m_glow->SetByte(GAMEOBJECT_BYTES_1, 0, 1);
 				if(m_glow->GetEntry() == 180422 || m_glow->GetEntry() == 180423)
-					m_glow->SetFloatValue(OBJECT_FIELD_SCALE_X, 10.0f);
+					m_glow->SetScale(  10.0f);
 				else
-					m_glow->SetFloatValue(OBJECT_FIELD_SCALE_X, 2.0f);
+					m_glow->SetScale(  2.0f);
 				m_glow->PushToWorld(m_bg.GetMapMgr());
 			}
 		}
@@ -1791,7 +1791,7 @@ void AlteracValley::Finish(uint32 losingTeam)
 	m_ended = true;
 	m_winningteam = (losingTeam == 0) ? 1 : 0;
 	sEventMgr.RemoveEvents(this);
-	sEventMgr.AddEvent(((CBattleground*)this), &CBattleground::Close, EVENT_BATTLEGROUND_CLOSE, 120000, 1,0);
+	sEventMgr.AddEvent(((CBattleground*)this), &CBattleground::Close, EVENT_BATTLEGROUND_CLOSE, 120000, 1, EVENT_FLAG_DO_NOT_EXECUTE_IN_WORLD_CONTEXT);
 
 	/* add the marks of honor to all players */
 	SpellEntry * winner_spell = dbcSpell.LookupEntry(24955);

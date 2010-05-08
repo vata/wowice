@@ -35,8 +35,8 @@ void Auction::UpdateInDB()
 
 AuctionHouse::AuctionHouse(uint32 ID)
 {
-	dbc = dbcAuctionHouse.LookupEntry(ID);
-	assert(dbc);
+	dbc = dbcAuctionHouse.LookupEntryForced(ID);
+	Wowice::Util::WoWICE_ASSERT(   dbc != NULL );
 
 	cut_percent = float( float(dbc->tax) / 100.0f );
 	deposit_percent = float( float(dbc->fee ) / 100.0f );
@@ -70,7 +70,7 @@ void AuctionHouse::UpdateDeletionQueue()
 	for(; it != removalList.end(); ++it)
 	{
 		auct = *it;
-		assert(auct->Deleted);
+		Wowice::Util::WoWICE_ASSERT(   auct->Deleted);
 		RemoveAuction(auct);
 	}
 
@@ -195,8 +195,8 @@ void AuctionHouse::RemoveAuction(Auction * auct)
 			snprintf(subject, 100, "%u:0:5", (unsigned int)auct->pItem->GetEntry());
 			uint32 cut = uint32(float(cut_percent * auct->HighestBid));
 			Player * plr = objmgr.GetPlayer(auct->Owner);
-			if(cut && plr && plr->GetUInt32Value(PLAYER_FIELD_COINAGE) >= cut)
-				plr->ModUnsigned32Value(PLAYER_FIELD_COINAGE, -((int32)cut));
+			if( cut && plr && plr->HasGold(cut) )
+				plr->ModGold( -(int32)cut );
 
 			sMailSystem.SendAutomatedMessage(AUCTION, GetID(), auct->Owner, subject, "", 0, 0, auct->pItem->GetGUID(), MAIL_STATIONERY_AUCTION );
 
@@ -250,13 +250,13 @@ void Auction::AddToPacket(WorldPacket & data)
 
 	for (uint32 i = 0; i < 6; i++)
 	{
-		data << pItem->GetUInt32Value(ITEM_FIELD_ENCHANTMENT_1_1 + (3 * i));   // Enchantment ID
-		data << uint32(pItem->GetEnchantmentApplytime(i));						 // Unknown / maybe ApplyTime
-		data << pItem->GetUInt32Value(ITEM_FIELD_SPELL_CHARGES + i);	   // Charges
+        data << uint32( pItem->GetEnchantmentId( i ) );   // Enchantment ID
+		data << uint32( pItem->GetEnchantmentApplytime( i ) );						 // Unknown / maybe ApplyTime
+        data << uint32( pItem->GetCharges( i ) );  // charges
 	}
 
-	data << pItem->GetUInt32Value(ITEM_FIELD_RANDOM_PROPERTIES_ID);		 // -ItemRandomSuffix / random property	 : If the value is negative its ItemRandomSuffix if its possitive its RandomItemProperty
-	data << pItem->GetUInt32Value(ITEM_FIELD_PROPERTY_SEED);			  // when ItemRandomSuffix is used this is the modifier
+    data << pItem->GetItemRandomPropertyId();		 // -ItemRandomSuffix / random property	 : If the value is negative its ItemRandomSuffix if its possitive its RandomItemProperty
+    data << pItem->GetItemRandomSuffixFactor();			  // when ItemRandomSuffix is used this is the modifier
 
 	/******************** ItemRandomSuffix***************************
 	* For what I have seen ItemRandomSuffix is like RandomItemProperty
@@ -275,7 +275,7 @@ void Auction::AddToPacket(WorldPacket & data)
 	data << uint32(0);				  // Unknown
 	data << uint32(0);				  // Unknown
 	data << uint32(0);				  // Unknown
-	data << pItem->GetUInt32Value(ITEM_FIELD_STACK_COUNT); // Amount
+	data << pItem->GetStackCount(); // Amount
 	data << uint32(0);				  // Unknown
 	data << uint32(0);				  // Unknown
 	data << uint64(Owner);			  // Owner guid
@@ -310,10 +310,8 @@ void AuctionHouse::SendBidListPacket(Player * plr, WorldPacket * packet)
 			++count;
 		}			
 	}
-#ifdef USING_BIG_ENDIAN
-	swap32((uint32*)&data.contents()[0]);
-#endif
-	data << count;
+
+    data << count;
 	auctionLock.ReleaseReadLock();
 	plr->GetSession()->SendPacket(&data);
 }
@@ -360,9 +358,6 @@ void AuctionHouse::SendOwnerListPacket(Player * plr, WorldPacket * packet)
 		}			
 	}
 	data << count;
-#ifdef USING_BIG_ENDIAN
-	swap32((uint32*)&data.contents()[0]);
-#endif
 	auctionLock.ReleaseReadLock();
 	plr->GetSession()->SendPacket(&data);
 }
@@ -489,13 +484,13 @@ void WorldSession::HandleAuctionPlaceBid( WorldPacket & recv_data )
 		return;
 	}
 
-	if(_player->GetUInt32Value(PLAYER_FIELD_COINAGE) < price)
+	if( !_player->HasGold(price) )
 	{
 		SendAuctionPlaceBidResultPacket(0, AUCTION_ERROR_MONEY);
 		return;
 	}
 
-	_player->ModUnsigned32Value(PLAYER_FIELD_COINAGE, -((int32)price));
+	_player->ModGold( -(int32)price );
 	if(auct->HighestBidder != 0)
 	{
 		// Return the money to the last highest bidder.
@@ -578,7 +573,7 @@ void WorldSession::HandleAuctionSellItem( WorldPacket & recv_data )
 
 	// Get item
 	Item * pItem = _player->GetItemInterface()->GetItemByGUID(item);
-	if( !pItem || pItem->IsSoulbound() || pItem->HasFlag(ITEM_FIELD_FLAGS, ITEM_FLAG_CONJURED ) )
+    if( !pItem || pItem->IsSoulbound() || pItem->IsConjured() )
 	{
 		WorldPacket data(SMSG_AUCTION_COMMAND_RESULT, 8);
 		data << uint32(0);
@@ -590,10 +585,10 @@ void WorldSession::HandleAuctionSellItem( WorldPacket & recv_data )
 
 	AuctionHouse * ah = pCreature->auctionHouse;
 
-	uint32 item_worth = pItem->GetProto()->SellPrice * pItem->GetUInt32Value(ITEM_FIELD_STACK_COUNT);
+	uint32 item_worth = pItem->GetProto()->SellPrice * pItem->GetStackCount();
 	uint32 item_deposit = (uint32)(item_worth * ah->deposit_percent) * (uint32)(etime / 240.0f); // deposit is per 4 hours
 
-	if (_player->GetUInt32Value(PLAYER_FIELD_COINAGE) < item_deposit)	// player cannot afford deposit
+	if( !_player->HasGold(item_deposit) ) // player cannot afford deposit
 	{
 		WorldPacket data(SMSG_AUCTION_COMMAND_RESULT, 8);
 		data << uint32(0);
@@ -636,7 +631,7 @@ void WorldSession::HandleAuctionSellItem( WorldPacket & recv_data )
 	auct->DepositAmount = item_deposit;
 
 	// remove deposit
-	_player->ModUnsigned32Value(PLAYER_FIELD_COINAGE, -(int32)item_deposit);
+	_player->ModGold( -(int32)item_deposit );
 
 	// Add and save auction to DB
 	ah->AddAuction(auct);
@@ -716,15 +711,15 @@ void AuctionHouse::SendAuctionList(Player * plr, WorldPacket * packet)
 			continue;
 
 		// rarity
-		if(rarityCheck != -1 && rarityCheck != (int32)proto->Quality)
+		if(rarityCheck != -1 && rarityCheck > (int32)proto->Quality)
 			continue;
 
 		// level range check - lower boundary
-		if(levelRange1 && proto->ItemLevel < levelRange1)
+		if(levelRange1 && proto->RequiredLevel < levelRange1)
 			continue;
 
 		// level range check - high boundary
-		if(levelRange2 && proto->ItemLevel > levelRange2)
+		if(levelRange2 && proto->RequiredLevel > levelRange2)
 			continue;
 
 		// usable check - this will hurt too :(
@@ -745,6 +740,9 @@ void AuctionHouse::SendAuctionList(Player * plr, WorldPacket * packet)
 
 			if(proto->Class == 2 && proto->SubClass && !(plr->GetWeaponProficiency()&(((uint32)(1))<<proto->SubClass)))
 				continue;
+
+			if(proto->RequiredSkill && (!plr->_HasSkillLine(proto->RequiredSkill) || proto->RequiredSkillRank > plr->_GetSkillLineCurrent(proto->RequiredSkill, true)))
+				continue;
 		}
 
 		// Page system.
@@ -761,9 +759,6 @@ void AuctionHouse::SendAuctionList(Player * plr, WorldPacket * packet)
 
 	// total count
 	data << uint32(1 + counted_items);
-#ifdef USING_BIG_ENDIAN
-	swap32((uint32*)&data.contents()[0]);
-#endif
 
 	auctionLock.ReleaseReadLock();
 	plr->GetSession()->SendPacket(&data);
@@ -771,7 +766,7 @@ void AuctionHouse::SendAuctionList(Player * plr, WorldPacket * packet)
 
 void WorldSession::HandleAuctionListItems( WorldPacket & recv_data )
 {
-	CHECK_INWORLD_RETURN
+	CHECK_INWORLD_RETURN;
 		uint64 guid;
 	recv_data >> guid;
 

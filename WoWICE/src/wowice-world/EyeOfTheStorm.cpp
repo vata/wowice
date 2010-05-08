@@ -137,7 +137,7 @@ EyeOfTheStorm::EyeOfTheStorm(MapMgr * mgr, uint32 id, uint32 lgroup, uint32 t) :
 {
 	int i;
 
-	for (i=0; i<2; i++) {
+	for (i= 0; i<2; i++) {
 		m_players[i].clear();
 		m_pendPlayers[i].clear();
 	}
@@ -307,7 +307,7 @@ void EyeOfTheStorm::HookOnAreaTrigger(Player * plr, uint32 id)
 		return;
 
 	if(bonusid > -1){
-		uint32 spellid=0;
+		uint32 spellid= 0;
 		uint32 x = (uint32)bonusid;
 		if(EOTSm_buffs[x] && EOTSm_buffs[x]->IsInWorld())
 		{
@@ -316,8 +316,6 @@ void EyeOfTheStorm::HookOnAreaTrigger(Player * plr, uint32 id)
 			if(sp)
 			{
 				Spell * pSpell = new Spell(plr, sp, true, NULL);
-				if (!pSpell)
-					return;
 				SpellCastTargets targets(plr->GetGUID());
 				pSpell->prepare(&targets);
 			}
@@ -631,7 +629,7 @@ void EyeOfTheStorm::OnCreate()
 			return;
 		}
 
-		m_bubbles[i]->SetFloatValue(OBJECT_FIELD_SCALE_X,0.1f);
+		m_bubbles[i]->SetScale( 0.1f);
 		m_bubbles[i]->SetByte(GAMEOBJECT_BYTES_1, 0,1);
 		m_bubbles[i]->SetUInt32Value(GAMEOBJECT_FLAGS,32);
 		m_bubbles[i]->SetUInt32Value(GAMEOBJECT_FACTION,114);
@@ -650,14 +648,14 @@ void EyeOfTheStorm::OnCreate()
 	m_standFlag->CreateFromProto( 184141, m_mapMgr->GetMapId(), 2174.782227f, 1569.054688f, 1160.361938f, -1.448624f );
 	m_standFlag->SetFloatValue( GAMEOBJECT_PARENTROTATION_02, 0.662620f );
 	m_standFlag->SetFloatValue( GAMEOBJECT_PARENTROTATION_03, -0.748956f );
-	m_standFlag->SetFloatValue( OBJECT_FIELD_SCALE_X, 2.5f );
+	m_standFlag->SetScale(  2.5f );
 	m_standFlag->PushToWorld( m_mapMgr );
 
 	m_dropFlag = m_mapMgr->CreateGameObject(184142);
 	m_dropFlag->CreateFromProto( 184142, m_mapMgr->GetMapId(), 2174.782227f, 1569.054688f, 1160.361938f, -1.448624f );
 	m_dropFlag->SetFloatValue( GAMEOBJECT_PARENTROTATION_02, 0.885448f );
 	m_dropFlag->SetFloatValue( GAMEOBJECT_PARENTROTATION_03, -0.464739f );
-	m_dropFlag->SetFloatValue( OBJECT_FIELD_SCALE_X, 2.5f );
+	m_dropFlag->SetScale(  2.5f );
 }
 
 void EyeOfTheStorm::RespawnCPFlag(uint32 i, uint32 id)
@@ -681,7 +679,7 @@ void EyeOfTheStorm::RespawnCPFlag(uint32 i, uint32 id)
 void EyeOfTheStorm::UpdateCPs()
 {
 	uint32 i;
-	set<Player*>::iterator itr, itrend;
+	set< Object* >::iterator itr, itrend;
 	Player * plr;
 	GameObject * go;
 	int32 delta = 0;
@@ -700,9 +698,10 @@ void EyeOfTheStorm::UpdateCPs()
 		go->AquireInrangeLock();
 		itr = go->GetInRangePlayerSetBegin();
 		itrend = go->GetInRangePlayerSetEnd();
+
 		for( ; itr != itrend; ++itr )
 		{
-			plr = *itr;
+			plr = static_cast< Player* >( *itr );
 			if( plr->isAlive() && !(plr->IsStealth()) && !(plr->m_invisible) && !(plr->SchoolImmunityList[0]) && plr->GetDistance2dSq( go ) <= EOTS_CAPTURE_DISTANCE )
 			{
 				playercounts[plr->GetTeam()]++;
@@ -915,54 +914,59 @@ bool EyeOfTheStorm::GivePoints(uint32 team, uint32 points)
 		{
 			for(set<Player*>::iterator itr = m_players[i].begin(); itr != m_players[i].end(); ++itr)
 			{
-				(*itr)->Root();
+
+                Player *p = *itr;
+
+				p->Root();
 				
-				if ( (*itr)== NULL )
+				if ( p == NULL )
 					continue;
 
 				if(i == m_winningteam)
 				{
-					(*itr)->m_bgScore.BonusHonor += winHonorToAdd;
-					HonorHandler::AddHonorPointsToPlayer((*itr), winHonorToAdd);
-					Item *item = objmgr.CreateItem( 29024 , *itr );
+					p->m_bgScore.BonusHonor += winHonorToAdd;
+					HonorHandler::AddHonorPointsToPlayer( p, winHonorToAdd);
+					Item *item = objmgr.CreateItem( 29024 , p );
 					if( item != NULL )
 					{
-						item->SetUInt32Value( ITEM_FIELD_STACK_COUNT, 3 );
+						item->SetStackCount(  3 );
 						item->SoulBind();
-						if( !(*itr)->GetItemInterface()->AddItemToFreeSlot( item ) )
+						if( !p->GetItemInterface()->AddItemToFreeSlot( item ) )
 						{
-							(*itr)->GetSession()->SendNotification("No free slots were found in your inventory!");
+							p->GetSession()->SendNotification("No free slots were found in your inventory!");
 							item->DeleteMe();
 						}
 						else
 						{
-							(*itr)->m_bgScore.BonusHonor += lostHonorToAdd;
-							HonorHandler::AddHonorPointsToPlayer( (*itr), lostHonorToAdd );
-							SlotResult *lr = (*itr)->GetItemInterface()->LastSearchResult();
-							(*itr)->GetSession()->SendItemPushResult( item, false, true, false, true, lr->ContainerSlot, lr->Slot, 3 );
+							p->m_bgScore.BonusHonor += lostHonorToAdd;
+							HonorHandler::AddHonorPointsToPlayer( p, lostHonorToAdd );
+							SlotResult *lr = p->GetItemInterface()->LastSearchResult();
+							
+                            p->SendItemPushResult( false, true, false, true, lr->ContainerSlot, lr->Slot, 3, item->GetEntry(), item->GetItemRandomSuffixFactor(), item->GetItemRandomPropertyId(), item->GetStackCount()  );
 						}
 					}
-					if(i && (*itr)->GetQuestLogForEntry(11341))
-						(*itr)->GetQuestLogForEntry(11341)->SendQuestComplete();
-					else if((*itr)->GetQuestLogForEntry(11337))
-						(*itr)->GetQuestLogForEntry(11337)->SendQuestComplete();
+					if(i && p->GetQuestLogForEntry(11341))
+						p->GetQuestLogForEntry(11341)->SendQuestComplete();
+					else if( p->GetQuestLogForEntry(11337) )
+						p->GetQuestLogForEntry(11337)->SendQuestComplete();
 				}
 				else
 				{
-					Item *item = objmgr.CreateItem( 29024 , *itr );
+					Item *item = objmgr.CreateItem( 29024 , p );
 					if( item != NULL )
 					{
-						item->SetUInt32Value( ITEM_FIELD_STACK_COUNT, 1 );
+						item->SetStackCount(  1 );
 						item->SoulBind();
-						if( !(*itr)->GetItemInterface()->AddItemToFreeSlot( item ) )
+						if( !p->GetItemInterface()->AddItemToFreeSlot( item ) )
 						{
-							(*itr)->GetSession()->SendNotification("No free slots were found in your inventory!");
+							p->GetSession()->SendNotification("No free slots were found in your inventory!");
 							item->DeleteMe();
 						}
 						else
 						{
-							SlotResult *lr = (*itr)->GetItemInterface()->LastSearchResult();
-							(*itr)->GetSession()->SendItemPushResult( item, false, true, false, true, lr->ContainerSlot, lr->Slot, 1 );
+							SlotResult *lr = p->GetItemInterface()->LastSearchResult();
+							
+                            p->SendItemPushResult( false, true, false, true, lr->ContainerSlot, lr->Slot, 1, item->GetEntry(), item->GetItemRandomSuffixFactor(), item->GetItemRandomPropertyId(), item->GetStackCount()  );
 						}
 					}
 				}
@@ -1016,7 +1020,7 @@ void EyeOfTheStorm::SpawnBuff(uint32 x)
 		if(chosen_buffid != EOTSm_buffs[x]->GetEntry())
 		{
 			EOTSm_buffs[x]->SetNewGuid(m_mapMgr->GenerateGameobjectGuid());
-			EOTSm_buffs[x]->SetUInt32Value(OBJECT_FIELD_ENTRY, chosen_buffid);
+			EOTSm_buffs[x]->SetEntry(  chosen_buffid);
 			EOTSm_buffs[x]->SetInfo(goi);
 		}
 

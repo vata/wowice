@@ -16,6 +16,8 @@
 #ifndef __UNIT_H
 #define __UNIT_H
 
+#include "WUtil.h"
+
 class AIInterface;
 class DynamicObject;
 
@@ -827,14 +829,14 @@ public:
 
 	void OnRemoveFromWorld();										// called when we are removed from world, kills all references to us.
 	
-	WoWICE_INLINE void Vanished()
+	void Vanished()
 	{
 		ClearAttackers();
 		ClearHealers();
 	}
 
-	WoWICE_INLINE const uint64& GetPrimaryAttackTarget() { return m_primaryAttackTarget; }
-	WoWICE_INLINE void SetUnit(Unit * p) { m_Unit = p; }
+	const uint64& GetPrimaryAttackTarget() { return m_primaryAttackTarget; }
+	void SetUnit(Unit * p) { m_Unit = p; }
 	void TryToClearAttackTargets();									// for pvp timeout
 	void AttackersForgetHate();										// used right now for Feign Death so attackers go home
 
@@ -850,23 +852,14 @@ protected:
 
 //====================================================================
 //  Unit
-//  Base object for Players and Creatures
+//  Base class for Players and Creatures
 //====================================================================
 
 class SERVER_DECL Unit : public Object
 {
 public:
-	/************************************************************************/
-	/* LUA Stuff                                                            */
-	/************************************************************************/
-/*	typedef struct { const char *name; int(*mfunc)(lua_State*,Unit*); } RegType;
-	static const char className[];
-	static RegType methods[];
-	
-	// a lua script cannot create a unit.
-	Unit(lua_State * L) { ASSERT(false); }*/
 
-	void CombatStatusHandler_UpdatePvPTimeout();
+    void CombatStatusHandler_UpdatePvPTimeout();
 	void CombatStatusHandler_ResetPvPTimeout();
 
 	virtual ~Unit ( );
@@ -879,7 +872,6 @@ public:
 	virtual void OnPushToWorld();
 
 	// Have subclasses change these to true
-	virtual bool IsPlayer() { return false; }
 	virtual bool IsCreature() { return false; }
 
     virtual bool IsPvPFlagged() = 0;
@@ -900,38 +892,25 @@ public:
 	
 	void SetDualWield(bool enabled);
 
-	bool __fastcall canReachWithAttack(Unit *pVictim);
-
-  //void StrikeWithAbility( Unit* pVictim, Spell* spell, uint32 addspelldmg, uint32 weapon_damage_type );
+	bool  canReachWithAttack(Unit *pVictim);
 
 	/// State flags are server-only flags to help me know when to do stuff, like die, or attack
-	WoWICE_INLINE void addStateFlag(uint32 f) { m_state |= f; };
-	WoWICE_INLINE bool hasStateFlag(uint32 f) { return (m_state & f ? true : false); }
-	WoWICE_INLINE void clearStateFlag(uint32 f) { m_state &= ~f; };
+	void addStateFlag(uint32 f) { m_state |= f; };
+	bool hasStateFlag(uint32 f) { return (m_state & f ? true : false); }
+	void clearStateFlag(uint32 f) { m_state &= ~f; };
 
 	/// Stats
-	WoWICE_INLINE uint32 getLevel() { return m_uint32Values[ UNIT_FIELD_LEVEL ]; };
-	WoWICE_INLINE uint8 getRace() { return GetByte(UNIT_FIELD_BYTES_0,0); }
-	WoWICE_INLINE uint8 getClass() { return GetByte(UNIT_FIELD_BYTES_0,1); }
-	WoWICE_INLINE void setRace(uint8 race) { SetByte(UNIT_FIELD_BYTES_0,0,race); }
-	WoWICE_INLINE void setClass(uint8 class_) { SetByte(UNIT_FIELD_BYTES_0,1, class_ ); }
-	WoWICE_INLINE uint32 getClassMask() { return 1 << (getClass() - 1); }
-	WoWICE_INLINE uint32 getRaceMask() { return 1 << (getRace() - 1); }
-	WoWICE_INLINE uint8 getGender() { return GetByte(UNIT_FIELD_BYTES_0,2); }
-	WoWICE_INLINE void setGender(uint8 gender) { SetByte(UNIT_FIELD_BYTES_0,2,gender); }
-	WoWICE_INLINE uint8 getStandState() { return ((uint8)m_uint32Values[UNIT_FIELD_BYTES_1]); }
+	uint32 getLevel() { return m_uint32Values[ UNIT_FIELD_LEVEL ]; };
+	uint32 getClassMask() { return 1 << (getClass() - 1); }
+	uint32 getRaceMask() { return 1 << (getRace() - 1); }
+	uint8 getStandState() { return ((uint8)m_uint32Values[UNIT_FIELD_BYTES_1]); }
  
 	//// Combat
-   // void DealDamage(Unit *pVictim, uint32 damage, uint32 targetEvent, uint32 unitEvent, uint32 spellId = 0);   // to stop from falling, etc
-	//void AttackerStateUpdate( Unit* pVictim, uint32 weapon_damage_type ); // weapon_damage_type: 0 = melee, 1 = offhand(dualwield), 2 = ranged
 	uint32 GetSpellDidHitResult( Unit* pVictim, uint32 weapon_damage_type, SpellEntry* ability );
 	void Strike( Unit* pVictim, uint32 weapon_damage_type, SpellEntry* ability, int32 add_damage, int32 pct_dmg_mod, uint32 exclusive_damage, bool disable_proc, bool skip_hit_check );
-//	void PeriodicAuraLog(Unit *pVictim, SpellEntry* spellID, uint32 damage, uint32 damageType);
-	//void SpellNonMeleeDamageLog(Unit *pVictim, uint32 spellID, uint32 damage);
 	uint32 m_procCounter;
-	uint32 HandleProc(uint32 flag, Unit* Victim, SpellEntry* CastingSpell,uint32 dmg=-1,uint32 abs=0);
+	uint32 HandleProc(uint32 flag, Unit* Victim, SpellEntry* CastingSpell,uint32 dmg=-1,uint32 abs= 0);
 	void HandleProcDmgShield(uint32 flag, Unit* attacker);//almost the same as handleproc :P
-//	void HandleProcSpellOnSpell(Unit* Victim,uint32 damage,bool critical);//nasty, some spells proc other spells
 
 	void RemoveExtraStrikeTarget(SpellEntry *spell_info);
 	void AddExtraStrikeTarget(SpellEntry *spell_info, uint32 charges);
@@ -950,10 +929,10 @@ public:
 	bool IsInInstance();
     void CalculateResistanceReduction(Unit *pVictim,dealdamage *dmg,SpellEntry* ability, float ArmorPctReduce) ;
 	void RegenerateHealth();
-	void RegeneratePower(bool isinterrupted);
-	WoWICE_INLINE void setHRegenTimer(uint32 time) {m_H_regenTimer = time; }
-	WoWICE_INLINE void setPRegenTimer(uint32 time) {m_P_regenTimer = time; }
-	WoWICE_INLINE void DelayPowerRegeneration(uint32 time) { m_P_regenTimer = time; if (!m_interruptedRegenTime) m_interruptedRegenTime = 2000; }
+    void RegeneratePower(bool isinterrupted);
+	void setHRegenTimer(uint32 time) {m_H_regenTimer = static_cast<uint16>( time ); }
+	void setPRegenTimer(uint32 time) {m_P_regenTimer = static_cast<uint16>( time ); }
+	void DelayPowerRegeneration(uint32 time) { m_P_regenTimer = static_cast<uint16>( time ); if (!m_interruptedRegenTime) m_interruptedRegenTime = 2000; }
 	void DeMorph();
 	uint32 ManaShieldAbsorb(uint32 dmg);
 	void smsg_AttackStart(Unit* pVictim);
@@ -965,15 +944,15 @@ public:
 	float get_chance_to_daze(Unit *target);
 
 	// Stealth  
-	WoWICE_INLINE int32 GetStealthLevel() { return m_stealthLevel; }
-	WoWICE_INLINE int32 GetStealthDetectBonus() { return m_stealthDetectBonus; }
-	WoWICE_INLINE void SetStealth(uint32 id) { m_stealth = id; }
-	WoWICE_INLINE bool IsStealth() { return (m_stealth!=0 ? true : false); }
+	int32 GetStealthLevel() { return m_stealthLevel; }
+	int32 GetStealthDetectBonus() { return m_stealthDetectBonus; }
+	void SetStealth(uint32 id) { m_stealth = id; }
+	bool IsStealth() { return (m_stealth!= 0 ? true : false); }
 	float detectRange;
 
 	// Invisibility
-	WoWICE_INLINE void SetInvisibility(uint32 id) { m_invisibility = id; }
-	WoWICE_INLINE bool IsInvisible() { return (m_invisible!=0 ? true : false); }
+	void SetInvisibility(uint32 id) { m_invisibility = id; }
+	bool IsInvisible() { return (m_invisible!= 0 ? true : false); }
 	uint32 m_invisibility;
 	bool m_invisible;
 	uint8 m_invisFlag;
@@ -992,8 +971,8 @@ public:
 	void GiveGroupXP(Unit *pVictim, Player *PlayerInGroup);
 
 	/// Combat / Death Status
-	WoWICE_INLINE bool isAlive() { return m_deathState == ALIVE; };
-	WoWICE_INLINE bool IsDead() { return  m_deathState !=ALIVE; };
+	bool isAlive() { return m_deathState == ALIVE; };
+	bool IsDead() { return  m_deathState !=ALIVE; };
 	virtual void setDeathState(DeathState s) {
 		m_deathState = s;
 		if ( m_deathState==JUST_DIED ) DropAurasOnDeath();
@@ -1045,9 +1024,7 @@ public:
 	//caller is the caster
 	int32 GetSpellDmgBonus(Unit *pVictim, SpellEntry *spellInfo,int32 base_dmg, bool isdot);
    
-	
-
-	uint32 m_addDmgOnce;
+    uint32 m_addDmgOnce;
 	Creature *m_TotemSlots[4];
 	uint32 m_ObjectSlots[4];
 	uint32 m_triggerSpell;
@@ -1063,13 +1040,12 @@ public:
 	struct DamageSplitTarget *m_damageSplitTarget;
  
 	std::list<struct ProcTriggerSpell> m_procSpells;
-//	std::map<uint32,ProcTriggerSpellOnSpellList> m_procSpellonSpell; //index is namehash
 	std::map<uint32,struct SpellCharge> m_chargeSpells;
 	deque<uint32> m_chargeSpellRemoveQueue;
 	bool m_chargeSpellsInUse;
-	WoWICE_INLINE void SetOnMeleeSpell( uint32 spell, uint8 ecn = 0 ) { m_meleespell = spell; m_meleespell_ecn = ecn;  }
-	WoWICE_INLINE uint32 GetOnMeleeSpell() { return m_meleespell; }
-	WoWICE_INLINE uint8 GetOnMeleeSpellEcn() { return m_meleespell_ecn; }
+	void SetOnMeleeSpell( uint32 spell, uint8 ecn = 0 ) { m_meleespell = spell; m_meleespell_ecn = ecn;  }
+	uint32 GetOnMeleeSpell() { return m_meleespell; }
+	uint8 GetOnMeleeSpellEcn() { return m_meleespell_ecn; }
 
 	uint32 DoDamageSplitTarget(uint32 res, uint32 school_type, bool melee_dmg);
 
@@ -1082,9 +1058,7 @@ public:
 	void ClearHateList();
 	void WipeHateList();
 	void WipeTargetList();
-	WoWICE_INLINE void setAItoUse(bool value){m_useAI = value;}
-
-//	virtual Group *GetGroup();
+	void setAItoUse(bool value){m_useAI = value;}
 
 	int32 GetThreatModifyer() { return m_threatModifyer; }
 	void ModThreatModifyer(int32 mod) { m_threatModifyer += mod; }
@@ -1092,17 +1066,17 @@ public:
 	void ModGeneratedThreatModifyer(uint32 school, int32 mod) { m_generatedThreatModifyer[school] += mod; }
 
 	void SetHitFromMeleeSpell(float value) { m_hitfrommeleespell = value; }
-	WoWICE_INLINE float GetHitFromMeleeSpell() { return m_hitfrommeleespell; }
+	float GetHitFromMeleeSpell() { return m_hitfrommeleespell; }
 	float m_hitfrommeleespell;
 
 	// DK:Affect
-	WoWICE_INLINE uint32 IsPacified() { return m_pacified; }
-	WoWICE_INLINE uint32 IsStunned() { return m_stunned; }
-	WoWICE_INLINE uint32 IsFeared() { return m_fearmodifiers; }
-	WoWICE_INLINE uint32 GetResistChanceMod() { return m_resistChance; }
-	WoWICE_INLINE void SetResistChanceMod(uint32 amount) { m_resistChance=amount; }
+	uint32 IsPacified() { return m_pacified; }
+	uint32 IsStunned() { return m_stunned; }
+	uint32 IsFeared() { return m_fearmodifiers; }
+	uint32 GetResistChanceMod() { return m_resistChance; }
+	void SetResistChanceMod(uint32 amount) { m_resistChance=amount; }
 	
-	WoWICE_INLINE uint16 HasNoInterrupt() { return m_noInterrupt; }
+	uint16 HasNoInterrupt() { return m_noInterrupt; }
 	bool setDetectRangeMod(uint64 guid, int32 amount);
 	void unsetDetectRangeMod(uint64 guid);
 	int32 getDetectRangeMod(uint64 guid);
@@ -1137,7 +1111,6 @@ public:
 	float ModDamageTakenByMechPCT[32];
 	int32 DoTPctIncrease[7];
 	float AOEDmgMod;
-	//int32 RangedDamageTakenPct; 
 	float m_ignoreArmorPctMaceSpec;
 	float m_ignoreArmorPct;
 
@@ -1219,9 +1192,8 @@ public:
 	void Emote (EmoteType emote);
 	void EventAddEmote(EmoteType emote, uint32 time);
 	void EmoteExpire();
-	WoWICE_INLINE void setEmoteState(uint8 emote) { m_emoteState = emote; };
-	WoWICE_INLINE uint32 GetOldEmote() { return m_oldEmote; }
-	void EventSummonPetExpire();
+	void setEmoteState(uint8 emote) { m_emoteState = emote; };
+	uint32 GetOldEmote() { return m_oldEmote; }
 	void EventAurastateExpire(uint32 aurastateflag){RemoveFlag(UNIT_FIELD_AURASTATE,aurastateflag);} //hmm this looks like so not necessary :S
 	void EventHealthChangeSinceLastUpdate();
 
@@ -1273,13 +1245,13 @@ public:
 
 	void SetStandState (uint8 standstate);
 
-	WoWICE_INLINE StandState GetStandState()
+	StandState GetStandState()
 	{
 		uint32 bytes1 = GetUInt32Value (UNIT_FIELD_BYTES_1);
 		return StandState (uint8 (bytes1));
 	}
 
-	WoWICE_INLINE void SetFaction(uint32 factionId)
+	void SetFaction(uint32 factionId)
 	{
 		SetUInt32Value(UNIT_FIELD_FACTIONTEMPLATE, factionId );
 		_setFaction();
@@ -1290,7 +1262,7 @@ public:
 	void SendChatMessageAlternateEntry(uint32 entry, uint8 type, uint32 lang, const char * msg);
 	void RegisterPeriodicChatMessage(uint32 delay, uint32 msgid, std::string message, bool sendnotify);
 
-	WoWICE_INLINE int GetHealthPct()
+	int GetHealthPct()
 	{
 		//shitty db? pet/guardian bug?
 		if (GetUInt32Value(UNIT_FIELD_HEALTH) == 0 || GetUInt32Value(UNIT_FIELD_MAXHEALTH) == 0)
@@ -1299,9 +1271,9 @@ public:
 		return (int)(GetUInt32Value(UNIT_FIELD_HEALTH) * 100 / GetUInt32Value(UNIT_FIELD_MAXHEALTH));
 	};
 
-    WoWICE_INLINE void SetHealthPct(uint32 val) { if (val>0) SetUInt32Value(UNIT_FIELD_HEALTH,float2int32(val*0.01f*GetUInt32Value(UNIT_FIELD_MAXHEALTH))); };
+    void SetHealthPct(uint32 val) { if (val>0) SetUInt32Value(UNIT_FIELD_HEALTH,float2int32(val*0.01f*GetUInt32Value(UNIT_FIELD_MAXHEALTH))); };
 
-	WoWICE_INLINE int GetManaPct()
+	int GetManaPct()
 	{
 		if (GetUInt32Value(UNIT_FIELD_POWER1) == 0 || GetUInt32Value(UNIT_FIELD_MAXPOWER1) == 0)
 			return 0;
@@ -1316,12 +1288,12 @@ public:
 	virtual void OnRemoveInRangeObject(Object* pObj);
 	void ClearInRangeSet();
 
-	WoWICE_INLINE Spell * GetCurrentSpell(){return m_currentSpell;}
-	WoWICE_INLINE void SetCurrentSpell(Spell* cSpell) { m_currentSpell = cSpell; }
+	Spell * GetCurrentSpell(){return m_currentSpell;}
+	void SetCurrentSpell(Spell* cSpell) { m_currentSpell = cSpell; }
 
 	uint32 m_CombatUpdateTimer;
 
-	WoWICE_INLINE void setcanperry(bool newstatus){can_parry=newstatus;}
+	void setcanperry(bool newstatus){can_parry=newstatus;}
 		
 	std::map<uint32,Aura*> tmpAura;
 
@@ -1342,7 +1314,7 @@ public:
 
 	int32 PctRegenModifier;
 	float PctPowerRegenModifier[4];
-	WoWICE_INLINE uint32 GetPowerType(){ return (GetUInt32Value(UNIT_FIELD_BYTES_0)>> 24);}
+	
 	void UpdatePowerAmm();
 
 	void RemoveAurasByInterruptFlag(uint32 flag);
@@ -1359,7 +1331,6 @@ public:
 	std::list<ExtraStrike*> m_extraStrikeTargets;
 	int32 m_fearmodifiers;
 	int64 m_magnetcaster; // Unit who acts as a magnet for this unit
-	//std::set<SpellEntry*> m_onStrikeSpells;
 	
 	//Combat Mod Results:
 	int32 m_CombatResult_Dodge;
@@ -1388,21 +1359,7 @@ public:
 	void DisableFlight();
 
 	// Escort Quests
-	//uint32 m_escortquestid;
-	//uint32 m_escortupdatetimer;
-	//bool bHasEscortQuest;
-	//bool bEscortActive;
-	//bool bStopAtEndOfWaypoints;
-	//bool bReturnOnDie;
-	//Player *q_AttachedPlayer;
-	//uint16 m_escortStartWP;
-	//uint16 m_escortEndWP;
-	/*void InitializeEscortQuest(uint32 questid, bool stopatend, bool returnondie);
-	void EscortSetStartWP(uint32 wp);
-	void EscortSetEndWP(uint32 wp);
-	void StartEscortQuest();
-	void PauseEscortQuest();
-	void EndEscortQuest();*/
+
 	void MoveToWaypoint(uint32 wp_id);	
 	void PlaySpellVisual(uint64 target, uint32 spellVisual);
 
@@ -1444,24 +1401,19 @@ public:
 	//guardians are temporary spawn that will inherit master faction and will follow them. Apart from that they have their own mind	
 	std::set<Creature*> m_Guardians;
 	Creature* create_guardian( uint32 guardian_entry, uint32 duration, float angle, uint32 lvl = 0, GameObject * obj = NULL, LocationVector * Vec = NULL); 
-	WoWICE_INLINE void AddGuardianRef( Creature* guard ){ if( guard != NULL ) m_Guardians.insert( guard );	}
+	void AddGuardianRef( Creature* guard ){ Arcemu::Util::ARCEMU_ASSERT(    guard != NULL );  m_Guardians.insert( guard );	}
 	void RemoveGuardianRef( Creature* g );
 	void RemoveAllGuardians( bool remove_from_world = true );
 
 	/************************************************************************/
 
-	WoWICE_INLINE uint32 GetCharmTempVal() { return m_charmtemp; }
-	WoWICE_INLINE void SetCharmTempVal(uint32 val) { m_charmtemp = val; }
+	uint32 GetCharmTempVal() { return m_charmtemp; }
+	void SetCharmTempVal(uint32 val) { m_charmtemp = val; }
 
-	WoWICE_INLINE void DisableAI() { m_useAI = false; }
-	WoWICE_INLINE void EnableAI() { m_useAI = true; }
+	void DisableAI() { m_useAI = false; }
+	void EnableAI() { m_useAI = true; }
 
-	WoWICE_INLINE void SetPowerType( uint8 type )
-	{
-		SetByte( UNIT_FIELD_BYTES_0, 3, type );
-	}
-
-	WoWICE_INLINE bool IsSpiritHealer()
+	bool IsSpiritHealer()
 	{
 		switch(GetEntry())
 		{
@@ -1480,6 +1432,13 @@ public:
 
 	void Root();
 	void Unroot();
+    bool isRooted(){
+
+        if( m_rooted )
+            return true;
+        else
+            return false;
+    }
 
 	void SetFacing(float newo);//only working if creature is idle
 
@@ -1487,9 +1446,6 @@ public:
 	void RemoveAurasByBuffType(uint32 buff_type, const uint64 &guid,uint32 skip);
 	bool HasAurasOfBuffType(uint32 buff_type, const uint64 &guid,uint32 skip);
 	int	 HasAurasWithNameHash(uint32 name_hash);
-//	bool HasNegativeAuraWithNameHash(uint32 name_hash); //just to reduce search range in some cases
-//	bool HasNegativeAura(uint32 spell_id); //just to reduce search range in some cases
-//	uint32 CountNegativeAura(uint32 spell_id); //just to reduce search range in some cases
 	bool IsPoisoned();
 
 	AuraCheckResponse AuraCheck(SpellEntry *proto, Object *caster= NULL);
@@ -1530,7 +1486,6 @@ public:
 		int32 max;
 	} m_soulSiphon;
 
-//	uint32 fearSpell;
 	uint32 m_cTimer;
 	void EventUpdateFlag();
 	CombatStatusHandler CombatStatus;
@@ -1539,31 +1494,114 @@ public:
 
 	void CancelSpell(Spell * ptr);
 	void EventStrikeWithAbility(uint64 guid, SpellEntry * sp, uint32 damage);
-//	bool m_spellsbusy;
 	void DispelAll(bool positive);
 
-	void SetPower(uint32 type, int32 value);
 	void SendPowerUpdate(bool self);
 
 	int8 m_hasVampiricTouch;
 	int8 m_hasVampiricEmbrace;
 
 	void			EventModelChange();			//model size changes when model changes
-	inline float	GetModelHalfSize() { return ModelHalfSize*GetFloatValue(OBJECT_FIELD_SCALE_X);	}	//used to calculate combat reach and stuff
+	inline float	GetModelHalfSize() { return ModelHalfSize * GetScale();	}	//used to calculate combat reach and stuff
 
 	void RemoveFieldSummon();
 
-	WoWICE_INLINE float GetBlockFromSpell() { return m_blockfromspell; }
-	WoWICE_INLINE float GetParryFromSpell() { return m_parryfromspell; }
-	WoWICE_INLINE float GetDodgeFromSpell() { return m_dodgefromspell; }
+	float GetBlockFromSpell() { return m_blockfromspell; }
+	float GetParryFromSpell() { return m_parryfromspell; }
+	float GetDodgeFromSpell() { return m_dodgefromspell; }
 	void SetBlockFromSpell(float value) { m_blockfromspell = value; }
 	void SetParryFromSpell(float value) { m_parryfromspell = value; }
 	void SetDodgeFromSpell(float value) { m_dodgefromspell = value; }
 	
 	void AggroPvPGuards();
 
+/////////////////////////////////////////////////////// Unit properties ///////////////////////////////////////////////////
+    void SetCharmedUnitGUID( uint64 GUID ){ SetUInt64Value( UNIT_FIELD_CHARM, GUID ); }
+    void SetSummonedUnitGUID( uint64 GUID ){ SetUInt64Value( UNIT_FIELD_SUMMON, GUID ); }
+    void SetSummonedCritterGUID( uint64 GUID ){ SetUInt64Value( UNIT_FIELD_CRITTER, GUID ); }
+
+    void SetCharmedByGUID( uint64 GUID ){ SetUInt64Value( UNIT_FIELD_CHARMEDBY, GUID ); }
+    void SetSummonedByGUID( uint64 GUID ){ SetUInt64Value( UNIT_FIELD_SUMMONEDBY, GUID ); }
+    void SetCreatedByGUID( uint64 GUID ){ SetUInt64Value( UNIT_FIELD_CREATEDBY, GUID ); }
+
+
+    uint64 GetCharmedUnitGUID(){ return GetUInt64Value( UNIT_FIELD_CHARM ); }
+    uint64 GetSummonedUnitGUID(){ return GetUInt64Value( UNIT_FIELD_SUMMON ); }
+    uint64 GetSummonedCritterGUID(){ return GetUInt64Value( UNIT_FIELD_CRITTER ); }
+
+    uint64 GetCharmedByGUID(){ return GetUInt64Value( UNIT_FIELD_CHARMEDBY ); }
+    uint64 GetSummonedByGUID(){ return GetUInt64Value( UNIT_FIELD_SUMMONEDBY ); }
+    uint64 GetCreatedByGUID(){ return GetUInt64Value( UNIT_FIELD_CREATEDBY ); }
+
+    void SetTargetGUID( uint64 GUID ){ SetUInt64Value( UNIT_FIELD_TARGET, GUID ); }
+    uint64 GetTargetGUID(){ return GetUInt64Value( UNIT_FIELD_TARGET ); }
+
+    void SetChannelSpellTargetGUID( uint64 GUID ){ SetUInt64Value( UNIT_FIELD_CHANNEL_OBJECT, GUID ); }
+    void SetChannelSpellId( uint32 SpellId ){ SetUInt32Value( UNIT_CHANNEL_SPELL, SpellId ); }
+    
+    uint64 GetChannelSpellTargetGUID(){ return GetUInt64Value( UNIT_FIELD_CHANNEL_OBJECT ); }
+    uint32 GetChannelSpellId(){ return GetUInt32Value( UNIT_CHANNEL_SPELL ); }
+    
+    //////////////////////////////////////////////////// bytes 0 //////////////////////////////////////////////////////
+    
+    void setRace( uint8 race ){ SetByte(UNIT_FIELD_BYTES_0, 0, race ); }
+    uint8 getRace() { return GetByte(UNIT_FIELD_BYTES_0, 0 ); }
+    
+    void setClass( uint8 class_ ){ SetByte( UNIT_FIELD_BYTES_0, 1, class_ ); }
+	uint8 getClass(){ return GetByte(UNIT_FIELD_BYTES_0, 1 ); }
+    
+    uint8 getGender(){ return GetByte(UNIT_FIELD_BYTES_0,2 ); }
+	void setGender( uint8 gender ){ SetByte(UNIT_FIELD_BYTES_0, 2, gender ); }
+    
+    void SetPowerType( uint8 type ){ SetByte(UNIT_FIELD_BYTES_0, 3, type ); }
+    uint8 GetPowerType(){ return GetByte( UNIT_FIELD_BYTES_0, 3 ); }
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    void SetHealth(   uint32 val ) { SetUInt32Value( UNIT_FIELD_HEALTH,  val ); } 
+    void SetMaxHealth( uint32 val ) { SetUInt32Value( UNIT_FIELD_MAXHEALTH,  val ); } 
+    uint32 GetHealth()    const { return GetUInt32Value( UNIT_FIELD_HEALTH ); }
+    uint32 GetMaxHealth() const { return GetUInt32Value( UNIT_FIELD_MAXHEALTH ); }
+
+    void SetPower(uint32 type, int32 value);
+
+    void ModPower( uint32 index, int32 value ){
+        int32 power = static_cast< int32 >( m_uint32Values[ UNIT_FIELD_POWER1 + index ] );
+        int32 maxpower = static_cast< int32 >( m_uint32Values[ UNIT_FIELD_MAXPOWER1 + index ] );
+
+        if( value <= power )
+            SetUInt32Value( UNIT_FIELD_POWER1 + index, 0 ); 
+        else
+            SetUInt32Value( UNIT_FIELD_POWER1 + index, power + value ); 
+
+        if( ( value + power ) > maxpower )
+            SetUInt32Value( UNIT_FIELD_POWER1 + index, maxpower ); 
+        else
+            SetUInt32Value( UNIT_FIELD_POWER1 + index, power + value ); 
+    }
+
+    uint32 GetPower( uint32 index ){ return GetUInt32Value( UNIT_FIELD_POWER1 + index ); }
+    
+    void SetMaxPower( uint32 index, uint32 value ){ SetUInt32Value( UNIT_FIELD_MAXPOWER1 + index, value ); }
+    
+    void ModMaxPower( uint32 index, int32 value ){
+        int32 maxpower = static_cast< int32 >( m_uint32Values[ UNIT_FIELD_MAXPOWER1 + index ] );
+
+        if( value <= maxpower )
+            SetUInt32Value( UNIT_FIELD_POWER1 + index, 0 ); 
+        else
+            SetUInt32Value( UNIT_FIELD_POWER1 + index, maxpower + value ); 
+
+    }
+
+    uint32 GetMaxPower( uint32 index ){ return GetUInt32Value( UNIT_FIELD_MAXPOWER1 + index ); }
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 protected:
 	Unit ();
+    void RemoveGarbage();
+    void AddGarbageAura( Aura *aur );
+    void AddGarbageSpell( Spell *sp );
 
 	uint32 m_meleespell;
 	uint8 m_meleespell_ecn; // extra_cast_number
@@ -1577,6 +1615,9 @@ protected:
 	uint32 m_attackTimer_1;
 	bool m_dualWield;
 
+    std::list< Aura* > m_GarbageAuras;
+    std::list< Spell* > m_GarbageSpells;
+
 	/// Combat
 	DeathState m_deathState;
 
@@ -1585,8 +1626,6 @@ protected:
 	uint32 m_stealthDetectBonus;	
 	
 	// DK:pet
-	//uint32 m_pet_state;
-	//uint32 m_pet_action;
 
 	// Spell currently casting
 	Spell * m_currentSpell;
@@ -1597,8 +1636,6 @@ protected:
 	bool can_parry;//will be enabled by block spell
 	int32 m_threatModifyer;
 	int32 m_generatedThreatModifyer[7];
-
-	//	float getDistance( float Position1X, float Position1Y, float Position2X, float Position2Y );	
 
 	int32 m_manashieldamt;
 	uint32 m_manaShieldId;

@@ -64,7 +64,7 @@ void DatabaseCleaner::CleanCharacters()
 	if(result)
 	{
 		do {
-			if(result->Fetch()[0].GetUInt32()!=0 && chr_guids.find(result->Fetch()[0].GetUInt32()) == chr_guids.end())
+			if(result->Fetch()[0].GetUInt32()!= 0 && chr_guids.find(result->Fetch()[0].GetUInt32()) == chr_guids.end())
 			{
 				tokill_items.push_back(result->Fetch()[1].GetUInt64());
 			}
@@ -106,7 +106,7 @@ void DatabaseCleaner::CleanCharacters()
 		{
 			Corpse * pCorpse = new Corpse(0, result->Fetch()[0].GetUInt32());
 			pCorpse->LoadValues(result->Fetch()[8].GetString());
-			pCorpse->SetUInt32Value(OBJECT_FIELD_GUID, 0);
+            pCorpse->SetLowGUID( 0 );
 			if(pCorpse->GetUInt32Value(CORPSE_FIELD_DISPLAY_ID) == 0 ||
 				pCorpse->GetUInt32Value(CORPSE_FIELD_OWNER) == 0 ||
 				chr_guids.find(pCorpse->GetUInt32Value(CORPSE_FIELD_OWNER)) == chr_guids.end())

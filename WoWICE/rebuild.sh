@@ -1,10 +1,10 @@
 #!/bin/sh
 
-DEST=~/realm
-OPTS="--prefix=$DEST --enable-optimize"
+DEST=~/wowserver/test
+OPTS="--prefix=$DEST"
 
 autoreconf -fi
-./configure $OPTS
+export LIBS=-ldl; ./configure $OPTS
 make clean
-make -j3
+make -j2
 make install

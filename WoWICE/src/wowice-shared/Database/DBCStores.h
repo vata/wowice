@@ -399,7 +399,7 @@ struct AchievementCriteriaEntry
 		// ACHIEVEMENT_CRITERIA_TYPE_HIGHEST_POWER = 96
 		struct
 		{
-			uint32  powerType;                              // 3 mana=0, 1=rage, 3=energy, 6=runic power
+			uint32  powerType;                              // 3 mana= 0, 1=rage, 3=energy, 6=runic power
 		} highest_power;
 
 		// ACHIEVEMENT_CRITERIA_TYPE_HIGHEST_STAT = 97
@@ -1515,7 +1515,7 @@ public:
 		m_firstEntry = NULL;
 		m_max = 0;
 		m_numrows = 0;
-		m_stringlength=0;
+		m_stringlength= 0;
 		m_stringData = NULL;
 	}
 
@@ -1560,10 +1560,6 @@ public:
 		fread(&useless_shit, 4, 1, f);
 		fread(&string_length, 4, 1, f);
 		pos = ftell(f);
-
-#ifdef USING_BIG_ENDIAN
-		swap32(&rows); swap32(&cols); swap32(&useless_shit); swap32(&string_length);
-#endif
 
 		if( load_strings )
 		{
@@ -1639,9 +1635,7 @@ public:
 				++t;
 				continue;		// skip!
 			}
-#ifdef USING_BIG_ENDIAN
-			swap32(&val);
-#endif
+
 			if(( *t == 's' ) || ( *t=='l' ))
 			{
 				char ** new_ptr = (char**)dest_ptr;
@@ -1653,9 +1647,7 @@ public:
 					val == 0 && count > 0 && *(t+1) == 'x'; t++, count--)
 				{
 					fread(&val, 4, 1, f);
-#ifdef USING_BIG_ENDIAN
-					swap32(&val);
-#endif
+
 				}
 				if( val < m_stringlength )
 					ptr = m_stringData + val;
@@ -1719,6 +1711,14 @@ public:
 #endif
 	}
 
+	T * LookupRowForced(uint32 i)
+	{
+		if(i >= m_numrows)
+			return NULL;
+		else
+			return &m_heapBlock[i];
+	}
+
 	T * CreateCopy(T * obj)
 	{
 		T * oCopy = (T*)malloc(sizeof(T));
@@ -1732,7 +1732,6 @@ public:
 			m_entries[i] = t;
 	}
 
-#ifdef SAFE_DBC_CODE_RETURNS
 	T * LookupEntry(uint32 i)
 	{
 		if(m_entries)
@@ -1759,35 +1758,6 @@ public:
 			return &m_heapBlock[i];
 	}
 
-#else
-
-	T * LookupEntry(uint32 i)
-	{
-		if(m_entries)
-		{
-			if(i > m_max || m_entries[i] == NULL)
-				return NULL;
-			else
-				return m_entries[i];
-		}
-		else
-		{
-			if(i >= m_numrows)
-				return NULL;
-			else
-				return m_heapBlock[i];
-		}
-	}
-
-	T * LookupRow(uint32 i)
-	{
-		if(i >= m_numrows)
-			return NULL;
-		else
-			return m_heapBlock[i];
-	}
-
-#endif
 };
 
 extern SERVER_DECL DBCStorage<WorldMapOverlay> dbcWorldMapOverlayStore;

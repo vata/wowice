@@ -53,11 +53,13 @@ CBattlegroundManager::CBattlegroundManager()
 :EventableObject()
 {
 	int i;
-	//dbcBattlemasterListStore.LookupEntry(
+
+    // Yes we will be running from WorldRunnable
+    m_holder = sEventMgr.GetEventHolder( WORLD_INSTANCE );
 
 	sEventMgr.AddEvent(this, &CBattlegroundManager::EventQueueUpdate, EVENT_BATTLEGROUND_QUEUE_UPDATE, 15000, 0,0);
 
-	for (i=0; i<BATTLEGROUND_NUM_TYPES; i++) {
+	for (i= 0; i<BATTLEGROUND_NUM_TYPES; i++) {
 		m_instances[i].clear();
 		m_maxBattlegroundId[i] = 0;
 	}
@@ -100,12 +102,10 @@ void CBattlegroundManager::HandleBattlegroundListPacket(WorldSession * m_session
 		}
 	}
 	m_instanceLock.Release();
-#ifdef USING_BIG_ENDIAN
-	*(uint32*)&data.contents()[13] = swap32(Count);
-#else
+
 	*(uint32*)&data.contents()[13] = Count;
-#endif
-	m_session->SendPacket(&data);
+
+    m_session->SendPacket(&data);
 }
 
 void CBattlegroundManager::HandleBattlegroundJoin(WorldSession * m_session, WorldPacket & pck)
@@ -321,8 +321,8 @@ uint32 CBattlegroundManager::GetArenaGroupQInfo(Group * group, int type, uint32 
 	ArenaTeam *team;
 	ArenaTeamMember *atm;
 	Player *plr;
-	uint32 count=0;
-	uint32 rating=0;
+	uint32 count= 0;
+	uint32 rating= 0;
 
 	if (group == NULL || group->GetLeader() == NULL) return 0;
 
@@ -646,7 +646,7 @@ void CBattlegroundManager::EventQueueUpdate(bool forceStart)
 			continue;
 		}
 
-		for (j=0; j<(uint32)m_queuedGroups[i].size(); j++)
+		for (j= 0; j<(uint32)m_queuedGroups[i].size(); j++)
 		{
 			group1 = group2 = NULL;
 			n =	RandomUInt((uint32)m_queuedGroups[i].size()) - 1;
@@ -730,7 +730,7 @@ void CBattlegroundManager::RemovePlayerFromQueues(Player * plr)
 {
 	m_queueLock.Acquire();
 
-	ASSERT(plr->m_bgQueueType < BATTLEGROUND_NUM_TYPES);
+	Wowice::Util::WoWICE_ASSERT(   plr->m_bgQueueType < BATTLEGROUND_NUM_TYPES);
 
 	sEventMgr.RemoveEvents(plr, EVENT_BATTLEGROUND_QUEUE_UPDATE);
 
@@ -752,7 +752,7 @@ void CBattlegroundManager::RemovePlayerFromQueues(Player * plr)
 
 	plr->m_bgIsQueued = false;
 	plr->m_bgTeam=plr->GetTeam();
-	plr->m_pendingBattleground=0;
+	plr->m_pendingBattleground= 0;
 	SendBattlefieldStatus(plr,0,0,0,0,0,0);
 	m_queueLock.Release();
 
@@ -899,7 +899,7 @@ CBattleground::CBattleground(MapMgr * mgr, uint32 id, uint32 levelgroup, uint32 
 	m_startTime = (uint32)UNIXTIME;
 	m_lastResurrect = (uint32)UNIXTIME;
 	m_invisGMs = 0;
-	sEventMgr.AddEvent(this, &CBattleground::EventResurrectPlayers, EVENT_BATTLEGROUND_QUEUE_UPDATE, 30000, 0,0);
+	sEventMgr.AddEvent(this, &CBattleground::EventResurrectPlayers, EVENT_BATTLEGROUND_QUEUE_UPDATE, 30000, 0,EVENT_FLAG_DO_NOT_EXECUTE_IN_WORLD_CONTEXT);
 
 	/* create raid groups */
 	for(uint32 i = 0; i < 2; ++i)
@@ -956,7 +956,7 @@ void CBattleground::UpdatePvPData()
 
 void CBattleground::BuildPvPUpdateDataPacket(WorldPacket * data)
 {
-	ASSERT( data )
+	Wowice::Util::WoWICE_ASSERT(    data != NULL  );
 
 	data->Initialize(MSG_PVP_LOG_DATA);
 	data->reserve(10*(m_players[0].size()+m_players[1].size())+50);
@@ -1033,7 +1033,7 @@ void CBattleground::BuildPvPUpdateDataPacket(WorldPacket * data)
 		{
 			for(set<Player*>::iterator itr = m_players[i].begin(); itr != m_players[i].end(); ++itr)
 			{
-				ASSERT( *itr );
+				Wowice::Util::WoWICE_ASSERT(    *itr != NULL  );
 				if( (*itr)->m_isGmInvisible )
 					continue;
 				*data << (*itr)->GetGUID(); // apparently there is a crash here
@@ -1079,7 +1079,7 @@ void CBattleground::RemovePendingPlayer(Player * plr)
 
 	/* send a null bg update (so they don't join) */
 	BattlegroundManager.SendBattlefieldStatus(plr, 0, 0, 0, 0, 0,0);
-	plr->m_pendingBattleground =0;
+	plr->m_pendingBattleground = 0;
 	plr->m_bgTeam=plr->GetTeam();
 	
 	m_mainLock.Release();
@@ -1169,7 +1169,7 @@ void CBattleground::PortPlayer(Player * plr, bool skip_teleport /* = false*/)
 	if(!m_countdownStage)
 	{
 		m_countdownStage = 1;
-		sEventMgr.AddEvent(this, &CBattleground::EventCountdown, EVENT_BATTLEGROUND_COUNTDOWN, 30000, 0,0);
+		sEventMgr.AddEvent(this, &CBattleground::EventCountdown, EVENT_BATTLEGROUND_COUNTDOWN, 30000, 0, EVENT_FLAG_DO_NOT_EXECUTE_IN_WORLD_CONTEXT);
 		sEventMgr.ModifyEventTimeLeft(this, EVENT_BATTLEGROUND_COUNTDOWN, 10000);
 	}
 
@@ -1353,15 +1353,10 @@ GameObject * CBattleground::SpawnGameObject(uint32 entry,uint32 MapId , float x,
 
 	go->SetUInt32Value(GAMEOBJECT_FACTION,faction);
 	go->_setFaction();
-	go->SetFloatValue(OBJECT_FIELD_SCALE_X,scale);
+	go->SetScale( scale);
 	go->SetUInt32Value(GAMEOBJECT_FLAGS, flags);
-//	go->SetFloatValue(GAMEOBJECT_POS_X, x);
-//	go->SetFloatValue(GAMEOBJECT_POS_Y, y);
-//	go->SetFloatValue(GAMEOBJECT_POS_Z, z);
-//	go->SetFloatValue(GAMEOBJECT_FACING, o);
 	go->SetPosition(x, y, z, o);
 	go->SetInstanceID(m_mapMgr->GetInstanceID());
-	go->m_battleground = this;
 
 	return go;
 }
@@ -1520,7 +1515,7 @@ void CBattleground::RemovePlayer(Player * plr, bool logout)
 	/* revive the player if he is dead */
 	if(!plr->isAlive())
 	{
-		plr->SetUInt32Value(UNIT_FIELD_HEALTH, plr->GetUInt32Value(UNIT_FIELD_MAXHEALTH));
+		plr->SetHealth( plr->GetMaxHealth());
 		plr->ResurrectPlayer();
 	}
 
@@ -1732,23 +1727,27 @@ Creature * CBattleground::SpawnSpiritGuide(float x, float y, float z, float o, u
 	pCreature->Create(pInfo->Name, m_mapMgr->GetMapId(), x, y, z, o);
 
 	pCreature->SetInstanceID(m_mapMgr->GetInstanceID());
-	pCreature->SetUInt32Value(OBJECT_FIELD_ENTRY, 13116 + horde);
-	pCreature->SetFloatValue(OBJECT_FIELD_SCALE_X, 1.0f);
+	pCreature->SetEntry(  13116 + horde);
+	pCreature->SetScale(  1.0f);
 
-	pCreature->SetUInt32Value(UNIT_FIELD_HEALTH, 100000);
-	pCreature->SetUInt32Value(UNIT_FIELD_POWER1, 4868);
-	pCreature->SetUInt32Value(UNIT_FIELD_POWER3, 200);
-	pCreature->SetUInt32Value(UNIT_FIELD_POWER5, 2000000);
+	pCreature->SetHealth( 100000);
+    pCreature->SetPower( POWER_TYPE_MANA, 4868 );
+    pCreature->SetPower( POWER_TYPE_FOCUS, 200 );
+    pCreature->SetPower( POWER_TYPE_HAPPINESS, 2000000 );
 
-	pCreature->SetUInt32Value(UNIT_FIELD_MAXHEALTH, 10000);
-	pCreature->SetUInt32Value(UNIT_FIELD_MAXPOWER1, 4868);
-	pCreature->SetUInt32Value(UNIT_FIELD_MAXPOWER3, 200);
-	pCreature->SetUInt32Value(UNIT_FIELD_MAXPOWER5, 2000000);
+	pCreature->SetMaxHealth( 10000);
+	pCreature->SetMaxPower( POWER_TYPE_MANA, 4868 );
+	pCreature->SetMaxPower( POWER_TYPE_FOCUS, 200 );
+	pCreature->SetMaxPower( POWER_TYPE_HAPPINESS, 2000000 );
 
 	pCreature->SetUInt32Value(UNIT_FIELD_LEVEL, 60);
 	pCreature->SetUInt32Value(UNIT_FIELD_FACTIONTEMPLATE, 84 - horde);
 	pCreature->_setFaction();
-	pCreature->SetUInt32Value(UNIT_FIELD_BYTES_0, 0 | (2 << 8) | (1 << 16));
+
+    pCreature->setRace( 0 );
+    pCreature->setClass( 2 );
+    pCreature->setGender( 1 );
+    pCreature->SetPowerType( 0 );
 
 	pCreature->SetUInt32Value(UNIT_VIRTUAL_ITEM_SLOT_ID, 22802);
 
@@ -1762,7 +1761,7 @@ Creature * CBattleground::SpawnSpiritGuide(float x, float y, float z, float o, u
 	pCreature->SetUInt32Value(UNIT_FIELD_DISPLAYID, 13337 + horde);
 	pCreature->SetUInt32Value(UNIT_FIELD_NATIVEDISPLAYID, 13337 + horde);
 
-	pCreature->SetUInt32Value(UNIT_CHANNEL_SPELL, 22011);
+	pCreature->SetChannelSpellId(  22011);
 	pCreature->SetFloatValue(UNIT_MOD_CAST_SPEED, 1.0f);
 
 	pCreature->SetUInt32Value(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_SPIRITGUIDE);
@@ -1789,7 +1788,7 @@ void CBattleground::RemovePlayerFromResurrect(Player * plr, Creature * spirit_he
 	map<Creature*,set<uint32> >::iterator itr = m_resurrectMap.find(spirit_healer);
 	if(itr != m_resurrectMap.end())
 		itr->second.erase(plr->GetLowGUID());
-	plr->m_areaSpiritHealer_guid=0;
+	plr->m_areaSpiritHealer_guid= 0;
 	m_mainLock.Release();
 }
 
@@ -1836,9 +1835,9 @@ void CBattleground::EventResurrectPlayers()
 				plr->SendMessageToSet(&data, true);
 
 				plr->ResurrectPlayer();
-				plr->SetUInt32Value(UNIT_FIELD_HEALTH, plr->GetUInt32Value(UNIT_FIELD_MAXHEALTH));
-				plr->SetUInt32Value(UNIT_FIELD_POWER1, plr->GetUInt32Value(UNIT_FIELD_MAXPOWER1));
-				plr->SetUInt32Value(UNIT_FIELD_POWER4, plr->GetUInt32Value(UNIT_FIELD_MAXPOWER4));
+				plr->SetHealth( plr->GetMaxHealth());
+                plr->SetPower( POWER_TYPE_MANA, plr->GetMaxPower( POWER_TYPE_MANA ) );
+				plr->SetPower( POWER_TYPE_ENERGY, plr->GetMaxPower( POWER_TYPE_ENERGY ) );
 				plr->CastSpell(plr, BG_REVIVE_PREPARATION, true);
 			}
 		}
@@ -1912,7 +1911,7 @@ void CBattlegroundManager::HandleArenaJoin(WorldSession * m_session, uint32 Batt
 			pGroup->Lock();
 			for(itx = pGroup->GetSubGroup(0)->GetGroupMembersBegin(); itx != pGroup->GetSubGroup(0)->GetGroupMembersEnd(); ++itx)
 			{
-				if(maxplayers==0)
+				if(maxplayers== 0)
 				{
 					m_session->SystemMessage(m_session->LocalizedWorldSrv(58));
 					pGroup->Unlock();
@@ -1951,7 +1950,7 @@ void CBattlegroundManager::HandleArenaJoin(WorldSession * m_session, uint32 Batt
 			{
 				if((*itx)->m_loggedInPlayer)
 				{
-					SendBattlefieldStatus((*itx)->m_loggedInPlayer, 1, BattlegroundType, 0 , 0, 0,1);
+					SendBattlefieldStatus((*itx)->m_loggedInPlayer, 1, BattlegroundType, 0 , 0, 0, 1);
 					(*itx)->m_loggedInPlayer->m_bgIsQueued = true;
 					(*itx)->m_loggedInPlayer->m_bgQueueInstanceId = 0;
 					(*itx)->m_loggedInPlayer->m_bgQueueType = BattlegroundType;

@@ -59,7 +59,7 @@ public:
 		//_lock.Release();
 		_cond.EndSynchronized();
 	}
-	WoWICE_INLINE RWLock() : _cond(&_lock) {_readers=0;_writers=0;}
+	WoWICE_INLINE RWLock() : _cond(&_lock) {_readers= 0;_writers= 0;}
   
 	private:
 		Mutex _lock;

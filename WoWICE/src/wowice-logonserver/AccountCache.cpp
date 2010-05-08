@@ -516,21 +516,38 @@ void InformationCore::SendRealms(AuthSocket * Socket)
 	realmLock.Release();
 
 	// Re-calculate size.
-#ifdef USING_BIG_ENDIAN
-	*(uint16*)&data.contents()[1] = swap16(uint16(data.size() - 3));
-#else
+
 	*(uint16*)&data.contents()[1] = uint16(data.size() - 3);
-#endif
 
 	// Send to the socket.
 	Socket->Send((const uint8*)data.contents(), uint32(data.size()));
 
-	if( m_serverSockets.empty() )
+	std::list< LogonCommServerSocket* > ss;
+	std::list< LogonCommServerSocket* >::iterator SSitr;
+
+	ss.clear();
+
+	serverSocketLock.Acquire();
+
+	if( m_serverSockets.empty() ){
+		serverSocketLock.Release();
 		return;
-	// this is kinda bad, it's like Arp Arp Arp
+	}
+
 	set<LogonCommServerSocket*>::iterator itr1;
-	for(itr1 = m_serverSockets.begin(); itr1 != m_serverSockets.end(); ++itr1)
-		(*itr1)->RefreshRealmsPop();
+
+	// We copy the sockets to a list and call RefreshRealmsPop() from there because if the socket is dead,
+	//then calling the method deletes the socket and removes it from the set corrupting the iterator and causing a crash!
+	for( itr1 = m_serverSockets.begin(); itr1 != m_serverSockets.end(); ++itr1){
+		ss.push_back( *itr1 );
+	}
+
+	serverSocketLock.Release();
+
+	for( SSitr = ss.begin(); SSitr != ss.end(); ++SSitr )
+		(*SSitr)->RefreshRealmsPop();
+
+	ss.clear();
 }
 
 void InformationCore::TimeoutSockets()
@@ -538,35 +555,51 @@ void InformationCore::TimeoutSockets()
 	if(!usepings)
 		return;
 
+	std::list< LogonCommServerSocket* > slist;    // list where we will store the timed out sockets
+	set<LogonCommServerSocket*>::iterator itr;
+	uint32 now = uint32( time(NULL) );
+
+	slist.clear();
+
 	/* burlex: this is vulnerable to race conditions, adding a mutex to it. */
 	serverSocketLock.Acquire();
 
-	uint32 t = uint32(time(NULL));
-	// check the ping time
-	set<LogonCommServerSocket*>::iterator itr, it2;
-	LogonCommServerSocket * s;
-	for(itr = m_serverSockets.begin(); itr != m_serverSockets.end();)
+	for( itr = m_serverSockets.begin(); itr != m_serverSockets.end(); ++itr )
 	{
-		s = *itr;
-		it2 = itr;
-		++itr;
+		LogonCommServerSocket *s = *itr;
 
-		if(s->last_ping < t && ((t - s->last_ping) > 300))
-		{
-			// ping timeout
-			printf("Closing socket due to ping timeout.\n");
+		// check for timeout and add the timed out sockets to the list
+		if( s->last_ping < now && ( (now - s->last_ping) > 300) )
+			slist.push_back( s );
+
+	}
+	
+	serverSocketLock.Release();
+
+	if( slist.size() > 0 ){
+		sLog.outDebug("Closing %lu socket(s) because of ping timeout.", slist.size() );
+
+		std::list< LogonCommServerSocket* >::iterator SockITR;
+
+		// iterate over the list and close and get rid of the sockets
+		for( SockITR = slist.begin(); SockITR != slist.end(); ++SockITR ){
+			
+			LogonCommServerSocket *s = *SockITR;
+			set<uint32>::iterator RealmITR;
+
+			// Removing the realms that are associated with this server from the realmlist			
+			for( RealmITR = s->server_ids.begin(); RealmITR != s->server_ids.end(); ++RealmITR ){
+				RemoveRealm( *RealmITR );
+			}
+
 			s->removed = true;
-			set<uint32>::iterator itr = s->server_ids.begin();
-			for(; itr != s->server_ids.end(); ++itr)
-//				RemoveRealm(*itr);
-				UpdateRealmStatus((*itr), 2);
-			m_serverSockets.erase(it2);
-
+			m_serverSockets.erase( s );
 			s->Disconnect();
+
 		}
 	}
 
-	serverSocketLock.Release();
+	slist.clear();
 }
 
 void InformationCore::CheckServers()

@@ -23,18 +23,18 @@ Corpse::Corpse(uint32 high, uint32 low)
 	memset(m_uint32Values, 0,(CORPSE_END)*sizeof(uint32));
 	m_updateMask.SetCount(CORPSE_END);
 	SetUInt32Value( OBJECT_FIELD_TYPE,TYPE_CORPSE|TYPE_OBJECT);
-	SetUInt32Value( OBJECT_FIELD_GUID,low);
-	SetUInt32Value( OBJECT_FIELD_GUID+1,high);
+	SetLowGUID( low );
+	SetHighGUID( high );
 	m_wowGuid.Init(GetGUID());
 
-	SetFloatValue( OBJECT_FIELD_SCALE_X, 1 );//always 1
+	SetScale(  1 );//always 1
 
 	m_time = (time_t)0;
 
 	m_state = CORPSE_STATE_BODY;
 	_loadedfromdb = false;
 
-	if(high!=0)
+	if(high!= 0)
 	objmgr.AddCorpse(this);
 }
 
@@ -67,7 +67,7 @@ void Corpse::SaveToDB()
 	CharacterDatabase.Execute( ss.str( ).c_str( ) );
 
 	ss.rdbuf()->str("");
-	ss << "INSERT INTO corpses (guid, positionX, positionY, positionZ, orientation, zoneId, mapId, data, instanceId) VALUES ("
+	ss << "INSERT INTO corpses (guid, positionx, positiony, positionz, orientation, zoneId, mapId, data, instanceid) VALUES ("
 		<< GetLowGUID() << ", '" << GetPositionX() << "', '" << GetPositionY() << "', '" << GetPositionZ() << "', '" << GetOrientation() << "', '" << GetZoneId() << "', '" << GetMapId() << "', '";
 
 	for(uint16 i = 0; i < m_valuesCount; i++ )

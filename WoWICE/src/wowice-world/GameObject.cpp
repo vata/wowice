@@ -22,14 +22,14 @@ GameObject::GameObject(uint64 guid)
 	memset(m_uint32Values, 0,(GAMEOBJECT_END)*sizeof(uint32));
 	m_updateMask.SetCount(GAMEOBJECT_END);
 	SetUInt32Value( OBJECT_FIELD_TYPE,TYPE_GAMEOBJECT|TYPE_OBJECT);
-	SetUInt64Value( OBJECT_FIELD_GUID,guid);
+	SetGUID( guid );
 	SetByte(GAMEOBJECT_BYTES_1, 3, 100);
 	m_wowGuid.Init(GetGUID());
 
-	SetFloatValue( OBJECT_FIELD_SCALE_X, 1);//info->Size  );
+	SetScale(  1);//info->Size  );
 	SetByte(GAMEOBJECT_BYTES_1, 3, 100);
 
-	counter=0;//not needed at all but to prevent errors that var was not initialized, can be removed in release
+	counter= 0;//not needed at all but to prevent errors that var was not initialized, can be removed in release
 
 	bannerslot = bannerauraslot = -1;
 
@@ -101,7 +101,7 @@ bool GameObject::CreateFromProto(uint32 entry,uint32 mapid, float x, float y, fl
 	if(!pInfo)return false;
 
 	Object::_Create( mapid, x, y, z, ang );
-	SetUInt32Value( OBJECT_FIELD_ENTRY, entry );
+	SetEntry(  entry );
 	
 	m_overrides=overrides;
 //	SetFloatValue( GAMEOBJECT_POS_X, x );
@@ -147,8 +147,8 @@ void GameObject::Create( uint32 guidlow, uint32 guidhigh,uint32 displayid, uint8
 {
 	Object::_Create( mapid, x, y, z, ang);
 
-	SetUInt32Value( OBJECT_FIELD_ENTRY, entryid );
-	SetFloatValue( OBJECT_FIELD_SCALE_X, scale );
+	SetEntry(  entryid );
+	SetScale(  scale );
 	SetUInt32Value( GAMEOBJECT_DISPLAYID, displayid );
 	SetByte( GAMEOBJECT_BYTES_1, 0, state  );
 	SetByte( GAMEOBJECT_BYTES_1, 1, typeId  );
@@ -158,8 +158,6 @@ void GameObject::Create( uint32 guidlow, uint32 guidhigh,uint32 displayid, uint8
 void GameObject::EventCastSpell(uint32 guid, uint32 sp, bool triggered)
 {
 	Spell * spp = new Spell(this,dbcSpell.LookupEntry(sp),false,NULL);
-	if (!spp)
-		return;
 	SpellCastTargets tars(guid);
 	spp->prepare(&tars);
 }
@@ -217,11 +215,6 @@ void GameObject::Update(uint32 p_time)
 				}
 				
 				Spell * sp = new Spell( this, spell, true, NULL );
-				if( sp == NULL )
-				{	
-					ReleaseInrangeLock();
-					return;
-				}
 				SpellCastTargets tgt((*itr)->GetGUID());
 				tgt.m_destX = GetPositionX();
 				tgt.m_destY = GetPositionY();
@@ -303,7 +296,16 @@ void GameObject::Despawn(uint32 delay, uint32 respawntime)
 void GameObject::SaveToDB()
 {
 	std::stringstream ss;
-	ss << "REPLACE INTO gameobject_spawns VALUES("
+
+    ss << "DELETE FROM gameobject_spawns WHERE id = ";
+    ss << m_spawn->id;
+    ss << ";";
+
+    WorldDatabase.ExecuteNA( ss.str().c_str() );
+
+    ss.rdbuf()->str("");
+
+	ss << "INSERT INTO gameobject_spawns VALUES("
 		<< ((m_spawn == NULL) ? 0 : m_spawn->id) << ","
 		<< GetEntry() << ","
 		<< GetMapId() << ","
@@ -319,36 +321,11 @@ void GameObject::SaveToDB()
 		<< GetUInt32Value(GAMEOBJECT_BYTES_1) << ","
 		<< GetUInt32Value(GAMEOBJECT_FLAGS) << ","
 		<< GetUInt32Value(GAMEOBJECT_FACTION) << ","
-		<< GetFloatValue(OBJECT_FIELD_SCALE_X) << ","
+		<< GetScale() << ","
 		<< "0,"
 		<< m_phase << ","
 		<< m_overrides << ")";
 	WorldDatabase.Execute(ss.str().c_str());
-
-  /*  std::stringstream ss;
-	if (!m_sqlid)
-		m_sqlid = objmgr.GenerateLowGuid(HIGHGUID_GAMEOBJECT);
-
-	ss << "DELETE FROM gameobjects WHERE id=" << m_sqlid;
-	sDatabase.Execute(ss.str().c_str());
-
-	ss.rdbuf()->str("");
-	ss << "INSERT INTO gameobjects VALUES ( "
-		<< m_sqlid << ", "
-		<< m_position.x << ", "
-		<< m_position.y << ", "
-		<< m_position.z << ", "
-		<< m_position.o << ", "
-		<< GetZoneId() << ", "
-		<< GetMapId() << ", '";
-
-	for( uint32 index = 0; index < m_valuesCount; index ++ )
-		ss << GetUInt32Value(index) << " ";
-
-	ss << "', ";
-	ss << GetEntry() << ", 0, 0)"; 
-
-	sDatabase.Execute( ss.str( ).c_str( ) );*/
 }
 
 void GameObject::SaveToFile(std::stringstream & name)
@@ -356,7 +333,7 @@ void GameObject::SaveToFile(std::stringstream & name)
 
 	std::stringstream ss;
 
-	ss << "REPLACE INTO gameobject_spawns VALUES("
+	ss << "INSERT INTO gameobject_spawns VALUES("
 		<< ((m_spawn == NULL) ? 0 : m_spawn->id) << ","
 		<< GetEntry() << ","
 		<< GetMapId() << ","
@@ -372,7 +349,7 @@ void GameObject::SaveToFile(std::stringstream & name)
 		<< GetByte(GAMEOBJECT_BYTES_1, 0) << ","
 		<< GetUInt32Value(GAMEOBJECT_FLAGS) << ","
 		<< GetUInt32Value(GAMEOBJECT_FACTION) << ","
-		<< GetFloatValue(OBJECT_FIELD_SCALE_X) << ","
+		<< GetScale() << ","
 		<< "0,"
 		<< m_phase << ","
 		<< m_overrides << ")";
@@ -431,10 +408,10 @@ void GameObject::InitAI()
 	}
     else if(pInfo->Type == GAMEOBJECT_TYPE_CHEST)
     {
-        Lock *pLock = dbcLock.LookupEntry(GetInfo()->SpellFocus);
+        Lock *pLock = dbcLock.LookupEntryForced(GetInfo()->SpellFocus);
         if(pLock)
         {
-            for(uint32 i=0; i < 5; i++)
+            for(uint32 i= 0; i < 5; i++)
             {
                 if(pLock->locktype[i])
                 {
@@ -462,7 +439,7 @@ void GameObject::InitAI()
 	if(!spellid || spellid == 22247)
 		return;
 
-	SpellEntry *sp= dbcSpell.LookupEntry(spellid);
+	SpellEntry *sp= dbcSpell.LookupEntryForced(spellid);
 	if(!sp)
 	{
 		spell = NULL;
@@ -477,7 +454,7 @@ void GameObject::InitAI()
 	
 	float r = 0;
 
-	for(uint32 i=0;i<3;i++)
+	for(uint32 i= 0;i<3;i++)
 	{
 		if(sp->Effect[i])
 		{
@@ -509,11 +486,11 @@ bool GameObject::Load(GOSpawn *spawn)
 	if(spawn->faction)
 	{
 		SetUInt32Value(GAMEOBJECT_FACTION,spawn->faction);
-		m_faction = dbcFactionTemplate.LookupEntry(spawn->faction);
+		m_faction = dbcFactionTemplate.LookupEntryForced(spawn->faction);
 		if(m_faction)
 			m_factionDBC = dbcFaction.LookupEntry(m_faction->Faction);
 	}
-	SetFloatValue(OBJECT_FIELD_SCALE_X,spawn->scale);
+	SetScale( spawn->scale);
 	_LoadQuests();
 	CALL_GO_SCRIPT_EVENT(this, OnCreate)();
 	CALL_GO_SCRIPT_EVENT(this, OnSpawn)();
@@ -585,10 +562,16 @@ void GameObject::UseFishingNode(Player *player)
 
 	if ( school != NULL ) // open school loot if school exists
 	{
-		lootmgr.FillGOLoot( &school->loot, school->GetEntry(), school->GetMapMgr() ? ( school->GetMapMgr()->iInstanceMode ? true : false ) : false );
+		
+		if( school->GetMapMgr() != NULL )
+			lootmgr.FillGOLoot( &school->loot, school->GetEntry(), school->GetMapMgr()->iInstanceMode );
+		else
+			lootmgr.FillGOLoot( &school->loot, school->GetEntry(), 0 );
+		
 		player->SendLoot( school->GetGUID(), LOOT_FISHING );
 		EndFishing( player, false );
 		school->CatchFish();
+		
 		if ( !school->CanFish() )
 			sEventMgr.AddEvent( school, &GameObject::Despawn, (uint32)0, ( 1800000 + RandomUInt( 3600000 ) ), EVENT_GAMEOBJECT_EXPIRE, 10000, 1, EVENT_FLAG_DO_NOT_EXECUTE_IN_WORLD_CONTEXT ); // respawn in 30 - 90 minutes
 	}
@@ -801,9 +784,9 @@ uint32 GameObject::GetGOReqSkill()
 		return 0;
 	
 	//! Here we check the SpellFocus table against the dbcs
-	Lock *lock = dbcLock.LookupEntry( GetInfo()->SpellFocus );
+	Lock *lock = dbcLock.LookupEntryForced( GetInfo()->SpellFocus );
 	if(!lock) return 0;
-	for(uint32 i=0;i<5;i++)
+	for(uint32 i= 0;i<5;i++)
 		if(lock->locktype[i] == 2 && lock->minlockskill[i])
 		{
 			return lock->minlockskill[i];
@@ -840,7 +823,7 @@ void GameObject::UpdateRotation()
 
 	float r2=GetFloatValue(GAMEOBJECT_PARENTROTATION_02);
 	float r3=GetFloatValue(GAMEOBJECT_PARENTROTATION_03);
-	if(r2==0.0f && r3==0.0f && !(m_overrides & GAMEOBJECT_OVERRIDE_PARENTROT) )
+	if(r2== 0.0f && r3== 0.0f && !(m_overrides & GAMEOBJECT_OVERRIDE_PARENTROT) )
 	{
 		r2 = (float)f_rot1;
 		r3 = (float)f_rot2;

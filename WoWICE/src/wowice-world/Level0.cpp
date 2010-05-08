@@ -550,25 +550,14 @@ bool ChatHandler::HandleAuraUpdateAdd( const char *args, WorldSession *m_session
 	}
 	else
 	{
-		SpellEntry * Sp = dbcSpell.LookupEntry(SpellID);
+		SpellEntry * Sp = dbcSpell.LookupEntryForced(SpellID);
 		if(!Sp)
 		{
 			SystemMessage(m_session, "SpellID %u is invalid.", SpellID);
 			return true;
 		}
 		Spell * SpellPtr = new Spell(Pl, Sp, false, NULL);
-		if(!SpellPtr)
-		{
-			SystemMessage(m_session, "Error while constructing spell for spellid %u.", SpellID);
-			return true;
-		}
 		AuraPtr = new Aura(Sp, SpellPtr->GetDuration(), Pl, Pl);
-		if(!AuraPtr)
-		{
-			SystemMessage(m_session, "Error while constructing aura for spellid %u.", SpellID);
-			delete SpellPtr;
-			return true;
-		}
 		Pl->AddAura(AuraPtr); // Serves purpose to just add the aura to our auraslots
 		uint8 VisualSlot = Pl->FindVisualSlot(SpellID, AuraPtr->IsPositive());
 		WorldPacket data(SMSG_AURA_UPDATE, 20);

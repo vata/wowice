@@ -58,7 +58,7 @@ uint32 ItemInterface::m_CreateForPlayer(ByteBuffer *data)
 
 				if(m_pItems[i]->GetProto())
 				{
-					for(uint32 e=0; e < m_pItems[i]->GetProto()->ContainerSlots; e++)
+					for(uint32 e= 0; e < m_pItems[i]->GetProto()->ContainerSlots; e++)
 					{
 						Item *pItem = ((Container*)(m_pItems[i]))->GetItem(static_cast<int16>( e ));
 						if(pItem)
@@ -97,7 +97,7 @@ void ItemInterface::m_DestroyForPlayer()
 			{
 				if(m_pItems[i]->GetProto())
 				{
-					for(uint32 e=0; e < m_pItems[i]->GetProto()->ContainerSlots; e++)
+					for(uint32 e= 0; e < m_pItems[i]->GetProto()->ContainerSlots; e++)
 					{
 						Item *pItem = ((Container*)(m_pItems[i]))->GetItem( static_cast<int16>( e ));
 						if(pItem)
@@ -2592,14 +2592,14 @@ int8 ItemInterface::CanAffordItem(ItemPrototype * item,uint32 amount, Creature *
 	if(item->BuyPrice)
 	{
 		int32 price = GetBuyPriceForItem(item, amount, m_pOwner, pVendor) * amount;
-		if((int32)m_pOwner->GetUInt32Value(PLAYER_FIELD_COINAGE) < price)
+		if( !m_pOwner->HasGold(price) )
 		{
 			return CAN_AFFORD_ITEM_ERROR_NOT_ENOUGH_MONEY;
 		}
 	}
 	if(item->RequiredFaction)
 	{
-		FactionDBC *factdbc = dbcFaction.LookupEntry(item->RequiredFaction);
+		FactionDBC *factdbc = dbcFaction.LookupEntryForced(item->RequiredFaction);
 		if(!factdbc || factdbc->RepListId < 0)
 			return (int8)NULL;
 		
@@ -2946,7 +2946,7 @@ void ItemInterface::AddBuyBackItem(Item *it,uint32 price)
 		return;
 	}
 
-	for(i=0; i <= (MAX_BUYBACK_SLOT - 1)*2;i+=2) //at least 1 slot is empty
+	for(i= 0; i <= (MAX_BUYBACK_SLOT - 1)*2;i+=2) //at least 1 slot is empty
 	{
 		if((m_pOwner->GetUInt32Value(PLAYER_FIELD_VENDORBUYBACK_SLOT_1 + i) == 0) || (m_pBuyBack[i/2] == NULL))
 		{
@@ -3428,7 +3428,7 @@ AddItemResult ItemInterface::AddItemToFreeBankSlot(Item *item)
 	{
 		if( m_pItems[i] != NULL && m_pItems[i]->GetProto()->BagFamily == 0 && m_pItems[i]->IsContainer() ) //special bags ignored
 		{
-			for( uint32 j =0; j < m_pItems[i]->GetProto()->ContainerSlots; j++ )
+			for( uint32 j = 0; j < m_pItems[i]->GetProto()->ContainerSlots; j++ )
 			{
 				Item *item2 = static_cast< Container* >( m_pItems[i] )->GetItem( static_cast<int16>( j ));
 				if( item2 == NULL )
@@ -3699,7 +3699,7 @@ bool ItemInterface::IsEquipped(uint32 itemid)
  				return true;
 
 			// check gems as well
-			for( uint32 count=0; count<it->GetSocketsCount(); count++ )
+			for( uint32 count= 0; count<it->GetSocketsCount(); count++ )
 			{
 				EnchantmentInstance *ei = it->GetEnchantment(2+count);
 				
@@ -4074,7 +4074,7 @@ bool ItemInterface::AddItemById( uint32 itemid, uint32 count, int32 randomprop )
 		{
 			SlotResult *lr = LastSearchResult();
             
-            chr->GetSession()->SendItemPushResult( item, false, true, false, true, lr->ContainerSlot, lr->Slot, toadd );
+            chr->SendItemPushResult( false, true, false, true, lr->ContainerSlot, lr->Slot, toadd , item->GetEntry(), item->GetItemRandomSuffixFactor(), item->GetItemRandomPropertyId(), item->GetCount()  );
 #ifdef ENABLE_ACHIEVEMENTS
             chr->GetAchievementMgr().UpdateAchievementCriteria( ACHIEVEMENT_CRITERIA_TYPE_LOOT_ITEM, itemid, 1, 0 );
 #endif

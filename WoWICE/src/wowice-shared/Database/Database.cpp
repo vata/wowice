@@ -21,7 +21,6 @@
 //////////////////////////////////////////////
 
 #include "DatabaseEnv.h"
-#include "../CrashHandler.h"
 #include "../NGLog.h"
 
 SQLCallbackBase::~SQLCallbackBase()
@@ -31,7 +30,7 @@ SQLCallbackBase::~SQLCallbackBase()
 
 Database::Database() : CThread()
 {
-	_counter=0;
+	_counter= 0;
 	Connections = NULL;
 	mConnectionCount = -1;   // Not connected.
 	ThreadRunning = true;

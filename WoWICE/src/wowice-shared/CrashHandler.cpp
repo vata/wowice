@@ -47,7 +47,6 @@ Mutex m_crashLock;
 
 #include <stdio.h>
 #include <time.h>
-//#include <windows.h>
 #include "Log.h"
 #include <tchar.h>
 
@@ -197,10 +196,6 @@ void PrintCrashInformation(PEXCEPTION_POINTERS except)
 	echo("%s repack by %s has crashed. Visit %s for support.", REPACK, REPACK_AUTHOR, REPACK_WEBSITE);
 #endif
 	echo("-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-\n");
-	/*echo("Call Stack: \n");
-	CStackWalker sw;
-	sw.ShowCallstack();
-	echo("-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-\n");*/
 }
 
 void CStackWalker::OnSymInit(LPCSTR szSearchPath, DWORD symOptions, LPCSTR szUserName)
@@ -229,10 +224,6 @@ void CStackWalker::OnCallstackEntry(CallstackEntryType eType, CallstackEntry &en
 			strcpy(entry.name, entry.undName);
 		if (entry.undFullName[0] != 0)
 			strcpy(entry.name, entry.undFullName);
-/*		if(!stricmp(entry.symTypeString, "-exported-"))
-			strcpy(entry.symTypeString, "dll");
-		for(uint32 i = 0; i < strlen(entry.symTypeString); ++i)
-			entry.symTypeString[i] = tolower(entry.symTypeString);*/
 
 		char * p = strrchr(entry.loadedImageName, '\\');
 		if(!p)
@@ -242,11 +233,6 @@ void CStackWalker::OnCallstackEntry(CallstackEntryType eType, CallstackEntry &en
 
 		if (entry.lineFileName[0] == 0)
 		{
-			//strcpy(entry.lineFileName, "(filename not available)");
-			//if (entry.moduleName[0] == 0)
-				//strcpy(entry.moduleName, "(module-name not available)");
-			//sprintf(buffer, "%s): %s: %s\n", (LPVOID) entry.offset, entry.moduleName, entry.lineFileName, entry.name);
-			//sprintf(buffer, "%s.
 			if(entry.name[0] == 0)
 				sprintf(entry.name, "%p", entry.offset);
 			
@@ -254,12 +240,8 @@ void CStackWalker::OnCallstackEntry(CallstackEntryType eType, CallstackEntry &en
 		}
 		else
 			sprintf(buffer, "%s!%s Line %u\n", p, entry.name, entry.lineNumber);
-		//OnOutput(buffer);
 
-		/*if(p)
-			OnOutput(p);
-		else*/
-			OnOutput(buffer);
+        OnOutput(buffer);
 	}
 }
 
@@ -305,9 +287,7 @@ int __cdecl HandleCrash(PEXCEPTION_POINTERS pExceptPtrs)
 		// not reached:P
 	}
 
-#ifndef FORCED_SERVER_KEEPALIVE
-	died=true;
-#endif
+	died = true;
 
 	// Create the date/time string
 	time_t curtime = time(NULL);
@@ -337,9 +317,7 @@ int __cdecl HandleCrash(PEXCEPTION_POINTERS pExceptPtrs)
 			FILE_ATTRIBUTE_NORMAL | FILE_FLAG_WRITE_THROUGH, 0);
 	}
 
-	PrintCrashInformation(pExceptPtrs);
-	// beep
-	//printf("\x7");
+    printf("\nServer has crashed.\n");
 	printf("\nCreating crash dump file %s\n", filename);
 	
 	if(hDump == INVALID_HANDLE_VALUE)
@@ -360,14 +338,10 @@ int __cdecl HandleCrash(PEXCEPTION_POINTERS pExceptPtrs)
 		CloseHandle(hDump);
 	}
 
-#ifndef FORCED_SERVER_KEEPALIVE
 	SetPriorityClass(GetCurrentProcess(), BELOW_NORMAL_PRIORITY_CLASS);
 	OnCrash(!ON_CRASH_BREAK_DEBUGGER);	  
+
 	return EXCEPTION_CONTINUE_SEARCH;
-#else
-	m_crashLock.Release();
-	return EXCEPTION_EXECUTE_HANDLER; //we do wish to handle this exception ourselfs = 1 = kill thread
-#endif
 }
 #endif
 

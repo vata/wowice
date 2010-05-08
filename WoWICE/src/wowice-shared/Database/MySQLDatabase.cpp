@@ -15,7 +15,6 @@
  */
 
 #include "DatabaseEnv.h"
-#include "../CrashHandler.h"
 #include "../NGLog.h"
 
 #if defined(ENABLE_DATABASE_MYSQL)
@@ -155,7 +154,7 @@ bool MySQLDatabase::_SendQuery(DatabaseConnection *con, const char* Sql, bool Se
 			result = _SendQuery(con, Sql, true);
 		}
 		else
-			printf("Sql query failed due to [%s], Query: [%s]\n", mysql_error( static_cast<MySQLDatabaseConnection*>(con)->MySql ), Sql);
+			Log.Error("Sql query failed due to [%s], Query: [%s]\n", mysql_error( static_cast<MySQLDatabaseConnection*>(con)->MySql ), Sql);
 	}
 
 	return (result == 0 ? true : false);

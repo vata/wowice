@@ -21,7 +21,7 @@ void WorldSession::HandleBattlefieldPortOpcode(WorldPacket &recv_data)
 	uint8 action;
 	uint32 bgtype;
 
-	if(!_player->IsInWorld()) return;
+	CHECK_INWORLD_ASSERT;
 	recv_data >> unk >> bgtype >> mapinfo >> action;
 
 	if(action == 0)
@@ -30,9 +30,10 @@ void WorldSession::HandleBattlefieldPortOpcode(WorldPacket &recv_data)
 	}
 	else
 	{
-		/* Usually the fields in the packet would've been used to check what instance we're porting into, however since we're not
+		/**********************************************************************************
+		 * Usually the fields in the packet would've been used to check what instance we're porting into, however since we're not
 		 * doing "queue multiple battleground types at once" we can just use our cached pointer in the player class. - Burlex
-		 */
+		 **********************************************************************************/
 
 		if(_player->m_pendingBattleground)
 			_player->m_pendingBattleground->PortPlayer(_player);
@@ -41,14 +42,15 @@ void WorldSession::HandleBattlefieldPortOpcode(WorldPacket &recv_data)
 
 void WorldSession::HandleBattlefieldStatusOpcode(WorldPacket &recv_data)
 {
-	/* This is done based on whether we are queued, inside, or not in a battleground.
-	 */
+/**********************************************************************************
+* This is done based on whether we are queued, inside, or not in a battleground.
+***********************************************************************************/
 	if(_player->m_pendingBattleground)		// Ready to port
-		BattlegroundManager.SendBattlefieldStatus(_player, 2, _player->m_pendingBattleground->GetType(), _player->m_pendingBattleground->GetId(), 120000, 0, _player->m_pendingBattleground->Rated());
+		BattlegroundManager.SendBattlefieldStatus(_player, BGSTATUS_READY, _player->m_pendingBattleground->GetType(), _player->m_pendingBattleground->GetId(), 120000, 0, _player->m_pendingBattleground->Rated());
 	else if(_player->m_bg)					// Inside a bg
-		BattlegroundManager.SendBattlefieldStatus(_player, 3, _player->m_bg->GetType(), _player->m_bg->GetId(), (uint32)UNIXTIME - _player->m_bg->GetStartTime(), _player->GetMapId(), _player->m_bg->Rated());
+		BattlegroundManager.SendBattlefieldStatus(_player, BGSTATUS_TIME, _player->m_bg->GetType(), _player->m_bg->GetId(), (uint32)UNIXTIME - _player->m_bg->GetStartTime(), _player->GetMapId(), _player->m_bg->Rated());
 	else									// None
-		BattlegroundManager.SendBattlefieldStatus(_player, 0, 0, 0, 0, 0, 0);	
+		BattlegroundManager.SendBattlefieldStatus(_player, BGSTATUS_NOFLAGS, 0, 0, 0, 0, 0);	
 }
 
 void WorldSession::HandleBattlefieldListOpcode(WorldPacket &recv_data)
@@ -60,12 +62,9 @@ void WorldSession::HandleBattlefieldListOpcode(WorldPacket &recv_data)
 	uint8 from;
 	recv_data >> from; // 0 - battlemaster, 1 - whatever
 
-	CHECK_INWORLD_RETURN;
-	/*Creature * pCreature = _player->GetMapMgr()->GetCreature( GET_LOWGUID_PART(guid) );
-	if( pCreature == NULL )
-		return;
-
-	SendBattlegroundList( pCreature, 0, from );*/
+	// weeeeeeeeeeeeeeeeeeeee
+	CHECK_INWORLD_ASSERT;
+	
 	BattlegroundManager.HandleBattlegroundListPacket(this, BGType, from);
 }
 
@@ -74,7 +73,9 @@ void WorldSession::SendBattlegroundList(Creature* pCreature, uint32 mapid)
 	if(!pCreature)
 		return;
 
-	/* we should have a bg id selection here. */
+	/**********************************************************************************
+	* uint32 t = BattleGroundType
+	**********************************************************************************/
 	uint32 t = BATTLEGROUND_WARSONG_GULCH;
 	if (mapid == 0)
 	{
@@ -103,8 +104,8 @@ void WorldSession::SendBattlegroundList(Creature* pCreature, uint32 mapid)
 void WorldSession::HandleBattleMasterHelloOpcode(WorldPacket &recv_data)
 {
 	CHECK_PACKET_SIZE(recv_data, 8);
-	if( !_player->IsInWorld() )
-		return;
+
+	CHECK_INWORLD_RETURN;
 
 	uint64 guid;
 	recv_data >> guid;
@@ -123,7 +124,7 @@ void WorldSession::HandleBattleMasterHelloOpcode(WorldPacket &recv_data)
 
 void WorldSession::HandleLeaveBattlefieldOpcode(WorldPacket &recv_data)
 {
-	if(_player->m_bg && _player->IsInWorld())
+	if( _player->m_bg && _player->IsInWorld() )
 		_player->m_bg->RemovePlayer(_player, false);
 }
 
@@ -221,7 +222,7 @@ void WorldSession::HandleBattlegroundPlayerPositionsOpcode(WorldPacket &recv_dat
 
 void WorldSession::HandleBattleMasterJoinOpcode(WorldPacket &recv_data)
 {
-	CHECK_INWORLD_RETURN
+	CHECK_INWORLD_RETURN;
 
 	if(_player->HasAura(BG_DESERTER))
 	{
@@ -247,7 +248,7 @@ void WorldSession::HandleBattleMasterJoinOpcode(WorldPacket &recv_data)
 
 void WorldSession::HandleArenaJoinOpcode(WorldPacket &recv_data)
 {
-	CHECK_INWORLD_RETURN
+	CHECK_INWORLD_RETURN;
 	if(_player->GetGroup() && _player->GetGroup()->m_isqueued)
 	{
 		SystemMessage("You are in a group that is already queued for a battleground or inside a battleground. Leave this first.");
@@ -258,7 +259,7 @@ void WorldSession::HandleArenaJoinOpcode(WorldPacket &recv_data)
     if(_player->m_bgIsQueued)
 		BattlegroundManager.RemovePlayerFromQueues(_player);
 
-	uint32 bgtype=0;
+	uint32 bgtype= 0;
 	uint64 guid;
 	uint8 arenacategory;
 	uint8 as_group;
@@ -286,7 +287,7 @@ void WorldSession::HandleArenaJoinOpcode(WorldPacket &recv_data)
 void WorldSession::HandleInspectHonorStatsOpcode( WorldPacket &recv_data )
 {
     CHECK_PACKET_SIZE( recv_data, 8 );
-	CHECK_INWORLD_RETURN
+	CHECK_INWORLD_RETURN;
 
     uint64 guid;
     recv_data >> guid;
@@ -325,7 +326,7 @@ void WorldSession::HandleInspectHonorStatsOpcode( WorldPacket &recv_data )
 void WorldSession::HandleInspectArenaStatsOpcode( WorldPacket & recv_data )
 {
     CHECK_PACKET_SIZE( recv_data, 8 );
-	CHECK_INWORLD_RETURN
+	CHECK_INWORLD_RETURN;
 
     uint64 guid;
     recv_data >> guid;
@@ -365,7 +366,7 @@ void WorldSession::HandleInspectArenaStatsOpcode( WorldPacket & recv_data )
 
 void WorldSession::HandlePVPLogDataOpcode(WorldPacket &recv_data)
 {
-	CHECK_INWORLD_RETURN
+	CHECK_INWORLD_RETURN;
 	if(_player->m_bg)
 		_player->m_bg->SendPVPData(_player);
 }

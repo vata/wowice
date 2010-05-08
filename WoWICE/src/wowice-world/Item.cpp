@@ -46,8 +46,8 @@ void Item::Init( uint32 high, uint32 low )
     ///////////////////////////// from virtual_constructor ///////////////
     memset( m_uint32Values, 0, (ITEM_END) * sizeof( uint32 ) );
 	SetUInt32Value( OBJECT_FIELD_TYPE,TYPE_ITEM | TYPE_OBJECT );
-	SetFloatValue( OBJECT_FIELD_SCALE_X, 1 );//always 1
-	SetFloatValue( OBJECT_FIELD_SCALE_X, 1 );//always 1
+	SetScale(  1 );//always 1
+	SetScale(  1 );//always 1
 	m_itemProto = NULL;
 	m_owner = NULL;
 	loot = NULL;
@@ -71,8 +71,8 @@ void Item::Init( uint32 high, uint32 low )
 	m_extensions = NULL;
 	m_loadedFromDB = false;
     //////////////////////////////////////////////////////////
-	SetUInt32Value( OBJECT_FIELD_GUID, low );
-	SetUInt32Value( OBJECT_FIELD_GUID + 1, high );
+	SetLowGUID( low );
+	SetHighGUID( high );
 	m_wowGuid.Init( GetGUID() );
 }
 
@@ -105,27 +105,29 @@ Item::~Item()
 
 void Item::Create( uint32 itemid, Player* owner )
 {
-	SetUInt32Value( OBJECT_FIELD_ENTRY, itemid );
- 
+	SetEntry(  itemid );
+
 	if( owner != NULL )
 	{
-		SetUInt64Value( ITEM_FIELD_OWNER, owner->GetGUID() );
-		SetUInt64Value( ITEM_FIELD_CONTAINED, owner->GetGUID() );
+        uint64 OwnerGUID = owner->GetGUID();
+
+        SetOWnerGUID( OwnerGUID );
+		SetContainerGUID( OwnerGUID );
 	}
 
-	SetUInt32Value( ITEM_FIELD_STACK_COUNT, 1 );
+	SetStackCount(  1 );
 
 	m_itemProto = ItemPrototypeStorage.LookupEntry( itemid );
 
 	ASSERT( m_itemProto );
 	 
-	SetUInt32Value( ITEM_FIELD_SPELL_CHARGES, m_itemProto->Spells[0].Charges );
-	SetUInt32Value( ITEM_FIELD_SPELL_CHARGES+1, m_itemProto->Spells[1].Charges );
-	SetUInt32Value( ITEM_FIELD_SPELL_CHARGES+2, m_itemProto->Spells[2].Charges );
-	SetUInt32Value( ITEM_FIELD_SPELL_CHARGES+3, m_itemProto->Spells[3].Charges );
-	SetUInt32Value( ITEM_FIELD_SPELL_CHARGES+4, m_itemProto->Spells[4].Charges );
-	SetUInt32Value( ITEM_FIELD_MAXDURABILITY, m_itemProto->MaxDurability );
-	SetUInt32Value( ITEM_FIELD_DURABILITY, m_itemProto->MaxDurability );
+	SetCharges( 0, m_itemProto->Spells[0].Charges );
+	SetCharges( 1, m_itemProto->Spells[1].Charges );
+	SetCharges( 2, m_itemProto->Spells[2].Charges );
+	SetCharges( 3, m_itemProto->Spells[3].Charges );
+	SetCharges( 4, m_itemProto->Spells[4].Charges );
+    SetDurability( m_itemProto->MaxDurability );
+	SetDurabilityMax( m_itemProto->MaxDurability );
 
 
 	m_owner = owner;
@@ -150,17 +152,17 @@ void Item::LoadFromDB(Field* fields, Player* plr, bool light )
 	else
 		locked = false;
 	
-	SetUInt32Value( OBJECT_FIELD_ENTRY, itemid );
+	SetEntry(  itemid );
 	m_owner = plr;
 
 	wrapped_item_id=fields[3].GetUInt32();
-	m_uint32Values[ITEM_FIELD_GIFTCREATOR] = fields[4].GetUInt32();
-	m_uint32Values[ITEM_FIELD_CREATOR] = fields[5].GetUInt32();
+	SetGiftCreatorGUID( fields[4].GetUInt32() );
+    SetCreatorGUID( fields[5].GetUInt32() );
 
 	count = fields[6].GetUInt32();
 	if( count > m_itemProto->MaxCount && (m_owner && !m_owner->ItemStackCheat) )
 		count = m_itemProto->MaxCount;
-	SetUInt32Value( ITEM_FIELD_STACK_COUNT, count);
+	SetStackCount(  count);
 
 	// Again another for that did not indent to make it do anything for more than 
 	// one iteration x == 0 was the only one executed
@@ -168,7 +170,7 @@ void Item::LoadFromDB(Field* fields, Player* plr, bool light )
 	{
 		if( m_itemProto->Spells[x].Id )
 		{
-			SetUInt32Value( ITEM_FIELD_SPELL_CHARGES + x , fields[7].GetUInt32() );
+            SetCharges( x, fields[ 7 ].GetUInt32() );
 			break;
 		}
 	}
@@ -184,8 +186,8 @@ void Item::LoadFromDB(Field* fields, Player* plr, bool light )
 
 	SetUInt32Value( ITEM_FIELD_ITEM_TEXT_ID, fields[11].GetUInt32() );
 
-	SetUInt32Value( ITEM_FIELD_MAXDURABILITY, m_itemProto->MaxDurability );
-	SetUInt32Value( ITEM_FIELD_DURABILITY, fields[12].GetUInt32() );
+	SetDurabilityMax( m_itemProto->MaxDurability );
+	SetDurability( fields[12].GetUInt32() );
 
 	if( light )
 		return;
@@ -201,7 +203,7 @@ void Item::LoadFromDB(Field* fields, Player* plr, bool light )
 	{
 		if( sscanf( (*itr).c_str(), "%u,%u,%u", (unsigned int*)&enchant_id, (unsigned int*)&time_left, (unsigned int*)&enchslot) == 3 )
 		{
-			entry = dbcEnchant.LookupEntry( enchant_id );
+			entry = dbcEnchant.LookupEntryForced( enchant_id );
 			if( entry && entry->Id == enchant_id && m_itemProto->SubClass != ITEM_SUBCLASS_WEAPON_THROWN)
 			{
 				AddEnchantment( entry, time_left, ( time_left == 0 ), false, false, enchslot );
@@ -243,40 +245,40 @@ void Item::LoadFromDB(Field* fields, Player* plr, bool light )
 	ApplyRandomProperties( false );
 
 	// Charter stuff
-	if(m_uint32Values[OBJECT_FIELD_ENTRY] == ITEM_ENTRY_GUILD_CHARTER)
+	if( GetEntry() == ITEM_ENTRY_GUILD_CHARTER)
 	{
-		SetUInt32Value( ITEM_FIELD_FLAGS, 1 );
-		SetUInt32Value( ITEM_FIELD_STACK_COUNT, 1 );
-		SetUInt32Value( ITEM_FIELD_PROPERTY_SEED, 57813883 );
+        SoulBind();
+		SetStackCount(  1 );
+		SetItemRandomSuffixFactor( 57813883 );
 		if( plr != NULL && plr->m_charters[CHARTER_TYPE_GUILD] )
-			SetUInt32Value( ITEM_FIELD_ENCHANTMENT_1_1, plr->m_charters[CHARTER_TYPE_GUILD]->GetID() );
+			SetEnchantmentId( 0, plr->m_charters[CHARTER_TYPE_GUILD]->GetID() );
 	}
 
-	if( m_uint32Values[OBJECT_FIELD_ENTRY] == ARENA_TEAM_CHARTER_2v2 )
+	if( GetEntry() == ARENA_TEAM_CHARTER_2v2 )
 	{
-		SetUInt32Value( ITEM_FIELD_FLAGS, 1 );
-		SetUInt32Value( ITEM_FIELD_STACK_COUNT, 1 );
-		SetUInt32Value( ITEM_FIELD_PROPERTY_SEED, 57813883 );
+        SoulBind();
+		SetStackCount(  1 );
+		SetItemRandomSuffixFactor( 57813883 );
 		if( plr != NULL && plr->m_charters[CHARTER_TYPE_ARENA_2V2] )
-			SetUInt32Value( ITEM_FIELD_ENCHANTMENT_1_1, plr->m_charters[CHARTER_TYPE_ARENA_2V2]->GetID() );
+			SetEnchantmentId( 0, plr->m_charters[CHARTER_TYPE_ARENA_2V2]->GetID() );
 	}
 
-	if( m_uint32Values[OBJECT_FIELD_ENTRY] == ARENA_TEAM_CHARTER_3v3 )
+	if( GetEntry() == ARENA_TEAM_CHARTER_3v3 )
 	{
-		SetUInt32Value( ITEM_FIELD_FLAGS, 1 );
-		SetUInt32Value( ITEM_FIELD_STACK_COUNT, 1 );
-		SetUInt32Value( ITEM_FIELD_PROPERTY_SEED, 57813883 );
+        SoulBind();
+		SetStackCount(  1 );
+		SetItemRandomSuffixFactor( 57813883 );
 		if( plr != NULL && plr->m_charters[CHARTER_TYPE_ARENA_3V3] )
-			SetUInt32Value( ITEM_FIELD_ENCHANTMENT_1_1, plr->m_charters[CHARTER_TYPE_ARENA_3V3]->GetID() );
+			SetEnchantmentId( 0,  plr->m_charters[CHARTER_TYPE_ARENA_3V3]->GetID() );
 	}
 
-	if( m_uint32Values[OBJECT_FIELD_ENTRY] == ARENA_TEAM_CHARTER_5v5 )
+	if( GetEntry() == ARENA_TEAM_CHARTER_5v5 )
 	{
-		SetUInt32Value( ITEM_FIELD_FLAGS, 1 );
-		SetUInt32Value( ITEM_FIELD_STACK_COUNT, 1 );
-		SetUInt32Value( ITEM_FIELD_PROPERTY_SEED, 57813883 );
+        SoulBind();
+		SetStackCount(  1 );
+		SetItemRandomSuffixFactor(  57813883 );
 		if( plr != NULL && plr->m_charters[CHARTER_TYPE_ARENA_5V5] )
-			SetUInt32Value( ITEM_FIELD_ENCHANTMENT_1_1, plr->m_charters[CHARTER_TYPE_ARENA_5V5]->GetID() );
+			SetEnchantmentId( 0,  plr->m_charters[CHARTER_TYPE_ARENA_5V5]->GetID() );
 	}
 }
 
@@ -335,23 +337,43 @@ void Item::SaveToDB( int8 containerslot, int8 slot, bool firstsave, QueryBuffer*
 	if( !m_isDirty && !firstsave )
 		return;
 
+    uint64 GiftCreatorGUID = GetGiftCreatorGUID();
+    uint64 CreatorGUID = GetCreatorGUID();
+
 	std::stringstream ss;
+    
+    ss << "DELETE FROM playeritems WHERE guid = " << GetLowGUID() << ";";
 
-	ss << "REPLACE INTO playeritems VALUES(";
+    if( firstsave )
+		CharacterDatabase.WaitExecute( ss.str().c_str() );
+	else
+	{
+		if( buf == NULL )
+			CharacterDatabase.Execute( ss.str().c_str() );
+		else
+			buf->AddQueryNA( ss.str().c_str() );
+	}
 
-	ss << m_uint32Values[ITEM_FIELD_OWNER] << ",";
-	ss << m_uint32Values[OBJECT_FIELD_GUID] << ",";
-	ss << m_uint32Values[OBJECT_FIELD_ENTRY] << ",";
+
+    ss.rdbuf()->str("");
+
+    uint64 ownerGUID = GetOwnerGUID();
+
+	ss << "INSERT INTO playeritems VALUES(";
+
+    ss << ( GUID_LOPART( ownerGUID ) ) << ",";
+	ss << GetLowGUID() << ",";
+	ss << GetEntry() << ",";
 	ss << wrapped_item_id << ",";
-	ss << m_uint32Values[ITEM_FIELD_GIFTCREATOR] << ",";
-	ss << m_uint32Values[ITEM_FIELD_CREATOR] << ",";
+	ss << ( GUID_LOPART( GiftCreatorGUID ) ) << ",";
+    ss << ( GUID_LOPART( CreatorGUID ) ) << ",";
 
-	ss << GetUInt32Value(ITEM_FIELD_STACK_COUNT) << ",";
-	ss << GetChargesLeft() << ",";
-	ss << GetUInt32Value(ITEM_FIELD_FLAGS) << ",";
+	ss << GetStackCount() << ",";
+	ss << int32( GetChargesLeft() ) << ",";
+	ss << uint32( m_uint32Values[ ITEM_FIELD_FLAGS ] ) << ",";
 	ss << random_prop << ", " << random_suffix << ", ";
 	ss << GetUInt32Value(ITEM_FIELD_ITEM_TEXT_ID) << ",";
-	ss << GetUInt32Value(ITEM_FIELD_DURABILITY) << ",";
+	ss << GetDurability() << ",";
 	ss << static_cast<int>(containerslot) << ",";
 	ss << static_cast<int>(slot) << ",'";
 
@@ -369,14 +391,6 @@ void Item::SaveToDB( int8 containerslot, int8 slot, bool firstsave, QueryBuffer*
 			if( remaining_duration < 0 )
 				remaining_duration = 0;
 
-			/*
-			if( !itr->second.RemoveAtLogout && (remaining_duration > 5 && itr->second.Slot != 2) || itr->second.Slot == 2)  // no point saving stuff with < 5 seconds... unless is perm enchant
-			{
-				ss << itr->second.Enchantment->Id << ",";
-				ss << remaining_duration << ",";
-				ss << itr->second.Slot << ";";
-			}
-			*/
 
 			if( itr->second.Enchantment && ( remaining_duration && remaining_duration > 5 || itr->second.Duration == 0 ) )
 			{
@@ -418,7 +432,7 @@ void Item::SaveToDB( int8 containerslot, int8 slot, bool firstsave, QueryBuffer*
 		if( buf == NULL )
 			CharacterDatabase.Execute( ss.str().c_str() );
 		else
-			buf->AddQueryStr( ss.str() );
+            buf->AddQueryNA( ss.str().c_str() );
 	}
 
 	m_isDirty = false;
@@ -439,7 +453,7 @@ void Item::DeleteFromDB()
 		}
 	}
 
-	CharacterDatabase.Execute( "DELETE FROM playeritems WHERE guid = %u", m_uint32Values[OBJECT_FIELD_GUID] );
+	CharacterDatabase.Execute( "DELETE FROM playeritems WHERE guid = %u", m_uint32Values[LOWGUID] );
 }
 
 void Item::DeleteMe()
@@ -588,8 +602,9 @@ void Item::RemoveFromWorld()
 void Item::SetOwner( Player* owner )
 { 
 	if( owner != NULL )
-		SetUInt64Value( ITEM_FIELD_OWNER, owner->GetGUID() );
-	else SetUInt64Value( ITEM_FIELD_OWNER, 0 );
+		SetOWnerGUID( owner->GetGUID() );
+	else 
+        SetOWnerGUID( 0 );
 
 	m_owner = owner; 
 }
@@ -664,7 +679,7 @@ int32 Item::AddEnchantment( EnchantEntry* Enchantment, uint32 Duration, bool Per
 	// Add the removal event.
 	if( Duration )
 	{
-		sEventMgr.AddEvent( this, &Item::RemoveEnchantment, uint32(Slot), EVENT_REMOVE_ENCHANTMENT1 + Slot, Duration * 1000, 1, 0 );
+		sEventMgr.AddEvent( this, &Item::RemoveEnchantment, uint32(Slot), EVENT_REMOVE_ENCHANTMENT1 + Slot, Duration * 1000, 1, EVENT_FLAG_DO_NOT_EXECUTE_IN_WORLD_CONTEXT );
 	}
 
 	// No need to send the log packet, if the owner isn't in world (we're still loading)
@@ -676,10 +691,10 @@ int32 Item::AddEnchantment( EnchantEntry* Enchantment, uint32 Duration, bool Per
 		WorldPacket EnchantLog( SMSG_ENCHANTMENTLOG, 25 );
 		EnchantLog << m_owner->GetGUID();
 		EnchantLog << m_owner->GetGUID();
-		EnchantLog << m_uint32Values[OBJECT_FIELD_ENTRY];
+		EnchantLog << GetEntry();
 		EnchantLog << Enchantment->Id;
 		EnchantLog << uint8(0);
-		m_owner->GetSession()->SendPacket( &EnchantLog );
+		m_owner->SendPacket( &EnchantLog );
 
 		if( m_owner->GetTradeTarget() )
 		{
@@ -779,7 +794,7 @@ void Item::ApplyEnchantmentBonus( uint32 Slot, bool Apply )
 							float speed = (float)GetProto()->Delay;
 							/////// procChance calc ///////
 							float ppm = 0;
-							SpellEntry* sp = dbcSpell.LookupEntry( Entry->spell[c] );
+							SpellEntry* sp = dbcSpell.LookupEntryForced( Entry->spell[c] );
 							if( sp )
 							{
 								switch( sp->NameHash )
@@ -854,7 +869,7 @@ void Item::ApplyEnchantmentBonus( uint32 Slot, bool Apply )
 						
 						if( Entry->spell[c] != 0 )
 						{
-							sp = dbcSpell.LookupEntry( Entry->spell[c] );
+							sp = dbcSpell.LookupEntryForced( Entry->spell[c] );
 							if( sp == NULL )
 								continue;
 
@@ -1284,7 +1299,7 @@ uint32 Item::CountGemsWithLimitId(uint32 LimitId)
 void Item::EventRemoveItem(){
     assert( this->GetOwner() != NULL );
 
-    this->GetOwner()->GetItemInterface()->SafeFullRemoveItemByGuid( this->GetGUID() );
+    m_owner->GetItemInterface()->SafeFullRemoveItemByGuid( this->GetGUID() );
 }
 
 void Item::SendDurationUpdate(){
@@ -1304,7 +1319,7 @@ void Item::SendDurationUpdate(){
     WorldPacket durationupdate( SMSG_ITEM_TIME_UPDATE, 12 );
     durationupdate << uint64( GetGUID() );
     durationupdate << uint32( GetItemExpireTime() - UNIXTIME );
-    this->GetOwner()->GetSession()->SendPacket( &durationupdate );
+    m_owner->SendPacket( &durationupdate );
 
 }
 
@@ -1348,14 +1363,14 @@ void Item::RemoveFromRefundableMap(){
 
 uint32 Item::RepairItemCost()
 {
-	DurabilityCostsEntry * dcosts = dbcDurabilityCosts.LookupEntry( m_itemProto->ItemLevel );
+	DurabilityCostsEntry * dcosts = dbcDurabilityCosts.LookupEntryForced( m_itemProto->ItemLevel );
 	if( dcosts == NULL )
 	{
 		sLog.outError("Repair: Unknown item level (%u)", dcosts);
 		return 0;
 	}
 
-	DurabilityQualityEntry * dquality = dbcDurabilityQuality.LookupEntry( ( m_itemProto->Quality + 1 ) * 2);
+	DurabilityQualityEntry * dquality = dbcDurabilityQuality.LookupEntryForced( ( m_itemProto->Quality + 1 ) * 2);
 	if( dquality == NULL )
 	{
 		sLog.outError("Repair: Unknown item quality (%u)", dquality);
@@ -1367,17 +1382,26 @@ uint32 Item::RepairItemCost()
 	return cost;
 }
 
-bool Item::RepairItem(Player * pPlayer)
+bool Item::RepairItem(Player * pPlayer, bool guildmoney, int32 * pCost) //pCost is needed for the guild log
 {
 	//int32 cost = (int32)pItem->GetUInt32Value( ITEM_FIELD_MAXDURABILITY ) - (int32)pItem->GetUInt32Value( ITEM_FIELD_DURABILITY );
 	int32 cost = RepairItemCost();
 	if( cost <= 0 )
 		return false;
+	if( guildmoney && pPlayer->IsInGuild() ) 
+	{
+		if( !pPlayer->GetGuildMember()->RepairItem((uint32)cost) )
+			return false;//we should tell the client that he can't repair with the guild gold.
+		if(  pCost != NULL )
+			*pCost += cost;
+	}
+	else//we pay with our gold
+	{
+		if( !pPlayer->HasGold(cost) )
+			return false;
 
-	if( cost > (int32)pPlayer->GetUInt32Value( PLAYER_FIELD_COINAGE ) )
-		return false;
-
-	pPlayer->ModUnsigned32Value( PLAYER_FIELD_COINAGE, -cost );
+		pPlayer->ModGold( -cost );
+	}
 	SetDurabilityToMax();
 	m_isDirty = true;
 	return true;
