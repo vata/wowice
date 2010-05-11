@@ -246,7 +246,7 @@ bool Master::Run(int argc, char ** argv)
 		Log.Success( "Config", ">> configs/world.conf" );
 	else
 	{
-		Log.Error( "Config", ">> configs/world.conf" );
+		sLog.outError( "Config", ">> configs/world.conf" );
 		return false;
 	}
 
@@ -254,7 +254,7 @@ bool Master::Run(int argc, char ** argv)
 		Log.Success( "Config", ">> configs/optional.conf");
 	else
 	{
-		Log.Error("Config", ">> configs/optional.conf");
+		sLog.outError("Config", ">> configs/optional.conf");
 		return false;
 	}
 
@@ -272,7 +272,7 @@ bool Master::Run(int argc, char ** argv)
 		char cmd[1024];
 		char banner[1024];
 		snprintf(banner, 1024, BANNER, BUILD_TAG, BUILD_REVISION, CONFIG, PLATFORM_TEXT, ARCH);
-		snprintf(cmd, 1024, "./wowice-crashreport -r %d -d \"%s\"", BUILD_REVISION, banner);
+		snprintf(cmd, 1024, "./wowice-crashreport -r %d -d \'%s\'", BUILD_REVISION, banner);
 		system(cmd);
 	}
 	unlink("wowice.uptime");
@@ -299,10 +299,6 @@ bool Master::Run(int argc, char ** argv)
 	Log.Line();
 	sLog.outString( "" );
 
-#ifdef GM_SCRIPT
-	ScriptSystem = new ScriptEngine;
-	ScriptSystem->Reload();
-#endif
 
 	new EventMgr;
 	new World;

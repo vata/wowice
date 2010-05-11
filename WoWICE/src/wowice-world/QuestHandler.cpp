@@ -111,9 +111,11 @@ void WorldSession::HandleQuestGiverQueryQuestOpcode( WorldPacket & recv_data )
 	uint64 guid;
 	uint32 quest_id;
 	uint32 status = 0;
+	uint8 unk;
 
 	recv_data >> guid;
 	recv_data >> quest_id;
+	recv_data >> unk;
 
 	Object *qst_giver = NULL;
 
@@ -155,8 +157,6 @@ void WorldSession::HandleQuestGiverQueryQuestOpcode( WorldPacket & recv_data )
 //------cebernic: added it for script engine
     if ( !quest_giver ) return;
     ItemPrototype *itemProto = quest_giver->GetProto();
-	  if(!itemProto)
-		  return;
 
     if ( itemProto->Bonding != ITEM_BIND_ON_USE || quest_giver->IsSoulbound() ){ // SoulBind item will be used after SoulBind()
       if(sScriptMgr.CallScriptedItem(quest_giver,GetPlayer()))
@@ -357,9 +357,9 @@ void WorldSession::HandleQuestgiverAcceptQuestOpcode( WorldPacket & recv_data )
 				item->DeleteMe();
 			}
 			else
-				SendItemPushResult(item, false, true, false, true, 
+                _player->SendItemPushResult( false, true, false, true, 
 				_player->GetItemInterface()->LastSearchItemBagSlot(), _player->GetItemInterface()->LastSearchItemSlot(),
-				1);
+				1, item->GetEntry(), item->GetItemRandomSuffixFactor(), item->GetItemRandomPropertyId(), item->GetStackCount()  );
 		}
 	}
 
@@ -368,7 +368,7 @@ void WorldSession::HandleQuestgiverAcceptQuestOpcode( WorldPacket & recv_data )
 		Item * item = objmgr.CreateItem( qst->srcitem, _player );
 		if(item)
 		{
-			item->SetUInt32Value(ITEM_FIELD_STACK_COUNT, qst->srcitemcount ? qst->srcitemcount : 1);
+			item->SetStackCount(  qst->srcitemcount ? qst->srcitemcount : 1);
 			if(!_player->GetItemInterface()->AddItemToFreeSlot(item))
 				item->DeleteMe();
 		}
@@ -778,13 +778,12 @@ void WorldSession::HandlePushQuestToPartyOpcode(WorldPacket &recv_data)
 					Player *pPlayer = (*itr)->m_loggedInPlayer;
 					if(pPlayer && pPlayer->GetGUID() !=  pguid)
 					{
-						WorldPacket data( MSG_QUEST_PUSH_RESULT, 13 );
-						data << pPlayer->GetGUID();
-						data << uint32(QUEST_SHARE_MSG_SHARING_QUEST);
-						data << uint8(0);
+						WorldPacket data( MSG_QUEST_PUSH_RESULT, 9 );
+						data << uint64(pPlayer->GetGUID());
+						data << uint8(QUEST_SHARE_MSG_SHARING_QUEST);
 						_player->GetSession()->SendPacket(&data);
-						
-						uint32 response = 0;
+
+						uint8 response = QUEST_SHARE_MSG_SHARING_QUEST;
 						uint32 status = sQuestMgr.PlayerMeetsReqs(pPlayer, pQuest, false);
 
 						// Checks if the player has the quest
@@ -808,20 +807,31 @@ void WorldSession::HandlePushQuestToPartyOpcode(WorldPacket &recv_data)
 							response = QUEST_SHARE_MSG_LOG_FULL;
 						}
 						// Checks if the player is dueling
-						else if( pPlayer->DuelingWith || pPlayer->GetQuestSharer() )
+						else if( pPlayer->DuelingWith ) // || pPlayer->GetQuestSharer() ) //VLack: A possible lock up can occur if we don't zero out questsharer, because sometimes the client does not send the reply packet.. This of course eliminates the check on it, so it is possible to spam group members with quest sharing, but hey, they are YOUR FRIENDS, and better than not being able to receive quest sharing requests at all!
 						{
 							response = QUEST_SHARE_MSG_BUSY;
 						}
 
-						if( response > 0 )
+						//VLack: The quest giver player has to be visible for pPlayer, or else the client will show a non-functional "complete quest" panel instead of the "accept quest" one!
+						//We could either push a full player create for pPlayer that would cause problems later (because they are still out of range and this would have to be handled somehow),
+						//or create a fake bad response, as we no longer have an out of range response. I'll go with the latter option and send that the other player is busy...
+						//Also, pPlayer's client can send a busy response automatically even if the players see each other, but they are still too far away.
+						//But sometimes nothing happens on pPlayer's client (near the end of mutual visibility line), no quest window and no busy response either. This has to be solved later, maybe a distance check here...
+						if( response == QUEST_SHARE_MSG_SHARING_QUEST && !pPlayer->IsVisible(_player) )
+						{
+							response = QUEST_SHARE_MSG_BUSY;
+						}
+
+						if( response != QUEST_SHARE_MSG_SHARING_QUEST )
 						{
 							sQuestMgr.SendPushToPartyResponse( _player, pPlayer, response );
 							continue;
 						}
+
 						data.clear();
 						sQuestMgr.BuildQuestDetails(&data, pQuest, _player, 1, pPlayer->GetSession()->language, pPlayer);
+						pPlayer->SetQuestSharer(pguid); //VLack: better to set this _before_ sending out the packet, so no race conditions can happen on heavily loaded servers.
 						pPlayer->GetSession()->SendPacket(&data);
-						pPlayer->SetQuestSharer(pguid);
 					}
 				}
 				_player->GetGroup()->Unlock();
@@ -836,7 +846,11 @@ void WorldSession::HandleQuestPushResult(WorldPacket& recvPacket)
 	if(!_player->IsInWorld()) return;
 	uint64 guid;
 	uint8 msg;
-	recvPacket >> guid >> msg;
+	recvPacket >> guid;
+	uint32 questid=0;
+	if ( recvPacket.size()>=13 ) //VLack: The client can send a 13 byte packet, where the result message is the 13th byte, and we have some data before it... Usually it is the quest id, but I have seen this as uint32(0) too.
+		recvPacket >> questid;
+	recvPacket >> msg;
 
 	sLog.outDetail( "WORLD: Received MSG_QUEST_PUSH_RESULT" );
 
@@ -845,10 +859,12 @@ void WorldSession::HandleQuestPushResult(WorldPacket& recvPacket)
 		Player *pPlayer = objmgr.GetPlayer(GetPlayer()->GetQuestSharer());
 		if(pPlayer)
 		{
-			WorldPacket data(MSG_QUEST_PUSH_RESULT, 13);
-			data << guid;
-			data << uint32(msg);
-			data << uint8(0);
+			WorldPacket data(MSG_QUEST_PUSH_RESULT, 9);
+			if ( recvPacket.size()>=13 ) //VLack: In case the packet was the longer one, its guid is the quest giver player, thus in the response we have to tell him that _this_ player reported the particular state. I think this type of response could also eliminate our SetQuestSharer/GetQuestSharer mess and its possible lock up conditions...
+				data << uint64(_player->GetGUID());
+			else
+				data << uint64(guid);
+			data << uint8(msg);
 			pPlayer->GetSession()->SendPacket(&data);
 			GetPlayer()->SetQuestSharer(0);
 		}

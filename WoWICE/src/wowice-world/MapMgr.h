@@ -20,8 +20,8 @@
 #ifndef __MAPMGR_H
 #define __MAPMGR_H
 
-#define IS_PERSISTENT_INSTANCE(p) ( ((p)->m_mapInfo->type == INSTANCE_ARENA && (p)->m_difficulty >= MODE_HEROIC) || (p)->m_mapInfo->type == INSTANCE_RAID )
-#define IS_RESETABLE_INSTANCE(p) ( !(p)->m_persistent && ((p)->m_mapInfo->type == INSTANCE_NONRAID || ((p)->m_mapInfo->type == INSTANCE_ARENA && (p)->m_difficulty == MODE_NORMAL)) )
+#define IS_PERSISTENT_INSTANCE(p) ( ((p)->m_mapInfo->type == INSTANCE_MULTIMODE && (p)->m_difficulty >= MODE_HEROIC) || (p)->m_mapInfo->type == INSTANCE_RAID )
+#define IS_RESETABLE_INSTANCE(p) ( !(p)->m_persistent && ((p)->m_mapInfo->type == INSTANCE_NONRAID || ((p)->m_mapInfo->type == INSTANCE_MULTIMODE && (p)->m_difficulty == MODE_NORMAL)) )
 #define CHECK_INSTANCE_GROUP(p,g) ( (p)->m_creatorGroup == 0 || ((g) && (p)->m_creatorGroup == (g)->GetID()) )
 
 #define GO_GUID_RECYCLE_INTERVAL	2048	//client will cache GO positions. Using same guid for same client will make GO appear at wrong possition so we try to avoid assigning same guid
@@ -98,33 +98,32 @@ public:
 ////////////////////////////////////////////////////////
 // Local (mapmgr) storage/generation of GameObjects
 /////////////////////////////////////////////
-	uint32 m_GOArraySize;
 	uint32 m_GOHighGuid;
-	GameObject ** m_GOStorage;
+    std::vector< GameObject* > GOStorage;
 	GameObject * CreateGameObject(uint32 entry);
 	GameObject * CreateAndSpawnGameObject(uint32 entryID, float x, float y, float z, float o, float scale);
 
-	WoWICE_INLINE uint32 GenerateGameobjectGuid() { return ++m_GOHighGuid; }
-	WoWICE_INLINE GameObject * GetGameObject(uint32 guid)
+	uint32 GenerateGameobjectGuid() { return ++m_GOHighGuid; }
+	GameObject * GetGameObject(uint32 guid)
 	{
 		if(guid > m_GOHighGuid)
 			return 0;
-		return m_GOStorage[guid];
+		return GOStorage[guid];
 	}
 
 /////////////////////////////////////////////////////////
 // Local (mapmgr) storage/generation of Creatures
 /////////////////////////////////////////////
-	uint32 m_CreatureArraySize;
 	uint32 m_CreatureHighGuid;
-	Creature ** m_CreatureStorage;
+    std::vector< Creature* > CreatureStorage;
+	CreatureSet::iterator creature_iterator;//required by owners despawning creatures and deleting *(++itr)
 	Creature * CreateCreature(uint32 entry, bool isVehicle = false);
 
-	__inline Creature * GetCreature(uint32 guid)
+	Creature * GetCreature(uint32 guid)
 	{
 		if(guid > m_CreatureHighGuid)
 			return NULL;
-		return m_CreatureStorage[guid];
+		return CreatureStorage[ guid ];
 	}
 
 //////////////////////////////////////////////////////////
@@ -135,7 +134,7 @@ public:
 	DynamicObjectStorageMap m_DynamicObjectStorage;
 	DynamicObject * CreateDynamicObject();
 
-	WoWICE_INLINE DynamicObject * GetDynamicObject(uint32 guid)
+	DynamicObject * GetDynamicObject(uint32 guid)
 	{
 		DynamicObjectStorageMap::iterator itr = m_DynamicObjectStorage.find(guid);
 		return (itr != m_DynamicObjectStorage.end()) ? itr->second : NULL;
@@ -146,7 +145,7 @@ public:
 ///////////////////////////////////////////
 	typedef HM_NAMESPACE::hash_map<uint32, Pet*> PetStorageMap;
 	PetStorageMap m_PetStorage;
-	__inline Pet * GetPet(uint32 guid)
+	Pet * GetPet(uint32 guid)
 	{
 		PetStorageMap::iterator itr = m_PetStorage.find(guid);
 		return (itr != m_PetStorage.end()) ? itr->second : NULL;
@@ -159,7 +158,7 @@ public:
 	// double typedef lolz// a compile breaker..
 	typedef HM_NAMESPACE::hash_map<uint32, Player*> PlayerStorageMap;
 	PlayerStorageMap m_PlayerStorage;
-	__inline Player * GetPlayer(uint32 guid)
+	Player * GetPlayer(uint32 guid)
 	{
 		PlayerStorageMap::iterator itr = m_PlayerStorage.find(guid);
 		return (itr != m_PlayerStorage.end()) ? itr->second : NULL;
@@ -201,31 +200,31 @@ public:
 	void UpdateCellActivity(uint32 x, uint32 y, int radius);
 
 	// Terrain Functions
-	WoWICE_INLINE float  GetLandHeight(float x, float y) { return GetBaseMap()->GetLandHeight(x, y); }
-	WoWICE_INLINE bool   IsUnderground(float x, float y,float z) { return GetBaseMap()->GetLandHeight(x, y) > (z+0.5f); }
-	WoWICE_INLINE float  GetWaterHeight(float x, float y) { return GetBaseMap()->GetWaterHeight(x, y); }
-	WoWICE_INLINE uint8  GetWaterType(float x, float y) { return GetBaseMap()->GetWaterType(x, y); }
-	WoWICE_INLINE uint8  GetWalkableState(float x, float y) { return GetBaseMap()->GetWalkableState(x, y); }
-	WoWICE_INLINE uint16 GetAreaID(float x, float y) { return GetBaseMap()->GetAreaID(x, y); }
+	float  GetLandHeight(float x, float y) { return GetBaseMap()->GetLandHeight(x, y); }
+	bool   IsUnderground(float x, float y,float z) { return GetBaseMap()->GetLandHeight(x, y) > (z+0.5f); }
+	float  GetWaterHeight(float x, float y) { return GetBaseMap()->GetWaterHeight(x, y); }
+	uint8  GetWaterType(float x, float y) { return GetBaseMap()->GetWaterType(x, y); }
+	uint8  GetWalkableState(float x, float y) { return GetBaseMap()->GetWalkableState(x, y); }
+	uint16 GetAreaID(float x, float y) { return GetBaseMap()->GetAreaID(x, y); }
 
-	WoWICE_INLINE uint32 GetMapId() { return _mapId; }
+	uint32 GetMapId() { return _mapId; }
 
 	void PushToProcessed(Player* plr);
 
-	WoWICE_INLINE bool HasPlayers() { return (m_PlayerStorage.size() > 0); }
-	WoWICE_INLINE bool IsCombatInProgress() { return (_combatProgress.size() > 0); }
+	bool HasPlayers() { return (m_PlayerStorage.size() > 0); }
+	bool IsCombatInProgress() { return (_combatProgress.size() > 0); }
 	void TeleportPlayers();
 
-	WoWICE_INLINE uint32 GetInstanceID() { return m_instanceID; }
-	WoWICE_INLINE MapInfo *GetMapInfo() { return pMapInfo; }
+	uint32 GetInstanceID() { return m_instanceID; }
+	MapInfo *GetMapInfo() { return pMapInfo; }
 
 	bool _shutdown;
 
-	WoWICE_INLINE MapScriptInterface * GetInterface() { return ScriptInterface; }
+	MapScriptInterface * GetInterface() { return ScriptInterface; }
 	virtual int32 event_GetInstanceID() { return m_instanceID; }
 
 	void LoadAllCells();
-	WoWICE_INLINE size_t GetPlayerCount() { return m_PlayerStorage.size(); }
+	size_t GetPlayerCount() { return m_PlayerStorage.size(); }
 	uint32 GetTeamPlayersCount(uint32 teamId);
 
 	void _PerformObjectDuties();
@@ -240,7 +239,6 @@ public:
 	void UnloadCell(uint32 x,uint32 y);
 	void EventRespawnCreature(Creature * c, MapCell * p);
 	void EventRespawnGameObject(GameObject * o, MapCell * c);
-	void SendMessageToCellPlayers(Object * obj, WorldPacket * packet, uint32 cell_radius = 2);
 	void SendChatMessageToCellPlayers(Object * obj, WorldPacket * packet, uint32 cell_radius, uint32 langpos, int32 lang, WorldSession * originator);
 	void SendPvPCaptureMessage(int32 ZoneMask, uint32 ZoneId, const char * Message, ...);
 	Instance * pInstance;
@@ -251,7 +249,6 @@ public:
 
 	void SendInitialStates(Player * plr);
 	void SetWorldState(uint32 zoneid, uint32 index, uint32 value);
-	//WoWICE_INLINE uint32 GetWorldState(uint32 state);
 
 	// better hope to clear any references to us when calling this :P
 	void InstanceShutdown()
@@ -274,11 +271,6 @@ public:
 
 	float GetFirstZWithCPZ(float x,float y ,float z);
 
-//#ifdef FORCED_SERVER_KEEPALIVE
-	void	KillThreadWithCleanup();
-	void	TeleportCorruptedPlayers();	//we have to be prepared something is corrupted here
-//#endif
-
 protected:
 
 	//! Collect and send updates to clients
@@ -290,12 +282,8 @@ private:
 	uint32 _mapId;
 	set<Object*> _mapWideStaticObjects;
 
-	//std::map<uint32,uint32> _worldStateSet;
-
 	bool _CellActive(uint32 x, uint32 y);
 	void UpdateInRangeSet(Object *obj, Player *plObj, MapCell* cell, ByteBuffer ** buf);
-
-	//WorldPacket* BuildInitialWorldState();
 
 public:
 	// Distance a Player can "see" other objects and receive updates from them (!! ALREADY dist*dist !!)

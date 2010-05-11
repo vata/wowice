@@ -148,7 +148,6 @@ wowice_world_SOURCES = \
     ScriptMgr.cpp \
     ScriptMgr.h \
     Skill.h \
-    SkillHandler.cpp \
     SocialHandler.cpp \
     SpeedDetector.cpp \
     SpeedDetector.h \
@@ -159,7 +158,7 @@ wowice_world_SOURCES = \
     Spell.h \
     SpellEffects.cpp \
     SpellHandler.cpp \
-    SpellFixes.cpp \
+    HackFixes.cpp \
     Stats.h \
     Stats.cpp \
     StdAfx.cpp \
@@ -195,19 +194,22 @@ wowice_world_SOURCES = \
     WorldSocket.h \
     WorldState.cpp \
     WorldState.h \
+    WorldStates.h \
     WorldRunnable.h \
     WorldRunnable.cpp \
     WordFilter.h \
     WordFilter.cpp \
-	Main.cpp \
-	Master.cpp \
-	Master.h \
-	CConsole.cpp \
-	CConsole.h \
-	BaseConsole.h \
-	ConsoleCommands.cpp \
-	ConsoleCommands.h \
-	ConsoleListener.cpp
+    Main.cpp \
+    Master.cpp \
+    Master.h \
+    CConsole.cpp \
+    CConsole.h \
+    BaseConsole.h \
+    ConsoleCommands.cpp \
+    ConsoleCommands.h \
+    ConsoleListener.cpp \
+    WUtil.h \
+    WUtil.cpp
 	
 wowice_world_LDADD = -lshared -lz -lpcre -lcollision
 

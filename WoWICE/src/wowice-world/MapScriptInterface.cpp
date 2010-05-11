@@ -54,7 +54,6 @@ uint32 MapScriptInterface::GetPlayerCountInRadius(float x, float y, float z /* =
 			if(pCell == 0 || pCell->GetPlayerCount() == 0)
 				continue;
 
-			pCell->AquireLock();
 			iter = pCell->Begin();
 			iter_end = pCell->End();
 
@@ -66,7 +65,6 @@ uint32 MapScriptInterface::GetPlayerCountInRadius(float x, float y, float z /* =
 					++PlayerCount;
 				}
 			}
-			pCell->ReleaseLock();
 		}
 	}
 
@@ -144,14 +142,15 @@ Creature* MapScriptInterface::SpawnCreature(uint32 Entry, float cX, float cY, fl
 	sp->Item1SlotDisplay = 0;
 	sp->Item2SlotDisplay = 0;
 	sp->Item3SlotDisplay = 0;
+	sp->CanFly = 0;
+	sp->phase = phase;
 
 	Creature * p = this->mapMgr.CreateCreature(Entry);
-	ASSERT(p);
+	Wowice::Util::WOWICE_ASSERT(   p != NULL );
 	p->Load(sp, (uint32)NULL, NULL);
 	p->setGender(Gender);
 	p->spawnid = 0;
 	p->m_spawn = 0;
-	p->m_phase = phase;
 	delete sp;
 	if (AddToWorld)
 		p->PushToWorld(&mapMgr);
@@ -172,7 +171,7 @@ Creature * MapScriptInterface::SpawnCreature(CreatureSpawn * sp, bool AddToWorld
 
 	uint8 Gender = info->GenerateModelId(&sp->displayid);
 	Creature * p = this->mapMgr.CreateCreature(sp->entry);
-	ASSERT(p);
+	Wowice::Util::WOWICE_ASSERT(   p != NULL );
 	p->Load(sp, (uint32)NULL, NULL);
 	p->setGender(Gender);
 	p->spawnid = 0;

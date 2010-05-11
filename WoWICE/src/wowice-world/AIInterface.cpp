@@ -140,7 +140,7 @@ void AIInterface::EventAiInterfaceParamsetFinish()
 
 void AIInterface::Init(Unit *un, AIType at, MovementType mt)
 {
-	AWowice::Util::WoWICE_ASSERT(   at != AITYPE_PET);
+	Wowice::Util::WoWICE_ASSERT(   at != AITYPE_PET);
 
 	m_AIType = at;
 	m_MovementType = mt;

@@ -19,6 +19,11 @@
 #define SCRIPT_MODULE void*
 #define ADD_CREATURE_FACTORY_FUNCTION(cl) static CreatureAIScript * Create(Creature * c) { return new cl(c); }
 #define ADD_INSTANCE_FACTORY_FUNCTION( ClassName ) static InstanceScript* Create( MapMgr* pMapMgr ) { return new ClassName( pMapMgr ); }; 
+#define ADD_GAMEOBJECT_FACTORY_FUNCTION( ClassName ) static GameObjectAIScript* Create(GameObject* GO) { return new ClassName(GO); }; 
+
+#ifndef WIN32
+#include <dlfcn.h>
+#endif
 
 class Channel;
 class Guild;
@@ -43,7 +48,7 @@ enum ServerHookEvents
 	SERVER_HOOK_EVENT_ON_CHAT				= 16,
 	SERVER_HOOK_EVENT_ON_LOOT				= 17,
 	SERVER_HOOK_EVENT_ON_GUILD_CREATE		= 18,
-	SERVER_HOOK_EVENT_ON_ENTER_WORLD_2		= 19,
+	SERVER_HOOK_EVENT_ON_FULL_LOGIN			= 19,
 	SERVER_HOOK_EVENT_ON_CHARACTER_CREATE	= 20,
 	SERVER_HOOK_EVENT_ON_QUEST_CANCELLED	= 21,
 	SERVER_HOOK_EVENT_ON_QUEST_FINISHED		= 22,
@@ -54,6 +59,7 @@ enum ServerHookEvents
 	SERVER_HOOK_EVENT_ON_POST_LEVELUP       = 27,
 	SERVER_HOOK_EVENT_ON_PRE_DIE	        = 28,	//general unit die, not only based on players
 	SERVER_HOOK_EVENT_ON_ADVANCE_SKILLLINE  = 29,
+    SERVER_HOOK_EVENT_ON_DUEL_FINISHED      = 30,
 
 	NUM_SERVER_HOOKS,
 };
@@ -95,8 +101,9 @@ typedef void(*tOnArenaFinish)(Player * pPlayer, ArenaTeam * pTeam, bool victory,
 typedef void(*tOnObjectLoot)(Player * pPlayer, Object * pTarget, uint32 Money, uint32 ItemId);
 typedef void(*tOnAreaTrigger)(Player * pPlayer, uint32 areaTrigger);
 typedef void(*tOnPostLevelUp)(Player * pPlayer);
-typedef void(*tOnPreUnitDie)(Unit *killer, Unit *target);
+typedef bool(*tOnPreUnitDie)(Unit *killer, Unit *target);
 typedef void(*tOnAdvanceSkillLine)(Player * pPlayer, uint32 SkillLine, uint32 Current);
+typedef void(*tOnDuelFinished)(Player * Winner, Player * Looser);
 
 class Spell;
 class Aura;
@@ -116,6 +123,7 @@ typedef InstanceScript* ( *exp_create_instance_ai )( MapMgr* pMapMgr );
 typedef bool(*exp_handle_dummy_spell)(uint32 i, Spell * pSpell);
 typedef bool(*exp_handle_dummy_aura)(uint32 i, Aura * pAura, bool apply);
 typedef void(*exp_script_register)(ScriptMgr * mgr);
+typedef void(*exp_engine_reload)();
 typedef uint32(*exp_get_script_type)();
 
 typedef uint32(*exp_get_version)();
@@ -155,18 +163,55 @@ public:
 	bool CallScriptedDummyAura( uint32 uSpellId, uint32 i, Aura* pAura, bool apply);
 	bool CallScriptedItem(Item * pItem, Player * pPlayer);
 
+	//Single Entry Registers
 	void register_creature_script(uint32 entry, exp_create_creature_ai callback);
 	void register_gameobject_script(uint32 entry, exp_create_gameobject_ai callback);
-	void register_gossip_script(uint32 entry, GossipScript * gs);
-	void register_go_gossip_script(uint32 entry, GossipScript * gs);
 	void register_dummy_aura(uint32 entry, exp_handle_dummy_aura callback);
 	void register_dummy_spell(uint32 entry, exp_handle_dummy_spell callback);
+	void register_instance_script( uint32 pMapId, exp_create_instance_ai pCallback ); 
+	void register_gossip_script(uint32 entry, GossipScript * gs);
+	void register_go_gossip_script(uint32 entry, GossipScript * gs);
 	void register_hook(ServerHookEvents event, void * function_pointer);
 	void register_item_gossip_script(uint32 entry, GossipScript * gs);
 	void register_quest_script(uint32 entry, QuestScript * qs);
-	void register_instance_script( uint32 pMapId, exp_create_instance_ai pCallback ); 
 
-	WoWICE_INLINE GossipScript * GetDefaultGossipScript() { return DefaultGossipScript; }
+	//Mutliple Entry Registers
+	void register_creature_script(uint32* entries, exp_create_creature_ai callback);
+	void register_gameobject_script(uint32* entries, exp_create_gameobject_ai callback);
+	void register_dummy_aura(uint32* entries, exp_handle_dummy_aura callback);
+	void register_dummy_spell(uint32* entries, exp_handle_dummy_spell callback);
+
+	void ReloadScriptEngines() {
+		//for all scripting engines that allow reloading, assuming there will be new scripting engines.
+		exp_get_script_type version_function;
+		exp_engine_reload engine_reloadfunc;
+		for(LibraryHandleMap::iterator itr = _handles.begin(); itr != _handles.end(); ++itr)
+		{
+#ifdef WIN32
+			version_function = (exp_get_script_type)GetProcAddress( (HMODULE)(*itr),"_exp_get_script_type");
+			if(version_function == 0)
+				continue;
+			if(version_function() & SCRIPT_TYPE_SCRIPT_ENGINE)
+			{
+				engine_reloadfunc = (exp_engine_reload)GetProcAddress( (HMODULE)(*itr),"_export_engine_reload");
+				if(engine_reloadfunc != 0)
+					engine_reloadfunc();
+			}
+#else
+			version_function = (exp_get_script_type)dlsym( (SCRIPT_MODULE)(*itr),"_exp_get_script_type");
+			if(version_function == 0)
+				continue;
+			if(version_function() & SCRIPT_TYPE_SCRIPT_ENGINE)
+			{
+				engine_reloadfunc = (exp_engine_reload)dlsym( (SCRIPT_MODULE)(*itr),"_export_engine_reload");
+				if(engine_reloadfunc != 0)
+					engine_reloadfunc();
+			}
+#endif
+		}
+	}
+
+	ARCEMU_INLINE GossipScript * GetDefaultGossipScript() { return DefaultGossipScript; }
 
 protected:
 	InstanceCreateMap mInstances; 
@@ -211,7 +256,7 @@ public:
 	virtual void OnLootTaken(Player* pPlayer, ItemPrototype *pItemPrototype) {}
 	virtual void AIUpdate() {}
 	virtual void OnEmote(Player * pPlayer, EmoteType Emote) {}
-	virtual void StringFunctionCall(const char * pFunc) {}
+	virtual void StringFunctionCall(int) {}
 
 	void RegisterAIUpdateEvent(uint32 frequency);
 	void ModifyAIUpdateEvent(uint32 newfrequency);
@@ -346,7 +391,7 @@ public:
 	void OnZone(Player * pPlayer, uint32 Zone);
 	bool OnChat(Player * pPlayer, uint32 Type, uint32 Lang, const char * Message, const char * Misc);
 	void OnLoot(Player * pPlayer, Unit * pTarget, uint32 Money, uint32 ItemId);
-	void OnEnterWorld2(Player * pPlayer);
+	void OnFullLogin(Player * pPlayer);
 	void OnCharacterCreate(Player * pPlayer);
 	void OnQuestCancelled(Player * pPlayer, Quest * pQuest);
 	void OnQuestFinished(Player * pPlayer, Quest * pQuest, Object * pQuestGiver);
@@ -355,8 +400,9 @@ public:
 	void OnObjectLoot(Player * pPlayer, Object * pTarget, uint32 Money, uint32 ItemId);
 	void OnAreaTrigger(Player * pPlayer, uint32 areaTrigger);
 	void OnPostLevelUp(Player * pPlayer);
-	void OnPreUnitDie(Unit *Killer, Unit *Victim);
+	bool OnPreUnitDie(Unit *Killer, Unit *Victim);
 	void OnAdvanceSkillLine(Player * pPlayer, uint32 SkillLine, uint32 Current);
+	void OnDuelFinished(Player * Winner, Player * Looser);
 };
 
 #define sScriptMgr ScriptMgr::getSingleton()

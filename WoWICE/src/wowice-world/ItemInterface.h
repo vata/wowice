@@ -198,7 +198,7 @@ public:
 	void BeginSearch()
 	{
 		// iteminterface doesn't use mutexes, maybe it should :P
-		ASSERT(!m_searchInProgress);
+		Wowice::Util::WOWICE_ASSERT(   !m_searchInProgress);
 		m_atEnd=false;
 		m_searchInProgress=true;
 		m_container= NULL;
@@ -210,7 +210,7 @@ public:
 	void EndSearch()
 	{
 		// nothing here either
-		ASSERT(m_searchInProgress);
+		Wowice::Util::WOWICE_ASSERT(   m_searchInProgress);
 		m_atEnd=true;
 		m_searchInProgress=false;
 	}

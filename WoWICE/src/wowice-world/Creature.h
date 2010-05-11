@@ -266,7 +266,7 @@ class CreatureAIScript;
 class GossipScript;
 class AuctionHouse;
 struct Trainer;
-#define CALL_SCRIPT_EVENT(obj, func) if(obj && obj->IsInWorld() && obj->GetTypeId() == TYPEID_UNIT && obj->GetMapMgr() && static_cast<Creature*>(obj)->GetScript() != NULL) static_cast<Creature*>(obj)->GetScript()->func
+#define CALL_SCRIPT_EVENT(obj, func) if(obj->IsInWorld() && obj->GetTypeId() == TYPEID_UNIT && static_cast<Creature*>(obj)->GetScript() != NULL) static_cast<Creature*>(obj)->GetScript()->func
 
 
 uint8 get_byte(uint32 buffer, uint32 index);
@@ -294,6 +294,9 @@ public:
 	void AddToWorld();
 	void AddToWorld(MapMgr * pMapMgr);
 	void RemoveFromWorld(bool addrespawnevent, bool free_guid);
+	void RemoveFromWorld(bool free_guid);
+
+	void PrepareForRemove();//remove auras, guardians, scripts
 
 	/// Creation
 	void Create ( const char* creature_name, uint32 mapid, float x, float y, float z, float ang);
@@ -490,8 +493,8 @@ public:
 				else detectRange = 0.0f;
 			}
 
-			detectRange += GetFloatValue(UNIT_FIELD_BOUNDINGRADIUS); // adjust range for size of creature
-			detectRange += obj->GetFloatValue(UNIT_FIELD_BOUNDINGRADIUS); // adjust range for size of stealthed player
+			detectRange += GetBoundingRadius(); // adjust range for size of creature
+			detectRange += obj->GetBoundingRadius(); // adjust range for size of stealthed player
 
 			if(GetDistance2dSq(obj) > detectRange * detectRange)
 				return false;
@@ -512,6 +515,11 @@ public:
 
 	bool Tagged;
 	uint64 TaggerGuid;
+	void Tag( uint64 TaggerGUID );
+	void UnTag();
+	bool IsTagged();
+	bool IsTaggable();
+	uint64 GetTaggerGUID();
 
 	/// Misc
 	WoWICE_INLINE void setEmoteState(uint8 emote) { m_emoteState = emote; };
@@ -524,13 +532,14 @@ public:
 	// Serialization
 	void SaveToDB();
 	void LoadAIAgents(CreatureTemplate * t);
-	void LoadAIAgents();
 	void DeleteFromDB();
 
 	void OnJustDied();
 	void OnRemoveCorpse();
 	void OnRespawn(MapMgr * m);
-	void SafeDelete();
+private:
+	void SafeDelete();//use DeleteMe() instead of SafeDelete() to avoid crashes like InWorld Creatures deleted.
+public:
 	void SummonExpire(); // this is used for guardians. They are non respawnable creatures linked to a player
 
 
@@ -550,10 +559,8 @@ public:
 	void SetEnslaveSpell(uint32 spellId) { m_enslaveSpell = spellId; }
 	bool RemoveEnslave();
 
-	WoWICE_INLINE Player *GetTotemOwner() { return totemOwner; }
     // Owner unit (the one that summoned it)
     WoWICE_INLINE Unit *GetOwner(){ return m_owner; }
-	WoWICE_INLINE void SetTotemOwner(Player *owner) { totemOwner = owner; }
 	WoWICE_INLINE uint32 GetTotemSlot() { return totemSlot; }
 	WoWICE_INLINE void SetTotemSlot(uint32 slot) { totemSlot = slot; }
     WoWICE_INLINE void SetOwner( Unit *pUnitOwner ){ m_owner = pUnitOwner; }
@@ -578,7 +585,7 @@ public:
 	void RegenerateFocus();
 
 	CreatureFamilyEntry * myFamily;
-	WoWICE_INLINE bool IsTotem() { return totemOwner != NULL && totemSlot != -1; }
+	WoWICE_INLINE bool IsTotem() { return m_owner != NULL && totemSlot != -1; }
 
 	WoWICE_INLINE bool IsExotic()
 	{
@@ -605,12 +612,11 @@ public:
 
 	void OnPushToWorld();
 	void Despawn(uint32 delay, uint32 respawntime);
-	void TriggerScriptEvent(string func);
+	void TriggerScriptEvent(int);
 
 	AuctionHouse * auctionHouse;
 	bool has_waypoint_text;
 	bool has_combat_text;
-	int8 m_lootMethod;
 
 	void DeleteMe();
 	bool CanAddToWorld();
@@ -658,7 +664,6 @@ protected:
 	uint32 m_enslaveCount;
 	uint32 m_enslaveSpell;
 
-	Player * totemOwner;
     Unit * m_owner;
 	int32 totemSlot;
 

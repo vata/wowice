@@ -45,7 +45,7 @@ void WorldSession::HandleAttackSwingOpcode( WorldPacket & recv_data )
 		return;
 	}
 
-	if(pEnemy->IsDead() || _player->IsDead())		// haxors :(
+	if(pEnemy->IsDead() || _player->IsDead() || !isAttackable(_player, pEnemy, false))		// haxors :(
 		return;
 
 	GetPlayer()->smsg_AttackStart(pEnemy);

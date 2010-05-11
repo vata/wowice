@@ -137,7 +137,7 @@ enum EventTypes
 	EVENT_ATTACK_TIMEOUT,		//Zack 2007 05 05: if no action is taken then combat should be exited after 5 seconds.
 	EVENT_SUMMON_EXPIRE,		//Zack 2007 05 28: similar to pet expire but we can have multiple guardians
 	EVENT_MUTE_PLAYER,			//Zack 2007 06 05: player gains his voice back
-	EVENT_PLAYER_FORECED_RESURECT,		//Zack 2007 06 08: After player not pushing release spirit for 6 minutes while dead
+	EVENT_PLAYER_FORCED_RESURRECT,		//Zack 2007 06 08: After player not pushing release spirit for 6 minutes while dead
 	EVENT_PLAYER_SOFT_DISCONNECT,		//Zack 2007 06 12: Kick AFK players to not eat resources
 	EVENT_BATTLEGROUND_WSG_AUTO_RETURN_FLAG,
 	EVENT_BATTLEGROUND_WSG_AUTO_RETURN_FLAG_1,
@@ -213,7 +213,8 @@ enum EventTypes
 	EVENT_UNPOSSESS,
 	EVENT_PLAYER_AVENGING_WRATH,
     EVENT_REMOVE_ITEM,
-    EVENT_REMOVE_ITEM_FROM_REFUNDABLE_MAP
+    EVENT_REMOVE_ITEM_FROM_REFUNDABLE_MAP,
+	NUM_EVENT_TYPES
 };
 
 enum EventFlags
@@ -243,20 +244,28 @@ struct SERVER_DECL TimedEvent
 #ifdef WIN32
 	void DecRef()
 	{
-		InterlockedDecrement(&ref);
-		if(ref == 0)
+		if( InterlockedDecrement( &ref ) == 0 )
 		{
 			delete cb;
 			delete this;
 		}
 	}
 
-	void IncRef() { InterlockedIncrement(&ref); }
+	void IncRef() { InterlockedIncrement( &ref ); }
 #else
 
-	/* burlex: if anyone knows how to do the equivalent of InterlockedIncrement/Decrement on linux feel free
-	   to change this, I couldn't find the atomic functions anymore though :*( */
-
+#if defined( __GNUC__ ) && ( defined( __i386__  ) || defined( __ia64__ ) )
+	// These are GNU specific atomic operators, they only work on certain platforms
+	// those x86 and x64 surely supports them, no idea about others
+	void IncRef(){ __sync_add_and_fetch( &ref, 1 ); }
+	
+	void DecRef(){ 
+		if( __sync_add_and_fetch( &ref, -1 ) == 0 ){
+			delete cb;
+			delete this;
+		}
+	}
+#else
 	void IncRef() { ++ref; }
     
 	void DecRef()
@@ -268,6 +277,7 @@ struct SERVER_DECL TimedEvent
 			 delete this;
 		}
 	}
+#endif
 #endif
 
 };

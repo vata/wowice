@@ -114,16 +114,16 @@ public:
 
 	WoWICE_INLINE CellSpawns *GetSpawnsList(uint32 cellx,uint32 celly)
 	{
-		ASSERT(cellx < _sizeX);
-		ASSERT(celly < _sizeY);
+		Wowice::Util::WOWICE_ASSERT(   cellx < _sizeX);
+		Wowice::Util::WOWICE_ASSERT(   celly < _sizeY);
 		if(spawns[cellx]== NULL) return NULL;
 
 		return spawns[cellx][celly];
 	}
 	WoWICE_INLINE CellSpawns * GetSpawnsListAndCreate(uint32 cellx, uint32 celly)
 	{
-		ASSERT(cellx < _sizeX);
-		ASSERT(celly < _sizeY);
+		Wowice::Util::WOWICE_ASSERT(   cellx < _sizeX);
+		Wowice::Util::WOWICE_ASSERT(   celly < _sizeY);
 		if(spawns[cellx]== NULL)
 		{
 			spawns[cellx] = new CellSpawns*[_sizeY];

@@ -148,7 +148,7 @@ void Player::SetStanding( uint32 Faction, int32 Value )
 	const int32 exaltedReputation = 42000;   //   0/1000  Exalted
 	const int32 maxReputation = 42999;       // 999/1000  Exalted
 	int32 newValue = Value;
-	FactionDBC * f = dbcFaction.LookupEntry( Faction );
+	FactionDBC * f = dbcFaction.LookupEntryForced( Faction );
 	if ( f == NULL || f->RepListId < 0 )
 		return;
 	ReputationMap::iterator itr = m_reputation.find( Faction );
@@ -228,7 +228,7 @@ void Player::ModStanding( uint32 Faction, int32 Value )
 	const int32 minReputation = -42000;      //   0/36000 Hated
 	const int32 exaltedReputation = 42000;   //   0/1000  Exalted
 	const int32 maxReputation = 42999;       // 999/1000  Exalted
-	FactionDBC * f = dbcFaction.LookupEntry( Faction );
+	FactionDBC * f = dbcFaction.LookupEntryForced( Faction );
 	int32 newValue = Value;
 	if ( f == NULL || f->RepListId < 0 )
 		return;
@@ -375,7 +375,7 @@ void Player::Reputation_OnKilledUnit( Unit * pUnit, bool InnerLoop )
 		return;
 	}
 
-	int team = GetTeam();
+	uint32 team = GetTeam();
 	ReputationModifier * modifier = objmgr.GetReputationModifier( pUnit->GetEntry(), pUnit->m_factionDBC->ID );
 	if( modifier != 0 )
 	{
@@ -422,12 +422,7 @@ void Player::Reputation_OnTalk( FactionDBC * dbc )
 
 	if ( SetFlagVisible( rep->flag, true ) && IsInWorld() )
 	{
-#ifdef USING_BIG_ENDIAN
-		uint32 swapped = swap32( dbc->RepListId );
-		m_session->OutPacket( SMSG_SET_FACTION_VISIBLE, 4, &swapped );
-#else
 		m_session->OutPacket( SMSG_SET_FACTION_VISIBLE, 4, &dbc->RepListId );
-#endif
 
 #ifdef OPTIMIZED_PLAYER_SAVING
 		save_Reputation();
@@ -486,12 +481,8 @@ void Player::OnModStanding( FactionDBC * dbc, FactionReputation * rep )
 {
 	if ( SetFlagVisible( rep->flag, true ) && IsInWorld() )
 	{
-#ifdef USING_BIG_ENDIAN
-		uint32 swapped = swap32( dbc->RepListId );
-		m_session->OutPacket( SMSG_SET_FACTION_VISIBLE, 4, &swapped );
-#else
+
 		m_session->OutPacket( SMSG_SET_FACTION_VISIBLE, 4, &dbc->RepListId );
-#endif
 	}
 
 	SetFlagAtWar( rep->flag, ( GetReputationRankFromStanding( rep->standing ) <= STANDING_HOSTILE ) );

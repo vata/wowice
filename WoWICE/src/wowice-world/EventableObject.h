@@ -44,7 +44,7 @@ protected:
 	void event_ModifyTimeAndTimeLeft(uint32 EventType, time_t Time);
 	bool event_HasEvent(uint32 EventType);
 	void event_RemoveByPointer(TimedEvent * ev);
-	WoWICE_INLINE int32 event_GetCurrentInstanceId() { return m_event_Instanceid; }
+	int32 event_GetCurrentInstanceId() { return m_event_Instanceid; }
 	bool event_GetTimeLeft(uint32 EventType, time_t * Time);
 
 public:
@@ -52,9 +52,8 @@ public:
 	// Public methods
 	EventableObject();
 	virtual ~EventableObject();
-	void Virtual_Destructor();
 
-	WoWICE_INLINE bool event_HasEvents() { return m_events.size() > 0 ? true : false; }
+	bool event_HasEvents() { return m_events.size() > 0 ? true : false; }
 	void event_AddEvent(TimedEvent * ptr);
 	void event_Relocate();
 	
@@ -95,7 +94,7 @@ public:
 	void AddEvent(TimedEvent * ev);
 	void AddObject(EventableObject * obj);
 
-	WoWICE_INLINE uint32 GetInstanceID() { return mInstanceId; }
+	uint32 GetInstanceID() { return mInstanceId; }
 
 protected:
 	int32 mInstanceId;

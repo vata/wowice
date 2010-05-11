@@ -76,7 +76,7 @@ TerrainMgr::~TerrainMgr()
 
 bool TerrainMgr::LoadTerrainHeader()
 {
-	// Create the path
+	// Create the path on stack
 	char File[200];
 
 	snprintf(File, 200, "%s/Map_%u.bin", mapPath.c_str(), (unsigned int)mapId);
@@ -123,15 +123,6 @@ bool TerrainMgr::LoadTerrainHeader()
 		}
 	}
 
-#ifdef USING_BIG_ENDIAN
-	uint32 x,y;
-	for(x=0;x<512;++x) {
-		for(y=0;y<512;++y) {
-			CellOffsets[x][y] = swap32(CellOffsets[x][y]);
-		}
-	}
-#endif
-
 	return true;
 
 #else
@@ -153,8 +144,8 @@ bool TerrainMgr::LoadTerrainHeader()
 
 	mFileSize = GetFileSize(hMappedFile, &sizehigh);
 
-	ASSERT(ReadFile(hMappedFile, CellOffsets, TERRAIN_HEADER_SIZE, &sizehigh, NULL));
-	ASSERT(sizehigh==TERRAIN_HEADER_SIZE);
+	Wowice::Util::WOWICE_ASSERT(   ReadFile(hMappedFile, CellOffsets, TERRAIN_HEADER_SIZE, &sizehigh, NULL));
+	Wowice::Util::WOWICE_ASSERT(   sizehigh==TERRAIN_HEADER_SIZE);
 
 	SetFilePointer(hMappedFile, 0, NULL, FILE_BEGIN);
 	m_Memory = (uint8*)MapViewOfFile(hMap, FILE_MAP_READ, 0, TERRAIN_HEADER_SIZE, mFileSize-TERRAIN_HEADER_SIZE);
@@ -189,7 +180,7 @@ bool TerrainMgr::LoadTerrainHeader()
 bool TerrainMgr::LoadCellInformation(uint32 x, uint32 y)
 {
 #ifdef USE_MEMORY_MAPPING_FOR_MAPS
-	if(CellOffsets[x][y]==0)
+	if(CellOffsets[x][y]== 0)
 		return false;
 	else
 		return true;
@@ -198,7 +189,7 @@ bool TerrainMgr::LoadCellInformation(uint32 x, uint32 y)
 		return false;
 
 	// Make sure that we're not already loaded.
-	assert(CellInformation[x][y] == 0);
+	Wowice::Util::WOWICE_ASSERT(   CellInformation[x][y] == 0);
 
 	// Find our offset in our cached header.
 	uint32 Offset = CellOffsets[x][y];
@@ -227,23 +218,6 @@ bool TerrainMgr::LoadCellInformation(uint32 x, uint32 y)
 		// Read from our file into this newly created struct.
 		fread(CellInformation[x][y], sizeof(CellTerrainInformation), 1, FileDescriptor);
 
-#ifdef USING_BIG_ENDIAN
-		uint32 i,j;
-		/* Swap all the data */
-
-		for(i = 0; j < 2; ++j) {
-			for(j = 0; j < 2; ++j) {
-				CellInformation[x][y]->AreaID[i][j] = swap16(CellInformation[x][y]->AreaID[i][j]);
-				CellInformation[x][y]->LiquidLevel[i][j] = swapfloat(CellInformation[x][y]->LiquidLevel[i][j]);
-			}
-		}
-
-		for(i = 0; i < 32; ++j) {
-			for(j = 0; j < 32; ++j) {
-				CellInformation[x][y]->Z[i][j] = swapfloat(CellInformation[x][y]->Z[i][j]);
-			}
-		}
-#endif
 	}
 	// Release the mutex.
 	mutex.Release();
@@ -263,10 +237,10 @@ bool TerrainMgr::UnloadCellInformation(uint32 x, uint32 y)
 #else
 	uint32 Start = getMSTime();
 
-	assert(!Instance);
+	Wowice::Util::WOWICE_ASSERT(   !Instance);
 	// Find our information pointer.
 	CellTerrainInformation * ptr = CellInformation[x][y];
-	assert(ptr != 0);
+	Wowice::Util::WOWICE_ASSERT(   ptr != 0);
 
 	// Set the spot to unloaded (null).
 	CellInformation[x][y] = 0;

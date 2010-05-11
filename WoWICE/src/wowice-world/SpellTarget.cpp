@@ -119,6 +119,16 @@ pSpellTarget SpellTargetHandler[EFF_TARGET_LIST_LENGTH_MARKER] =
 	&Spell::SpellTargetNULL,					// 98
 	&Spell::SpellTargetNULL,					// 99
 	&Spell::SpellTargetNULL,					// 100
+	&Spell::SpellTargetNULL,					// 101
+	&Spell::SpellTargetNULL,					// 102
+	&Spell::SpellTargetNULL,					// 103
+	&Spell::SpellTargetInFrontOfCaster,			// 104
+	&Spell::SpellTargetNULL,					// 105
+	&Spell::SpellTargetNULL,					// 106
+	&Spell::SpellTargetNULL,					// 107
+	&Spell::SpellTargetNULL,					// 108
+	&Spell::SpellTargetNULL,					// 109
+	&Spell::SpellTargetNULL,					// 110
 	// all 81 > n spelltargettype's are from test spells
 };
 
@@ -249,7 +259,7 @@ void Spell::SpellTargetNULL(uint32 i, uint32 j)
 /// Spell Target Handling for type 0: Default targeting
 void Spell::SpellTargetDefault(uint32 i, uint32 j)
 {
-	if(j==0 || (m_caster->IsPet() && j==1))
+	if(j== 0 || (m_caster->IsPet() && j==1))
 	{
 		TargetsList* tmpMap=&m_targetUnits[i];
 
@@ -305,7 +315,7 @@ void Spell::SpellTargetPet(uint32 i, uint32 j)
 	if(p_caster)
 	{
 		TargetsList* tmpMap=&m_targetUnits[i];
-		if(p_caster->GetSummon())
+		if(p_caster->GetSummon())//should we add only 1 pet of all the pets of p_caster?
 			SafeAddTarget(tmpMap,p_caster->GetSummon()->GetGUID());
 	}
 }
@@ -385,7 +395,7 @@ void Spell::SpellTargetSingleTargetEnemy(uint32 i, uint32 j)
 		float range = GetMaxRange( dbcSpellRange.LookupEntry( m_spellInfo->rangeIndex ) );//this is probably wrong
 		range *= range;
 		std::set<Object*>::iterator itr,itr2;
-		m_caster->AquireInrangeLock(); //make sure to release lock before exit function !
+
 		for( itr2 = m_caster->GetInRangeSetBegin(); itr2 != m_caster->GetInRangeSetEnd(); )
 		{
 			itr = itr2;
@@ -414,13 +424,11 @@ void Spell::SpellTargetSingleTargetEnemy(uint32 i, uint32 j)
 
 					if(!--jumps)
 					{
-						m_caster->ReleaseInrangeLock();
 						return;
 					}
 				}
 			}
 		}
-		m_caster->ReleaseInrangeLock();
 	}
 }
 
@@ -457,12 +465,12 @@ void Spell::SpellTargetAllPartyMembersRangeNR(uint32 i, uint32 j)
 	if( p == NULL )
 	{
 		if( static_cast< Creature* >( u_caster)->IsTotem() )
-			p = static_cast< Player* >( static_cast< Creature* >( u_caster )->GetTotemOwner() );
+			p = static_cast< Player* >( static_cast< Creature* >( u_caster )->GetOwner() );
 		else if( u_caster->IsPet() && static_cast< Pet* >( u_caster )->GetPetOwner() ) 
 			p = static_cast< Pet* >( u_caster )->GetPetOwner();
-		else if( u_caster->GetUInt64Value( UNIT_FIELD_CREATEDBY ) )
+		else if( u_caster->GetCreatedByGUID() )
 		{
-			Unit *t = u_caster->GetMapMgr()->GetUnit( u_caster->GetUInt64Value( UNIT_FIELD_CREATEDBY ) );
+			Unit *t = u_caster->GetMapMgr()->GetUnit( u_caster->GetCreatedByGUID() );
 			if ( t && t->IsPlayer() )
 				p = static_cast< Player* >( t );
 		}
@@ -532,8 +540,8 @@ void Spell::SpellTargetInFrontOfCaster(uint32 i, uint32 j)
 	TargetsList* tmpMap=&m_targetUnits[i];
 	std::set<Object*>::iterator itr;
 	uint8 did_hit_result;
-	m_caster->AquireInrangeLock(); //make sure to release lock before exit function !
-	for( itr = m_caster->GetInRangeSetBegin(); itr != m_caster->GetInRangeSetEnd(); itr++ )
+
+    for( itr = m_caster->GetInRangeSetBegin(); itr != m_caster->GetInRangeSetEnd(); itr++ )
 	{
 		if(!((*itr)->IsUnit()) || !((Unit*)(*itr))->isAlive())
 			continue;
@@ -558,7 +566,6 @@ void Spell::SpellTargetInFrontOfCaster(uint32 i, uint32 j)
 			}
 		}
 	}
-	m_caster->ReleaseInrangeLock();
 }
 
 /// Spell Target Handling for type 25: Single Target Friend	 // Used o.a. in Duel
@@ -599,7 +606,7 @@ void Spell::SpellTargetPetOwner(uint32 i, uint32 j)
 { 
 	TargetsList* tmpMap = &m_targetUnits[i];
 	if( u_caster != NULL && u_caster->IsPet() && static_cast< Pet* >( u_caster )->GetPetOwner() )
-		SafeAddTarget( tmpMap, u_caster->GetUInt64Value( UNIT_FIELD_SUMMONEDBY ) );
+		SafeAddTarget( tmpMap, u_caster->GetSummonedByGUID() );
 	else if( u_caster != NULL && u_caster->GetAIInterface() && u_caster->GetAIInterface()->GetPetOwner() )
 		SafeAddTarget( tmpMap, u_caster->GetAIInterface()->GetPetOwner()->GetGUID() );
 }
@@ -684,7 +691,6 @@ void Spell::SpellTargetScriptedEffects( uint32 i, uint32 j )
 			return;
 
 		std::vector<Player*> raidList;
-		std::vector<Player*>::iterator itr;
 
 		uint32 count = group->GetSubGroupCount();
 
@@ -710,6 +716,7 @@ void Spell::SpellTargetScriptedEffects( uint32 i, uint32 j )
 		if( GetProto()->NameHash == SPELL_HASH_CIRCLE_OF_HEALING && p_caster->HasSpell( 55675 ) ) // Glyph of circle of healing
 			maxTargets++;
 
+		std::vector<Player*>::iterator itr;
 		for( itr = raidList.begin(); itr != raidList.end() && maxTargets > 0; ++itr, maxTargets-- )
 		{
 			SafeAddTarget( tmpMap, (*itr)->GetGUID() );
@@ -725,10 +732,14 @@ void Spell::SpellTargetSummon(uint32 i, uint32 j)
 	if ( m_spellInfo->Effect[i] == SPELL_EFFECT_SUMMON_PET || m_spellInfo->Effect[i] == SPELL_EFFECT_SUMMON_OBJECT)
 	{
 		TargetsList* tmpMap=&m_targetUnits[i];
-		if(m_caster->GetUInt64Value(UNIT_FIELD_SUMMON) == 0)
-			SafeAddTarget(tmpMap,u_caster->GetGUID());
+
+        if( u_caster == NULL )
+            return;
+
+		if( u_caster->GetSummonedUnitGUID() == 0)
+			SafeAddTarget(tmpMap, u_caster->GetGUID());
 		else
-			SafeAddTarget(tmpMap,m_caster->GetUInt64Value(UNIT_FIELD_SUMMON));
+			SafeAddTarget(tmpMap, u_caster->GetSummonedUnitGUID() );
 	}
 }
 
@@ -746,7 +757,7 @@ void Spell::SpellTargetNearbyPartyMembers(uint32 i, uint32 j)
 				float r = GetRadius(i);
 				r *= r;
 
-				Player* p = static_cast< Player* >( static_cast< Creature* >( u_caster )->GetTotemOwner() );
+				Player* p = static_cast< Player* >( static_cast< Creature* >( u_caster )->GetOwner() );
 				
 				if( p == NULL)
 					return;
@@ -853,7 +864,7 @@ void Spell::SpellTargetDummyTarget(uint32 i, uint32 j)
 					return;
 
 				Object::InRangeSet::iterator itr,itr2;
-				p_caster->AquireInrangeLock(); //make sure to release lock before exit function !
+
 				for(itr2 = p_caster->GetInRangeSetBegin(); itr2 != p_caster->GetInRangeSetEnd(); )
 				{
 					itr=itr2;
@@ -865,12 +876,10 @@ void Spell::SpellTargetDummyTarget(uint32 i, uint32 j)
 						if(cloudtype == 24222 || cloudtype == 17408 || cloudtype == 17407 || cloudtype == 17378)
 						{
 							p_caster->SetSelection(creature->GetGUID());
-							p_caster->ReleaseInrangeLock();
 							return;
 						}
 					}
 				}
-				p_caster->ReleaseInrangeLock();
 			}
 			break;
 		case 51729: // Blessing of Zim'Torga
@@ -984,7 +993,7 @@ void Spell::SpellTargetChainTargeting(uint32 i, uint32 j)
 	else
 	{
 		std::set<Object*>::iterator itr;
-		firstTarget->AquireInrangeLock(); //make sure to release lock before exit function !
+
 		for( itr = firstTarget->GetInRangeSetBegin(); itr != firstTarget->GetInRangeSetEnd(); itr++ )
 		{
 			if( !(*itr)->IsUnit() || !((Unit*)(*itr))->isAlive())
@@ -994,7 +1003,7 @@ void Spell::SpellTargetChainTargeting(uint32 i, uint32 j)
 			if( (*itr)->GetUInt32Value( UNIT_FIELD_HEALTH ) == (*itr)->GetUInt32Value( UNIT_FIELD_MAXHEALTH ) )
 				continue;
 
-			if (sWorld.Collision) {
+			if (sWorld.Collision && u_caster != NULL ) {
 				if (u_caster->GetMapId() == (*itr)->GetMapId() && !CollideInterface.CheckLOS(u_caster->GetMapId(),u_caster->GetPositionNC(),(*itr)->GetPositionNC()))
 					continue;
 			}
@@ -1006,13 +1015,11 @@ void Spell::SpellTargetChainTargeting(uint32 i, uint32 j)
 					SafeAddTarget(tmpMap,(*itr)->GetGUID());
 					if(!--jumps)
 					{
-						firstTarget->ReleaseInrangeLock();
 						return;
 					}
 				}
 			}
 		}
-		firstTarget->ReleaseInrangeLock();
 	}
 }
 
@@ -1057,7 +1064,7 @@ void Spell::SpellTargetInFrontOfCaster2(uint32 i, uint32 j)
 	TargetsList* tmpMap=&m_targetUnits[i];
 	std::set<Object*>::iterator itr,itr2;
 	uint8 did_hit_result;
-	m_caster->AquireInrangeLock(); //make sure to release lock before exit function !
+
 	for( itr2 = m_caster->GetInRangeSetBegin(); itr2 != m_caster->GetInRangeSetEnd();)
 	{
 		itr = itr2;
@@ -1080,7 +1087,6 @@ void Spell::SpellTargetInFrontOfCaster2(uint32 i, uint32 j)
 			}
 		}
 	}
-	m_caster->ReleaseInrangeLock();
 }
 
 // Spell Target Handling for type 56: Target all raid members. (WotLK)
@@ -1090,9 +1096,8 @@ void Spell::SpellTargetAllRaid( uint32 i, uint32 j )
 		return;
 
     TargetsList* tmpMap = &m_targetUnits[i];
-    SafeAddTarget( tmpMap, m_caster->GetGUID() );
-
-	Group * group = static_cast< Unit* >( m_caster )->GetGroup(); 
+	SafeAddTarget( tmpMap, m_caster->GetGUID() );
+    Group * group = static_cast< Unit* >( m_caster )->GetGroup(); 
 	if( group == NULL )
 		return;
 	
@@ -1108,7 +1113,14 @@ void Spell::SpellTargetAllRaid( uint32 i, uint32 j )
 			for( GroupMembersSet::iterator itr = subgroup->GetGroupMembersBegin(); itr != subgroup->GetGroupMembersEnd(); ++itr )
 			{
 				if( (*itr)->m_loggedInPlayer && (*itr)->m_loggedInPlayer != m_caster)
+				{
+					if (GetProto()->casterAuraSpellNot) // ?targetAuraSpellNot
+					{
+						if ((*itr)->m_loggedInPlayer->HasAura(GetProto()->casterAuraSpellNot))
+							continue;
+					}
 					SafeAddTarget( tmpMap,(*itr)->m_loggedInPlayer->GetGUID() );
+				}
 			}
 		}
 	}

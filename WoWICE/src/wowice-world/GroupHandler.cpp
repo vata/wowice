@@ -99,11 +99,7 @@ void WorldSession::HandleGroupInviteOpcode( WorldPacket & recv_data )
 
 	player->GetSession()->SendPacket(&data);
 
-	uint32 gtype = 0;
-	if(group)
-		gtype = group->GetGroupType();
-
-	SendPartyCommandResult(_player, gtype, membername, ERR_PARTY_NO_ERROR);
+	SendPartyCommandResult(_player, 0, membername, ERR_PARTY_NO_ERROR);
 
 	// 16/08/06 - change to guid to prevent very unlikely event of a crash in deny, etc
 	player->SetInviter(_player->GetLowGUID());
@@ -206,7 +202,7 @@ void WorldSession::HandleGroupUninviteOpcode( WorldPacket & recv_data )
 		return;
 	}
 
-	if ( !_player->InGroup() || info->m_Group != _player->GetGroup() )
+	if ( !_player->InGroup() || ( info != NULL && info->m_Group != _player->GetGroup() ) )
 	{
 		SendPartyCommandResult(_player, 0, membername, ERR_PARTY_IS_NOT_IN_YOUR_PARTY);
 		return;
@@ -229,7 +225,9 @@ void WorldSession::HandleGroupUninviteOpcode( WorldPacket & recv_data )
 	group = _player->GetGroup();
 
 	if(group)
+	{
 		group->RemovePlayer(info);
+	}
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////
@@ -247,8 +245,8 @@ void WorldSession::HandleGroupUninviteGuidOpcode( WorldPacket & recv_data )
 
 	recv_data >> PlayerGUID;
 
-	player = objmgr.GetPlayer(GUID_LOPART(PlayerGUID));
-	info = objmgr.GetPlayerInfo(GUID_LOPART(PlayerGUID));
+	player = objmgr.GetPlayer( Wowice::Util::GUID_LOPART(PlayerGUID));
+	info = objmgr.GetPlayerInfo( Wowice::Util::GUID_LOPART(PlayerGUID));
 	// If both conditions match the player gets thrown out of the group by the server since this means the character is deleted
 	if ( player == NULL && info == NULL )
 	{
@@ -258,7 +256,7 @@ void WorldSession::HandleGroupUninviteGuidOpcode( WorldPacket & recv_data )
 
 	membername = player ? player->GetName() : info->name;
 
-	if ( !_player->InGroup() || info->m_Group != _player->GetGroup() )
+	if ( !_player->InGroup() || ( info != NULL && info->m_Group != _player->GetGroup() ) )
 	{
 		SendPartyCommandResult(_player, 0, membername, ERR_PARTY_IS_NOT_IN_YOUR_PARTY);
 		return;
@@ -280,7 +278,9 @@ void WorldSession::HandleGroupUninviteGuidOpcode( WorldPacket & recv_data )
 
 	group = _player->GetGroup();
 	if(group)
+	{
 		group->RemovePlayer(info);
+	}
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////
@@ -361,26 +361,15 @@ void WorldSession::HandleLootMethodOpcode( WorldPacket & recv_data )
 	if( pGroup == NULL)
 		return;
 
-	/*Player * pLootMaster = objmgr.GetPlayer((uint32)lootMaster);
-
-	if ( pLootMaster )
-		pGroup->SetLooter(pLootMaster , lootMethod, threshold );
-	else
-		pGroup->SetLooter(_player , lootMethod, threshold );*/
-
-  // cebernic: Extended this code,it supports diff leader & lootmaster.
-  Player *plr = objmgr.GetPlayer((uint32)lootMaster);
-  if ( _player->m_playerInfo->guid == lootMaster || !plr) {
-    Group* pGroup = _player->GetGroup();
-    if ( !pGroup ) return;
-    pGroup->SetLooter(_player, static_cast<uint8>( lootMethod ), static_cast<uint16>( threshold ));
-  }
-  else {
-    Group* pGroup = plr->GetGroup();
-    if ( !pGroup ) 
-		return;
-    pGroup->SetLooter(plr, static_cast<uint8>( lootMethod ), static_cast<uint16>( threshold ));
-  }
+	Player *plr = objmgr.GetPlayer((uint32)lootMaster);
+	if ( plr != NULL ) 
+	{
+		pGroup->SetLooter(plr, static_cast<uint8>( lootMethod ), static_cast<uint16>( threshold ));
+	}
+	else 
+	{
+		pGroup->SetLooter(_player, static_cast<uint8>( lootMethod ), static_cast<uint16>( threshold ));
+	}
 
 }
 
@@ -427,9 +416,28 @@ void WorldSession::HandleSetPlayerIconOpcode(WorldPacket& recv_data)
 		if(icon > 7)
 			return;			// whoops, buffer overflow :p
 
+		//removing other icon
+		for(uint8 i = 0; i < 8; ++i)
+		{
+			if( pGroup->m_targetIcons[i] == guid )
+			{
+				WorldPacket data(MSG_RAID_TARGET_UPDATE, 10);
+				data << uint8(0);
+				data << uint64(0);
+				data << uint8(i);
+				data << uint64(0);
+				pGroup->SendPacketToAll(&data);
+
+				pGroup->m_targetIcons[i] = 0;
+				break;
+			}
+		}
 		// setting icon
 		WorldPacket data(MSG_RAID_TARGET_UPDATE, 10);
-		data << uint8(0) << icon << guid;
+		data << uint8(0);
+		data << uint64(GetPlayer()->GetGUID());
+		data << icon;
+		data << guid;
 		pGroup->SendPacketToAll(&data);
 
 		pGroup->m_targetIcons[icon] = guid;

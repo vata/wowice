@@ -173,10 +173,10 @@ bool ChatHandler::HandleQuestStatusCommand(const char * args, WorldSession * m_s
 	}
 
 	uint32 quest_id = atol(args);
-	if(quest_id==0)
+	if(quest_id== 0)
 	{
 		quest_id = GetQuestIDFromLink(args);
-		if(quest_id==0)
+		if(quest_id== 0)
 			return false;
 	}
 	std::string recout = "|cff00ff00";
@@ -221,10 +221,10 @@ bool ChatHandler::HandleQuestStartCommand(const char * args, WorldSession * m_se
 	}
 
 	uint32 quest_id = atol(args);
-	if(quest_id==0)
+	if(quest_id== 0)
 	{
 		quest_id = GetQuestIDFromLink(args);
-		if(quest_id==0)
+		if(quest_id== 0)
 			return false;
 	}
 	std::string recout = "|cff00ff00";
@@ -275,7 +275,7 @@ bool ChatHandler::HandleQuestStartCommand(const char * args, WorldSession * m_se
 						Item * item = objmgr.CreateItem( qst->srcitem, plr);
 						if(item)
 						{
-							item->SetUInt32Value(ITEM_FIELD_STACK_COUNT, qst->srcitemcount ? qst->srcitemcount : 1);
+							item->SetStackCount(  qst->srcitemcount ? qst->srcitemcount : 1);
 							if(!plr->GetItemInterface()->AddItemToFreeSlot(item))
 								item->DeleteMe();
 						}
@@ -322,10 +322,10 @@ bool ChatHandler::HandleQuestFinishCommand(const char * args, WorldSession * m_s
 	// reward_slot is for when quest has choice of rewards (0 is the first choice, 1 is the second choice, ...)
 	// reward_slot will default to 0 if none is specified
 	uint32 reward_slot;
-	if(quest_id==0)
+	if(quest_id== 0)
 	{
 		quest_id = GetQuestIDFromLink(args);
-		if(quest_id==0)
+		if(quest_id== 0)
 			return false;
 		if(strstr(args,"|r"))
 		{
@@ -394,7 +394,7 @@ bool ChatHandler::HandleQuestFinishCommand(const char * args, WorldSession * m_s
 					// I need some way to get the guid without targeting the creature or looking through all the spawns...
 					Object *quest_giver = 0;
 
-					for(uint32 guid=1; guid < plr->GetMapMgr()->m_CreatureArraySize; guid++)
+                    for(size_t guid=1; guid < plr->GetMapMgr()->CreatureStorage.size(); guid++)
 					{
 						Creature *pCreature = plr->GetMapMgr()->GetCreature(GET_LOWGUID_PART(guid));
 						if(pCreature)
@@ -402,7 +402,7 @@ bool ChatHandler::HandleQuestFinishCommand(const char * args, WorldSession * m_s
 							if(pCreature->GetEntry() == giver_id) //found creature
 							{
 								quest_giver = (Object*)pCreature;
-								guid = plr->GetMapMgr()->m_CreatureArraySize;
+                                guid = plr->GetMapMgr()->CreatureStorage.size();
 							}
 						}
 					}
@@ -476,7 +476,7 @@ bool ChatHandler::HandleQuestFinishCommand(const char * args, WorldSession * m_s
 								Item *itm = objmgr.CreateItem(qst->reward_item[i], plr);
 								if( itm )
 								{
-									itm->SetUInt32Value(ITEM_FIELD_STACK_COUNT, uint32(qst->reward_itemcount[i]));
+									itm->SetStackCount(  uint32(qst->reward_itemcount[i]));
 									if( !plr->GetItemInterface()->SafeAddItem(itm,slotresult.ContainerSlot, slotresult.Slot) )
 									{
 										itm->DeleteMe();
@@ -486,7 +486,7 @@ bool ChatHandler::HandleQuestFinishCommand(const char * args, WorldSession * m_s
 						}
 						else
 						{
-							add->SetCount(add->GetUInt32Value(ITEM_FIELD_STACK_COUNT) + qst->reward_itemcount[i]);
+							add->SetStackCount( add->GetStackCount() + qst->reward_itemcount[i]);
 							add->m_isDirty = true;
 						}
 					}
@@ -517,7 +517,7 @@ bool ChatHandler::HandleQuestFinishCommand(const char * args, WorldSession * m_s
 							Item *itm = objmgr.CreateItem(qst->reward_choiceitem[reward_slot], plr);
 							if( itm )
 							{
-								itm->SetUInt32Value(ITEM_FIELD_STACK_COUNT, uint32(qst->reward_choiceitemcount[reward_slot]));
+								itm->SetStackCount(  uint32(qst->reward_choiceitemcount[reward_slot]));
 								if( !plr->GetItemInterface()->SafeAddItem(itm,slotresult.ContainerSlot, slotresult.Slot) )
 								{
 									itm->DeleteMe();
@@ -527,7 +527,7 @@ bool ChatHandler::HandleQuestFinishCommand(const char * args, WorldSession * m_s
 					}
 					else
 					{
-						add->SetCount(add->GetUInt32Value(ITEM_FIELD_STACK_COUNT) + qst->reward_choiceitemcount[reward_slot]);
+						add->SetStackCount( add->GetStackCount() + qst->reward_choiceitemcount[reward_slot]);
 						add->m_isDirty = true;
 					}
 				}
@@ -548,9 +548,9 @@ bool ChatHandler::HandleQuestFinishCommand(const char * args, WorldSession * m_s
 			{
 				// Money reward
 				// Check they don't have more than the max gold
-				if(sWorld.GoldCapEnabled && (plr->GetUInt32Value(PLAYER_FIELD_COINAGE) + qst->reward_money) <= sWorld.GoldLimit)
+				if( sWorld.GoldCapEnabled && (plr->GetGold() + qst->reward_money) <= sWorld.GoldLimit )
 				{
-					plr->ModUnsigned32Value( PLAYER_FIELD_COINAGE, qst->reward_money );
+					plr->ModGold( qst->reward_money );
 				}
 				plr->GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_QUEST_REWARD_GOLD, qst->reward_money, 0, 0);
 			}
@@ -660,7 +660,7 @@ bool ChatHandler::HandleQuestGiverCommand(const char * args, WorldSession * m_se
 			string spawnId1;
 			if(spawnResult1)
 			{
-				Field *fields = spawnResult1->Fetch();
+				fields = spawnResult1->Fetch();
 				spawnId1 = fields[0].GetString();
 
 				delete spawnResult1;
@@ -715,7 +715,7 @@ bool ChatHandler::HandleQuestGiverCommand(const char * args, WorldSession * m_se
 			string spawnId2;
 			if(spawnResult2)
 			{
-				Field *fields = spawnResult2->Fetch();
+				fields = spawnResult2->Fetch();
 				spawnId2 = fields[0].GetString();
 
 				delete spawnResult2;
@@ -853,8 +853,8 @@ bool ChatHandler::HandleQuestListCommand(const char * args, WorldSession * m_ses
 
 		do
 		{
-			Field *fields = creatureResult->Fetch();
-			uint32 quest_id = fields[0].GetUInt32();
+			fields = creatureResult->Fetch();
+			quest_id = fields[0].GetUInt32();
 
 			qst = QuestStorage.LookupEntry(quest_id);
 			if(qst== NULL)
@@ -917,10 +917,10 @@ bool ChatHandler::HandleQuestAddStartCommand(const char * args, WorldSession * m
 	}
 
 	uint32 quest_id = atol(args);
-	if(quest_id==0)
+	if(quest_id== 0)
 	{
 		quest_id = GetQuestIDFromLink(args);
-		if(quest_id==0)
+		if(quest_id== 0)
 			return false;
 	}
 	Quest * qst = QuestStorage.LookupEntry(quest_id);
@@ -1002,10 +1002,10 @@ bool ChatHandler::HandleQuestAddFinishCommand(const char * args, WorldSession * 
 	}
 
 	uint32 quest_id = atol(args);
-	if(quest_id==0)
+	if(quest_id== 0)
 	{
 		quest_id = GetQuestIDFromLink(args);
-		if(quest_id==0)
+		if(quest_id== 0)
 			return false;
 	}
 	Quest * qst = QuestStorage.LookupEntry(quest_id);
@@ -1100,10 +1100,10 @@ bool ChatHandler::HandleQuestDelStartCommand(const char * args, WorldSession * m
 	}
 
 	uint32 quest_id = atol(args);
-	if(quest_id==0)
+	if(quest_id== 0)
 	{
 		quest_id = GetQuestIDFromLink(args);
-		if(quest_id==0)
+		if(quest_id== 0)
 			return false;
 	}
 	Quest * qst = QuestStorage.LookupEntry(quest_id);
@@ -1184,10 +1184,10 @@ bool ChatHandler::HandleQuestDelFinishCommand(const char * args, WorldSession * 
 	}
 
 	uint32 quest_id = atol(args);
-	if(quest_id==0)
+	if(quest_id== 0)
 	{
 		quest_id = GetQuestIDFromLink(args);
-		if(quest_id==0)
+		if(quest_id== 0)
 			return false;
 	}
 	Quest * qst = QuestStorage.LookupEntry(quest_id);
@@ -1285,7 +1285,7 @@ bool ChatHandler::HandleQuestFinisherCommand(const char * args, WorldSession * m
 			string spawnId1;
 			if(spawnResult1)
 			{
-				Field *fields = spawnResult1->Fetch();
+				fields = spawnResult1->Fetch();
 				spawnId1 = fields[0].GetString();
 
 				delete spawnResult1;
@@ -1339,7 +1339,7 @@ bool ChatHandler::HandleQuestFinisherCommand(const char * args, WorldSession * m
 			string spawnId2;
 			if(spawnResult2)
 			{
-				Field *fields = spawnResult2->Fetch();
+				fields = spawnResult2->Fetch();
 				spawnId2 = fields[0].GetString();
 
 				delete spawnResult2;
@@ -1561,10 +1561,10 @@ bool ChatHandler::HandleQuestRemoveCommand(const char * args, WorldSession * m_s
 
 	string recout = "";
 	uint32 quest_id = atol(args);
-	if(quest_id==0)
+	if(quest_id== 0)
 	{
 		quest_id = GetQuestIDFromLink(args);
-		if(quest_id==0)
+		if(quest_id== 0)
 			return false;
 	}
 	Quest * qst = QuestStorage.LookupEntry(quest_id);
@@ -1589,10 +1589,10 @@ bool ChatHandler::HandleQuestRewardCommand(const char * args, WorldSession * m_s
 	stringstream recout;
 
 	uint32 qu_id = atol(args);
-	if(qu_id==0)
+	if(qu_id== 0)
 	{
 		qu_id = GetQuestIDFromLink(args);
-		if(qu_id==0)
+		if(qu_id== 0)
 			return false;
 	}
 	Quest* q = QuestStorage.LookupEntry(qu_id);

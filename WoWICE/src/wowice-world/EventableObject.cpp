@@ -30,14 +30,6 @@ EventableObject::~EventableObject()
 	m_events.clear();
 }
 
-//we virtually are destroying this object that means we will have no more events and we do not belong to any holder anymore
-void EventableObject::Virtual_Destructor()
-{
-	event_RemoveEvents();
-	m_holder = 0;
-	m_event_Instanceid = -1;
-}
-
 EventableObject::EventableObject()
 {
 	/* commented, these will be allocated when the first event is added. */
@@ -54,11 +46,38 @@ void EventableObject::event_AddEvent(TimedEvent * ptr)
 {
 	m_lock.Acquire();
 
-	if(!m_holder)
+	if( m_holder == NULL )
 	{
 		m_event_Instanceid = event_GetInstanceID();
 		m_holder = sEventMgr.GetEventHolder(m_event_Instanceid);
+        
+        if( m_holder == NULL ){
+
+            ///////////////////////////////////////// this is for me for debugging purposes - dfighter ////////////////////////////
+            // Wowice::Util::WOWICE_ASSERT( false );
+            ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+            // We still couldn't find an eventholder for us so let's run in WorldRunnable
+            m_event_Instanceid = WORLD_INSTANCE;
+            m_holder = sEventMgr.GetEventHolder(m_event_Instanceid);
+        }
 	}
+
+    // We still couldn't find an event holder for ourselves :(
+    Wowice::Util::WOWICE_ASSERT(   m_holder != NULL );
+
+    // If we are flagged not to run in WorldRunnable then we won't!
+    // This is much better than adding us to the eventholder and removing on an update
+    if( m_event_Instanceid == WORLD_INSTANCE && ( ptr->eventFlag & EVENT_FLAG_DO_NOT_EXECUTE_IN_WORLD_CONTEXT ) ){
+        delete ptr->cb;
+        delete ptr;
+
+        ///////////////////////////////////////// this is for me for debugging purposes - dfighter ////////////////////////////
+        // Wowice::Util::WOWICE_ASSERT( false );
+        ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+		m_lock.Release();
+        return;
+    }
 
 	ptr->IncRef();
 	ptr->instanceId = m_event_Instanceid;
@@ -66,15 +85,8 @@ void EventableObject::event_AddEvent(TimedEvent * ptr)
 	m_events.insert( p );
 	m_lock.Release();
 
-	/* Add to event manager */
-	if(!m_holder)
-	{
-		/* relocate to -1 eventholder :/ */
-		m_event_Instanceid = WORLD_INSTANCE;
-		m_holder = sEventMgr.GetEventHolder(m_event_Instanceid);
-		ASSERT(m_holder);
-	}
-
+   
+    /* Add to event manager */
 	m_holder->AddEvent(ptr);
 }
 
@@ -324,9 +336,7 @@ void EventableObjectHolder::Update(time_t time_difference)
 	{
 		it2 = itr++;
 
-		if((*it2)->instanceId != mInstanceId || (*it2)->deleted || 
-			( mInstanceId == WORLD_INSTANCE && (*it2)->eventFlag & EVENT_FLAG_DO_NOT_EXECUTE_IN_WORLD_CONTEXT))
-		{
+		if((*it2)->instanceId != mInstanceId || (*it2)->deleted ){
 			if( !(*it2)->deleted ){
 				(*it2)->DecRef();
 			}
@@ -467,8 +477,6 @@ void EventableObjectHolder::AddObject(EventableObject * obj)
 				continue;
 			}
 
-			if(mInstanceId == WORLD_INSTANCE && itr->second->eventFlag & EVENT_FLAG_DO_NOT_EXECUTE_IN_WORLD_CONTEXT)
-				continue;
 			itr->second->IncRef();	
 			itr->second->instanceId = mInstanceId;
 			m_insertPool.push_back(itr->second);
@@ -486,9 +494,6 @@ void EventableObjectHolder::AddObject(EventableObject * obj)
 		{
 			// ignore deleted events
 			if(itr->second->deleted)
-				continue;
-
-			if(mInstanceId == WORLD_INSTANCE && itr->second->eventFlag & EVENT_FLAG_DO_NOT_EXECUTE_IN_WORLD_CONTEXT)
 				continue;
 
 			itr->second->IncRef();

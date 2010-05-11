@@ -406,21 +406,33 @@ void ScriptMgr::UnloadScripts()
 
 void ScriptMgr::register_creature_script(uint32 entry, exp_create_creature_ai callback)
 {
+	if(_creatures.find(entry) != _creatures.end())
+		sLog.outError("ScriptMgr is trying to register a script for Creature ID: %u even if there's already one for that Creature. Remove one of those scripts.", entry);
+
 	_creatures.insert( CreatureCreateMap::value_type( entry, callback ) );
 }
 
 void ScriptMgr::register_gameobject_script(uint32 entry, exp_create_gameobject_ai callback)
 {
+	if(_gameobjects.find(entry) != _gameobjects.end())
+		sLog.outError("ScriptMgr is trying to register a script for GameObject ID: %u even if there's already one for that GameObject. Remove one of those scripts.", entry);
+
 	_gameobjects.insert( GameObjectCreateMap::value_type( entry, callback ) );
 }
 
 void ScriptMgr::register_dummy_aura(uint32 entry, exp_handle_dummy_aura callback)
 {
+	if(_auras.find(entry) != _auras.end())
+		sLog.outError("ScriptMgr is trying to register a script for Aura ID: %u even if there's already one for that Aura. Remove one of those scripts.", entry);
+
 	_auras.insert( HandleDummyAuraMap::value_type( entry, callback ) );
 }
 
 void ScriptMgr::register_dummy_spell(uint32 entry, exp_handle_dummy_spell callback)
 {
+	if(_spells.find(entry) != _spells.end())
+		sLog.outError("ScriptMgr is trying to register a script for Spell ID: %u even if there's already one for that Spell. Remove one of those scripts.", entry);
+
 	_spells.insert( HandleDummySpellMap::value_type( entry, callback ) );
 }
 
@@ -428,7 +440,12 @@ void ScriptMgr::register_gossip_script(uint32 entry, GossipScript * gs)
 {
 	CreatureInfo * ci = CreatureNameStorage.LookupEntry(entry);
 	if(ci)
+	{
+		if(ci->gossip_script != DefaultGossipScript)
+			sLog.outError("ScriptMgr is trying to register a gossip for Creature ID: %u even if there's already one for that Creature. Remove one of those gossips.", entry);
+
 		ci->gossip_script = gs;
+	}
 
 	_customgossipscripts.insert(gs);
 }
@@ -437,7 +454,12 @@ void ScriptMgr::register_go_gossip_script(uint32 entry, GossipScript * gs)
 {
 	GameObjectInfo * gi = GameObjectNameStorage.LookupEntry(entry);
 	if(gi)
+	{
+		if(gi->gossip_script != NULL)
+			sLog.outError("ScriptMgr is trying to register a gossip for GameObject ID: %u even if there's already one for that GameObject. Remove one of those gossips.", entry);
+
 		gi->gossip_script = gs;
+	}
 
 	_customgossipscripts.insert(gs);
 }
@@ -446,15 +468,55 @@ void ScriptMgr::register_quest_script(uint32 entry, QuestScript * qs)
 {
 	Quest * q = QuestStorage.LookupEntry( entry );
 	if( q != NULL )
+	{
+		if(q->pQuestScript != NULL)
+		sLog.outError("ScriptMgr is trying to register a script for Quest ID: %u even if there's already one for that Quest. Remove one of those scripts.", entry);
+
 		q->pQuestScript = qs;
+	}
 
 	_questscripts.insert( qs );
 }
 
 void ScriptMgr::register_instance_script( uint32 pMapId, exp_create_instance_ai pCallback ) 
 { 
+	if(mInstances.find(pMapId) != mInstances.end())
+		sLog.outError("ScriptMgr is trying to register a script for Instance ID: %u even if there's already one for that Instance. Remove one of those scripts.", pMapId);
+
 	mInstances.insert( InstanceCreateMap::value_type( pMapId, pCallback ) ); 
 }; 
+
+void ScriptMgr::register_creature_script( uint32* entries, exp_create_creature_ai callback ) 
+{ 
+	for( uint32 y = 0; entries[y] != 0; y++)
+	{
+		register_creature_script(entries[y], callback);
+	}
+};
+
+void ScriptMgr::register_gameobject_script( uint32* entries, exp_create_gameobject_ai callback ) 
+{ 
+	for( uint32 y = 0; entries[y] != 0; y++)
+	{
+		register_gameobject_script(entries[y], callback);
+	}
+};
+
+void ScriptMgr::register_dummy_aura( uint32* entries, exp_handle_dummy_aura callback ) 
+{ 
+	for( uint32 y = 0; entries[y] != 0; y++)
+	{
+		register_dummy_aura(entries[y], callback);
+	}
+};
+
+void ScriptMgr::register_dummy_spell( uint32* entries, exp_handle_dummy_spell callback ) 
+{ 
+	for( uint32 y = 0; entries[y] != 0; y++)
+	{
+		register_dummy_spell(entries[y], callback);
+	}
+};
 
 CreatureAIScript* ScriptMgr::CreateAIScriptClassForEntry(Creature* pCreature)
 {
@@ -507,7 +569,7 @@ bool ScriptMgr::CallScriptedDummyAura(uint32 uSpellId, uint32 i, Aura* pAura, bo
 
 bool ScriptMgr::CallScriptedItem(Item * pItem, Player * pPlayer)
 {
-	if(pItem->GetProto() && pItem->GetProto()->gossip_script)
+	if(pItem->GetProto()->gossip_script)
 	{
 		pItem->GetProto()->gossip_script->GossipHello(pItem,pPlayer,true);
 		return true;
@@ -520,7 +582,12 @@ void ScriptMgr::register_item_gossip_script(uint32 entry, GossipScript * gs)
 {
 	ItemPrototype * proto = ItemPrototypeStorage.LookupEntry(entry);
 	if(proto)
+	{
+		if(proto->gossip_script != NULL)
+		sLog.outError("ScriptMgr is trying to register a gossip for Item ID: %u even if there's already one for that Item. Remove one of those gossips.", entry);
+
 		proto->gossip_script = gs;
+	}
 
 	_customgossipscripts.insert(gs);
 }
@@ -566,7 +633,7 @@ void GameObjectAIScript::RemoveAIUpdateEvent()
 
 void GameObjectAIScript::RegisterAIUpdateEvent(uint32 frequency)
 {
-	sEventMgr.AddEvent(_gameobject, &GameObject::CallScriptUpdate, EVENT_SCRIPT_UPDATE_EVENT, frequency, 0,0);
+	sEventMgr.AddEvent(_gameobject, &GameObject::CallScriptUpdate, EVENT_SCRIPT_UPDATE_EVENT, frequency, 0, EVENT_FLAG_DO_NOT_EXECUTE_IN_WORLD_CONTEXT);
 }
 
 
@@ -600,6 +667,12 @@ void GossipScript::GossipHello(Object* pObject, Player* Plr, bool AutoSend)
 		GossipText * text = NpcTextStorage.LookupEntry(Text);
 		if(text != 0)
 			TextID = Text;
+	}
+
+	if (pCreature->isSpiritHealer())
+	{
+		Plr->GetSession()->SendSpiritHealerRequest(pCreature);
+		return;
 	}
 
 	objmgr.CreateGossipMenuForPlayer(&Menu, pCreature->GetGUID(), TextID, Plr);
@@ -700,10 +773,10 @@ void GossipScript::GossipHello(Object* pObject, Player* Plr, bool AutoSend)
 			pTrainer->RequiredClass == Plr->getClass() &&   // correct class
 			pCreature->getLevel() > 10 &&				   // creature level
 			pTrainer->TrainerType != TRAINER_TYPE_PET &&  // Pet Trainers do not respec hunter talents
-			Plr->getLevel() > 10 )						  // player level
+			Plr->getLevel() >= 10 )						  // player level
 		{
 			Menu->AddItem(0, Plr->GetSession()->LocalizedWorldSrv(22), 11);
-			if(Plr->getLevel() > 40 && Plr->m_talentSpecsCount < 2)
+			if(Plr->getLevel() >= 40 && Plr->m_talentSpecsCount < 2)
 				Menu->AddItem(0, "Learn about Dual Talent Specialization.", 15);
 		}
 	
@@ -732,12 +805,6 @@ void GossipScript::GossipHello(Object* pObject, Player* Plr, bool AutoSend)
 	if (pCreature->isBanker())
 		Menu->AddItem(0, Plr->GetSession()->LocalizedWorldSrv(17), 6);
 
-	if (pCreature->isSpiritHealer())
-	{	// Spirit Healers should NOT have a menu!
-		//Menu->AddItem(0, Plr->GetSession()->LocalizedWorldSrv(18), 7);
-		Plr->GetSession()->SendSpiritHealerRequest(pCreature);
-	}
-
 	if (pCreature->isCharterGiver())
 	{
 		if( pCreature->isTabardDesigner() )
@@ -749,15 +816,19 @@ void GossipScript::GossipHello(Object* pObject, Player* Plr, bool AutoSend)
 	if (pCreature->isTabardDesigner())
 		Menu->AddItem(0, Plr->GetSession()->LocalizedWorldSrv(20), 9);
 
+	if ( pCreature->isStableMaster() && Plr->getClass() == HUNTER )
+		Menu->AddItem(0, "I'd like to stable my pet here.", 17);
+
 	if(AutoSend)
 		Menu->SendTo(Plr);
 }
 
 void GossipScript::GossipSelectOption(Object* pObject, Player* Plr, uint32 Id, uint32 IntId, const char * EnteredCode)
 {
-	Creature* pCreature = static_cast< Creature* >( pObject );
 	if( pObject->GetTypeId() != TYPEID_UNIT )
 		return;
+
+	Creature* pCreature = static_cast< Creature* >( pObject );
 
 	sLog.outDebug("GossipSelectOption: Id = %u, IntId = %u", Id, IntId);
 
@@ -843,13 +914,13 @@ void GossipScript::GossipSelectOption(Object* pObject, Player* Plr, uint32 Id, u
 
 	case 16: // end dual spec dialog
 		{
-			if(Plr->GetUInt32Value(PLAYER_FIELD_COINAGE) < 10000000)
+			if( !Plr->HasGold(10000000) )
 			{
 				Plr->GetSession()->SendNotification("You do not have enough gold to purchase a dual spec."); // I know this is not correct
 				Plr->Gossip_Complete();
 				return;
 			}
-			Plr->ModUnsigned32Value(PLAYER_FIELD_COINAGE, -10000000);
+			Plr->ModGold( -10000000 );
 			Plr->m_talentSpecsCount = 2;
 			Plr->Reset_Talents();
 			Plr->CastSpell(Plr, 63624, true); // Show activate spec buttons
@@ -858,6 +929,10 @@ void GossipScript::GossipSelectOption(Object* pObject, Player* Plr, uint32 Id, u
 			Plr->SaveToDB(false); // hai gm i bought dual spec but no werk plis gief mi 1000g back - GTFO you never bought anything
 			Plr->Gossip_Complete();
 		}
+		break;
+
+	case 17:
+		Plr->GetSession()->SendStabledPetList(pCreature->GetGUID());
 		break;
 
 	default:
@@ -893,7 +968,7 @@ void InstanceScript::RemoveUpdateEvent()
 /* Hook Stuff */
 void ScriptMgr::register_hook(ServerHookEvents event, void * function_pointer)
 {
-	ASSERT(event < NUM_SERVER_HOOKS);
+	Wowice::Util::WOWICE_ASSERT(   event < NUM_SERVER_HOOKS);
 	_hooks[event].push_back(function_pointer);
 }
 
@@ -1061,9 +1136,9 @@ void HookInterface::OnObjectLoot(Player * pPlayer, Object * pTarget, uint32 mone
 		((tOnObjectLoot)*itr)(pPlayer, pTarget, money, itemId);
 }
 
-void HookInterface::OnEnterWorld2(Player * pPlayer)
+void HookInterface::OnFullLogin(Player * pPlayer)
 {
-	ServerHookList hookList = sScriptMgr._hooks[SERVER_HOOK_EVENT_ON_ENTER_WORLD_2];
+	ServerHookList hookList = sScriptMgr._hooks[SERVER_HOOK_EVENT_ON_FULL_LOGIN];
 	for(ServerHookList::iterator itr = hookList.begin(); itr != hookList.end(); ++itr)
 		((tOnEnterWorld)*itr)(pPlayer);
 }
@@ -1110,12 +1185,19 @@ void HookInterface::OnPostLevelUp(Player * pPlayer)
 		((tOnPostLevelUp)*itr)(pPlayer);
 }
 
-void HookInterface::OnPreUnitDie(Unit *killer, Unit *victim)
+bool HookInterface::OnPreUnitDie(Unit *killer, Unit *victim)
 {
 	ServerHookList hookList = sScriptMgr._hooks[SERVER_HOOK_EVENT_ON_PRE_DIE];
+	bool ret_val = true;
 	for(ServerHookList::iterator itr = hookList.begin(); itr != hookList.end(); ++itr)
-		((tOnPreUnitDie)*itr)(killer, victim);
+	{
+		bool rv = ((tOnPreUnitDie)*itr)(killer, victim);
+		if (rv == false) // never set ret_val back to true, once it's false
+			ret_val = false;
+	}
+	return ret_val;
 }
+		
 
 void HookInterface::OnAdvanceSkillLine(Player * pPlayer, uint32 skillLine, uint32 current)
 {
@@ -1123,3 +1205,10 @@ void HookInterface::OnAdvanceSkillLine(Player * pPlayer, uint32 skillLine, uint3
 	for(ServerHookList::iterator itr = hookList.begin(); itr != hookList.end(); ++itr)
 		((tOnAdvanceSkillLine)*itr)(pPlayer, skillLine, current);
 }
+
+void HookInterface::OnDuelFinished(Player * Winner, Player * Looser)
+ {
+       ServerHookList hookList = sScriptMgr._hooks[SERVER_HOOK_EVENT_ON_DUEL_FINISHED];
+       for(ServerHookList::iterator itr = hookList.begin(); itr != hookList.end(); ++itr)
+               ((tOnDuelFinished)*itr)(Winner, Looser);
+ }

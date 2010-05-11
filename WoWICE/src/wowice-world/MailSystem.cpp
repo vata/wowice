@@ -148,26 +148,32 @@ bool MailMessage::AddMessageDataToPacket(WorldPacket& data)
 				continue;
 
 			data << uint8(i++);
-			data << pItem->GetUInt32Value(OBJECT_FIELD_GUID);
+            data << pItem->GetLowGUID();
 			data << pItem->GetEntry();
 
 			for( j = 0; j < 6; ++j )
 			{
+                /* Don't remove this please - dfighter
 				data << pItem->GetUInt32Value( ITEM_FIELD_ENCHANTMENT_1_1 + ( j * 3 ) );
 				data << pItem->GetUInt32Value( ITEM_FIELD_ENCHANTMENT_2_1 + ( j * 3 ) );
 				data << pItem->GetUInt32Value( ITEM_FIELD_ENCHANTMENT_3_1 + ( j * 3 ) );
+                */
+
+                data << uint32( pItem->GetEnchantmentId( j ) );
+                data << uint32( pItem->GetEnchantmentId( j + 1 * 3 ) );
+                data << uint32( pItem->GetEnchantmentId( j + 2 * 3 ) );
 			}
 
-			data << pItem->GetUInt32Value( ITEM_FIELD_RANDOM_PROPERTIES_ID );
-			if( ( (int32)pItem->GetUInt32Value( ITEM_FIELD_RANDOM_PROPERTIES_ID ) ) < 0 )
-                data << pItem->GetItemRandomSuffixFactor();
+            data << uint32( pItem->GetItemRandomPropertyId() );
+            if( ( (int32)pItem->GetItemRandomPropertyId() ) < 0 )
+                data << uint32( pItem->GetItemRandomSuffixFactor() );
 			else
 				data << uint32( 0 );
 
-			data << uint8( pItem->GetUInt32Value(ITEM_FIELD_STACK_COUNT) );
+			data << uint8( pItem->GetStackCount() );
 			data << uint32( pItem->GetChargesLeft() );
-			data << pItem->GetUInt32Value( ITEM_FIELD_MAXDURABILITY );
-			data << pItem->GetUInt32Value( ITEM_FIELD_DURABILITY );
+            data << uint32( pItem->GetDurabilityMax() );
+            data << uint32( pItem->GetDurability() );
 			data << uint32( 0 );
 			data << uint32( 0 );
 			data << uint32( 0 );
@@ -178,92 +184,30 @@ bool MailMessage::AddMessageDataToPacket(WorldPacket& data)
 	}
 
 	return true;
-/*
-	data << uint16(0);
-	data << message_id;
-	data << uint8(message_type);
-	if(message_type)
-		data << uint32(sender_guid);
-	else
-		data << sender_guid;
 
-	data << subject;
-	data << message_id;	  // itempageid
-	data << message_id;
-
-	data << stationery;
-
-	uint32 itementry = 0, itemcount = 0;
-	uint32 charges = 0, durability = 0, maxdurability = 0;
-
-	if(attached_item_guid)
-	{
-		QueryResult * result = CharacterDatabase.Query("SELECT `entry`, `count`, `charges`, `durability` FROM playeritems WHERE guid='%u'", GUID_LOPART(attached_item_guid));
-		if(result)
-		{
-			itementry = result->Fetch()[0].GetUInt32();
-			itemcount = result->Fetch()[1].GetUInt32();
-			charges = result->Fetch()[2].GetUInt32();
-			durability = result->Fetch()[3].GetUInt32();
-			ItemPrototype * it = ItemPrototypeStorage.LookupEntry(itementry);
-			maxdurability = it ? it->MaxDurability : durability;
-
-			delete result;
-		}
-	}
-
-	if(external_attached_item_guid)
-	{
-		QueryResult * result = CharacterDatabase.Query("SELECT `entry`, `count`, `charges`, `durability` FROM playeritems_external WHERE guid='%u'", GUID_LOPART(external_attached_item_guid));
-		if(result)
-		{
-			itementry = result->Fetch()[0].GetUInt32();
-			itemcount = result->Fetch()[1].GetUInt32();
-			charges = result->Fetch()[2].GetUInt32();
-			durability = result->Fetch()[3].GetUInt32();
-			ItemPrototype * it = ItemPrototypeStorage.LookupEntry(itementry);
-			maxdurability = it ? it->MaxDurability : durability;
-
-			delete result;
-		}
-	}
-
-	data << itementry;
-	data << uint32(0);  // unk
-	data << uint32(0);  // unk
-	data << uint32(0);  // unk
-	for(uint32 i = 0; i < 17; ++i)
-		data << uint32(0);
-
-	data << (itemcount ? uint8(itemcount) : uint8(1));
-	data << charges;
-	data << maxdurability;
-	data << durability;
-	data << money;
-	data << cod;
-	data << uint32(read_flag);
-
-	if(expire_time)
-		data << float(float(expire_time - (uint32)UNIXTIME) / 86400.0f);
-	else
-		data << float(0);
-
-	data << uint32(0);
-
-	return true;*/
 }
 
 void MailSystem::SaveMessageToSQL(MailMessage * message)
 {
 	stringstream ss;
+
+
+    ss << "DELETE FROM mailbox WHERE message_id = ";
+    ss << message->message_id;
+    ss << ";";
+
+    CharacterDatabase.ExecuteNA( ss.str().c_str() );
+
+    ss.rdbuf()->str("");
+
 	vector< uint64 >::iterator itr;
-	ss << "REPLACE INTO mailbox VALUES("
+	ss << "INSERT INTO mailbox VALUES("
 		<< message->message_id << ","
 		<< message->message_type << ","
 		<< message->player_guid << ","
-		<< message->sender_guid << ",\""
-		<< CharacterDatabase.EscapeString(message->subject) << "\",\""
-		<< CharacterDatabase.EscapeString(message->body) << "\","
+		<< message->sender_guid << ",\'"
+		<< CharacterDatabase.EscapeString(message->subject) << "\',\'"
+		<< CharacterDatabase.EscapeString(message->body) << "\',"
 		<< message->money << ",'";
 
 	for( itr = message->items.begin( ); itr != message->items.end( ); ++itr )
@@ -276,8 +220,9 @@ void MailSystem::SaveMessageToSQL(MailMessage * message)
 		<< message->delivery_time << ","
 		<< message->copy_made << ","
 		<< message->read_flag << ","
-		<< message->deleted_flag << ")";
-	CharacterDatabase.WaitExecute(ss.str().c_str());
+		<< message->deleted_flag << ");";
+	
+    CharacterDatabase.Execute(ss.str().c_str());
 }
 
 void WorldSession::HandleSendMail(WorldPacket & recv_data )
@@ -320,14 +265,19 @@ void WorldSession::HandleSendMail(WorldPacket & recv_data )
 		recv_data >> itemguid;
 
 		pItem = _player->GetItemInterface()->GetItemByGUID( itemguid );
-		if( pItem == NULL || pItem->IsSoulbound() || pItem->HasFlag( ITEM_FIELD_FLAGS, ITEM_FLAG_CONJURED ) )
+        if( pItem == NULL || pItem->IsSoulbound() || pItem->IsConjured() )
 		{
 			SendMailError( MAIL_ERR_INTERNAL_ERROR );
 			return;
 		}
 		if(pItem->IsAccountbound() && GetAccountId() !=  player->acct) // don't mail account-bound items to another account
 		{
-			SendMailError( MAIL_ERR_INTERNAL_ERROR );
+			WorldPacket data(SMSG_SEND_MAIL_RESULT, 16);
+			data << uint32(0);
+			data << uint32(0); 
+			data << uint32(MAIL_ERR_BAG_FULL); 
+			data << uint32(INV_ERR_ARTEFACTS_ONLY_FOR_OWN_CHARACTERS); 
+			SendPacket(&data);
 			return;
 		}
 
@@ -394,7 +344,7 @@ void WorldSession::HandleSendMail(WorldPacket & recv_data )
 	}	
 	
 	// check that we have enough in our backpack
-	if( (int32)_player->GetUInt32Value( PLAYER_FIELD_COINAGE ) < cost )
+	if( !_player->HasGold(cost) )
 	{
 		SendMailError( MAIL_ERR_NOT_ENOUGH_MONEY );
 		return;
@@ -412,7 +362,7 @@ void WorldSession::HandleSendMail(WorldPacket & recv_data )
 			pItem->RemoveFromWorld();
 			pItem->SetOwner( NULL );
 			pItem->SaveToDB( INVENTORY_SLOT_NOT_SET, 0, true, NULL );
-			msg.items.push_back( pItem->GetUInt32Value(OBJECT_FIELD_GUID) );
+            msg.items.push_back( pItem->GetLowGUID() );
 
 			if( GetPermissionCount() > 0 )
 			{
@@ -424,14 +374,14 @@ void WorldSession::HandleSendMail(WorldPacket & recv_data )
 		}
 	}
 
-	if(msg.money != 0 || msg.cod != 0 || !msg.items.size() && player->acct != _player->GetSession()->GetAccountId())
+	if(msg.money != 0 || msg.cod != 0 || ( !msg.items.size() && player->acct != _player->GetSession()->GetAccountId()) )
 	{
 		if(!sMailSystem.MailOption(MAIL_FLAG_DISABLE_HOUR_DELAY_FOR_ITEMS))
 			msg.delivery_time += 3600;  // 1hr
 	}
 
 	// take the money
-	_player->ModUnsigned32Value(PLAYER_FIELD_COINAGE, -cost);
+	_player->ModGold( -cost );
 
 	// Fill in the rest of the info
 	msg.player_guid = player->guid;
@@ -451,7 +401,7 @@ void WorldSession::HandleSendMail(WorldPacket & recv_data )
 	// Great, all our info is filled in. Now we can add it to the other players mailbox.
 	sMailSystem.DeliverMessage(player->guid, &msg);
 	// Save/Update character's gold if they've received gold that is. This prevents a rollback.
-	CharacterDatabase.Execute("UPDATE `characters` SET `gold`='%u' WHERE (`guid`='%u')", _player->GetUInt32Value(PLAYER_FIELD_COINAGE), _player->m_playerInfo->guid);
+	CharacterDatabase.Execute("UPDATE characters SET gold = %u WHERE guid = %u", _player->GetGold(), _player->m_playerInfo->guid);
 	// Success packet :)
 	SendMailError(MAIL_OK);
 }
@@ -468,9 +418,9 @@ void WorldSession::HandleMarkAsRead(WorldPacket & recv_data )
 	// mark the message as read
 	message->read_flag = 1;
 
-	// mail now has a 3 day expiry time
+	// mail now has a 30 day expiry time
 	if(!sMailSystem.MailOption(MAIL_FLAG_NO_EXPIRY))
-		message->expire_time = (uint32)UNIXTIME + (TIME_DAY * 3);
+		message->expire_time = (uint32)UNIXTIME + (TIME_DAY * 30);
 
 	// update it in sql
 	CharacterDatabase.WaitExecute("UPDATE mailbox SET read_flag = 1, expiry_time = %u WHERE message_id = %u", message->message_id, message->expire_time);
@@ -553,7 +503,7 @@ void WorldSession::HandleTakeItem(WorldPacket & recv_data )
 	// check for cod credit
 	if(message->cod > 0)
 	{
-		if(_player->GetUInt32Value(PLAYER_FIELD_COINAGE) < message->cod)
+		if( !_player->HasGold(message->cod) )
 		{
 			data << uint32(MAIL_ERR_NOT_ENOUGH_MONEY);
 			SendPacket(&data);
@@ -601,8 +551,8 @@ void WorldSession::HandleTakeItem(WorldPacket & recv_data )
 
 	// send complete packet
 	data << uint32(MAIL_OK);
-	data << item->GetUInt32Value(OBJECT_FIELD_GUID);
-	data << item->GetUInt32Value(ITEM_FIELD_STACK_COUNT);
+    data << item->GetLowGUID();
+	data << item->GetStackCount();
 
 	message->items.erase( itr );
 
@@ -612,7 +562,7 @@ void WorldSession::HandleTakeItem(WorldPacket & recv_data )
 	
 	if( message->cod > 0 )
 	{
-		_player->ModUnsigned32Value(PLAYER_FIELD_COINAGE, -int32(message->cod));
+		_player->ModGold( -(int32)message->cod );
 		string subject = "COD Payment: ";
 		subject += message->subject;
 		sMailSystem.SendAutomatedMessage(NORMAL, message->player_guid, message->sender_guid, subject, "", message->cod, 0, 0, MAIL_STATIONERY_TEST1 );
@@ -645,7 +595,7 @@ void WorldSession::HandleTakeMoney(WorldPacket & recv_data )
 	// Check they don't have more than the max gold
 	if(sWorld.GoldCapEnabled)
 	{
-		if((_player->GetUInt32Value(PLAYER_FIELD_COINAGE) + message->money) > sWorld.GoldLimit)
+		if( (_player->GetGold() + message->money) > sWorld.GoldLimit )
 		{
 			_player->GetItemInterface()->BuildInventoryChangeError(NULL, NULL, INV_ERR_TOO_MUCH_GOLD);
 			return;
@@ -653,7 +603,7 @@ void WorldSession::HandleTakeMoney(WorldPacket & recv_data )
 	}
 
 	// add the money to the player
-	_player->ModUnsigned32Value(PLAYER_FIELD_COINAGE, message->money);
+	_player->ModGold( message->money );
 
 	// message no longer has any money
 	message->money = 0;
@@ -747,7 +697,7 @@ void WorldSession::HandleMailCreateTextItem(WorldPacket & recv_data )
 	if (pItem== NULL)
 		return;
 
-	pItem->SetUInt32Value(ITEM_FIELD_ITEM_TEXT_ID, message_id);
+	pItem->SetTextId(message_id);
 	if( _player->GetItemInterface()->AddItemToFreeSlot(pItem) )
 	{
 		// mail now has an item after it
@@ -802,21 +752,15 @@ void Mailbox::FillTimePacket(WorldPacket& data)
 		}
 	}
 
-	if(c==0)
+	if(c== 0)
 	{
-#ifdef USING_BIG_ENDIAN
-		*(uint32*)(&data.contents()[0])=swap32(0xc7a8c000);
-#else
-		*(uint32*)(&data.contents()[0])=0xc7a8c000;
-#endif
+
+		*(uint32*)(&data.contents()[0])= 0xc7a8c000;
 	}
 	else
 	{
-#ifdef USING_BIG_ENDIAN
-		*(uint32*)(&data.contents()[4])=swap32(c);
-#else
+
 		*(uint32*)(&data.contents()[4])=c;
-#endif
 	}
 }
 

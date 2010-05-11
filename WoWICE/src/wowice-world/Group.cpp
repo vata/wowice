@@ -290,6 +290,7 @@ void Group::Update()
 				data << uint8(0);	// unk2
 				//data << uint64(0);	// unk3
 				data << uint64(0x500000000004BC0CULL);
+				data << uint32(0);		// 3.3 - increments every time a group list update is being sent to client
 				data << uint32(m_MemberCount-1);	// we don't include self
 
 				for( j = 0; j < m_SubGroupCount; j++ )
@@ -307,7 +308,8 @@ void Group::Update()
 							if( (*itr2) == NULL )
 								continue;
 
-							data << (*itr2)->name << (*itr2)->guid << uint32(0);	// highguid
+							data << (*itr2)->name;
+							data << (*itr2)->guid << uint32(0);	// highguid
 							
 							if( (*itr2)->m_loggedInPlayer != NULL )
 								data << uint8( 1 );
@@ -326,6 +328,7 @@ void Group::Update()
 								flags |= 4;
 
 							data << flags;
+							data << uint8(0); // 3.3 - may have some use
 						}
 					}
 				}
@@ -345,6 +348,7 @@ void Group::Update()
 				data << uint8( m_LootThreshold );
 				data << uint8( m_difficulty );
 				data << uint8( m_raiddifficulty );
+				data << uint8( 0 ); // 3.3 - unk
 
 				if( !(*itr1)->m_loggedInPlayer->IsInWorld() )
 					(*itr1)->m_loggedInPlayer->CopyAndSendDelayedPacket( &data );
@@ -528,11 +532,12 @@ void Group::RemovePlayer(PlayerInfo * info)
 		//Remove some party auras.
 		for (uint32 i=MAX_POSITIVE_AURAS_EXTEDED_START;i<MAX_POSITIVE_AURAS_EXTEDED_END;i++)
 		{
-			if (pPlayer->m_auras[i] && 
-				pPlayer->m_auras[i]->m_areaAura && 
-				pPlayer->m_auras[i]->GetUnitCaster() &&
-				(!pPlayer->m_auras[i]->GetUnitCaster() ||(pPlayer->m_auras[i]->GetUnitCaster()->IsPlayer() && pPlayer!=pPlayer->m_auras[i]->GetUnitCaster())))
-				pPlayer->m_auras[i]->Remove();
+			if (pPlayer->m_auras[i] && pPlayer->m_auras[i]->m_areaAura)
+			{
+				Unit * caster = pPlayer->m_auras[i]->GetUnitCaster();
+				if( caster != NULL && caster->IsPlayer() && pPlayer->GetLowGUID() != caster->GetLowGUID() )
+					pPlayer->m_auras[i]->Remove();
+			}
 		}
 	}
 
@@ -744,22 +749,10 @@ void Group::MovePlayer(PlayerInfo *info, uint8 subgroup)
 
 void Group::SendNullUpdate( Player *pPlayer )
 {
-	// this packet is 24 bytes long.		// AS OF 2.1.0
-	uint8 buffer[24];
-	memset(buffer, 0, 24);
-	pPlayer->GetSession()->OutPacket( SMSG_GROUP_LIST, 24, buffer );
-}
-
-// player is object class because its called from unit class
-void Group::SendPartyKillLog( Object * player, Object * Unit )
-{
-	if( !player || !Unit || !HasMember( static_cast< Player* >( player ) ) )
-		return;
-
-	WorldPacket data( SMSG_PARTYKILLLOG, 16 );
-	data << player->GetGUID();
-	data << Unit->GetGUID();
-	SendPacketToAll( &data );
+	// this packet is 28 bytes long.		// AS OF 3.3
+	uint8 buffer[28];
+	memset(buffer, 0, 28);
+	pPlayer->GetSession()->OutPacket( SMSG_GROUP_LIST, 28, buffer );
 }
 
 void Group::LoadFromDB(Field *fields)
@@ -894,9 +887,9 @@ void Group::SaveToDB()
 		ss << "0,0,0,0,0,";
 
 	ss << (uint32)UNIXTIME << ",'";
-	for(int i= 0; i<NUM_MAPS; i++)
+	for(uint32 i= 0; i<NUM_MAPS; i++)
 	{
-		for(int j= 0; j<NUM_INSTANCE_MODES; j++)
+		for(uint32 j= 0; j<NUM_INSTANCE_MODES; j++)
 		{
 			if(m_instanceIds[i][j] > 0)
 			{
@@ -941,19 +934,19 @@ void Group::UpdateOutOfRangePlayer(Player * pPlayer, uint32 Flags, bool Distribu
 	}
 
 	if(Flags & GROUP_UPDATE_FLAG_HEALTH)
-		*data << uint32(pPlayer->GetUInt32Value(UNIT_FIELD_HEALTH));
+		*data << uint32(pPlayer->GetHealth());
 
 	if(Flags & GROUP_UPDATE_FLAG_MAXHEALTH)
-		*data << uint32(pPlayer->GetUInt32Value(UNIT_FIELD_MAXHEALTH));
+		*data << uint32(pPlayer->GetMaxHealth());
 
 	if(Flags & GROUP_UPDATE_FLAG_POWER_TYPE)
 		*data << uint8(pPlayer->GetPowerType());
 
 	if(Flags & GROUP_UPDATE_FLAG_POWER)
-		*data << uint16(pPlayer->GetUInt32Value(UNIT_FIELD_POWER1 + pPlayer->GetPowerType()));
+		*data << uint16(pPlayer->GetPower( pPlayer->GetPowerType()  ) );
 
 	if(Flags & GROUP_UPDATE_FLAG_MAXPOWER)
-		*data << uint16(pPlayer->GetUInt32Value(UNIT_FIELD_MAXPOWER1 + pPlayer->GetPowerType()));
+		*data << uint16(pPlayer->GetMaxPower( pPlayer->GetPowerType() ));
 
 	if(Flags & GROUP_UPDATE_FLAG_LEVEL)
 		*data << uint16(pPlayer->getLevel());
@@ -1047,25 +1040,25 @@ void Group::UpdateAllOutOfRangePlayersFor(Player * pPlayer)
 					hisMask.Clear();
 					myMask.Clear();
 					u1 = u2 = false;
-					for(uint32 i = PLAYER_QUEST_LOG_1_1; i < PLAYER_QUEST_LOG_25_1; ++i)
+					for(uint32 j = PLAYER_QUEST_LOG_1_1; j <= PLAYER_QUEST_LOG_25_5; ++j)
 					{
-						if(plr->GetUInt32Value(i))
+						if(plr->GetUInt32Value(j))
 						{
-							hisMask.SetBit(i);
+							hisMask.SetBit(j);
 							u1 = true;
 						}
 
-						if(pPlayer->GetUInt32Value(i))
+						if(pPlayer->GetUInt32Value(j))
 						{
 							u2 = true;
-							myMask.SetBit(i);
+							myMask.SetBit(j);
 						}
 					}
 
 					if(u1)
 					{
 						data.clear();
-                        plr->BuildValuesUpdateBlockForPlayer(&data, &hisMask);
+						plr->BuildValuesUpdateBlockForPlayer(&data, &hisMask);
 						pPlayer->PushUpdateData(&data, 1);
 					}
 
@@ -1523,3 +1516,97 @@ void Group::SetRaidDifficulty(uint32 diff){
 	
 	Unlock();
 }
+
+void Group::SendLootUpdates( Object *o ){
+
+	// Build the actual update.
+	ByteBuffer buf( 500 );
+	
+	uint32 Flags = o->GetUInt32Value( UNIT_DYNAMIC_FLAGS );
+
+	Flags |= U_DYN_FLAG_LOOTABLE;
+	Flags |= U_DYN_FLAG_TAPPED_BY_PLAYER;
+	
+	o->BuildFieldUpdatePacket( &buf, UNIT_DYNAMIC_FLAGS, Flags );
+
+	Lock();
+
+	switch( m_LootMethod ){
+	case PARTY_LOOT_RR:
+	case PARTY_LOOT_FFA:
+	case PARTY_LOOT_GROUP:
+	case PARTY_LOOT_NBG:{
+
+		SubGroup *sGrp = NULL;
+		GroupMembersSet::iterator itr2;
+
+		for( uint32 Index = 0; Index < GetSubGroupCount(); ++Index ){
+			sGrp = GetSubGroup( Index );
+			itr2 = sGrp->GetGroupMembersBegin();
+			
+			for( ; itr2 != sGrp->GetGroupMembersEnd(); ++itr2 ){
+				PlayerInfo *p = *itr2;
+
+				if( p->m_loggedInPlayer != NULL && p->m_loggedInPlayer->IsVisible( o ) )   // Save updates for non-existent creatures
+					p->m_loggedInPlayer->PushUpdateData( &buf, 1 );
+			}
+		}
+
+		break;}
+
+	case PARTY_LOOT_MASTER:{
+		
+		GroupMembersSet::iterator itr2;
+		SubGroup * sGrp = NULL;
+		
+		for( uint32 Index = 0; Index < GetSubGroupCount(); ++Index ){			
+			sGrp = GetSubGroup( Index );
+			itr2 = sGrp->GetGroupMembersBegin();
+			
+			for( ; itr2 != sGrp->GetGroupMembersEnd(); ++itr2 ){
+				PlayerInfo *p = *itr2;
+				
+				if( p->m_loggedInPlayer != NULL && p->m_loggedInPlayer->IsVisible( o ) )	   // Save updates for non-existent creatures
+					p->m_loggedInPlayer->PushUpdateData( &buf, 1 );
+			}
+		}
+		
+		Player * pLooter = GetLooter() ? GetLooter()->m_loggedInPlayer : NULL;
+		if( pLooter == NULL )
+			pLooter = GetLeader()->m_loggedInPlayer;
+		
+		if( pLooter->IsVisible( o ) )  // Save updates for non-existent creatures
+			pLooter->PushUpdateData( &buf, 1 );
+		
+		break;}
+	}
+
+
+	Unlock();
+}
+
+
+#ifdef ENABLE_ACHIEVEMENTS
+
+void Group::UpdateAchievementCriteriaForInrange( Object *o, AchievementCriteriaTypes type, int32 miscvalue1, int32 miscvalue2, uint32 time ){
+	Lock();
+
+	SubGroup *sGrp = NULL;
+	GroupMembersSet::iterator itr2;
+	
+	for( uint32 Index = 0; Index < GetSubGroupCount(); ++Index ){
+		sGrp = GetSubGroup( Index );
+		itr2 = sGrp->GetGroupMembersBegin();
+		
+		for( ; itr2 != sGrp->GetGroupMembersEnd(); ++itr2 ){
+			PlayerInfo *p = *itr2;
+			
+			if( p->m_loggedInPlayer != NULL && p->m_loggedInPlayer->IsVisible( o ) )
+				p->m_loggedInPlayer->GetAchievementMgr().UpdateAchievementCriteria( type, miscvalue1, miscvalue2, time );
+		}
+	}
+
+	Unlock();
+}
+
+#endif

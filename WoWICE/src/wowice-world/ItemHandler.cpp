@@ -632,7 +632,7 @@ void WorldSession::HandleDestroyItemOpcode( WorldPacket & recv_data )
 			_player->m_charters[CHARTER_TYPE_ARENA_3V3] = NULL;
 		}
 
-		uint32 mail_id = it->GetUInt32Value(ITEM_FIELD_ITEM_TEXT_ID);
+		uint32 mail_id = it->GetTextId();
 		if(mail_id)
 			sMailSystem.RemoveMessageIfDeleted(mail_id, _player);
 		
@@ -665,7 +665,6 @@ void WorldSession::HandleAutoEquipItemOpcode( WorldPacket & recv_data )
 	CHECK_PACKET_SIZE(recv_data, 2);
 	WorldPacket data;
 
-	AddItemResult result;
 	int8 SrcInvSlot, SrcSlot, error= 0;
 	
 	recv_data >> SrcInvSlot >> SrcSlot;
@@ -794,6 +793,7 @@ void WorldSession::HandleAutoEquipItemOpcode( WorldPacket & recv_data )
 	{
 		eitem = _player->GetItemInterface()->SafeRemoveAndRetreiveItemFromSlot( SrcInvSlot, SrcSlot, false );
 		oitem = _player->GetItemInterface()->SafeRemoveAndRetreiveItemFromSlot( INVENTORY_SLOT_NOT_SET, Slot, false );
+		AddItemResult result;
 		if( oitem != NULL )
 		{
 			result = _player->GetItemInterface()->SafeAddItem( oitem, SrcInvSlot, SrcSlot );
@@ -859,6 +859,15 @@ void WorldSession::HandleAutoEquipItemSlotOpcode( WorldPacket& recvData )
 
 	if( _player->DualWield2H && ( slotType == EQUIPMENT_SLOT_OFFHAND || slotType == EQUIPMENT_SLOT_MAINHAND ) )
 		hasDualWield2H = true;
+
+    // Need to check if the item even goes into that slot
+    // Item system is a mess too, so it needs rewrite, but hopefully this will do for now
+    int8 error = _player->GetItemInterface()->CanEquipItemInSlot2( INVENTORY_SLOT_NOT_SET, destSlot, item );
+    if( error ){
+        _player->GetItemInterface()->BuildInventoryChangeError( item, NULL, error );
+        return;
+    }
+
 
 	// Handle destination slot checking.
 	if( destSlot == slotType || hasDualWield2H )
@@ -1038,7 +1047,6 @@ void WorldSession::HandleBuyBackOpcode( WorldPacket & recv_data )
 	if( !_player || !_player->IsInWorld() )
 		return;
 	CHECK_PACKET_SIZE(recv_data, 8);
-	WorldPacket data(16);
 	uint64 guid;
 	int32 stuff;
 	Item* add ;
@@ -1106,6 +1114,7 @@ void WorldSession::HandleBuyBackOpcode( WorldPacket & recv_data )
 			it->DeleteMe();
 		}
 
+		WorldPacket data(16);
 		data.Initialize( SMSG_BUY_ITEM );
 		data << uint64(guid);
 		data << getMSTime(); //VLack: seen is Aspire code
@@ -1157,11 +1166,6 @@ void WorldSession::HandleSellItemOpcode( WorldPacket & recv_data )
 	}
 
 	ItemPrototype *it = item->GetProto();
-	if(!it)
-	{
-		SendSellItem(vendorguid, itemguid, 2);
-		return; //our player doesn't have this item
-	}
 
 	if(item->IsContainer() && ((Container*)item)->HasItems())
 	{
@@ -1307,7 +1311,7 @@ void WorldSession::HandleBuyItemInSlotOpcode( WorldPacket & recv_data ) // drag 
 			if(!c)return;
 			bagslot = (int8)_player->GetItemInterface()->GetBagSlotByGuid(bagguid);
 
-			if(bagslot == INVENTORY_SLOT_NOT_SET || (c->GetProto() && (uint32)slot > c->GetProto()->ContainerSlots))
+			if(bagslot == INVENTORY_SLOT_NOT_SET || ((uint32)slot > c->GetProto()->ContainerSlots))
 			{
 				_player->GetItemInterface()->BuildInventoryChangeError(0, 0, INV_ERR_ITEM_DOESNT_GO_TO_SLOT);
 				return;
@@ -1825,7 +1829,15 @@ void WorldSession::HandleReadItemOpcode(WorldPacket &recvPacket)
 			data << item->GetGUID();
 			SendPacket(&data);
 			sLog.outDebug("Sent SMSG_READ_OK %d", item->GetGUID());
-		}	
+		}
+		else
+		{
+			WorldPacket data(SMSG_READ_ITEM_FAILED, 5);
+			data << item->GetGUID();
+			data << uint8(2);
+			SendPacket(&data);
+			sLog.outDebug("Sent SMSG_READ_ITEM_FAILED %d", item->GetGUID());
+		}
 	}
 }
 
@@ -1921,12 +1933,28 @@ void WorldSession::HandleRepairItemOpcode(WorldPacket &recvPacket)
 	sLog.outDebug("Received CMSG_REPAIR_ITEM %d", itemguid);
 }
 
-void WorldSession::HandleBuyBankSlotOpcode(WorldPacket& recvPacket) 
+void WorldSession::HandleBuyBankSlotOpcode(WorldPacket& recvPacket)
 {
-	if(!_player->IsInWorld()) return;
-	//CHECK_PACKET_SIZE(recvPacket, 12);
+	CHECK_PACKET_SIZE(recvPacket, 8);
+
+	if(!_player->IsInWorld())
+		return;
+
+	uint64 guid;
+	recvPacket >> guid;
+	Creature* Banker = _player->GetMapMgr()->GetCreature( GET_LOWGUID_PART(guid) );
+
+	if(Banker == NULL || !Banker->isBanker())
+	{
+		WorldPacket data(SMSG_BUY_BANK_SLOT_RESULT, 4);
+		data << uint32(2); // E_ERR_BANKSLOT_NOTBANKER
+		SendPacket( &data );
+		return;
+	}
+
 	uint32 bytes,slots;
 	int32 price;
+
 	sLog.outDebug("WORLD: CMSG_BUY_bytes_SLOT");
 
 	bytes = GetPlayer()->GetUInt32Value(PLAYER_BYTES_2);
@@ -1934,8 +1962,15 @@ void WorldSession::HandleBuyBankSlotOpcode(WorldPacket& recvPacket)
 
 	sLog.outDetail("PLAYER: Buy bytes bag slot, slot number = %d", slots);
 	BankSlotPrice* bsp = dbcBankSlotPrices.LookupEntryForced(slots+1);
-	price = (bsp != NULL ) ? bsp->Price : 99999999;
+	if(bsp == NULL)
+	{
+		WorldPacket data(SMSG_BUY_BANK_SLOT_RESULT, 4);
+		data << uint32(0); // E_ERR_BANKSLOT_FAILED_TOO_MANY
+		SendPacket( &data );
+		return;
+	}
 
+	price = bsp->Price;
 	if( _player->HasGold(price) )
 	{
 	   _player->SetUInt32Value(PLAYER_BYTES_2, (bytes&0xff00ffff) | ((slots+1) << 16) );
@@ -1943,6 +1978,12 @@ void WorldSession::HandleBuyBankSlotOpcode(WorldPacket& recvPacket)
 #ifdef ENABLE_ACHIEVEMENTS
 		_player->GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_BUY_BANK_SLOT, 1, 0, 0);
 #endif
+	}
+	else
+	{
+		WorldPacket data(SMSG_BUY_BANK_SLOT_RESULT, 4);
+		data << uint32(1); // E_ERR_BANKSLOT_INSUFFICIENT_FUNDS
+		SendPacket( &data );
 	}
 }
 
@@ -2121,7 +2162,6 @@ void WorldSession::HandleInsertGemOpcode(WorldPacket &recvPacket)
 			it = itemi->SafeRemoveAndRetreiveItemByGuid(gemguid,true);
 			if( !it ) 
 				return; //someone sending hacked packets to crash server
-			ip = it->GetProto();
 
 			gp = dbcGemProperty.LookupEntryForced(it->GetProto()->GemProperties);
 			it->DeleteMe();
@@ -2378,29 +2418,27 @@ void WorldSession::HandleItemRefundRequestOpcode( WorldPacket& recvPacket ){
                     ex = dbcItemExtendedCost.LookupEntry( RefundEntry.second );
             }
 
-            if( ex != NULL ){
+            if( ex != NULL )
+			{
                 proto = itm->GetProto();
 
-                if( proto != NULL ){
-                    
 ////////////////////////////////// We remove the refunded item and refund the cost //////////////////////////////////
                     
-                    for( int i = 0; i < 5; ++i ){
-                        _player->GetItemInterface()->AddItemById( ex->item[i], ex->count[i], 0 );
-                    }
-
-                    _player->GetItemInterface()->AddItemById( 43308, ex->honor, 0 );   // honor points
-                    _player->GetItemInterface()->AddItemById( 43307, ex->arena, 0 );  // arena points
-                    _player->ModGold( proto->BuyPrice );
-
-                    _player->GetItemInterface()->RemoveItemAmtByGuid( GUID, 1 );
-
-                    _player->GetItemInterface()->RemoveRefundable( GUID );
-
-					// we were successful!
-					error = 0;
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+                for( int i = 0; i < 5; ++i ){
+                    _player->GetItemInterface()->AddItemById( ex->item[i], ex->count[i], 0 );
                 }
+
+                _player->GetItemInterface()->AddItemById( 43308, ex->honor, 0 );   // honor points
+                _player->GetItemInterface()->AddItemById( 43307, ex->arena, 0 );  // arena points
+                _player->ModGold( proto->BuyPrice );
+
+                _player->GetItemInterface()->RemoveItemAmtByGuid( GUID, 1 );
+
+                _player->GetItemInterface()->RemoveRefundable( GUID );
+
+				// we were successful!
+				error = 0;
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
             }
         }
     }
