@@ -264,7 +264,7 @@ public:
 	GossipMenu(uint64 Creature_Guid, uint32 Text_Id);
 	void AddItem(GossipMenuItem* GossipItem);
 	void AddItem(uint8 Icon, const char* Text, int32 Id = -1, int8 Extra = 0);
-	void AddMenuItem(uint8 Icon, std::string Message, uint32 dtSender, uint32 dtAction, std::string BoxMessage, uint32 BoxMoney, bool Coded = false);
+	void AddMenuItem(uint8 Icon, const char* Message, uint32 dtSender, uint32 dtAction, const char* BoxMessage, uint32 BoxMoney, bool Coded = false);
 	void BuildPacket(WorldPacket& Packet);
 	void SendTo(Player* Plr);
 	void SendGossipMenu( uint32 TitleTextId, uint64 npcGUID );
@@ -309,6 +309,17 @@ public:
 	uint64 ItemGuid;
 	uint32 CharterId;
 	string GuildName;
+
+	/************************************************************************/
+	/* Developer Fields                                                     */
+	/************************************************************************/
+	string UnkString;
+	uint32 Data[7];
+	uint16 Unk1;
+	uint32 Unk2;
+	uint32 Unk3;
+	uint32 PetitionSignerCount;
+	string PetitionSignerNames[10];
 
 	Charter(Field * fields);
 	Charter(uint32 id, uint32 leader, uint32 type) : CharterType(type), LeaderGuid(leader), CharterId(id)
@@ -702,6 +713,47 @@ public:
 	std::set<uint32> allCompletedAchievements;
 #endif
 
+#undef ENABLE_ALWAYS_SERIOUS_MODE_GCC_STL_HACK
+
+// it's for private persons (pps)
+private:
+
+// we don't want too serious people to see this, they'd freak out!
+#ifndef ENABLE_ALWAYS_SERIOUS_MODE_GCC_STL_HACK
+
+#define GRRR "Group Rest & Relaxation & Recreation"
+
+//////////////////////////////////////////////////////////////////////////////
+// I've been asked if there was an easter egg in the source code
+// No there isn't really, but now here's this easter octagon instead, enjoy!
+// ( if you are artistic, female, blue eyed with good imagination, and
+//   at least some sense of humor, this might even look like an egg. :P )
+//
+//                  ---------
+//                 /         \
+//                /           \
+//               /             \
+//              |               |
+//              |               |
+//              |               |
+//              |               |
+//              |               |
+//              |               |
+//              |               |
+//              \               /
+//               \             /
+//                \           /
+//                 -----------
+//
+//
+//////////////////////////////////////////////////////////////////////////////
+
+#undef GRRR
+
+#endif
+
+#define ENABLE_ALWAYS_SERIOUS_MODE_GCC_STL_HACK
+
 protected:
 	BCEntryStorage m_BCEntryStorage; // broadcast system.
 	RWLock playernamelock;
@@ -771,6 +823,7 @@ protected:
 	LevelInfoMap mLevelInfo;
 	PetDefaultSpellMap mDefaultPetSpells;
 	PetSpellCooldownMap mPetSpellCooldowns;
+	SpellTargetConstraintMap m_spelltargetconstraints;
 #ifdef ENABLE_ACHIEVEMENTS
 	AchievementCriteriaEntryList m_AchievementCriteriasByType[ACHIEVEMENT_CRITERIA_TYPE_TOTAL];
 #endif
@@ -778,8 +831,5 @@ protected:
 
 
 #define objmgr ObjectMgr::getSingleton()
-
-//void SetProgressBar(int, int, const char*);
-//void ClearProgressBar();
 
 #endif

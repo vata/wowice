@@ -35,6 +35,7 @@ void MapCell::Init(uint32 x, uint32 y, uint32 mapid, MapMgr *mapmgr)
 	_y= static_cast<uint16>( y );
 	_unloadpending=false;
 	_objects.clear();
+	objects_iterator = _objects.begin();
 }
 
 void MapCell::AddObject(Object *obj)
@@ -42,9 +43,7 @@ void MapCell::AddObject(Object *obj)
 	if(obj->IsPlayer())
 		++_playerCount;
 
-	AquireLock();
 	_objects.insert(obj);
-	ReleaseLock();
 }
 
 void MapCell::RemoveObject(Object *obj)
@@ -52,14 +51,14 @@ void MapCell::RemoveObject(Object *obj)
 	if(obj->IsPlayer())
 		--_playerCount;
 
-	AquireLock();
+	if(objects_iterator != _objects.end() && (*objects_iterator) == obj)  
+		++objects_iterator;
+
 	_objects.erase(obj);
-	ReleaseLock();
 }
 
 void MapCell::SetActivity(bool state)
 {	
-	AquireLock();
 	if(!_active && state)
 	{
 		// Move all objects to active set.
@@ -91,7 +90,6 @@ void MapCell::SetActivity(bool state)
 			CollideInterface.DeactivateTile(_mapmgr->GetMapId(), _x/8, _y/8);
 		}
 	}
-	ReleaseLock();
 
 	_active = state; 
 
@@ -106,7 +104,6 @@ void MapCell::RemoveObjects()
 	if( _unloadpending == true )
 		return;
 
-	AquireLock();
 	/* delete objects in pending respawn state */
 	for( itr = _respawnObjects.begin(); itr != _respawnObjects.end(); ++itr )
 	{
@@ -130,13 +127,13 @@ void MapCell::RemoveObjects()
 	_respawnObjects.clear();
 
 	//This time it's simpler! We just remove everything :)
-	for(itr = _objects.begin(); itr != _objects.end(); )
+	for(objects_iterator = _objects.begin(); objects_iterator != _objects.end(); )
 	{
 		count++;
 
-		Object *obj = (*itr);
+		Object *obj = (*objects_iterator);
 
-		itr++;
+		objects_iterator++;
 
 		//zack : we actually never set this to null. Useless check for lucky memory corruption hit.
 		if(!obj)
@@ -146,7 +143,7 @@ void MapCell::RemoveObjects()
 		{
 			if(obj->GetTypeFromGUID() == HIGHGUID_TYPE_TRANSPORTER)
 				continue;
-			if(obj->GetTypeId()==TYPEID_CORPSE && obj->GetUInt32Value(CORPSE_FIELD_OWNER) != 0)
+			if(obj->GetTypeId()==TYPEID_CORPSE && GET_LOWGUID_PART(static_cast<Corpse*>(obj)->GetOwner()) != 0)
 				continue;
 			if(!obj->m_loadedFromDB)
 				continue;
@@ -165,8 +162,6 @@ void MapCell::RemoveObjects()
 		delete obj;
 	}
 	_objects.clear();
-	ReleaseLock();
-
 	_playerCount = 0;
 	_loaded = false;
 }
@@ -277,13 +272,13 @@ void MapCell::QueueUnloadPending()
 		return;
 
 	_unloadpending = true;
-	//Log.Debug("MapCell", "Queueing pending unload of cell %u %u", _x, _y);
-	sEventMgr.AddEvent(_mapmgr, &MapMgr::UnloadCell,(uint32)_x,(uint32)_y,MAKE_CELL_EVENT(_x,_y),sWorld.map_unload_time * 1000,1,0);
+	Log.Debug("MapCell", "Queueing pending unload of cell %u %u", _x, _y);
+	sEventMgr.AddEvent(_mapmgr, &MapMgr::UnloadCell,(uint32)_x,(uint32)_y,MAKE_CELL_EVENT(_x,_y),sWorld.map_unload_time * 1000,1, EVENT_FLAG_DO_NOT_EXECUTE_IN_WORLD_CONTEXT);
 }
 
 void MapCell::CancelPendingUnload()
 {
-	//Log.Debug("MapCell", "Cancelling pending unload of cell %u %u", _x, _y);
+	Log.Debug("MapCell", "Cancelling pending unload of cell %u %u", _x, _y);
 	if(!_unloadpending)
 		return;
 
@@ -292,8 +287,8 @@ void MapCell::CancelPendingUnload()
 
 void MapCell::Unload()
 {
-	//Log.Debug("MapCell", "Unloading cell %u %u", _x, _y);
-	ASSERT(_unloadpending);
+	Log.Debug("MapCell", "Unloading cell %u %u", _x, _y);
+	Wowice::Util::WOWICE_ASSERT(   _unloadpending);
 	if(_active)
 	{
 		_unloadpending=false;

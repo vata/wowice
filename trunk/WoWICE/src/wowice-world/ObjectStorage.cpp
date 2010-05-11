@@ -19,14 +19,14 @@
  */
 const char * gItemPrototypeFormat						= "uuuusuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuffuffuuuuuuuuuufuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuusuuuuuuuuuuuuuuuuuuuuuuuuuuuuu";
 const char * gItemNameFormat							= "usu";
-const char * gCreatureNameFormat						= "usssuuuuuuuuuuuuuuuuffcc";
-const char * gGameObjectNameFormat						= "uuusssssssfuuuuuuuuuuuuuuuuuuuuuuuuuuuuuu";
-const char * gCreatureProtoFormat						= "uuuuuuufuuuffuuffuuuuuuuuffsuuuufffuuuuuuuuu";
+const char * gCreatureNameFormat						= "usssuuuuuuuuuuffcuuuuuuu";
+const char * gGameObjectNameFormat						= "uuussssuuuuuuuuuuuuuuuuuuuuuuuufuuuuuu";
+const char * gCreatureProtoFormat						= "uuuuuuufuuuffuuffuuuuuuuuffsuuuufffuuuuuuuuuu";
 const char * gVendorRestrictionEntryFormat				= "uuuuuu";
 const char * gAreaTriggerFormat							= "ucuusffffuu";
 const char * gItemPageFormat							= "usu";
 const char * gNpcTextFormat								= "ufssuuuuuuufssuuuuuuufssuuuuuuufssuuuuuuufssuuuuuuufssuuuuuuufssuuuuuuufssuuuuuuu";
-const char * gQuestFormat								= "uuuuuuuuuuuuuuuuuuussssssssssuuuuuuuuiiiiuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuiiiiiiuiuuuuuuuuuuuusuuuusuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuu";
+const char * gQuestFormat								= "uuuuuuuuuuuuuuuuuuussssssssssuuuuuuuuuuuuiiiiuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuiiiiiiuiuuuuuuuuuuuusuuuusuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuu";
 //const char * gSpellExtraFormat							= "uuuu";
 const char * gGraveyardFormat							= "uffffuuuux";
 const char * gTeleportCoordFormat						= "uxufffx";
@@ -141,20 +141,6 @@ void ObjectMgr::LoadExtraCreatureProtoStuff()
 		itr->Destruct();
 	}
 
-	{
-		StorageContainerIterator<Quest> * itr = QuestStorage.MakeIterator();
-		Quest * qst;
-		while(!itr->AtEnd())
-		{
-			qst = itr->Get();
-			qst->pQuestScript = NULL;
-
-			if( !itr->Inc() )
-				break;
-		}
-		itr->Destruct();
-	}
-
 	// Load AI Agents
 	if(Config.MainConfig.GetBoolDefault("Server", "LoadAIAgents", true))
 	{
@@ -172,10 +158,10 @@ void ObjectMgr::LoadExtraCreatureProtoStuff()
 				Field *fields = result->Fetch();
 				entry = fields[0].GetUInt32();
 				cn = CreatureProtoStorage.LookupEntry(entry);
-				spe = dbcSpell.LookupEntryForced(fields[5].GetUInt32());
+				spe = dbcSpell.LookupEntryForced(fields[6].GetUInt32());
 				if( spe == NULL )
 				{
-					Log.Warning("AIAgent", "For %u has nonexistent spell %u.", fields[0].GetUInt32(), fields[5].GetUInt32());
+					Log.Warning("AIAgent", "For %u has nonexistent spell %u.", fields[0].GetUInt32(), fields[6].GetUInt32());
 					continue;
 				}
 				if(!cn)
@@ -183,28 +169,29 @@ void ObjectMgr::LoadExtraCreatureProtoStuff()
 
 				sp = new AI_Spell;
 				sp->entryId = fields[0].GetUInt32();
-				sp->agent = fields[1].GetUInt16();
-				sp->procChance = fields[3].GetUInt32();
-				sp->procCount = fields[4].GetUInt32();
+				sp->instance_mode = fields[1].GetUInt32();
+				sp->agent = fields[2].GetUInt16();
+				sp->procChance = fields[4].GetUInt32();
+				sp->procCount = fields[5].GetUInt32();
 				sp->spell = spe;
-				sp->spellType = static_cast<uint8>( fields[6].GetUInt32() );
+				sp->spellType = static_cast<uint8>( fields[7].GetUInt32() );
 
-				int32  targettype = fields[7].GetInt32();
+				int32  targettype = fields[8].GetInt32();
 				if( targettype == -1 )
 					sp->spelltargetType = static_cast<uint8>( GetAiTargetType( spe ) );
 				else sp->spelltargetType = static_cast<uint8>( targettype );
 
-				sp->cooldown = fields[8].GetInt32();
-				sp->floatMisc1 = fields[9].GetFloat();
+				sp->cooldown = fields[9].GetInt32();
+				sp->floatMisc1 = fields[10].GetFloat();
 				sp->autocast_type=(uint32)-1;
 				sp->cooldowntime=getMSTime();
-				sp->procCounter=0;
-				sp->Misc2 = fields[10].GetUInt32();
+				sp->procCounter= 0;
+				sp->Misc2 = fields[11].GetUInt32();
 				if(sp->agent == AGENT_SPELL)
 				{
 					if(!sp->spell)
 					{
-						sLog.outDebug("SpellId %u in ai_agent for %u is invalid.\n", (unsigned int)fields[5].GetUInt32(), (unsigned int)sp->entryId);
+						sLog.outDebug("SpellId %u in ai_agent for %u is invalid.\n", (unsigned int)fields[6].GetUInt32(), (unsigned int)sp->entryId);
 						delete sp;
 						sp = NULL;
 						continue;
@@ -213,7 +200,7 @@ void ObjectMgr::LoadExtraCreatureProtoStuff()
 					if(sp->spell->Effect[0] == SPELL_EFFECT_LEARN_SPELL || sp->spell->Effect[1] == SPELL_EFFECT_LEARN_SPELL ||
 						sp->spell->Effect[2] == SPELL_EFFECT_LEARN_SPELL)
 					{
-						sLog.outDebug("Teaching spell %u in ai_agent for %u\n", (unsigned int)fields[5].GetUInt32(), (unsigned int)sp->entryId);
+						sLog.outDebug("Teaching spell %u in ai_agent for %u\n", (unsigned int)fields[6].GetUInt32(), (unsigned int)sp->entryId);
 						delete sp;
 						sp = NULL;
 						continue;
@@ -228,8 +215,8 @@ void ObjectMgr::LoadExtraCreatureProtoStuff()
 						//now this will not be exact cooldown but maybe a bigger one to not make him spam spells to often
 						int cooldown;
 						SpellDuration *sd=dbcSpellDuration.LookupEntry(sp->spell->DurationIndex);
-						int Dur=0;
-						int Casttime=0;//most of the time 0
+						int Dur= 0;
+						int Casttime= 0;//most of the time 0
 						int RecoveryTime=sp->spell->RecoveryTime;
 						if(sp->spell->DurationIndex)
 							Dur =::GetDuration(sd);
@@ -242,21 +229,21 @@ void ObjectMgr::LoadExtraCreatureProtoStuff()
 
 					/*
 					//now apply the moron filter
-					if(sp->procChance==0)
+					if(sp->procChance== 0)
 					{
 						//printf("SpellId %u in ai_agent for %u is invalid.\n", (unsigned int)fields[5].GetUInt32(), (unsigned int)sp->entryId);
 						delete sp;
 						sp = NULL;
 						continue;
 					}
-					if(sp->spellType==0)
+					if(sp->spellType== 0)
 					{
 						//right now only these 2 are used
 						if(IsBeneficSpell(sp->spell))
 							sp->spellType==STYPE_HEAL;
 						else sp->spellType==STYPE_BUFF;
 					}
-					if(sp->spelltargetType==0)
+					if(sp->spelltargetType== 0)
 						sp->spelltargetType = RecommandAISpellTargetType(sp->spell);
 						*/
 				}
@@ -324,14 +311,14 @@ void ObjectMgr::LoadExtraItemStuff()
 		pItemPrototype = itr->Get();
 		if(pItemPrototype->ItemSet > 0)
 		{
-			ItemSetContentMap::iterator itr = mItemSets.find(pItemPrototype->ItemSet);
+			ItemSetContentMap::iterator itr2 = mItemSets.find(pItemPrototype->ItemSet);
 			std::list<ItemPrototype*>* l;
-			if(itr == mItemSets.end())
+			if(itr2 == mItemSets.end())
 			{
 				l = new std::list<ItemPrototype*>;				
 				mItemSets.insert( ItemSetContentMap::value_type( pItemPrototype->ItemSet, l) );
 			} else {
-				l = itr->second;
+				l = itr2->second;
 			}
 			l->push_back(pItemPrototype);
 		}
@@ -480,6 +467,21 @@ void ObjectMgr::LoadExtraItemStuff()
 	foodItems.clear();
 }
 
+void ObjectMgr::LoadExtraGameObjectStuff()
+{
+	StorageContainerIterator<GameObjectInfo> * itr = GameObjectNameStorage.MakeIterator();
+	GameObjectInfo * goi;
+	while(!itr->AtEnd())
+	{
+		goi = itr->Get();
+		goi->gossip_script = NULL;
+
+		if( !itr->Inc() )
+		break;
+	}
+	itr->Destruct();
+}
+
 #define make_task(storage, itype, storagetype, tablename, format) tl.AddTask( new Task( \
 	new CallbackP2< SQLStorage< itype, storagetype< itype > >, const char *, const char *> \
     (&storage, &SQLStorage< itype, storagetype< itype > >::Load, tablename, format) ) )
@@ -504,6 +506,7 @@ void Storage_FillTaskList(TaskList & tl)
 	make_task(UnitModelSizeStorage, UnitModelSizeEntry, HashMapStorageContainer, "unit_display_sizes", gUnitModelSizeFormat);
 	make_task(WorldStringTableStorage, WorldStringTable, HashMapStorageContainer, "worldstring_tables", gWorldStringTableFormat);
 	make_task(WorldBroadCastStorage, WorldBroadCast, HashMapStorageContainer, "worldbroadcast", gWorldBroadCastFormat);
+	
 }
 
 void Storage_Cleanup()

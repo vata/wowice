@@ -643,12 +643,11 @@ void QuestMgr::BuildQuestUpdateComplete(WorldPacket* data, Quest* qst)
 	*data << qst->id;
 }
 
-void QuestMgr::SendPushToPartyResponse(Player *plr, Player* pTarget, uint32 response)
+void QuestMgr::SendPushToPartyResponse(Player *plr, Player* pTarget, uint8 response)
 {
-	WorldPacket data(MSG_QUEST_PUSH_RESULT, 13);
-	data << pTarget->GetGUID();
-	data << response;
-	data << uint8(0);
+	WorldPacket data(MSG_QUEST_PUSH_RESULT, 9);
+	data << uint64(pTarget->GetGUID());
+	data << uint8(response);
 	plr->GetSession()->SendPacket(&data);
 }
 
@@ -693,13 +692,29 @@ bool QuestMgr::OnGameObjectActivate(Player *plr, GameObject *go)
 	return false;
 }
 
-void QuestMgr::OnPlayerKill(Player* plr, Creature* victim)
+void QuestMgr::OnPlayerKill(Player* plr, Creature* victim, bool IsGroupKill)
+{
+	uint32 entry = victim->GetEntry();
+	_OnPlayerKill( plr, entry, IsGroupKill );
+
+	// Extra credit (yay we wont have to script this anymore) - Shauren
+	for( uint8 i = 0; i < 2; ++i )
+	{
+		uint32 extracredit = victim->GetCreatureInfo()->killcredit[i];
+		if( extracredit != 0 )
+		{
+			if( CreatureNameStorage.LookupEntry(extracredit) )
+				_OnPlayerKill( plr, extracredit, IsGroupKill );
+		}
+	}
+}
+
+void QuestMgr::_OnPlayerKill(Player* plr, uint32 entry, bool IsGroupKill)
 {
 	if(!plr)
 		return;
 
 	uint32 i, j;
-	uint32 entry = victim->GetEntry();
 	QuestLogEntry *qle;
 	Quest* qst;
 
@@ -1134,19 +1149,17 @@ void QuestMgr::OnQuestFinished(Player* plr, Quest* qst, Object *qst_giver, uint3
 		// cast Effect Spell
 		if(qst->effect_on_player)
 		{
-			SpellEntry  * inf =dbcSpell.LookupEntry(qst->effect_on_player);
+			SpellEntry  * inf =dbcSpell.LookupEntryForced(qst->effect_on_player);
 			if(inf)
 			{
 				Spell * spe = new Spell(plr,inf,true,NULL);
-				if (!spe)
-					return;
 				SpellCastTargets tgt;
 				tgt.m_unitTarget = plr->GetGUID();
 				spe->prepare(&tgt);
 			}
 		}
 
-		plr->ModUnsigned32Value( PLAYER_FIELD_COINAGE, GenerateRewardMoney( plr, qst ) );
+		plr->ModGold( GenerateRewardMoney( plr, qst ) );
 
 		// if daily then append to finished dailies
 		if ( qst->is_repeatable == wowice_QUEST_REPEATABLE_DAILY )
@@ -1154,7 +1167,7 @@ void QuestMgr::OnQuestFinished(Player* plr, Quest* qst, Object *qst_giver, uint3
 	}
 	else
 	{
-		plr->ModUnsigned32Value( PLAYER_FIELD_COINAGE, GenerateRewardMoney( plr, qst ) );
+		plr->ModGold( GenerateRewardMoney( plr, qst ) );
 	  
 		// Reputation reward
 		GiveQuestRewardReputation(plr, qst, qst_giver);
@@ -1186,14 +1199,14 @@ void QuestMgr::OnQuestFinished(Player* plr, Quest* qst, Object *qst_giver, uint3
 							if (itm== NULL)
 								return;
 
-							itm->SetUInt32Value(ITEM_FIELD_STACK_COUNT, uint32(qst->reward_itemcount[i]));
+							itm->SetStackCount(  uint32(qst->reward_itemcount[i]));
 							if( !plr->GetItemInterface()->SafeAddItem(itm,slotresult.ContainerSlot, slotresult.Slot) )
 								itm->DeleteMe();
 						}
 					}
 					else
 					{
-						add->SetCount(add->GetUInt32Value(ITEM_FIELD_STACK_COUNT) + qst->reward_itemcount[i]);
+						add->SetStackCount( add->GetStackCount() + qst->reward_itemcount[i]);
 						add->m_isDirty = true;
 					}
 				}
@@ -1226,14 +1239,14 @@ void QuestMgr::OnQuestFinished(Player* plr, Quest* qst, Object *qst_giver, uint3
 						if (itm== NULL)
 							return;
 
-						itm->SetUInt32Value(ITEM_FIELD_STACK_COUNT, uint32(qst->reward_choiceitemcount[reward_slot]));
+						itm->SetStackCount(  uint32(qst->reward_choiceitemcount[reward_slot]));
 						if( !plr->GetItemInterface()->SafeAddItem(itm,slotresult.ContainerSlot, slotresult.Slot) )
 							itm->DeleteMe();
 					}
 				}
 				else
 				{
-					add->SetCount(add->GetUInt32Value(ITEM_FIELD_STACK_COUNT) + qst->reward_choiceitemcount[reward_slot]);
+					add->SetStackCount( add->GetStackCount() + qst->reward_choiceitemcount[reward_slot]);
 					add->m_isDirty = true;
 				}
 			}
@@ -1284,12 +1297,10 @@ void QuestMgr::OnQuestFinished(Player* plr, Quest* qst, Object *qst_giver, uint3
 		// cast Effect Spell
 		if(qst->effect_on_player)
 		{
-			SpellEntry  * inf =dbcSpell.LookupEntry(qst->effect_on_player);
+			SpellEntry  * inf =dbcSpell.LookupEntryForced(qst->effect_on_player);
 			if(inf)
 			{
 				Spell * spe = new Spell(plr,inf,true,NULL);
-				if (!spe)
-					return;
 				SpellCastTargets tgt;
 				tgt.m_unitTarget = plr->GetGUID();
 				spe->prepare(&tgt);
@@ -1476,12 +1487,8 @@ void QuestMgr::SendQuestInvalid(INVALID_REASON reason, Player *plyr)
 {
 	if(!plyr)
 		return;
-#ifdef USING_BIG_ENDIAN
-	uint32 swapped = swap32((uint32)reason);
 	plyr->GetSession()->OutPacket(SMSG_QUESTGIVER_QUEST_INVALID, 4, &reason);
-#else
-	plyr->GetSession()->OutPacket(SMSG_QUESTGIVER_QUEST_INVALID, 4, &reason);
-#endif	
+
 	sLog.outDebug("WORLD:Sent SMSG_QUESTGIVER_QUEST_INVALID");
 }
 
@@ -1624,7 +1631,7 @@ bool QuestMgr::OnActivateQuestGiver(Object *qst_giver, Player *plr)
 		if (sQuestMgr.CalcStatus(qst_giver, plr) < QMGR_QUEST_CHAT)
 			return false; 
 
-		ASSERT(itr != q_end);
+		Wowice::Util::WOWICE_ASSERT(   itr != q_end);
 
 		uint32 status = sQuestMgr.CalcStatus(qst_giver, plr);
 
@@ -1869,6 +1876,8 @@ void QuestMgr::LoadExtraQuestStuff()
 			if(qst->reward_choiceitem[i])
 				qst->count_reward_choiceitem++;
 		}
+
+		qst->pQuestScript = NULL;
 
 		if(!it->Inc())
 			break;

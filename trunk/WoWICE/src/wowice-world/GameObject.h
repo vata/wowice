@@ -84,7 +84,7 @@ struct GameObjectInfo
 	uint32 ID;
 	uint32 Type;
 	uint32 DisplayID;
-	char * Name;
+	const char * Name;
 	char * Category;
 	char * Castbartext;
 	char * Unkstr;
@@ -182,13 +182,13 @@ public:
 	static RegType methods[];
 
 	// a lua script cannot create a unit.
-	GameObject(lua_State * L) { ASSERT(false); }*/
+	GameObject(lua_State * L) { Wowice::Util::WOWICE_ASSERT(   false); }*/
 
 	GameObject(uint64 guid);
 	~GameObject( );
 
-	WoWICE_INLINE GameObjectInfo* GetInfo() { return pInfo; }
-	WoWICE_INLINE void SetInfo(GameObjectInfo * goi) { pInfo = goi; }
+	GameObjectInfo* GetInfo() { return pInfo; }
+	void SetInfo(GameObjectInfo * goi) { pInfo = goi; }
 
 	//void Create ( uint32 display_id, uint8 state, uint32 obj_field_entry, float scale, uint16 type, uint16 faction, uint32 mapid, float x, float y, float z, float ang );
    // void Create ( uint32 mapid, float x, float y, float z, float ang);
@@ -242,7 +242,7 @@ public:
 
 	void Deactivate();
 
-	WoWICE_INLINE bool isQuestGiver()
+	bool isQuestGiver()
 	{
 		//from GameObject::CreateFromProto - SetByte( GAMEOBJECT_BYTES_1, 1, pInfo->Type );
 		if(GetByte(GAMEOBJECT_BYTES_1, 1) == 2) 
@@ -270,30 +270,29 @@ public:
 	Unit* m_summoner;
 	int8 bannerslot;
 	int8 bannerauraslot;
-	CBattleground * m_battleground;
 
 	void CallScriptUpdate();
    
 
-	WoWICE_INLINE GameObjectAIScript* GetScript() { return myScript; }
+	GameObjectAIScript* GetScript() { return myScript; }
 
 	void TrapSearchTarget();	// Traps need to find targets faster :P
 
-	WoWICE_INLINE bool HasAI() { return spell != 0; }
+	bool HasAI() { return spell != 0; }
 	GOSpawn * m_spawn;
 	void OnPushToWorld();
 	void OnRemoveInRangeObject(Object* pObj);
 	void RemoveFromWorld(bool free_guid);
 
-	WoWICE_INLINE bool CanMine(){return (usage_remaining > 0);}
-	WoWICE_INLINE void UseMine(){ if(usage_remaining) usage_remaining--;}
+	bool CanMine(){return (usage_remaining > 0);}
+	void UseMine(){ if(usage_remaining) usage_remaining--;}
 	void CalcMineRemaining(bool force)
 	{
 		if(force || !usage_remaining)
 			usage_remaining = GetInfo()->sound4 + RandomUInt(GetInfo()->sound5 - GetInfo()->sound4) - 1;
 	}
-	WoWICE_INLINE bool CanFish() { return ( usage_remaining > 0 ); }
-	WoWICE_INLINE void CatchFish() { if ( usage_remaining ) usage_remaining--; }
+	bool CanFish() { return ( usage_remaining > 0 ); }
+	void CatchFish() { if ( usage_remaining ) usage_remaining--; }
 	void CalcFishRemaining( bool force )
 	{
 		if ( force || !usage_remaining )
@@ -306,7 +305,34 @@ public:
 	void SetState(uint8 state);
 	uint8 GetState();
 
-	WoWICE_INLINE uint32 GetOverrides() { return m_overrides; }
+	uint32 GetOverrides() { return m_overrides; }
+
+
+
+
+
+
+
+
+
+
+
+	//Easy Functions
+	void SetDisplayId( uint32 id ) { SetUInt32Value(GAMEOBJECT_DISPLAYID, id); }
+	uint32 GetDisplayId() { return GetUInt32Value(GAMEOBJECT_DISPLAYID); }
+
+	void SetParentRotation( uint8 rot, float value ) { SetFloatValue(GAMEOBJECT_PARENTROTATION+rot, value); }
+	float GetParentRotation( uint8 rot ) { return GetFloatValue(GAMEOBJECT_PARENTROTATION+rot); }
+
+	void SetFaction( uint32 id ) 
+	{ 
+		SetUInt32Value(GAMEOBJECT_FACTION, id); 
+		_setFaction();
+	}
+	uint32 GetFaction() { return GetUInt32Value(GAMEOBJECT_FACTION); }
+
+	void SetLevel( uint32 level ) { SetUInt32Value(GAMEOBJECT_LEVEL, level); }
+	uint32 GetLevel() { return GetUInt32Value(GAMEOBJECT_LEVEL); }
 
 protected:
 

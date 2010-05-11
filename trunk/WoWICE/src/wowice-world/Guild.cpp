@@ -142,7 +142,7 @@ void Guild::LogGuildEvent(uint8 iEvent, uint8 iStringCount, ...)
 	char * strs[4] = {NULL,NULL,NULL,NULL};
 
 	va_start(ap, iStringCount);
-	ASSERT(iStringCount <= 4);
+	Wowice::Util::WOWICE_ASSERT(   iStringCount <= 4);
 
 	WorldPacket data(SMSG_GUILD_EVENT, 100);
 	uint32 i;
@@ -169,7 +169,7 @@ void Guild::AddGuildLogEntry(uint8 iEvent, uint8 iParamCount, ...)
 	GuildLogEvent * ev;
 
 	va_start(ap, iParamCount);
-	ASSERT(iParamCount<=3);
+	Wowice::Util::WOWICE_ASSERT(   iParamCount<=3);
 
 	ev = new GuildLogEvent;
 	ev->iLogId = GenerateGuildLogEventId();
@@ -467,7 +467,7 @@ bool Guild::LoadFromDB(Field * f)
 		}
 
 		//m_ranks.push_back(r);
-		ASSERT(m_ranks[r->iId] == NULL);
+		Wowice::Util::WOWICE_ASSERT(   m_ranks[r->iId] == NULL);
 		m_ranks[r->iId] = r;
 
 	} while(result->NextRow());
@@ -772,9 +772,9 @@ void Guild::RemoveGuildMember(PlayerInfo * pMember, WorldSession * pClient)
 	{
 		int RDiff = pMember->guildRank->iId - pClient->GetPlayer()->getPlayerInfo()->guildRank->iId;
 
-		if(pClient &&
-			!pClient->GetPlayer()->getPlayerInfo()->guildRank->CanPerformCommand(GR_RIGHT_REMOVE) &&
-			pClient->GetPlayer()->getPlayerInfo() != pMember || RDiff <= 0 && pClient->GetPlayer()->getPlayerInfo() != pMember)
+		if(	(!pClient->GetPlayer()->getPlayerInfo()->guildRank->CanPerformCommand(GR_RIGHT_REMOVE) 
+				&& pClient->GetPlayer()->getPlayerInfo() != pMember )
+			|| (RDiff <= 0 && pClient->GetPlayer()->getPlayerInfo() != pMember) )
 		{
 			Guild::SendGuildCommandResult(pClient, GUILD_CREATE_S, "", GUILD_PERMISSIONS);
 			return;
@@ -990,7 +990,7 @@ void Guild::ChangeGuildMaster(PlayerInfo * pNewMaster, WorldSession * pClient)
 
 	GuildMemberMap::iterator itr = m_members.find(pNewMaster);
 	GuildMemberMap::iterator itr2 = m_members.find(pClient->GetPlayer()->getPlayerInfo());
-	ASSERT(m_ranks[0]!= NULL);
+	Wowice::Util::WOWICE_ASSERT(   m_ranks[0]!= NULL);
 	if(itr==m_members.end())
 	{
 		Guild::SendGuildCommandResult(pClient, GUILD_PROMOTE_S, pNewMaster->name, GUILD_PLAYER_NOT_IN_GUILD_S);
@@ -1409,7 +1409,7 @@ void Guild::DepositMoney(WorldSession * pClient, uint32 uAmount)
 
 	// broadcast guild event telling everyone the new balance
 	char buf[20];
-	snprintf(buf, 20, I64FMT, (uint64)m_bankBalance);
+	snprintf(buf, 20, I64FMT, m_bankBalance);
 	LogGuildEvent(GUILD_EVENT_SETNEWBALANCE, 1, buf);
 
 	// log it!
@@ -1474,7 +1474,7 @@ void Guild::SpendMoney(uint32 uAmount)
 
 	// notify everyone with the new balance
 	char buf[20];
-	snprintf(buf, 20, I64FMT, (uint64)m_bankBalance);
+	snprintf(buf, 20, I64FMT, m_bankBalance);
 	LogGuildEvent(GUILD_EVENT_SETNEWBALANCE, 1, buf);
 }
 void Guild::SendGuildBankLog(WorldSession * pClient, uint8 iSlot)

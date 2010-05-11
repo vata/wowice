@@ -167,7 +167,7 @@ void WorldSession::HandleActivateTaxiOpcode( WorldPacket & recv_data )
 	}
 
 	// Check for gold
-	newmoney = ((GetPlayer()->GetUInt32Value(PLAYER_FIELD_COINAGE)) - taxipath->GetPrice());
+	newmoney = (GetPlayer()->GetGold() - taxipath->GetPrice());
 	if(newmoney < 0 )
 	{
 		data << uint32( 3 );
@@ -182,8 +182,8 @@ void WorldSession::HandleActivateTaxiOpcode( WorldPacket & recv_data )
 	// hippogryph: 479
 	// fer0x: Incorrect system. Need take values from TaxiNodes.dbc
 
-	uint32 modelid =0;
-	if( _player->GetTeam() )
+	uint32 modelid = 0;
+	if( _player->IsTeamHorde() )
 	{
 		/*
 		if( taxinode->horde_mount == 2224 )
@@ -315,7 +315,7 @@ void WorldSession::HandleMultipleActivateTaxiOpcode(WorldPacket & recvPacket)
 	}
 
 	// Check for gold
-	newmoney = ((GetPlayer()->GetUInt32Value(PLAYER_FIELD_COINAGE)) - totalcost);
+	newmoney = (GetPlayer()->GetGold() - totalcost);
 	if(newmoney < 0 )
 	{
 		data << uint32( 3 );
@@ -329,8 +329,8 @@ void WorldSession::HandleMultipleActivateTaxiOpcode(WorldPacket & recvPacket)
 	// wyvern: 295
 	// hippogryph: 479
 
-	uint32 modelid =0;
-	if( _player->GetTeam() )
+	uint32 modelid = 0;
+	if( _player->IsTeamHorde() )
 	{
 		/*
 		if( taxinode->horde_mount == 2224 )

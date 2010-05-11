@@ -20,7 +20,7 @@ initialiseSingleton(CommandTableStorage);
 
 ChatCommand * ChatHandler::getCommandTable()
 {
-	ASSERT(false);
+	Wowice::Util::WOWICE_ASSERT(   false);
 	return 0;
 }
 
@@ -105,7 +105,7 @@ void CommandTableStorage::Load()
 
 void CommandTableStorage::Override(const char * command, const char * level)
 {
-	ASSERT(level[0] != '\0');
+	Wowice::Util::WOWICE_ASSERT(   level[0] != '\0');
 	char * cmd = strdup(command);
 
 	// find the command we're talking about
@@ -586,11 +586,11 @@ void CommandTableStorage::Init()
 		{ "resettalents",        'n', &ChatHandler::HandleResetTalentsCommand,     ".resettalents - Resets all talents of targeted player to that of their current level. DANGEROUS.",                  NULL, 0, 0, 0 },
 		{ "resetskills",         'n', &ChatHandler::HandleResetSkillsCommand,      ".resetskills - Resets all skills.",                                                                                 NULL, 0, 0, 0 },
 		{ "additem",             'm', &ChatHandler::HandleAddInvItemCommand,       "Adds item x count y",                                                                                                                  NULL, 0, 0, 0 },
-		{ "removeitem",          'm', &ChatHandler::HandleRemoveItemCommand,       "Removes item %u count %u.",                                                                                         NULL, 0, 0, 0 },
+		{ "removeitem",          'm', &ChatHandler::HandleRemoveItemCommand,       "Removes item x count y.",                                                                                         NULL, 0, 0, 0 },
 		{ "additemset",          'm', &ChatHandler::HandleAddItemSetCommand,       "Adds item set to inv.",                                                                                             NULL, 0, 0, 0 },
 		{ "advanceallskills",    'm', &ChatHandler::HandleAdvanceAllSkillsCommand, "Advances all skills <x> points.",                                                                                   NULL, 0, 0, 0 },
-		{ "getstanding",         'm', &ChatHandler::HandleGetStandingCommand,      "Gets standing of faction %u.",                                                                                      NULL, 0, 0, 0 },
-		{ "setstanding",         'm', &ChatHandler::HandleSetStandingCommand,      "Sets stanging of faction %u.",                                                                                      NULL, 0, 0, 0 },
+		{ "getstanding",         'm', &ChatHandler::HandleGetStandingCommand,      "Gets standing of faction x.",                                                                                      NULL, 0, 0, 0 },
+		{ "setstanding",         'm', &ChatHandler::HandleSetStandingCommand,      "Sets stanging of faction x.",                                                                                      NULL, 0, 0, 0 },
 		{ "showitems",           'm', &ChatHandler::HandleShowItems,               "Shows items of selected Player",                                                                                    NULL, 0, 0, 0 },
 		{ "showskills",          'm', &ChatHandler::HandleShowSkills,              "Shows skills of selected Player",                                                                                   NULL, 0, 0, 0 },
 		{ "showinstances",       'z', &ChatHandler::HandleShowInstancesCommand,    "Shows persistent instances of selected Player",                                                                     NULL, 0, 0, 0 },
@@ -764,7 +764,7 @@ void CommandTableStorage::Init()
 		{
 			// Set the correct pointer.
 			ChatCommand * np = GetSubCommandTable(p->Name);
-			ASSERT(np);
+			Wowice::Util::WOWICE_ASSERT(   np != NULL );
 			p->ChildCommands = np;
 		}
 		++p;
@@ -931,9 +931,9 @@ WorldPacket * ChatHandler::FillMessageData( uint32 type, uint32 language, const 
 	//uint32	len_of_text;
 	//char	    text[];		 // not sure ? i think is null terminated .. not null terminated
 	//uint8	    afk_state;
-	ASSERT(type != CHAT_MSG_CHANNEL);
+	Wowice::Util::WOWICE_ASSERT(   type != CHAT_MSG_CHANNEL);
 	   //channels are handled in channel handler and so on
-	uint32 messageLength = (uint32)strlen((char*)message) + 1;
+	uint32 messageLength = (uint32)strlen(message) + 1;
 
 	WorldPacket *data = new WorldPacket(SMSG_MESSAGECHAT, messageLength + 30);
 
@@ -954,7 +954,7 @@ WorldPacket * ChatHandler::FillMessageData( uint32 type, uint32 language, const 
 
 WorldPacket* ChatHandler::FillSystemMessageData(const char *message) const
 {
-	uint32 messageLength = (uint32)strlen((char*)message) + 1;
+	uint32 messageLength = (uint32)strlen(message) + 1;
 
 	WorldPacket * data = new WorldPacket(SMSG_MESSAGECHAT, 30 + messageLength);
 	*data << (uint8)CHAT_MSG_SYSTEM;
@@ -1195,7 +1195,7 @@ bool ChatHandler::CmdSetValueField(WorldSession *m_session, uint32 field, uint32
 		if(field == UNIT_FIELD_STAT1) av /= 2;
 		if(field == UNIT_FIELD_BASE_HEALTH)
 		{
-			plr->SetUInt32Value(UNIT_FIELD_HEALTH, av);
+			plr->SetHealth( av);
 		}
 
 		plr->SetUInt32Value(field, av);
@@ -1220,7 +1220,7 @@ bool ChatHandler::CmdSetValueField(WorldSession *m_session, uint32 field, uint32
 			sGMLog.writefromsession(m_session, "used modify field value: [creature]%s, %u on %s", fieldname, av, creaturename.c_str());
 			if(field == UNIT_FIELD_STAT1) av /= 2;
 			if(field == UNIT_FIELD_BASE_HEALTH)
-				cr->SetUInt32Value(UNIT_FIELD_HEALTH, av);
+				cr->SetHealth( av);
 
 			switch(field)
 			{
@@ -1245,7 +1245,8 @@ bool ChatHandler::CmdSetValueField(WorldSession *m_session, uint32 field, uint32
 			if(field == UNIT_FIELD_FACTIONTEMPLATE)
 				cr->_setFaction();
 
-			cr->SaveToDB();
+			if(!cr->IsPet())
+				cr->SaveToDB();
 		}
 		else
 		{

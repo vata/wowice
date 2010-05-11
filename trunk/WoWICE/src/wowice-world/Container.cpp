@@ -52,7 +52,7 @@ void Container::LoadFromDB( Field*fields )
 	uint32 itemid=fields[2].GetUInt32();
 	m_itemProto = ItemPrototypeStorage.LookupEntry( itemid );
 
-	ASSERT(m_itemProto);
+	Wowice::Util::WOWICE_ASSERT(   m_itemProto  != NULL );
 	SetEntry(  itemid );
 	
 
@@ -66,7 +66,7 @@ void Container::LoadFromDB( Field*fields )
 	SetDurability( fields[12].GetUInt32() );
   
 
-	SetUInt32Value( CONTAINER_FIELD_NUM_SLOTS, m_itemProto->ContainerSlots);
+	SetNumSlots(m_itemProto->ContainerSlots);
 
 	m_Slot = new Item*[m_itemProto->ContainerSlots];
 	memset(m_Slot, 0, sizeof(Item*)*(m_itemProto->ContainerSlots));
@@ -77,18 +77,18 @@ void Container::Create( uint32 itemid, Player *owner )
 {
 
 	m_itemProto = ItemPrototypeStorage.LookupEntry( itemid );
-	ASSERT(m_itemProto);
+	Wowice::Util::WOWICE_ASSERT(   m_itemProto != NULL );
 
 	SetEntry(  itemid );
 
 	// TODO: this shouldn't get NULL form containers in mail fix me
 	if( owner != NULL )
 	{
-        SetOWnerGUID( 0 );
+        SetOwnerGUID( 0 );
         SetContainerGUID( owner->GetGUID() );
 	}
 	SetStackCount(  1 );
-	SetUInt32Value( CONTAINER_FIELD_NUM_SLOTS, m_itemProto->ContainerSlots);
+	SetNumSlots(m_itemProto->ContainerSlots);
 
 	m_Slot = new Item*[m_itemProto->ContainerSlots];
 	memset(m_Slot, 0, sizeof(Item*)*(m_itemProto->ContainerSlots));
@@ -99,7 +99,7 @@ void Container::Create( uint32 itemid, Player *owner )
 
 int8 Container::FindFreeSlot()
 {
-	int8 TotalSlots = static_cast<int8>(GetUInt32Value( CONTAINER_FIELD_NUM_SLOTS ));
+	int8 TotalSlots = static_cast<int8>(GetNumSlots());
 	for (int8 i= 0; i < TotalSlots; i++)
 	{
 		if(!m_Slot[i]) 
@@ -113,7 +113,7 @@ int8 Container::FindFreeSlot()
 
 bool Container::HasItems()
 {
-	int8 TotalSlots = static_cast<int8>(GetUInt32Value( CONTAINER_FIELD_NUM_SLOTS ));
+	int8 TotalSlots = static_cast<int8>(GetNumSlots());
 	for (int8 i= 0; i < TotalSlots; i++)
 	{
 		if(m_Slot[i]) 
@@ -129,7 +129,7 @@ bool Container::AddItem(int16 slot, Item *item)
 	if (slot < 0 || (uint32)slot >= GetProto()->ContainerSlots)
 		return false;
 
-	//ASSERT(m_Slot[slot] == NULL);
+	//Wowice::Util::WOWICE_ASSERT(   m_Slot[slot] == NULL);
 	if(m_Slot[slot] != NULL)
 	{
 		//sLog.outString("Bad container item %u slot %d", item->GetGUID(), slot);
@@ -147,12 +147,14 @@ bool Container::AddItem(int16 slot, Item *item)
 	item->SetOwner(m_owner);
 
 	if(item->GetProto()->Bonding == ITEM_BIND_ON_PICKUP)
+	{
 		if(item->GetProto()->Flags & ITEM_FLAG_ACCOUNTBOUND) // don't "Soulbind" account-bound items
 			item->AccountBind();
 		else
 			item->SoulBind();
+	}
 
-	SetUInt64Value(CONTAINER_FIELD_SLOT_1  + (slot*2), item->GetGUID());
+	SetSlot(slot, item->GetGUID());
 
 	//new version to fix bag issues
 	if(m_owner->IsInWorld() && !item->IsInWorld())
@@ -212,22 +214,22 @@ void Container::SwapItems(int8 SrcSlot, int8 DstSlot)
 
 	if( m_Slot[DstSlot])
 	{
-		SetUInt64Value(CONTAINER_FIELD_SLOT_1  + (DstSlot*2),  m_Slot[DstSlot]->GetGUID()  );
+		SetSlot(DstSlot, m_Slot[DstSlot]->GetGUID());
 		m_Slot[DstSlot]->m_isDirty = true;
 	}
 	else
 	{
-		SetUInt64Value(CONTAINER_FIELD_SLOT_1  + (DstSlot*2), 0 );
+		SetSlot(DstSlot, 0);
 	}
 
 	if( m_Slot[SrcSlot])
 	{
-		SetUInt64Value(CONTAINER_FIELD_SLOT_1  + (SrcSlot*2), m_Slot[SrcSlot]->GetGUID() );
+		SetSlot(SrcSlot, m_Slot[SrcSlot]->GetGUID());
 		m_Slot[SrcSlot]->m_isDirty = true;
 	}
 	else
 	{
-		SetUInt64Value(CONTAINER_FIELD_SLOT_1  + (SrcSlot*2), 0 );
+		SetSlot(SrcSlot, 0 );
 	}
 }
 
@@ -243,7 +245,7 @@ Item *Container::SafeRemoveAndRetreiveItemFromSlot(int16 slot, bool destroy)
 
 	if( pItem->GetOwner() == m_owner )
 	{
-		SetUInt64Value(CONTAINER_FIELD_SLOT_1  + slot*2, 0 );
+		SetSlot(slot, 0);
         pItem->SetContainerGUID( 0 );
 
 		if(destroy)
@@ -271,7 +273,7 @@ bool Container::SafeFullRemoveItemFromSlot(int16 slot)
 	if (pItem == NULL ||pItem==this) return false;
 	m_Slot[slot] = NULL;
 
-	SetUInt64Value(CONTAINER_FIELD_SLOT_1  + slot*2, 0 );
+	SetSlot(slot, 0);
 	pItem->SetContainerGUID( 0 );
 
 	if(pItem->IsInWorld())
@@ -297,7 +299,7 @@ bool Container::AddItemToFreeSlot(Item *pItem, uint32 * r_slot)
             pItem->SetContainerGUID( GetGUID() );
 			pItem->SetOwner(m_owner);
 
-			SetUInt64Value(CONTAINER_FIELD_SLOT_1  + (slot*2), pItem->GetGUID());
+			SetSlot(uint16(slot), pItem->GetGUID());
 
 			if(m_owner->IsInWorld() && !pItem->IsInWorld())
 			{

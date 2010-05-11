@@ -1955,6 +1955,48 @@ public:
         ModUnsigned32Value(PLAYER_FIELD_COINAGE, -coins);
     }
 
+	/////////////////////////////////////////////////
+	// EASY FUNCTIONS - MISC
+	/////////////////////////////////////////////////
+
+	 void SetChosenTitle( uint32 id ) { SetUInt32Value(PLAYER_CHOSEN_TITLE, id); }
+
+	 void SetInventorySlot( uint32 slot, uint64 guid ) { SetUInt64Value(PLAYER_FIELD_INV_SLOT_HEAD + (slot * 2), guid); }
+
+	 void SetFarsightTarget( uint64 guid ) { SetUInt64Value(PLAYER_FARSIGHT, guid); }
+	 uint64 GetFarsightTarget() { return GetUInt64Value(PLAYER_FARSIGHT); }
+
+	 void SetXp( uint32 xp ) { SetUInt32Value(PLAYER_XP, xp); }
+	 uint32 GetXp() { return GetUInt32Value(PLAYER_XP); }
+	 void SetNextLevelXp( uint32 xp ) { SetUInt32Value(PLAYER_NEXT_LEVEL_XP, xp); }
+
+	 void SetTalentPoints( uint8 spec, uint32 amt ) { SetUInt32Value(PLAYER_CHARACTER_POINTS1+spec, amt); }
+	 void ModTalentPoints( uint8 spec, int32 amt ) { ModUnsigned32Value(PLAYER_CHARACTER_POINTS1+spec, amt); }
+	 uint32 GetTalentPoints( uint8 spec ) { return GetUInt32Value(PLAYER_CHARACTER_POINTS1+spec); }
+
+	 void ModPosDamageDoneMod( uint32 school, uint32 value ) { ModUnsigned32Value(PLAYER_FIELD_MOD_DAMAGE_DONE_POS+school, value); }
+	 uint32 GetPosDamageDoneMod( uint32 school ) { return GetUInt32Value(PLAYER_FIELD_MOD_DAMAGE_DONE_POS+school); }
+
+	 void ModNegDamageDoneMod( uint32 school, uint32 value ) { ModUnsigned32Value(PLAYER_FIELD_MOD_DAMAGE_DONE_NEG+school, value); }
+	 uint32 GetNegDamageDoneMod( uint32 school ) { return GetUInt32Value(PLAYER_FIELD_MOD_DAMAGE_DONE_NEG+school); }
+
+	 void ModHealingDoneMod( uint32 value ) { ModUnsigned32Value(PLAYER_FIELD_MOD_HEALING_DONE_POS, value); }
+	 uint32 GetHealingDoneMod() { return GetUInt32Value(PLAYER_FIELD_MOD_HEALING_DONE_POS); }
+
+	 void SetAmmoId( uint32 id ) { SetUInt32Value(PLAYER_AMMO_ID, id); }
+	 uint32 GetAmmoId() { return GetUInt32Value(PLAYER_AMMO_ID); }
+
+	 void SetHonorCurrency( uint32 value ) { SetUInt32Value(PLAYER_FIELD_HONOR_CURRENCY, value); }
+	 void ModHonorCurrency( uint32 value ) { ModUnsigned32Value(PLAYER_FIELD_HONOR_CURRENCY, value); }
+	 uint32 GetHonorCurrency() { return GetUInt32Value(PLAYER_FIELD_HONOR_CURRENCY); }
+
+	 void SetArenaCurrency( uint32 value ) { SetUInt32Value(PLAYER_FIELD_ARENA_CURRENCY, value); }
+	 void ModArenaCurrency( uint32 value ) { ModUnsigned32Value(PLAYER_FIELD_ARENA_CURRENCY, value); }
+	 uint32 GetArenaCurrency() { return GetUInt32Value(PLAYER_FIELD_ARENA_CURRENCY); }
+
+     void SetGlyph( uint32 slot, uint32 id ) { SetUInt32Value(PLAYER_FIELD_GLYPHS_1 + slot, id); }
+	 uint32 GetGlyph( uint32 slot ) { return GetUInt32Value(PLAYER_FIELD_GLYPHS_1 + slot); }
+
 	//! Do this on /pvp off
 	WoWICE_INLINE void ResetPvPTimer();
 	//! Stop the timer for pvp off
@@ -1967,8 +2009,38 @@ public:
 	//! PvP Toggle (called on /pvp)
 	void PvPToggle();
 
-	WoWICE_INLINE uint32 LastHonorResetTime() const { return m_lastHonorResetTime; }
-	WoWICE_INLINE void LastHonorResetTime(uint32 val) { m_lastHonorResetTime = val; }
+	///////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	// void HandleSpellLoot( uint32 itemid )
+	//  Generates loot for the spell loot item (clams for example) , then adds the generated loot to the Player
+	//
+	// Parameters:
+	//  uint32 itemid   -  unique numerical identifier of the item the Player is looting
+	//
+	// Return Value:
+	//  None.
+	//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	void HandleSpellLoot( uint32 itemid );
+
+
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+    //  void LearnTalent( uint32 talentid, uint32 rank, bool isPreviewed )
+    //    Teaches a talentspell to the Player and decreases the available talent points
+    //
+    //
+    //  Parameters:
+    //   uint32 talentid     -   unique numeric identifier of the talent (index of talent.dbc )
+    //   uint32 rank         -   rank of the talent
+	//   bool isPreviewed	 -   true if called from the preview system
+    //
+    //  Return Value:
+    //   None.
+    //  
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+    void LearnTalent( uint32 talentid, uint32 rank, bool isPreviewed = false ); 
+
+	 uint32 LastHonorResetTime() const { return m_lastHonorResetTime; }
+	 void LastHonorResetTime(uint32 val) { m_lastHonorResetTime = val; }
 	uint32 OnlineTime;
 	bool tutorialsDirty;
 	LevelInfo * lvlinfo;

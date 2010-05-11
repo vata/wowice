@@ -479,6 +479,9 @@ void HandleConsoleInput(BaseConsole * pConsole, const char * szInput)
 			"reload", "<Table>",
 			"Reloads a table from the world database."
 		},
+		{
+			&HandleScriptEngineReloadCommand, "reloadscripts", "<NULL>", "Reloads all scripting engines currently loaded."
+		},
 		{ NULL, NULL, NULL, NULL },
 	};
 

@@ -53,7 +53,8 @@ bool CanTrainAt(Player * plr, Trainer * trn)
 //////////////////////////////////////////////////////////////
 void WorldSession::HandleTabardVendorActivateOpcode( WorldPacket & recv_data )
 {
-	if(!_player->IsInWorld()) return;
+	CHECK_INWORLD_ASSERT;
+
 	uint64 guid;
 	recv_data >> guid;
 	Creature *pCreature = _player->GetMapMgr()->GetCreature(GET_LOWGUID_PART(guid));
@@ -64,7 +65,6 @@ void WorldSession::HandleTabardVendorActivateOpcode( WorldPacket & recv_data )
 
 void WorldSession::SendTabardHelp(Creature* pCreature)
 {
-	if(!_player->IsInWorld()) return;
 	WorldPacket data(8);
 	data.Initialize( MSG_TABARDVENDOR_ACTIVATE );
 	data << pCreature->GetGUID();
@@ -77,7 +77,8 @@ void WorldSession::SendTabardHelp(Creature* pCreature)
 //////////////////////////////////////////////////////////////
 void WorldSession::HandleBankerActivateOpcode( WorldPacket & recv_data )
 {
-	if(!_player->IsInWorld()) return;
+	CHECK_INWORLD_ASSERT;
+
 	uint64 guid;
 	recv_data >> guid;
 
@@ -89,7 +90,7 @@ void WorldSession::HandleBankerActivateOpcode( WorldPacket & recv_data )
 
 void WorldSession::SendBankerList(Creature* pCreature)
 {
-	if(!_player->IsInWorld()) return;
+
 	WorldPacket data(8);
 	data.Initialize( SMSG_SHOW_BANK );
 	data << pCreature->GetGUID();
@@ -101,13 +102,15 @@ void WorldSession::SendBankerList(Creature* pCreature)
 //////////////////////////////////////////////////////////////
 //NOTE: we select prerequirements for spell that TEACHES you
 //not by spell that you learn!
+
 void WorldSession::HandleTrainerListOpcode( WorldPacket & recv_data )
 {
-	if(!_player->IsInWorld()) return;
+	CHECK_INWORLD_ASSERT;
+
 	// Inits, grab creature, check.
 	uint64 guid;
 	recv_data >> guid;
-	Creature *train = GetPlayer()->GetMapMgr()->GetCreature(GET_LOWGUID_PART(guid));
+	Creature* train = GetPlayer()->GetMapMgr()->GetCreature(GET_LOWGUID_PART(guid));
 	if(!train) return;
 
 	_player->Reputation_OnTalk(train->m_factionDBC);
@@ -118,7 +121,7 @@ void WorldSession::SendTrainerList(Creature* pCreature)
 {
 	Trainer * pTrainer = pCreature->GetTrainer();
 	//if(pTrainer == 0 || !CanTrainAt(_player, pTrainer)) return;
-	if(pTrainer==0)
+	if(pTrainer == 0)
 		return;
 
 	if(!CanTrainAt(_player,pTrainer))
@@ -132,7 +135,7 @@ void WorldSession::SendTrainerList(Creature* pCreature)
 	WorldPacket data(SMSG_TRAINER_LIST, 5000);
 	TrainerSpell * pSpell;
 	uint32 Spacer = 0;
-	uint32 Count=0;
+	uint32 Count= 0;
 	uint8 Status;
 	string Text;
 
@@ -164,12 +167,9 @@ void WorldSession::SendTrainerList(Creature* pCreature)
 		++Count;
 	}
 
-#ifdef USING_BIG_ENDIAN
-	*(uint32*)&data.contents()[12] = swap32(Count);
-#else
 	*(uint32*)&data.contents()[12] = Count;
-#endif
-	if ( stricmp(pTrainer->UIMessage,"DMSG")==0 )
+
+	if ( stricmp(pTrainer->UIMessage,"DMSG") == 0 )
 		data << _player->GetSession()->LocalizedWorldSrv(37);
 	else
 		data << pTrainer->UIMessage;
@@ -179,7 +179,7 @@ void WorldSession::SendTrainerList(Creature* pCreature)
 
 void WorldSession::HandleTrainerBuySpellOpcode(WorldPacket& recvPacket)
 {
-	if(!_player->IsInWorld()) return;
+	CHECK_INWORLD_ASSERT;
 
     ////////////////////////////////////////////////////////////////////////////////
     // As of 3.1.3 the client sends this when buying a spell
@@ -203,7 +203,8 @@ void WorldSession::HandleTrainerBuySpellOpcode(WorldPacket& recvPacket)
     if(pCreature == NULL) return;
 
 	Trainer *pTrainer = pCreature->GetTrainer();
-	if(pTrainer == NULL || !CanTrainAt(_player, pTrainer)) return;
+	if(pTrainer == 0)
+		return;
 
     // Check if the trainer offers that spell
 	TrainerSpell * pSpell = NULL;
@@ -219,6 +220,7 @@ void WorldSession::HandleTrainerBuySpellOpcode(WorldPacket& recvPacket)
     // If the trainer doesn't offer it, this is probably some packet mangling
     if(pSpell == NULL){
         // Disconnecting the player
+		sCheatLog.writefromsession(this, "Player %s tried learning none-obtainable spell - Possibly using WPE", _player->GetName() );
         this->Disconnect();
 		return;
     }
@@ -229,7 +231,7 @@ void WorldSession::HandleTrainerBuySpellOpcode(WorldPacket& recvPacket)
 
 //////////////////////////////////////////// Teaching ////////////////////////////////////
 	
-	_player->ModUnsigned32Value(PLAYER_FIELD_COINAGE, -(int32)pSpell->Cost);
+	_player->ModGold( -(int32)pSpell->Cost );
 
 	if( pSpell->pCastSpell)
 	{
@@ -238,17 +240,8 @@ void WorldSession::HandleTrainerBuySpellOpcode(WorldPacket& recvPacket)
     else
 	{
 /////////////////////////////////////// Showing the learning spellvisuals//////////////
-            packetSMSG_PLAY_SPELL_VISUAL pck;
-
-	        pck.guid = pCreature->GetGUID();
-	        pck.visualid = 0x5b3;
-
-	        _player->OutPacketToSet( SMSG_PLAY_SPELL_VISUAL, sizeof(packetSMSG_PLAY_SPELL_VISUAL), &pck, true );
-
-            pck.guid = _player->GetGUID();
-	        pck.visualid = 0x16a;
-
-	        _player->OutPacketToSet( SMSG_PLAY_SPELL_IMPACT, sizeof(packetSMSG_PLAY_SPELL_VISUAL), &pck, true );
+            _player->SendPlaySpellVisual( pCreature->GetGUID(), 0x5B3 );
+            _player->SendPlaySpellVisual( _player->GetGUID(), 0x16A );
 ///////////////////////////////////////////////////////////////////////////////////////
         
         // add the spell itself
@@ -303,9 +296,9 @@ uint8 WorldSession::TrainerGetSpellStatus(TrainerSpell* pSpell)
 
 	if(	(pSpell->RequiredLevel && _player->getLevel()<pSpell->RequiredLevel)
 		|| (pSpell->RequiredSpell && !_player->HasSpell(pSpell->RequiredSpell))
-		|| (pSpell->Cost && _player->GetUInt32Value(PLAYER_FIELD_COINAGE) < pSpell->Cost)
+		|| (pSpell->Cost && !_player->HasGold(pSpell->Cost))
 		|| (pSpell->RequiredSkillLine && _player->_GetSkillLineCurrent(pSpell->RequiredSkillLine,true) < pSpell->RequiredSkillLineValue)
-		|| (pSpell->IsProfession && pSpell->RequiredSkillLine==0 && _player->GetUInt32Value(PLAYER_CHARACTER_POINTS2) == 0)//check level 1 professions if we can learn a new profession
+		|| (pSpell->IsProfession && pSpell->RequiredSkillLine== 0 && _player->GetTalentPoints(SPEC_SECONDARY) == 0)//check level 1 professions if we can learn a new profession
 		)
 		return TRAINER_STATUS_NOT_LEARNABLE;
 	return TRAINER_STATUS_LEARNABLE;
@@ -328,7 +321,7 @@ void WorldSession::HandleCharterShowListOpcode( WorldPacket & recv_data )
 
 void WorldSession::SendCharterRequest(Creature* pCreature)
 {
-	if( !_player->IsInWorld() || !pCreature )
+	if( !pCreature )
 		return;
 
 	if( !pCreature->isTabardDesigner() )
@@ -519,7 +512,7 @@ void WorldSession::HandleGossipSelectOptionOpcode( WorldPacket & recv_data )
 	uint32 option;
 	uint32 unk24;
 	uint64 guid;
-	int8 extra=0;
+	int8 extra= 0;
 
 	recv_data >> guid >> unk24 >> option;
 
@@ -639,8 +632,8 @@ void WorldSession::HandleNpcTextQueryOpcode( WorldPacket & recv_data )
 	
 	if(pGossip)
 	{
-		data << float(1.0f);		// Unknown
-		for(uint32 i=0;i<8;i++)
+		data << float( 1.0f );		// Unknown
+		for(uint32 i = 0; i < 8; i++)
 		{
 			if(lnc)
 			{
@@ -655,7 +648,7 @@ void WorldSession::HandleNpcTextQueryOpcode( WorldPacket & recv_data )
 
 			data << pGossip->Texts[i].Lang;
 			data << uint32(0x00);		// Was prob.. but if you set it to 0 emotes work ;)
-			for(uint32 e=0;e<6;e++)
+			for(uint32 e = 0; e < 6; e++)
 				data << uint32(pGossip->Texts[i].Emote[e]);
 
 			if(i!=7) data << uint32(0x00);	// don't append to last
@@ -729,5 +722,31 @@ void WorldSession::SendSpiritHealerRequest(Creature* pCreature)
 {
 	WorldPacket data(SMSG_SPIRIT_HEALER_CONFIRM, 8);
 	data << pCreature->GetGUID();
+	SendPacket(&data);
+}
+
+void WorldSession::SendStabledPetList(uint64 npcguid)
+{
+	WorldPacket data(10 + (_player->m_Pets.size() * 25));
+	data.SetOpcode(MSG_LIST_STABLED_PETS);
+
+	data << npcguid;
+
+	data << uint8(_player->m_Pets.size());
+	data << uint8(_player->m_StableSlotCount);
+	for(std::map<uint32, PlayerPet*>::iterator itr = _player->m_Pets.begin(); itr != _player->m_Pets.end(); ++itr)
+	{
+		data << uint32( itr->first );			// pet no
+		data << uint32( itr->second->entry );	// entryid
+		data << uint32( itr->second->level );	// level
+		data << itr->second->name;			// name
+		if( itr->second->stablestate == STABLE_STATE_ACTIVE )
+			data << uint8(STABLE_STATE_ACTIVE);
+		else
+		{
+			data << uint8(STABLE_STATE_PASSIVE + 1);
+		}
+	}
+
 	SendPacket(&data);
 }

@@ -125,6 +125,7 @@ void WorldSession::HandleMessagechatOpcode( WorldPacket & recv_data )
 		case CHAT_MSG_SAY:
 		case CHAT_MSG_EMOTE:
 		case CHAT_MSG_PARTY:
+		case CHAT_MSG_PARTY_LEADER:
 		case CHAT_MSG_RAID:
 		case CHAT_MSG_RAID_LEADER:
 		case CHAT_MSG_RAID_WARNING:
@@ -235,6 +236,7 @@ void WorldSession::HandleMessagechatOpcode( WorldPacket & recv_data )
 
 		} break;
 	case CHAT_MSG_PARTY:
+	case CHAT_MSG_PARTY_LEADER:
 	case CHAT_MSG_RAID:
 	case CHAT_MSG_RAID_LEADER:
 	case CHAT_MSG_RAID_WARNING:
@@ -528,7 +530,7 @@ void WorldSession::HandleMessagechatOpcode( WorldPacket & recv_data )
 				SystemMessage("Your chat message was blocked by a server-side filter.");
 				return;
 			}
-			if( _player->m_bg != NULL && _player->GetTeam() != NULL )
+			if( _player->m_bg != NULL )
 			{
 				data = sChatHandler.FillMessageData( type, lang, msg.c_str(), _player->GetGUID() );
 				_player->m_bg->DistributePacketToTeam( data, _player->GetTeam() );
@@ -536,6 +538,23 @@ void WorldSession::HandleMessagechatOpcode( WorldPacket & recv_data )
 			}
 		}break;
 	}
+}
+
+void WorldSession::HandleEmoteOpcode( WorldPacket & recv_data )
+{
+	CHECK_PACKET_SIZE(recv_data,4);
+
+	if(!_player->isAlive())
+		return;
+
+	uint32 emote;
+	recv_data >> emote;
+	_player->Emote((EmoteType)emote);
+#ifdef ENABLE_ACHIEVEMENTS
+	_player->GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_DO_EMOTE, emote, 0, 0);
+#endif
+	uint64 guid = _player->GetGUID();
+	sQuestMgr.OnPlayerEmote(_player, emote, guid);
 }
 
 void WorldSession::HandleTextEmoteOpcode( WorldPacket & recv_data )
@@ -619,7 +638,7 @@ void WorldSession::HandleTextEmoteOpcode( WorldPacket & recv_data )
             case EMOTE_STATE_KNEEL:
 			case EMOTE_STATE_DANCE:
 				{
-					_player->SetUInt32Value(UNIT_NPC_EMOTESTATE, em->textid);
+					_player->SetEmoteState(em->textid);
 				}break;
 		}
 
@@ -643,25 +662,59 @@ void WorldSession::HandleTextEmoteOpcode( WorldPacket & recv_data )
 	}
 }
 
-void WorldSession::HandleReportSpamOpcode(WorldPacket & recvPacket)
+void WorldSession::HandleReportSpamOpcode( WorldPacket & recv_data )
 {
-	CHECK_PACKET_SIZE(recvPacket, 29);
+	CHECK_PACKET_SIZE(recv_data, 1+8);
+	sLog.outDebug("WORLD: CMSG_REPORT_SPAM");
 
-    // the 0 in the out packet is unknown
-    GetPlayer()->GetSession()->OutPacket(SMSG_COMMENTATOR_GET_PLAYER_INFO, 1, 0 );
+	uint8 spam_type;                                        // 0 - mail, 1 - chat
+	uint64 spammer_guid;
+	uint32 unk1 = 0, unk2 = 0, unk3 = 0, unk4 = 0;
+	std::string description = "";
+	recv_data >> spam_type;                                 // unk 0x01 const, may be spam type (mail/chat)
+	recv_data >> spammer_guid;                              // player guid
+	switch(spam_type)
+	{
+		case 0:
+			CHECK_PACKET_SIZE(recv_data, recv_data.rpos()+4+4+4);
+			recv_data >> unk1;                              // const 0
+			recv_data >> unk2;                              // probably mail id
+			recv_data >> unk3;                              // const 0
+			break;
+		case 1:
+			CHECK_PACKET_SIZE(recv_data, recv_data.rpos()+4+4+4+4+1);
+			recv_data >> unk1;                              // probably language
+			recv_data >> unk2;                              // message type?
+			recv_data >> unk3;                              // probably channel id
+			recv_data >> unk4;                              // unk random value
+			recv_data >> description;                       // spam description string (messagetype, channel name, player name, message)
+			break;
+	}
+	// NOTE: all chat messages from this spammer automatically ignored by spam reporter until logout in case chat spam.
+	// if it's mail spam - ALL mails from this spammer automatically removed by client
 
-	/* This whole thing is guess-work */
-	uint8 unk1;
-	uint64 reportedGuid;
-	uint32 unk2;
-	uint32 messagetype;
-	uint32 unk3;
-	uint32 unk4;
-	std::string message;
-	recvPacket >> unk1 >> reportedGuid >> unk2 >> messagetype >> unk3 >> unk4 >> message;
+	// Complaint Received message
+	WorldPacket data(SMSG_COMPLAIN_RESULT, 1);
+	data << uint8(0);
+	SendPacket(&data);
 
-	Player * rPlayer = objmgr.GetPlayer((uint32)reportedGuid);
-	if(!rPlayer)
+	sLog.outDebug("REPORT SPAM: type %u, guid %u, unk1 %u, unk2 %u, unk3 %u, unk4 %u, message %s", spam_type, Arcemu::Util::GUID_LOPART(spammer_guid), unk1, unk2, unk3, unk4, description.c_str());
+}
+
+void WorldSession::HandleChatIgnoredOpcode(WorldPacket & recvPacket )
+{
+	CHECK_PACKET_SIZE(recvPacket, 8+1);
+
+	uint64 iguid;
+	uint8 unk;
+
+	recvPacket >> iguid;
+	recvPacket >> unk; // probably related to spam reporting
+
+	Player *player = objmgr.GetPlayer(uint32(iguid));
+	if(!player || !player->GetSession())
 		return;
 
+	WorldPacket * data = sChatHandler.FillMessageData(CHAT_MSG_IGNORED, LANG_UNIVERSAL, _player->GetName(), _player->GetGUID());
+	player->GetSession()->SendPacket(data);
 }

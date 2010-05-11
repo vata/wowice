@@ -37,9 +37,6 @@ public:
 	//Init
 	void Init(uint32 x, uint32 y, uint32 mapid, MapMgr *mapmgr);
 	
-	WoWICE_INLINE void AquireLock(){ m_objectlock.Acquire(); }
-	WoWICE_INLINE void ReleaseLock(){ m_objectlock.Release(); }
-
 	//Object Managing
 	void AddObject(Object *obj); 
 	void RemoveObject(Object *obj);
@@ -70,6 +67,7 @@ public:
 	WoWICE_INLINE uint16 GetPositionY() { return _y; }
 
 	ObjectSet _respawnObjects;
+	ObjectSet::iterator objects_iterator;//required by MapCell::RemoveObjects() removing Creatures which will remove their guardians and corrupt itr.
 
 private:
 	uint16 _x,_y;

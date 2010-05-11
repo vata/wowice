@@ -134,7 +134,7 @@ bool ChatHandler::HandleResetInstanceCommand(const char* args, WorldSession *m_s
 		{
 			bool foundSomething = false;
 			plr->getPlayerInfo()->savedInstanceIdsLock.Acquire();
-			for(int difficulty= 0; difficulty<NUM_INSTANCE_MODES; difficulty++)
+			for(uint32 difficulty= 0; difficulty<NUM_INSTANCE_MODES; difficulty++)
 			{
 				PlayerInstanceMap::iterator itr = plr->getPlayerInfo()->savedInstanceIds[difficulty].find(instance->m_mapId);
 				if(itr == plr->getPlayerInfo()->savedInstanceIds[difficulty].end() || (*itr).second != instance->m_instanceId)
@@ -321,7 +321,7 @@ bool ChatHandler::HandleCreateInstanceCommand(const char * args, WorldSession * 
 	MapMgr * mgr = sInstanceMgr.CreateInstance(INSTANCE_NONRAID, mapid);
 	if(mgr == NULL)
 	{
-		Log.Error("CreateInstanceGMCommand", "CreateInstance() call failed for map %u", mapid);
+		sLog.outError("CreateInstanceGMCommand", "CreateInstance() call failed for map %u", mapid);
 		return false;      // Shouldn't happen
 	}
 	Log.Notice("CreateInstanceGMCommand", "GM created instance for map %u", mapid);
@@ -356,7 +356,7 @@ bool ChatHandler::HandleShowInstancesCommand(const char* args, WorldSession* m_s
 	std::stringstream ss;
 	ss << "Show persistent instances of " << MSG_COLOR_CYAN << plr->GetName() << "|r\n";
 	plr->getPlayerInfo()->savedInstanceIdsLock.Acquire();
-	for(int difficulty= 0; difficulty<NUM_INSTANCE_MODES; difficulty++)
+	for(uint32 difficulty= 0; difficulty<NUM_INSTANCE_MODES; difficulty++)
 	{
 		for(PlayerInstanceMap::iterator itr = plr->getPlayerInfo()->savedInstanceIds[difficulty].begin(); itr != plr->getPlayerInfo()->savedInstanceIds[difficulty].end(); ++itr)
 		{

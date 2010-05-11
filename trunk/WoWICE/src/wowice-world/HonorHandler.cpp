@@ -21,9 +21,9 @@ void WorldSession::HandleSetVisibleRankOpcode( WorldPacket& recv_data )
 	uint32 ChosenRank;
 	recv_data >> ChosenRank; 
 	if( ChosenRank == 0xFFFFFFFF )
-		_player->SetUInt32Value( PLAYER_CHOSEN_TITLE, 0 );
+		_player->SetChosenTitle(0 );
 	else if( _player->HasTitle( static_cast< RankTitles >( ChosenRank ) ) )
-		_player->SetUInt32Value( PLAYER_CHOSEN_TITLE, ChosenRank );
+		_player->SetChosenTitle(ChosenRank );
 }
 
 void HonorHandler::AddHonorPointsToPlayer(Player *pPlayer, uint32 uAmount)
@@ -60,14 +60,8 @@ int32 HonorHandler::CalculateHonorPointsForKill( uint32 playerLevel, uint32 vict
 	if(v_level <= k_grey)
 		return 0;
 
-	// Correct formula unknown. This one is correct for lvl 70 killing lvl 70 and scales down for lower levels
-	// uint32 diff_level = v_level - k_level; // Should somehow affect the result
-
-	float honor_points = 20.9f;
-	honor_points *= ((float)k_level) / PLAYER_LEVEL_CAP;
+	float honor_points = -0.53177f + 0.59357f * exp((k_level +23.54042f) / 26.07859f);
 	honor_points *= World::getSingleton().getRate( RATE_HONOR );
-	if(honor_points < 1.0f) // Make sure we get at least 1 point on low levels
-		return 1;
 	return float2int32( honor_points );
 }
 
@@ -226,7 +220,7 @@ void HonorHandler::OnPlayerKilledUnit( Player *pPlayer, Unit* pVictim )
 				if(pAffectedPlayer->GetZoneId() == 3518)
 				{
 					// Add Halaa Battle Token
-					SpellEntry * pvp_token_spell = dbcSpell.LookupEntry(pAffectedPlayer->GetTeam()? 33004 : 33005);
+					SpellEntry * pvp_token_spell = dbcSpell.LookupEntry(pAffectedPlayer->IsTeamHorde() ? 33004 : 33005);
 					pAffectedPlayer->CastSpell(pAffectedPlayer, pvp_token_spell, true);
 				}
 				// If we are in Hellfire Peninsula <http://www.wowwiki.com/Hellfire_Peninsula#World_PvP_-_Hellfire_Fortifications>
@@ -242,7 +236,7 @@ void HonorHandler::OnPlayerKilledUnit( Player *pPlayer, Unit* pVictim )
 					*/
 
 					// Add Mark of Thrallmar/Honor Hold
-					SpellEntry * pvp_token_spell = dbcSpell.LookupEntry(pAffectedPlayer->GetTeam()? 32158 : 32155);
+					SpellEntry * pvp_token_spell = dbcSpell.LookupEntry(pAffectedPlayer->IsTeamHorde() ? 32158 : 32155);
 					pAffectedPlayer->CastSpell(pAffectedPlayer, pvp_token_spell, true);
 				}
 			}
@@ -256,8 +250,8 @@ void HonorHandler::RecalculateHonorFields(Player *pPlayer)
 	pPlayer->SetUInt32Value(PLAYER_FIELD_TODAY_CONTRIBUTION, pPlayer->m_honorToday);
 	pPlayer->SetUInt32Value(PLAYER_FIELD_YESTERDAY_CONTRIBUTION, pPlayer->m_honorYesterday);
 	pPlayer->SetUInt32Value(PLAYER_FIELD_LIFETIME_HONORBALE_KILLS, pPlayer->m_killsLifetime);
-	pPlayer->SetUInt32Value(PLAYER_FIELD_HONOR_CURRENCY, pPlayer->m_honorPoints);
-	pPlayer->SetUInt32Value(PLAYER_FIELD_ARENA_CURRENCY, pPlayer->m_arenaPoints);
+	pPlayer->SetHonorCurrency(pPlayer->m_honorPoints);
+	pPlayer->SetArenaCurrency(pPlayer->m_arenaPoints);
 
 	// Currency tab - (Blizz Placeholders)
 	pPlayer->UpdateKnownCurrencies(43307, true); //Arena Points

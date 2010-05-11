@@ -116,7 +116,7 @@ bool ChatHandler::HandleRecallAddCommand(const char* args, WorldSession *m_sessi
 	{
 		Field *fields = result->Fetch();
 		const char * locname = fields[0].GetString();
-		if (strncmp((char*)args,locname,strlen(locname))==0)
+		if (strncmp((char*)args,locname,strlen(locname))== 0)
 		{
 			RedSystemMessage(m_session, "Name in use, please use another name for your location.");
 			delete result;
@@ -143,7 +143,7 @@ bool ChatHandler::HandleRecallAddCommand(const char* args, WorldSession *m_sessi
 	snprintf((char*)buf, 256, "Added location to DB with MapID: %d, X: %f, Y: %f, Z: %f, O: %f",
 		(unsigned int)plr->GetMapId(), plr->GetPositionX(), plr->GetPositionY(), plr->GetPositionZ(), plr->GetOrientation());
 	GreenSystemMessage(m_session, buf);
-	sGMLog.writefromsession(m_session, "used recall add, added \"%s\" location to database.", rc_locname.c_str());
+	sGMLog.writefromsession(m_session, "used recall add, added \'%s\' location to database.", rc_locname.c_str());
 
 	return true;
 }
@@ -163,13 +163,13 @@ bool ChatHandler::HandleRecallDelCommand(const char* args, WorldSession *m_sessi
 		float id = fields[0].GetFloat();
 		const char * locname = fields[1].GetString();
 
-		if (strnicmp((char*)args,locname,strlen(locname))==0)
+		if (strnicmp((char*)args,locname,strlen(locname))== 0)
 		{
 			std::stringstream ss;
 			ss << "DELETE FROM recall WHERE id = "<< (int)id <<";";
 			WorldDatabase.Execute( ss.str( ).c_str( ) );
 			GreenSystemMessage(m_session, "Recall location removed.");
-			sGMLog.writefromsession(m_session, "used recall delete, removed \"%s\" location from database.", args);
+			sGMLog.writefromsession(m_session, "used recall delete, removed \'%s\' location from database.", args);
 			delete result;
 			return true;
 		}
@@ -236,7 +236,7 @@ bool ChatHandler::HandleRecallPortPlayerCommand(const char* args, WorldSession *
 		float z = fields[5].GetFloat();
 		float o = fields[6].GetFloat();
 
-		if (strnicmp((char*)location,locname,strlen(args))==0)
+		if (strnicmp((char*)location,locname,strlen(args))== 0)
 		{
 			sGMLog.writefromsession( m_session, "ported %s to %s ( map: %u, x: %f, y: %f, z: %f, 0: %f )", plr->GetName(), locname, locmap, x, y, z, o );
 			if( plr->GetSession() && ( plr->GetSession()->CanUseCommand('a') || !m_session->GetPlayer()->m_isGmInvisible ) )

@@ -52,7 +52,6 @@ GameObject::GameObject(uint64 guid)
 	m_deleted = false;
 	usage_remaining = 1;
 	m_respawnCell= NULL;
-	m_battleground = NULL;
 	m_rotation = 0;
 
 	m_overrides = 0;
@@ -64,6 +63,12 @@ GameObject::~GameObject()
 	if(m_ritualmembers) {
 		delete[] m_ritualmembers;
 		m_ritualmembers = NULL;
+	}
+
+	if(myScript != NULL)
+	{
+		myScript->Destroy();
+		myScript = NULL;
 	}
 
 	uint32 guid = GetUInt32Value(OBJECT_FIELD_CREATED_BY);
@@ -148,34 +153,31 @@ void GameObject::Update(uint32 p_time)
 			if(counter++%checkrate)
 				return;
 		}
-		ObjectSet::iterator itr = GetInRangeSetBegin();
-		ObjectSet::iterator it2 = itr;
-		ObjectSet::iterator iend = GetInRangeSetEnd();
-		Unit * pUnit;
-		float dist;
-		AquireInrangeLock(); //make sure to release lock before exit function !
-		for(; it2 != iend;)
-		{
-			itr = it2;
-			++it2;
-			dist = GetDistanceSq((*itr));
-			if( (*itr) != m_summoner && (*itr)->IsUnit() && dist <= range)
-			{
-				pUnit = static_cast<Unit*>(*itr);
 
+        for( std::set< Object* >::iterator itr = m_objectsInRange.begin(); itr != m_objectsInRange.end(); ++itr )
+		{
+            float dist;
+
+            Object *o = *itr;
+
+			dist = GetDistanceSq( o );
+
+			if( o != m_summoner && o->IsUnit() && dist <= range)
+			{
 				if(m_summonedGo)
 				{
 					if(!m_summoner)
 					{
 						ExpireAndDelete();
-						ReleaseInrangeLock();
 						return;
 					}
-					if(!isAttackable(m_summoner,pUnit))continue;
+					
+                    if(!isAttackable(m_summoner, o ))
+                        continue;
 				}
 				
 				Spell * sp = new Spell( this, spell, true, NULL );
-				SpellCastTargets tgt((*itr)->GetGUID());
+				SpellCastTargets tgt( o->GetGUID() );
 				tgt.m_destX = GetPositionX();
 				tgt.m_destY = GetPositionY();
 				tgt.m_destZ = GetPositionZ();
@@ -235,10 +237,10 @@ void GameObject::Despawn(uint32 delay, uint32 respawntime)
 	{
 		/* Get our originating mapcell */
 		MapCell * pCell = m_mapCell;
-		ASSERT(pCell);
+		Wowice::Util::WOWICE_ASSERT(   pCell != NULL );
 		pCell->_respawnObjects.insert((Object*)this);
 		sEventMgr.RemoveEvents(this);
-		sEventMgr.AddEvent(m_mapMgr, &MapMgr::EventRespawnGameObject, this, pCell, EVENT_GAMEOBJECT_ITEM_SPAWN, respawntime, 1, 0);
+		sEventMgr.AddEvent(m_mapMgr, &MapMgr::EventRespawnGameObject, this, pCell, EVENT_GAMEOBJECT_ITEM_SPAWN, respawntime, 1, EVENT_FLAG_DO_NOT_EXECUTE_IN_WORLD_CONTEXT);
 		Object::RemoveFromWorld(false);
 		m_respawnCell = pCell;
 	}
@@ -251,6 +253,11 @@ void GameObject::Despawn(uint32 delay, uint32 respawntime)
 
 void GameObject::SaveToDB()
 {
+	if(m_spawn == NULL)
+	{
+		sLog.outError("GameObject::SaveToDB() is trying to save a GameObject with spawn Id = 0");
+		return;
+	}
 	std::stringstream ss;
 
     ss << "DELETE FROM gameobject_spawns WHERE id = ";
@@ -262,7 +269,7 @@ void GameObject::SaveToDB()
     ss.rdbuf()->str("");
 
 	ss << "INSERT INTO gameobject_spawns VALUES("
-		<< ((m_spawn == NULL) ? 0 : m_spawn->id) << ","
+		<< m_spawn->id << ","
 		<< GetEntry() << ","
 		<< GetMapId() << ","
 		<< GetPositionX() << ","
@@ -271,12 +278,12 @@ void GameObject::SaveToDB()
 		<< GetOrientation() << ","
 //		<< GetUInt64Value(GAMEOBJECT_ROTATION) << ","
 		<< uint64(0) << ","
-		<< GetFloatValue(GAMEOBJECT_PARENTROTATION) << ","
-		<< GetFloatValue(GAMEOBJECT_PARENTROTATION_02) << ","
-		<< GetFloatValue(GAMEOBJECT_PARENTROTATION_03) << ","
+		<< GetParentRotation(0) << ","
+		<< GetParentRotation(2) << ","
+		<< GetParentRotation(3) << ","
 		<< GetUInt32Value(GAMEOBJECT_BYTES_1) << ","
 		<< GetUInt32Value(GAMEOBJECT_FLAGS) << ","
-		<< GetUInt32Value(GAMEOBJECT_FACTION) << ","
+		<< GetFaction() << ","
 		<< GetScale() << ","
 		<< "0,"
 		<< m_phase << ","
@@ -299,12 +306,12 @@ void GameObject::SaveToFile(std::stringstream & name)
 		<< GetOrientation() << ","
 //		<< GetUInt64Value(GAMEOBJECT_ROTATION) << ","
 		<< uint64(0) << ","
-		<< GetFloatValue(GAMEOBJECT_PARENTROTATION) << ","
-		<< GetFloatValue(GAMEOBJECT_PARENTROTATION_02) << ","
-		<< GetFloatValue(GAMEOBJECT_PARENTROTATION_03) << ","
+		<< GetParentRotation(0) << ","
+		<< GetParentRotation(2) << ","
+		<< GetParentRotation(3) << ","
 		<< GetByte(GAMEOBJECT_BYTES_1, 0) << ","
 		<< GetUInt32Value(GAMEOBJECT_FLAGS) << ","
-		<< GetUInt32Value(GAMEOBJECT_FACTION) << ","
+		<< GetFaction() << ","
 		<< GetScale() << ","
 		<< "0,"
 		<< m_phase << ","
@@ -493,7 +500,6 @@ void GameObject::UseFishingNode(Player *player)
 		player->_AdvanceSkillLine( SKILL_FISHING, float2int32( 1.0f * sWorld.getRate( RATE_SKILLRATE ) ) );
 
 	GameObject * school = NULL;
-	this->AquireInrangeLock(); //make sure to release lock before exit function !
 	for ( InRangeSet::iterator it = GetInRangeSetBegin(); it != GetInRangeSetEnd(); ++it )
 	{
 		if ( (*it) == NULL || (*it)->GetTypeId() != TYPEID_GAMEOBJECT || (*it)->GetByte(GAMEOBJECT_BYTES_1, 1) != GAMEOBJECT_TYPE_FISHINGHOLE)
@@ -507,7 +513,6 @@ void GameObject::UseFishingNode(Player *player)
 		else
 			break;
 	}
-	this->ReleaseInrangeLock();
 
 	if ( school != NULL ) // open school loot if school exists
 	{
@@ -671,13 +676,15 @@ void GameObject::Deactivate()
 
 void GameObject::CallScriptUpdate()
 {
-	ASSERT(myScript);
+	Wowice::Util::WOWICE_ASSERT(   myScript != NULL );
 	myScript->AIUpdate();
 }
 
 void GameObject::OnPushToWorld()
 {
 	Object::OnPushToWorld();
+	CALL_GO_SCRIPT_EVENT(this, OnCreate)();
+	CALL_GO_SCRIPT_EVENT(this, OnSpawn)();
 	CALL_INSTANCE_SCRIPT_EVENT( m_mapMgr, OnGameObjectPushToWorld )( this );
 }
 

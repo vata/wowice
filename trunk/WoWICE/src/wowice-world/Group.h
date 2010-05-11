@@ -130,9 +130,6 @@ public:
 
 	void SendNullUpdate(Player *pPlayer);
 
-	// Group Combat
-	void SendPartyKillLog(Object * player, Object * Unit);
-
 	// Destroying/Converting
 	void Disband();
 	Player* FindFirstPlayer();

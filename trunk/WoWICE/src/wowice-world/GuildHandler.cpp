@@ -560,7 +560,7 @@ void WorldSession::HandleCharterBuy(WorldPacket & recv_data)
 		if(arena_type > 2)
 			return;
 
-		if(_player->m_arenaTeams[arena_type] || _player->m_charters[arena_index])
+		if(_player->m_arenaTeams[arena_type])
 		{
 			SendNotification(_player->GetSession()->LocalizedWorldSrv(71));
 			return;
@@ -579,7 +579,7 @@ void WorldSession::HandleCharterBuy(WorldPacket & recv_data)
 			return;
 		}
 
-		if(_player->m_charters[arena_type])
+		if(_player->m_charters[arena_index])
 		{
 			SendNotification(_player->GetSession()->LocalizedWorldSrv(73));
             return;
@@ -599,7 +599,7 @@ void WorldSession::HandleCharterBuy(WorldPacket & recv_data)
 			return;			// error message needed here
 
 		ItemPrototype * ip = ItemPrototypeStorage.LookupEntry(item_ids[arena_type]);
-		ASSERT(ip);
+		Wowice::Util::WOWICE_ASSERT(   ip != NULL );
 		SlotResult res = _player->GetItemInterface()->FindFreeInventorySlot(ip);
 		if(res.Result == 0)
 		{
@@ -623,7 +623,15 @@ void WorldSession::HandleCharterBuy(WorldPacket & recv_data)
 			c->GuildName = name;
 			c->ItemGuid = i->GetGUID();
 
-			i->SetStackCount(  1);
+			c->UnkString = UnkString;
+			c->Unk1 = crap10;
+			c->Unk2 = crap11;
+			c->Unk3 = crap12;
+			c->PetitionSignerCount = PetitionSignerCount;
+			memcpy(&Data, c->Data, sizeof(Data));
+			memcpy(&PetitionSignerNames, c->PetitionSignerNames, sizeof(PetitionSignerNames));
+
+			i->SetUInt32Value(ITEM_FIELD_STACK_COUNT, 1);
             i->SoulBind();
             i->SetEnchantmentId( 0,  c->GetID() );
             i->SetItemRandomSuffixFactor( 57813883 );
@@ -666,7 +674,7 @@ void WorldSession::HandleCharterBuy(WorldPacket & recv_data)
 		}
 
 		ItemPrototype * ip = ItemPrototypeStorage.LookupEntry(ITEM_ENTRY_GUILD_CHARTER);
-		assert(ip);
+		Wowice::Util::WOWICE_ASSERT(   ip != NULL );
 		SlotResult res = _player->GetItemInterface()->FindFreeInventorySlot(ip);
 		if(res.Result == 0)
 		{
@@ -696,6 +704,13 @@ void WorldSession::HandleCharterBuy(WorldPacket & recv_data)
 			c->GuildName = name;
 			c->ItemGuid = i->GetGUID();
 
+			c->UnkString = UnkString;
+			c->Unk1 = crap10;
+			c->Unk2 = crap11;
+			c->Unk3 = crap12;
+			c->PetitionSignerCount = PetitionSignerCount;
+			memcpy(&Data, c->Data, sizeof(Data));
+			memcpy(&PetitionSignerNames, c->PetitionSignerNames, sizeof(PetitionSignerNames));
 
 			i->SetStackCount(  1);
             i->SoulBind();
@@ -726,10 +741,10 @@ void SendShowSignatures(Charter * c, uint64 i, Player * p)
 	data << (uint64)c->GetLeader();
 	data << c->GetID();
 	data << uint8(c->SignatureCount);
-	for(uint32 i = 0; i < c->Slots; ++i)
+	for(uint32 j = 0; j < c->Slots; ++j)
 	{
-		if(c->Signatures[i] == 0) continue;
-		data << uint64(c->Signatures[i]) << uint32(1);
+		if(c->Signatures[j] == 0) continue;
+		data << uint64(c->Signatures[j]) << uint32(1);
 	}
 	data << uint8(0);
 	p->GetSession()->SendPacket(&data);
@@ -862,7 +877,7 @@ void WorldSession::HandleCharterOffer( WorldPacket & recv_data )
 		return;
 	}
 
-	if(pTarget == 0 || pTarget->GetTeam() != _player->GetTeam() || pTarget == _player && !sWorld.interfaction_guild)
+	if(pTarget == 0 || pTarget->GetTeam() != _player->GetTeam() || ( pTarget == _player && !sWorld.interfaction_guild ) )
 	{
 		SendNotification(_player->GetSession()->LocalizedWorldSrv(77));
 		return;
@@ -913,6 +928,24 @@ void WorldSession::HandleCharterSign( WorldPacket & recv_data )
 	data.clear();
 	data << item_guid << (uint64)c->GetLeader() << uint32(0);
 	SendPacket(&data);
+}
+
+void WorldSession::HandleCharterDecline( WorldPacket & recv_data )
+{
+	uint64 item_guid;
+	recv_data >> item_guid;
+
+	Charter * c = objmgr.GetCharterByItemGuid(item_guid);
+	if(!c)
+		return;
+
+	Player *owner = objmgr.GetPlayer(c->GetLeader());
+	if(owner)
+	{
+		WorldPacket data(MSG_PETITION_DECLINE, 8);
+		data << _player->GetGUID();
+		owner->GetSession()->SendPacket(&data);
+	}
 }
 
 void WorldSession::HandleCharterTurnInCharter(WorldPacket & recv_data)
@@ -1514,7 +1547,7 @@ void WorldSession::HandleGuildBankDepositItem(WorldPacket & recv_data)
 
 			/* remove the item's association with the player */
 			pSourceItem->SetOwner(NULL);
-            pSourceItem->SetOWnerGUID( 0 );
+            pSourceItem->SetOwnerGUID( 0 );
 			pSourceItem->SaveToDB(0, 0, true, NULL);
 
 			/* log it */
@@ -1532,7 +1565,7 @@ void WorldSession::HandleGuildBankDepositItem(WorldPacket & recv_data)
 		{
 			/* the guild was robbed by some n00b! :O */
 			pDestItem->SetOwner(_player);
-            pDestItem->SetOWnerGUID( _player->GetGUID() );
+            pDestItem->SetOwnerGUID( _player->GetGUID() );
 			pDestItem->SaveToDB(source_bagslot, source_slot, true, NULL);
 
 			/* add it to him in game */
@@ -1674,6 +1707,7 @@ void Guild::SendGuildBank(WorldSession * pClient, GuildBankTab * pTab, int8 upda
 
 			data << uint8(j);			// slot
 			data << pTab->pSlots[j]->GetEntry();
+			data << uint32(0);			// 3.3.0 (0x8000, 0x8020) from MaNGOS
 			data << (uint32)pTab->pSlots[j]->GetItemRandomPropertyId();
 
 			if( pTab->pSlots[j]->GetItemRandomPropertyId() )
@@ -1683,8 +1717,9 @@ void Guild::SendGuildBank(WorldSession * pClient, GuildBankTab * pTab, int8 upda
 			data << uint32(0);			// unknown value
 			data << uint8(0);			// unknown 2.4.2
 			uint32 Enchant0 = 0;
-			if (pTab->pSlots[j]->GetEnchantment(0))
-				Enchant0 = pTab->pSlots[j]->GetEnchantment(0)->Enchantment->Id;
+			EnchantmentInstance * ei = pTab->pSlots[j]->GetEnchantment(0);
+			if ( ei != NULL )
+				Enchant0 = ei->Enchantment->Id;
 			if (Enchant0)
 			{
 				data << uint8(1);			// number of enchants

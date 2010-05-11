@@ -204,7 +204,7 @@ void WorldSession::CharacterEnumProc(QueryResult * result)
 
 			if( Class == WARLOCK || Class == HUNTER )
 			{
-				res = CharacterDatabase.Query("SELECT entry FROM playerpets WHERE ownerguid = %u AND MOD( active, 10 ) = 1;", GUID_LOPART( guid ) );
+				res = CharacterDatabase.Query("SELECT entry FROM playerpets WHERE ownerguid = %u AND MOD( active, 10 ) = 1 AND alive = TRUE;", Arcemu::Util::GUID_LOPART( guid ) );
 
 				if(res)
 				{
@@ -227,7 +227,7 @@ void WorldSession::CharacterEnumProc(QueryResult * result)
                 data << uint32( 0 );
             }
 
-			res = CharacterDatabase.Query("SELECT containerslot, slot, entry, enchantments FROM playeritems WHERE ownerguid=%u", GUID_LOPART(guid));
+			res = CharacterDatabase.Query("SELECT containerslot, slot, entry, enchantments FROM playeritems WHERE ownerguid=%u", Arcemu::Util::GUID_LOPART( guid ));
 
 			memset(items, 0, sizeof(player_item) * 20);
 			uint32 enchantid;
@@ -260,7 +260,7 @@ void WorldSession::CharacterEnumProc(QueryResult * result)
 										if( enc != NULL )
 											items[slot].enchantment = enc->visual;
 										else
-											items[slot].enchantment = 0;;
+											items[slot].enchantment = 0;
 									}
 								}
 							}
@@ -410,7 +410,7 @@ void WorldSession::HandleCharCreateOpcode( WorldPacket & recv_data )
 	uint32 realmType = sLogonCommHandler.GetRealmType();
 	if( !HasGMPermissions() && realmType == REALMTYPE_PVP && _side >= 0 && !sWorld.crossover_chars) // ceberwow fixed bug
 	{
-		if( ((pNewChar->GetTeam()== 0) && (_side == 1)) || ((pNewChar->GetTeam()== 1) && (_side == 0)) )
+		if( (pNewChar->IsTeamAlliance() && (_side == 1)) || (pNewChar->IsTeamHorde() && (_side == 0)) )
 		{
 			pNewChar->ok_to_remove = true;
 			delete pNewChar;
@@ -463,6 +463,7 @@ void WorldSession::HandleCharCreateOpcode( WorldPacket & recv_data )
 	pn->guild= NULL;
 	pn->guildRank= NULL;
 	pn->guildMember= NULL;
+	pn->lastOnline = UNIXTIME;
 #ifdef VOICE_CHAT
 	pn->groupVoiceId = -1;
 #endif
@@ -651,7 +652,7 @@ void WorldSession::HandlePlayerLoginOpcode( WorldPacket & recv_data )
 	}
 
 	Player* plr = new Player((uint32)playerGuid);
-	ASSERT(plr);
+	Wowice::Util::WOWICE_ASSERT(   plr != NULL );
 	plr->SetSession(this);
 	m_bIsWLevelSet = false;
 	
@@ -813,8 +814,8 @@ void WorldSession::FullLogin(Player * plr)
 	plr->m_playerInfo = info;
 	if(plr->m_playerInfo->guild)
 	{
-		plr->m_uint32Values[PLAYER_GUILDID] = plr->m_playerInfo->guild->GetGuildId();
-		plr->m_uint32Values[PLAYER_GUILDRANK] = plr->m_playerInfo->guildRank->iId;
+		plr->SetGuildId(plr->m_playerInfo->guild->GetGuildId());
+		plr->SetGuildRank(plr->m_playerInfo->guildRank->iId);
 	}
 
 	info->m_loggedInPlayer = plr;
@@ -830,14 +831,14 @@ void WorldSession::FullLogin(Player * plr)
 	// Find our transporter and add us if we're on one.
 	if(plr->m_TransporterGUID != 0)
 	{
-		Transporter * pTrans = objmgr.GetTransporter(GUID_LOPART(plr->m_TransporterGUID));
+		Transporter * pTrans = objmgr.GetTransporter( Arcemu::Util::GUID_LOPART(plr->m_TransporterGUID));
 		if(pTrans)
 		{
 			if(plr->IsDead())
 			{
 				plr->ResurrectPlayer();
-				plr->SetUInt32Value(UNIT_FIELD_HEALTH, plr->GetUInt32Value(UNIT_FIELD_MAXHEALTH));
-				plr->SetUInt32Value(UNIT_FIELD_POWER1, plr->GetUInt32Value(UNIT_FIELD_MAXPOWER1));
+				plr->SetHealth(plr->GetMaxHealth());
+                plr->SetPower( POWER_TYPE_MANA, plr->GetMaxPower( POWER_TYPE_MANA ) );
 			}
 
 			float c_tposx = pTrans->GetPositionX() + plr->m_TransporterX;
@@ -881,7 +882,7 @@ void WorldSession::FullLogin(Player * plr)
 		if ( sWorld.m_AdditionalFun ) //cebernic: tells people who 's newbie :D
 		{
 			const int classtext[] ={0,5,6,8,9,11,0,4,3,7,0,10};
-			sWorld.SendLocalizedWorldText(true,"{65}",classtext[ (uint32)plr->getClass() ] , plr->GetName() , (plr->GetTeam() ? "{63}":"{64}") );
+			sWorld.SendLocalizedWorldText(true,"{65}",classtext[ (uint32)plr->getClass() ] , plr->GetName() , (plr->IsTeamHorde() ? "{63}":"{64}") );
 		}
 
 	}
@@ -978,7 +979,7 @@ void WorldSession::FullLogin(Player * plr)
 			plr->AddCalculatedRestXP(timediff);
 	}
 
-	sHookInterface.OnEnterWorld2(_player);
+	sHookInterface.OnFullLogin(_player);
 
 	if(info->m_Group)
 		info->m_Group->Update();

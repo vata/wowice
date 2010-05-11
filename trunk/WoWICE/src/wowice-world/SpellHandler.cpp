@@ -38,8 +38,6 @@ void WorldSession::HandleUseItemOpcode(WorldPacket& recvPacket)
 	if (!tmpItem)
 		return;
 	ItemPrototype *itemProto = tmpItem->GetProto();
-	if(!itemProto)
-		return;
 
   if ( tmpItem->IsSoulbound() ){ // SouldBind item will be used after SouldBind()
     if(sScriptMgr.CallScriptedItem(tmpItem,_player))
@@ -71,9 +69,13 @@ void WorldSession::HandleUseItemOpcode(WorldPacket& recvPacket)
 	}
 
     // Let's check if the item even has that spell
-    for( int i = 0; i < 5; ++i ){
+    for( int i = 0; i < 5; ++i )
+	{
         if( itemProto->Spells[i].Trigger == USE && itemProto->Spells[i].Id == spellId )
+		{
             found = true;
+			break;//found 1 already
+		}
     }
 
     // We didn't find the spell, so the player is probably trying to cheat
@@ -171,7 +173,7 @@ void WorldSession::HandleUseItemOpcode(WorldPacket& recvPacket)
 					}
 				}
 
-				if( itemProto->AllowableClass && !(_player->getClassMask() & itemProto->AllowableClass) || itemProto->AllowableRace && !(_player->getRaceMask() & itemProto->AllowableRace) )
+				if( ( itemProto->AllowableClass && !(_player->getClassMask() & itemProto->AllowableClass) ) || ( itemProto->AllowableRace && !(_player->getRaceMask() & itemProto->AllowableRace) ) )
 				{
 					_player->GetItemInterface()->BuildInventoryChangeError(tmpItem,NULL,INV_ERR_YOU_CAN_NEVER_USE_THAT_ITEM);
 					return;
@@ -210,8 +212,6 @@ void WorldSession::HandleUseItemOpcode(WorldPacket& recvPacket)
 				}
 
 				Spell *spell = new Spell(_player, spellInfo, false, NULL);
-				if (!spell)
-					return;
 				spell->extra_cast_number=cn;
 				spell->i_caster = tmpItem;
 				spell->m_glyphslot = glyphIndex;
@@ -246,33 +246,32 @@ void WorldSession::HandleSpellClick(WorldPacket& recvPacket)
 		return;
 
 	uint32 cast_spell_id = 0;
-	if( target_unit->GetUInt32Value( OBJECT_FIELD_ENTRY ) == 28605 )
+	if( target_unit->GetEntry()  == 28605 )
 		cast_spell_id = 52263; // steel horse
 	//32633
-	if( target_unit->GetUInt32Value( OBJECT_FIELD_ENTRY ) == 32633 )
+	if( target_unit->GetEntry()  == 32633 )
 		cast_spell_id = 61425; // Traveler's Tundra Mammoth
 
-	if( target_unit->GetUInt32Value( OBJECT_FIELD_ENTRY ) == 29929 )
+	if( target_unit->GetEntry()  == 29929 )
 		cast_spell_id = 55531; // Mechano-Hog
 
-	if( target_unit->HasAura(59907) )
+	if( target_unit->RemoveAura( 59907 ) )
 	{
-		if( target_unit->GetUInt32Value( OBJECT_FIELD_ENTRY ) == 31897 )
+		if( target_unit->GetEntry()  == 31897 )
 			cast_spell_id = 7001; // Lightwell Rank 1
-		if( target_unit->GetUInt32Value( OBJECT_FIELD_ENTRY ) == 31896 )
+		if( target_unit->GetEntry()  == 31896 )
 			cast_spell_id = 27873; // Lightwell Rank 2
-		if( target_unit->GetUInt32Value( OBJECT_FIELD_ENTRY ) == 31895 )
+		if( target_unit->GetEntry()  == 31895 )
 			cast_spell_id = 27874; // Lightwell Rank 3
-		if( target_unit->GetUInt32Value( OBJECT_FIELD_ENTRY ) == 31894 )
+		if( target_unit->GetEntry()  == 31894 )
 			cast_spell_id = 28276; // Lightwell Rank 4
-		if( target_unit->GetUInt32Value( OBJECT_FIELD_ENTRY ) == 31893 )
+		if( target_unit->GetEntry()  == 31893 )
 			cast_spell_id = 48084; // Lightwell Rank 5
-		if( target_unit->GetUInt32Value( OBJECT_FIELD_ENTRY ) == 31883 )
+		if( target_unit->GetEntry()  == 31883 )
 			cast_spell_id = 48085; // Lightwell Rank 6
 
 		target_unit->CastSpell(_player, cast_spell_id, true);
 
-		target_unit->RemoveAura(59907);
 		if( !target_unit->HasAura(59907) )
 			if(target_unit->IsCreature())
 				static_cast<Creature*>(target_unit)->Despawn(0,0);
@@ -283,9 +282,9 @@ void WorldSession::HandleSpellClick(WorldPacket& recvPacket)
 		return;
 
 	SpellEntry *spellInfo = dbcSpell.LookupEntryForced( cast_spell_id );
- 	Spell *spell = new Spell(_player, spellInfo, false, NULL);
-	if (!spell)
+	if( spellInfo == NULL )
 		return;
+ 	Spell *spell = new Spell(_player, spellInfo, false, NULL);
 	SpellCastTargets targets( target_guid );
 	spell->prepare(&targets);
 }
@@ -307,7 +306,7 @@ void WorldSession::HandleCastSpellOpcode(WorldPacket& recvPacket)
 		return;
 	}
 
-	if( !_player->isAlive() && _player->GetShapeShift() != FORM_SPIRITOFREDEMPTION && spellId != 7355)//They're dead and not in spirit of redemption. 7355 (stuck) can be cast while dead.
+	if( !_player->isAlive() && _player->GetShapeShift() != FORM_SPIRITOFREDEMPTION && !(spellInfo->Attributes & ATTRIBUTES_DEAD_CASTABLE))//They're dead, not in spirit of redemption and the spell can't be cast while dead.
 		return;	
 	
 	sLog.outDetail("WORLD: got cast spell packet, spellId - %i (%s), data length = %i",
@@ -331,13 +330,13 @@ void WorldSession::HandleCastSpellOpcode(WorldPacket& recvPacket)
 	if(!GetPlayer()->HasSpell(spellId))
 	{
 		sCheatLog.writefromsession(this,"Cast spell %lu but doesn't have that spell.", spellId);
-		sLog.outDetail("WORLD: Spell isn't cast because player \"%s\" is cheating", GetPlayer()->GetName());
+		sLog.outDetail("WORLD: Spell isn't cast because player \'%s\' is cheating", GetPlayer()->GetName());
 		return;
 	}
 	if(spellInfo->Attributes & ATTRIBUTES_PASSIVE)
 	{
 		sCheatLog.writefromsession(this,"Cast passive spell %lu.", spellId);
-		sLog.outDetail("WORLD: Spell isn't cast because player \"%s\" is cheating", GetPlayer()->GetName());
+		sLog.outDetail("WORLD: Spell isn't cast because player \'%s\' is cheating", GetPlayer()->GetName());
 		return;
 	}
 
@@ -375,7 +374,7 @@ void WorldSession::HandleCastSpellOpcode(WorldPacket& recvPacket)
 			if(!_player->m_onAutoShot)
 			{
 				_player->m_AutoShotTarget = _player->GetSelection();
-				uint32 duration = _player->GetUInt32Value(UNIT_FIELD_RANGEDATTACKTIME);
+				uint32 duration = _player->GetBaseAttackTime(RANGED);
 				SpellCastTargets targets(recvPacket,GetPlayer()->GetGUID());
 				if(!targets.m_unitTarget)
 				{
@@ -428,8 +427,6 @@ void WorldSession::HandleCastSpellOpcode(WorldPacket& recvPacket)
 		}
 
 		Spell *spell = new Spell(GetPlayer(), spellInfo, false, NULL);
-		if (!spell)
-			return;
 		spell->extra_cast_number=cn;
 		spell->prepare(&targets);
 	}
@@ -457,8 +454,8 @@ void WorldSession::HandleCancelAuraOpcode( WorldPacket& recvPacket )
 
 		if(info != NULL && !(info->Attributes & static_cast<uint32>(ATTRIBUTES_CANT_CANCEL)))
 		{
-			_player->RemoveAura( spellId );
-			sLog.outDebug("removing aura %u",spellId);
+			_player->RemoveAllAuraById( spellId );
+			sLog.outDebug("Removing all auras with ID: %u",spellId);
 		}
 	}
 }
@@ -493,12 +490,12 @@ void WorldSession::HandlePetCastSpell(WorldPacket & recvPacket)
 	recvPacket >> guid >> spellid >> flags;
 
 	SpellEntry * sp = dbcSpell.LookupEntryForced(spellid);
-	if ( !sp )
+	if ( sp == NULL )
 		return;
 	// Summoned Elemental's Freeze
     if (spellid == 33395)
     {
-        if (!_player->m_Summon)
+		if (!_player->GetSummon())
             return;
     }
     else if ( guid != _player->m_CurrentCharm )
@@ -514,9 +511,9 @@ void WorldSession::HandlePetCastSpell(WorldPacket & recvPacket)
 		targets.m_unitTarget = guid;
 	else if(flags & TARGET_FLAG_UNIT)
 	{
-		WoWGuid guid;
-		recvPacket >> guid;
-		targets.m_unitTarget = guid.GetOldGuid();
+		WoWGuid guid2;
+		recvPacket >> guid2;
+		targets.m_unitTarget = guid2.GetOldGuid();
 	}
 	else if(flags & TARGET_FLAG_SOURCE_LOCATION)
 	{
@@ -534,9 +531,7 @@ void WorldSession::HandlePetCastSpell(WorldPacket & recvPacket)
 	}
 	if(spellid == 33395)	// Summoned Water Elemental's freeze
 	{
-		Spell * pSpell = new Spell(_player->m_Summon, sp, false, 0);
-		if (!pSpell)
-			return;
+		Spell * pSpell = new Spell(_player->GetSummon(), sp, false, 0);
 		pSpell->prepare(&targets);
 	}
 	else			// trinket?
@@ -557,8 +552,6 @@ void WorldSession::HandlePetCastSpell(WorldPacket & recvPacket)
 				return;
 
 			Spell * pSpell = new Spell(nc, sp, false, 0);
-			if (!pSpell)
-				return;
 			pSpell->prepare(&targets);
 		}
 	}

@@ -46,10 +46,10 @@ void WorldSession::HandlePetAction(WorldPacket & recv_data)
 				{
 					if(!sEventMgr.HasEvent(_player, EVENT_PLAYER_CHARM_ATTACK))
 					{
-						uint32 timer = pCharm->GetUInt32Value(UNIT_FIELD_BASEATTACKTIME);
+						uint32 timer = pCharm->GetBaseAttackTime(MELEE);
 						if(!timer) timer = 2000;
 
-						sEventMgr.AddEvent(_player, &Player::_EventCharmAttack, EVENT_PLAYER_CHARM_ATTACK, timer, 0,0);
+						sEventMgr.AddEvent(_player, &Player::_EventCharmAttack, EVENT_PLAYER_CHARM_ATTACK, timer, 0, EVENT_FLAG_DO_NOT_EXECUTE_IN_WORLD_CONTEXT);
 						_player->_EventCharmAttack();
 					}
 				}break;
@@ -63,12 +63,6 @@ void WorldSession::HandlePetAction(WorldPacket & recv_data)
 	if( !pPet )
 		return;
 	
-	if( !pPet->isAlive() )
-	{
-		pPet->SendActionFeedback( PET_FEEDBACK_PET_DEAD );	
-		return;
-	}
-
 	Unit *pTarget = NULL;
 
 	if(action == PET_ACTION_SPELL || action == PET_ACTION_SPELL_1 || action == PET_ACTION_SPELL_2 || (action == PET_ACTION_ACTION && misc == PET_ACTION_ATTACK )) // >> target
@@ -78,132 +72,148 @@ void WorldSession::HandlePetAction(WorldPacket & recv_data)
 		if(!pTarget) pTarget = pPet;	// target self
 	}
 
-	switch(action)
+	std::list<Pet*> summons = _player->GetSummons();
+	bool alive_summon = false;
+	for(std::list<Pet*>::iterator itr = summons.begin(); itr != summons.end();)
 	{
-	case PET_ACTION_ACTION:
+		pPet = (*itr);
+		++itr;
+		if( !pPet->isAlive() )
+			continue;
+		alive_summon = true;//we found a an alive summon
+		uint64 GUID = pPet->GetGUID();
+		switch(action)
 		{
-			pPet->SetPetAction(misc);	   // set current action
-			switch(misc)
+		case PET_ACTION_ACTION:
 			{
-			case PET_ACTION_ATTACK:
+				pPet->SetPetAction(misc);	   // set current action
+				switch(misc)
 				{
-					// make sure the target is attackable
-					if( pTarget == pPet || !isAttackable( pPet, pTarget ) )
- 					{
-						pPet->SendActionFeedback( PET_FEEDBACK_CANT_ATTACK_TARGET );
-						return;
-					}
-
-					// Clear the threat
-					pPet->GetAIInterface()->WipeTargetList();
-					pPet->GetAIInterface()->WipeHateList();
-
-					// Attack target with melee if the owner if we don't have spells - other wise cast. All done by AIInterface.
-					if(pPet->GetAIInterface()->getUnitToFollow() == NULL)
-						pPet->GetAIInterface()->SetUnitToFollow(_player);
-
-					// EVENT_PET_ATTACK
-					pPet->GetAIInterface()->SetAIState(STATE_ATTACKING);
-					pPet->GetAIInterface()->AttackReaction(pTarget, 1, 0);
-				}break;
-			case PET_ACTION_FOLLOW:
-				{
-					// Clear the threat
-					pPet->GetAIInterface()->WipeTargetList();
-					pPet->GetAIInterface()->WipeHateList();
-
-					// Follow the owner... run to him...
-					pPet->GetAIInterface()->SetUnitToFollow(_player);
-					pPet->GetAIInterface()->HandleEvent(EVENT_FOLLOWOWNER, pPet, 0);
-				}break;
-			case PET_ACTION_STAY:
-				{
-					// Clear the threat
-					pPet->GetAIInterface()->WipeTargetList();
-					pPet->GetAIInterface()->WipeHateList();
-
-					// Stop following the owner, and sit.
-					pPet->GetAIInterface()->SetUnitToFollow(NULL);
-				}break;
-			case PET_ACTION_DISMISS:
-				{
-					// Bye byte...
-					pPet->Dismiss();
-				}break;
-			}
-		}break;
-
-	case PET_ACTION_SPELL_2:
-	case PET_ACTION_SPELL_1:
-	case PET_ACTION_SPELL:
-		{
-			// misc == spellid
-			SpellEntry * entry = dbcSpell.LookupEntry( misc );
-			if( entry == NULL ) 
-				return;
-
-			AI_Spell * sp = pPet->GetAISpellForSpellId( entry->Id );
-			if( sp != NULL )
-			{
-				// Check the cooldown
-				if(sp->cooldowntime && getMSTime() < sp->cooldowntime)
-				{
-					pPet->SendCastFailed( misc, SPELL_FAILED_NOT_READY );
-					return;
-				}
-				else
-				{
-					if( sp->spellType != STYPE_BUFF )
+				case PET_ACTION_ATTACK:
 					{
 						// make sure the target is attackable
-                        if( pTarget == pPet || !isAttackable( pPet, pTarget ) )
-						{
+						if( pTarget == pPet || !isAttackable( pPet, pTarget ) )
+ 						{
 							pPet->SendActionFeedback( PET_FEEDBACK_CANT_ATTACK_TARGET );
 							return;
 						}
-					}
 
-					if(sp->autocast_type != AUTOCAST_EVENT_ATTACK)
-					{
-						if(sp->autocast_type == AUTOCAST_EVENT_OWNER_ATTACKED)
-							pPet->CastSpell(_player, sp->spell, false);
-						else
-							pPet->CastSpell(pPet, sp->spell, false);
-					}
-					else
+						// Clear the threat
+						pPet->GetAIInterface()->WipeTargetList();
+						pPet->GetAIInterface()->WipeHateList();
+
+						// Attack target with melee if the owner if we don't have spells - other wise cast. All done by AIInterface.
+						if(pPet->GetAIInterface()->getUnitToFollow() == NULL)
+							pPet->GetAIInterface()->SetUnitToFollow(_player);
+
+						// EVENT_PET_ATTACK
+						pPet->GetAIInterface()->SetAIState(STATE_ATTACKING);
+						pPet->GetAIInterface()->AttackReaction(pTarget, 1, 0);
+					}break;
+				case PET_ACTION_FOLLOW:
 					{
 						// Clear the threat
 						pPet->GetAIInterface()->WipeTargetList();
 						pPet->GetAIInterface()->WipeHateList();
 
-						pPet->GetAIInterface()->AttackReaction(pTarget, 1, 0);
-						pPet->GetAIInterface()->SetNextSpell(sp);
+						// Follow the owner... run to him...
+						pPet->GetAIInterface()->SetUnitToFollow(_player);
+						pPet->GetAIInterface()->HandleEvent(EVENT_FOLLOWOWNER, pPet, 0);
+					}break;
+				case PET_ACTION_STAY:
+					{
+						// Clear the threat
+						pPet->GetAIInterface()->WipeTargetList();
+						pPet->GetAIInterface()->WipeHateList();
+
+						// Stop following the owner, and sit.
+						pPet->GetAIInterface()->ResetUnitToFollow();
+					}break;
+				case PET_ACTION_DISMISS:
+					{
+						// Bye byte...
+						pPet->Dismiss();
+					}break;
+				}
+			}break;
+
+		case PET_ACTION_SPELL_2:
+		case PET_ACTION_SPELL_1:
+		case PET_ACTION_SPELL:
+			{
+				// misc == spellid
+				SpellEntry * entry = dbcSpell.LookupEntryForced( misc );
+				if( entry == NULL ) 
+					return;
+
+				AI_Spell * sp = pPet->GetAISpellForSpellId( entry->Id );
+				if( sp != NULL )
+				{
+					// Check the cooldown
+					if(sp->cooldowntime && getMSTime() < sp->cooldowntime)
+					{
+						pPet->SendCastFailed( misc, SPELL_FAILED_NOT_READY );
+						return;
+					}
+					else
+					{
+						if( sp->spellType != STYPE_BUFF )
+						{
+							// make sure the target is attackable
+							if( pTarget == pPet || !isAttackable( pPet, pTarget ) )
+							{
+								pPet->SendActionFeedback( PET_FEEDBACK_CANT_ATTACK_TARGET );
+								return;
+							}
+						}
+
+						if(sp->autocast_type != AUTOCAST_EVENT_ATTACK)
+						{
+							if(sp->autocast_type == AUTOCAST_EVENT_OWNER_ATTACKED)
+								pPet->CastSpell(_player, sp->spell, false);
+							else
+								pPet->CastSpell(pPet, sp->spell, false);
+						}
+						else
+						{
+							// Clear the threat
+							pPet->GetAIInterface()->WipeTargetList();
+							pPet->GetAIInterface()->WipeHateList();
+
+							pPet->GetAIInterface()->AttackReaction(pTarget, 1, 0);
+							pPet->GetAIInterface()->SetNextSpell(sp);
+						}
 					}
 				}
-			}
-		}break;
-	case PET_ACTION_STATE:
-		{
-             if( misc == PET_STATE_PASSIVE ){
-                // stop attacking and run to owner
-                pPet->GetAIInterface()->WipeTargetList();
-				pPet->GetAIInterface()->WipeHateList();
-                pPet->GetAIInterface()->SetUnitToFollow(_player);
-				pPet->GetAIInterface()->HandleEvent(EVENT_FOLLOWOWNER, pPet, 0);
-            }
-			pPet->SetPetState(misc);
+			}break;
+		case PET_ACTION_STATE:
+			{
+				 if( misc == PET_STATE_PASSIVE ){
+					// stop attacking and run to owner
+					pPet->GetAIInterface()->WipeTargetList();
+					pPet->GetAIInterface()->WipeHateList();
+					pPet->GetAIInterface()->SetUnitToFollow(_player);
+					pPet->GetAIInterface()->HandleEvent(EVENT_FOLLOWOWNER, pPet, 0);
+				}
+				pPet->SetPetState(misc);
 
-		}break;
-	default:
-		{
-			printf("WARNING: Unknown pet action received. Action = %.4X, Misc = %.4X\n", action, misc);
-		}break;
+			}break;
+		default:
+			{
+				printf("WARNING: Unknown pet action received. Action = %.4X, Misc = %.4X\n", action, misc);
+			}break;
+		}
+
+		/* Send pet action sound - WHEE THEY TALK */
+		WorldPacket actionp(SMSG_PET_ACTION_SOUND, 12);
+		actionp << GUID << uint32(1);//should we send only 1 sound for all the pets?
+		SendPacket(&actionp);
 	}
-
-	/* Send pet action sound - WHEE THEY TALK */
-	WorldPacket actionp(SMSG_PET_ACTION_SOUND, 12);
-	actionp << pPet->GetGUID() << uint32(1);
-	SendPacket(&actionp);
+	if( !alive_summon )
+	{	
+		pPet->SendActionFeedback( PET_FEEDBACK_PET_DEAD );	
+		return;
+	}
 }
 
 void WorldSession::HandlePetInfo(WorldPacket & recv_data)
@@ -240,7 +250,7 @@ void WorldSession::HandleStablePet(WorldPacket & recv_data)
 
 	// remove pet from world and association with player
 	Pet *pPet = _player->GetSummon();
-	if( !pPet || pPet->IsSummon() ) 
+	if( pPet != NULL && pPet->IsSummon() ) 
 		return;
 	
 	PlayerPet *pet = _player->GetPlayerPet( _player->GetUnstabledPetNumber() );
@@ -248,7 +258,8 @@ void WorldSession::HandleStablePet(WorldPacket & recv_data)
 		return;
 	pet->stablestate = STABLE_STATE_PASSIVE;
 	
-	pPet->Remove( true, true );
+	if( pPet != NULL )//if pPet is NULL here then the pet is dead and we relogged.
+		pPet->Remove( true, true );
 
 	WorldPacket data(1);
 	data.SetOpcode(SMSG_STABLE_RESULT);
@@ -270,7 +281,9 @@ void WorldSession::HandleUnstablePet(WorldPacket & recv_data)
 		sLog.outError("PET SYSTEM: Player "I64FMT" tried to unstable non-existent pet %d", _player->GetGUID(), petnumber);
 		return;
 	}
-	_player->SpawnPet( petnumber );
+	//unstable selected pet but spawn it only if it's alive
+	if( pet->alive )
+		_player->SpawnPet( petnumber );
 	pet->stablestate = STABLE_STATE_ACTIVE;
 
 	WorldPacket data(1);
@@ -293,7 +306,7 @@ void WorldSession::HandleStableSwapPet(WorldPacket & recv_data)
 		return;
 	}
 	Pet *pPet = _player->GetSummon();
-	if( !pPet || pPet->IsSummon() )
+	if( pPet != NULL && pPet->IsSummon() )
 		return;
 
 	//stable current pet
@@ -301,11 +314,13 @@ void WorldSession::HandleStableSwapPet(WorldPacket & recv_data)
 	if( !pet2 )
 		return;
 
-	pPet->Remove( true, true );
+	if( pPet != NULL)//if pPet is NULL here then the pet is dead and we relogged.
+		pPet->Remove( true, true );
 	pet2->stablestate = STABLE_STATE_PASSIVE;
 
-	//unstable selected pet
-	_player->SpawnPet( petnumber );
+	//unstable selected pet but spawn it only if it's alive
+	if( pet->alive )
+		_player->SpawnPet( petnumber );
 	pet->stablestate = STABLE_STATE_ACTIVE;
 
 	WorldPacket data;
@@ -328,30 +343,7 @@ void WorldSession::HandleStabledPetList(WorldPacket & recv_data)
 		return;
     }
 
-	WorldPacket data(10 + (_player->m_Pets.size() * 25));
-	data.SetOpcode(MSG_LIST_STABLED_PETS);
-
-	data << npcguid;
-
-	data << uint8(_player->m_Pets.size());
-	data << uint8(_player->m_StableSlotCount);
-	uint8 i = 0;
-	for(std::map<uint32, PlayerPet*>::iterator itr = _player->m_Pets.begin(); itr != _player->m_Pets.end(); ++itr)
-	{
-		data << uint32( itr->first );			// pet no
-		data << uint32( itr->second->entry );	// entryid
-		data << uint32( itr->second->level );	// level
-		data << itr->second->name;			// name
-		if( itr->second->stablestate == STABLE_STATE_ACTIVE )
-			data << uint8(STABLE_STATE_ACTIVE);
-		else
-		{
-			data << uint8(STABLE_STATE_PASSIVE + i);
-			i++;
-		}
-	}
-
-	SendPacket(&data);
+	SendStabledPetList(npcguid);
 }
 
 void WorldSession::HandleBuyStableSlot( WorldPacket &recv_data )
@@ -418,20 +410,29 @@ void WorldSession::HandlePetRename(WorldPacket & recv_data)
 	string name;
 	recv_data >> guid >> name;
 
-	if(!_player->GetSummon() || _player->GetSummon()->GetGUID() != guid)
+	Pet * pet = NULL;
+	std::list<Pet*> summons = _player->GetSummons();
+	for(std::list<Pet*>::iterator itr = summons.begin(); itr != summons.end(); ++itr)
 	{
+		if( (*itr)->GetGUID() == guid)
+		{
+			pet = (*itr);
+			break;
+		}
+	}
+	if(pet == NULL)
+	{	
 		sChatHandler.SystemMessage(this, "That pet is not your current pet, or you do not have a pet.");
 		return;
 	}
-
 	name = CharacterDatabase.EscapeString(name);
-	Pet * pet = _player->GetSummon();
+
 	pet->Rename(name);
 
 	// Disable pet rename.
 	pet->SetUInt32Value(UNIT_FIELD_BYTES_2, 1 | /* (0x28 << 8) | */ (PET_RENAME_NOT_ALLOWED << 16) );
 
-    assert( pet->GetPetOwner() != NULL );
+    Arcemu::Util::ARCEMU_ASSERT(    pet->GetPetOwner() != NULL );
     
     if( pet->GetPetOwner()->IsPvPFlagged() )
         pet->SetPvPFlag();
@@ -501,20 +502,20 @@ void WorldSession::HandlePetSpellAutocast( WorldPacket& recvPacket )
     uint8  state;
     recvPacket >> guid >> spellid >> unk >> state;
 
-	Pet * pPet = _player->GetSummon();
-	if( pPet == NULL )
-		return;
-	
 	SpellEntry * spe = dbcSpell.LookupEntryForced( spellid );
 	if( spe == NULL )
 		return;
-	
-	// do we have the spell? if not don't set it (exploit fix)
-	PetSpellMap::iterator itr = pPet->GetSpells()->find( spe );
-	if( itr == pPet->GetSpells()->end( ) )
-		return;
 
-	pPet->SetSpellState( spellid, state > 0 ? AUTOCAST_SPELL_STATE : DEFAULT_SPELL_STATE );
+	std::list<Pet*> summons = _player->GetSummons();
+	for(std::list<Pet*>::iterator itr = summons.begin(); itr != summons.end(); ++itr)
+	{
+		// do we have the spell? if not don't set it (exploit fix)
+		PetSpellMap::iterator itr2 = (*itr)->GetSpells()->find( spe );
+		if( itr2 == (*itr)->GetSpells()->end( ) )
+			continue;
+
+		(*itr)->SetSpellState( spellid, state > 0 ? AUTOCAST_SPELL_STATE : DEFAULT_SPELL_STATE );
+	}
 }
 void WorldSession::HandlePetCancelAura( WorldPacket& recvPacket )
 {
@@ -526,12 +527,16 @@ void WorldSession::HandlePetCancelAura( WorldPacket& recvPacket )
 
 	recvPacket >> guid >> spellid;
 
-	Pet * pPet = _player->GetSummon();
-	if( pPet == NULL )
-		return;
-
-	if( !pPet->RemoveAura( spellid ) )
-		sLog.outError("PET SYSTEM: Player "I64FMT" failed to cancel aura %u from pet", _player->GetGUID(), spellid );
+	std::list<Pet*> summons = _player->GetSummons();
+	for(std::list<Pet*>::iterator itr = summons.begin(); itr != summons.end(); ++itr)
+	{
+		if( (*itr)->GetGUID() == guid )//guid should be the pet guid
+		{
+			if( !(*itr)->RemoveAura( spellid ) )
+				sLog.outError("PET SYSTEM: Player "I64FMT" failed to cancel aura %u from pet", _player->GetGUID(), spellid );
+			break;
+		}
+	}
 }
 
 void WorldSession::HandlePetLearnTalent( WorldPacket & recvPacket )
@@ -554,7 +559,7 @@ void WorldSession::HandlePetLearnTalent( WorldPacket & recvPacket )
 		return;
 
 	// find talent entry
-	TalentEntry *te = dbcTalent.LookupEntry( talentid );
+	TalentEntry *te = dbcTalent.LookupEntryForced( talentid );
 	if( te == NULL )
 		return;
 
@@ -590,7 +595,7 @@ void WorldSession::HandlePetLearnTalent( WorldPacket & recvPacket )
 		pPet->RemoveSpell( te->RankID[ talentcol - 1 ] );
 
 	// add spell, discount talent point
-	SpellEntry* sp = dbcSpell.LookupEntry( te->RankID[ talentcol ] );
+	SpellEntry* sp = dbcSpell.LookupEntryForced( te->RankID[ talentcol ] );
 	if( sp != NULL )
 	{
 		pPet->AddSpell( sp, true );

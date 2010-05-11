@@ -119,18 +119,6 @@ const uint32 m_iconsStates[EOTS_TOWER_COUNT][3] = {
     {2731, 2732, 2733}
      };
 
-/**
- * WorldStates
- */
-#define EOTS_WORLDSTATE_DISPLAYON 2718
-#define EOTS_WORLDSTATE_DISPLAYVALUE 2719
-#define EOTS_WORLDSTATE_ALLIANCE_VICTORYPOINTS 2749
-#define EOTS_WORLDSTATE_HORDE_VICTORYPOINTS 2750
-#define EOTS_WORLDSTATE_ALLIANCE_BASES 2752
-#define EOTS_WORLDSTATE_HORDE_BASES 2753
-#define EOTS_NETHERWING_FLAG_SPELL 34976
-
-
 #define EOTS_CAPTURE_RATE 4
 
 EyeOfTheStorm::EyeOfTheStorm(MapMgr * mgr, uint32 id, uint32 lgroup, uint32 t) : CBattleground(mgr,id,lgroup,t)
@@ -160,6 +148,8 @@ EyeOfTheStorm::EyeOfTheStorm(MapMgr * mgr, uint32 id, uint32 lgroup, uint32 t) :
 	m_flagHolder = 0;
 	m_points[0] = m_points[1] = 0;
 	m_lastHonorGainPoints[0] = m_lastHonorGainPoints[1] = 0;
+	m_standFlag = NULL;
+	m_dropFlag = NULL;
 }
 
 EyeOfTheStorm::~EyeOfTheStorm()
@@ -251,8 +241,8 @@ bool EyeOfTheStorm::HookHandleRepop(Player * plr)
 	for(i = 0; i < EOTS_TOWER_COUNT; ++i)
 	{
 		if(m_CPBanner[i] && 
-			(((m_CPBanner[i]->GetEntry() == EOTS_BANNER_ALLIANCE) && (t == 0)) ||
-			 ((m_CPBanner[i]->GetEntry() == EOTS_BANNER_HORDE   ) && (t == 1)))  )
+			(((m_CPBanner[i]->GetEntry() == EOTS_BANNER_ALLIANCE) && (t == TEAM_ALLIANCE)) ||
+			 ((m_CPBanner[i]->GetEntry() == EOTS_BANNER_HORDE   ) && (t == TEAM_HORDE)))  )
 		{
 			distcur = plr->GetPositionNC().Distance2DSq( EOTSGraveyardLocations[i][0], EOTSGraveyardLocations[i][1] );
 			if( distcur < dist )
@@ -298,7 +288,7 @@ void EyeOfTheStorm::HookOnAreaTrigger(Player * plr, uint32 id)
 		bonusid = EOTS_TOWER_MAGE;
 		break;
 	default:
-		Log.Error("EyeOfTheStorm", "Encountered unhandled areatrigger id %u", id);
+		sLog.outError("EyeOfTheStorm", "Encountered unhandled areatrigger id %u", id);
 		return;
 		break;
 	}
@@ -334,7 +324,7 @@ void EyeOfTheStorm::HookOnAreaTrigger(Player * plr, uint32 id)
 		// Remove player from battleground.
 		this->RemovePlayer(plr, false);
 		// Kick	player from server.
-		plr->Kick(6000);
+		plr->Kick(MSTIME_6SECONDS);
 		return;
 	}
 #endif
@@ -346,7 +336,7 @@ void EyeOfTheStorm::HookOnAreaTrigger(Player * plr, uint32 id)
 	int32 val;
 	uint32 i;
 	uint32 towers = 0;
-	if( team == 0 )
+	if( team == TEAM_ALLIANCE )
 		val = EOTS_BANNER_ALLIANCE;
 	else
 		val = EOTS_BANNER_HORDE;
@@ -362,7 +352,6 @@ void EyeOfTheStorm::HookOnAreaTrigger(Player * plr, uint32 id)
 
 	/*
 	Points from flag captures
-
 	* 1 towers controlled = 75 points
 	* 2 towers controlled = 85 points
 	* 3 towers controlled = 100 points
@@ -408,7 +397,7 @@ void EyeOfTheStorm::HookFlagDrop(Player * plr, GameObject * obj)
 	plr->CastSpell( plr->GetGUID(), EOTS_NETHERWING_FLAG_SPELL, true );
 
 	SetWorldState( 2757, 0 );
-	PlaySoundToAll((plr->GetTeam()) ? SOUND_HORDE_CAPTURE : SOUND_ALLIANCE_CAPTURE);
+	PlaySoundToAll( plr->IsTeamHorde() ? SOUND_HORDE_CAPTURE : SOUND_ALLIANCE_CAPTURE );
 	SendChatMessage( CHAT_MSG_BG_EVENT_ALLIANCE + plr->GetTeam(), plr->GetGUID(), "$N has taken the flag!" );
 	m_flagHolder = plr->GetLowGUID();
 
@@ -429,7 +418,7 @@ bool EyeOfTheStorm::HookSlowLockOpen(GameObject * pGo, Player * pPlayer, Spell *
 	pPlayer->CastSpell( pPlayer->GetGUID(), EOTS_NETHERWING_FLAG_SPELL, true );
 
 	SetWorldState( 2757, 0 );
-	PlaySoundToAll((pPlayer->GetTeam()) ? SOUND_HORDE_CAPTURE : SOUND_ALLIANCE_CAPTURE);
+	PlaySoundToAll( pPlayer->IsTeamHorde() ? SOUND_HORDE_CAPTURE : SOUND_ALLIANCE_CAPTURE );
 	SendChatMessage( CHAT_MSG_BG_EVENT_ALLIANCE + pPlayer->GetTeam(), pPlayer->GetGUID(), "$N has taken the flag!" );
 	m_flagHolder = pPlayer->GetLowGUID();
 	return true;
@@ -478,7 +467,7 @@ void EyeOfTheStorm::DropFlag2(Player * plr, uint32 id)
 
 	switch(id)
 	{
-		case 4476:			// BE Tower
+		case 4476:			// Blood Elf Tower
 			m_dropFlag->SetPosition( LocationVector( 2048.83f, 1393.65f, 1194.49f, 0.20944f ) );
 			break;
 		case 4514:			// Fel Reaver Tower
@@ -632,7 +621,7 @@ void EyeOfTheStorm::OnCreate()
 		m_bubbles[i]->SetScale( 0.1f);
 		m_bubbles[i]->SetByte(GAMEOBJECT_BYTES_1, 0,1);
 		m_bubbles[i]->SetUInt32Value(GAMEOBJECT_FLAGS,32);
-		m_bubbles[i]->SetUInt32Value(GAMEOBJECT_FACTION,114);
+		m_bubbles[i]->SetFaction(114);
 		m_bubbles[i]->SetByte(GAMEOBJECT_BYTES_1, 3, 100);
 
 		m_bubbles[i]->PushToWorld( m_mapMgr );
@@ -646,15 +635,15 @@ void EyeOfTheStorm::OnCreate()
 	/* Flag */
 	m_standFlag = m_mapMgr->CreateGameObject(184141);
 	m_standFlag->CreateFromProto( 184141, m_mapMgr->GetMapId(), 2174.782227f, 1569.054688f, 1160.361938f, -1.448624f );
-	m_standFlag->SetFloatValue( GAMEOBJECT_PARENTROTATION_02, 0.662620f );
-	m_standFlag->SetFloatValue( GAMEOBJECT_PARENTROTATION_03, -0.748956f );
+	m_standFlag->SetParentRotation(2, 0.662620f );
+	m_standFlag->SetParentRotation(3, -0.748956f );
 	m_standFlag->SetScale(  2.5f );
 	m_standFlag->PushToWorld( m_mapMgr );
 
 	m_dropFlag = m_mapMgr->CreateGameObject(184142);
 	m_dropFlag->CreateFromProto( 184142, m_mapMgr->GetMapId(), 2174.782227f, 1569.054688f, 1160.361938f, -1.448624f );
-	m_dropFlag->SetFloatValue( GAMEOBJECT_PARENTROTATION_02, 0.885448f );
-	m_dropFlag->SetFloatValue( GAMEOBJECT_PARENTROTATION_03, -0.464739f );
+	m_dropFlag->SetParentRotation(2, 0.885448f );
+	m_dropFlag->SetParentRotation(3, -0.464739f );
 	m_dropFlag->SetScale(  2.5f );
 }
 
@@ -695,7 +684,6 @@ void EyeOfTheStorm::UpdateCPs()
 		go = m_CPStatusGO[i];
 		disp = &m_CPDisplay[i];
 
-		go->AquireInrangeLock();
 		itr = go->GetInRangePlayerSetBegin();
 		itrend = go->GetInRangePlayerSetEnd();
 
@@ -713,7 +701,6 @@ void EyeOfTheStorm::UpdateCPs()
 				}
 			}
 		}
-		go->ReleaseInrangeLock();
 
 		/* score diff calculation */
 		//printf("EOTS: Playercounts = %u %u\n", playercounts[0], playercounts[1]);
@@ -903,7 +890,7 @@ bool EyeOfTheStorm::GivePoints(uint32 team, uint32 points)
 		m_nextPvPUpdateTime = 0;
 
 		sEventMgr.RemoveEvents(this);
-		sEventMgr.AddEvent(((CBattleground*)this), &CBattleground::Close, EVENT_BATTLEGROUND_CLOSE, 120000, 1,0);
+		sEventMgr.AddEvent(((CBattleground*)this), &CBattleground::Close, EVENT_BATTLEGROUND_CLOSE, 120000, 1, EVENT_FLAG_DO_NOT_EXECUTE_IN_WORLD_CONTEXT);
 
 		/* add the marks of honor to all players */
 		uint32 lostHonorToAdd = m_honorPerKill;
@@ -919,9 +906,6 @@ bool EyeOfTheStorm::GivePoints(uint32 team, uint32 points)
 
 				p->Root();
 				
-				if ( p == NULL )
-					continue;
-
 				if(i == m_winningteam)
 				{
 					p->m_bgScore.BonusHonor += winHonorToAdd;
@@ -1005,8 +989,8 @@ void EyeOfTheStorm::SpawnBuff(uint32 x)
 	{
 		EOTSm_buffs[x] = SpawnGameObject(chosen_buffid, m_mapMgr->GetMapId(), EOTSBuffCoordinates[x][0], EOTSBuffCoordinates[x][1], EOTSBuffCoordinates[x][2], EOTSBuffCoordinates[x][3], 0, 114, 1);
 
-		EOTSm_buffs[x]->SetFloatValue(GAMEOBJECT_PARENTROTATION_02, EOTSBuffRotations[x][0]);
-		EOTSm_buffs[x]->SetFloatValue(GAMEOBJECT_PARENTROTATION_03, EOTSBuffRotations[x][1]);
+		EOTSm_buffs[x]->SetParentRotation(2, EOTSBuffRotations[x][0]);
+		EOTSm_buffs[x]->SetParentRotation(3, EOTSBuffRotations[x][1]);
 		EOTSm_buffs[x]->SetByte(GAMEOBJECT_BYTES_1, 0, 1);
 		EOTSm_buffs[x]->SetByte(GAMEOBJECT_BYTES_1, 1, 6);
 		EOTSm_buffs[x]->SetByte(GAMEOBJECT_BYTES_1, 3, 100);

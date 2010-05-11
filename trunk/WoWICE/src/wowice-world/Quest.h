@@ -32,18 +32,18 @@ finished = 8
 
 enum QUEST_STATUS
 {
-	QMGR_QUEST_NOT_AVAILABLE		= 0x00,	// There aren't any quests available.		| "No Mark"
-	QMGR_QUEST_AVAILABLELOW_LEVEL		= 0x01,	// Quest available, and your level isn't enough.| "Gray Quotation Mark !"
-	QMGR_QUEST_CHAT				= 0x02,	// Quest available it shows a talk balloon.	| "No Mark"
-		// On 3.1.2 0x03 and 0x04 is some new status, so the old ones are now shifted by 2 (0x03->0x05 and so on). 
-	QMGR_QUEST_REPEATABLE_FINISHED_LOWLEVEL	= 0x03, 
-	QMGR_QUEST_REPEATABLE_LOWLEVEL		= 0x04, 
-	QMGR_QUEST_NOT_FINISHED			= 0x05,	// Quest isn't finished yet.			| "Gray Question ? Mark"
-	QMGR_QUEST_REPEATABLE_FINISHED		= 0x06,
-	QMGR_QUEST_REPEATABLE			= 0x07,	// Quest repeatable				| "Blue Question ? Mark" 
-	QMGR_QUEST_AVAILABLE			= 0x08,	// Quest available, and your level is enough	| "Yellow Quotation ! Mark" 
-	QMGR_QUEST_FINISHED			= 0x0A,	// Quest has been finished.			| "Yellow Question  ? Mark" (7 has no minimap icon)
-	//QUEST_ITEM_UPDATE			= 0x06	// Yellow Question "?" Mark. //Unknown
+	QMGR_QUEST_NOT_AVAILABLE					= 0x00,	// There aren't any quests available.		| "No Mark"
+	QMGR_QUEST_AVAILABLELOW_LEVEL				= 0x01,	// Quest available, and your level isn't enough.| "Gray Quotation Mark !"
+	QMGR_QUEST_CHAT								= 0x02,	// Quest available it shows a talk balloon.	| "No Mark"
+	// On 3.1.2 0x03 and 0x04 is some new status, so the old ones are now shifted by 2 (0x03->0x05 and so on). 
+	QMGR_QUEST_REPEATABLE_FINISHED_LOWLEVEL		= 0x03, 
+	QMGR_QUEST_REPEATABLE_LOWLEVEL				= 0x04, 
+	QMGR_QUEST_NOT_FINISHED						= 0x05,	// Quest isn't finished yet.			| "Gray Question ? Mark"
+	QMGR_QUEST_REPEATABLE_FINISHED				= 0x06,
+	QMGR_QUEST_REPEATABLE						= 0x07,	// Quest repeatable				| "Blue Question ? Mark" 
+	QMGR_QUEST_AVAILABLE						= 0x08,	// Quest available, and your level is enough	| "Yellow Quotation ! Mark" 
+	QMGR_QUEST_FINISHED							= 0x0A,	// Quest has been finished.			| "Yellow Question  ? Mark" (7 has no minimap icon)
+	//QUEST_ITEM_UPDATE							= 0x06	// Yellow Question "?" Mark. //Unknown
 };
 
 enum QuestStatus		// dupe for scriptdev2
@@ -115,11 +115,15 @@ enum QUEST_SHARE
 	QUEST_SHARE_MSG_CANT_TAKE_QUEST			= 1,
 	QUEST_SHARE_MSG_ACCEPT_QUEST			= 2,
 	QUEST_SHARE_MSG_REFUSE_QUEST			= 3,
-	QUEST_SHARE_MSG_TOO_FAR					= 4,
-	QUEST_SHARE_MSG_BUSY					= 5,
-	QUEST_SHARE_MSG_LOG_FULL				= 6,
-	QUEST_SHARE_MSG_HAVE_QUEST				= 7,
-	QUEST_SHARE_MSG_FINISH_QUEST			= 8,
+//	QUEST_SHARE_MSG_TOO_FAR				= 4, //VLack: This message seems to be non-existent as of 3.2.x, plus it isn't used in ArcEmu, so it is safe to get rid of it.
+	QUEST_SHARE_MSG_BUSY				= 4,
+	QUEST_SHARE_MSG_LOG_FULL			= 5,
+	QUEST_SHARE_MSG_HAVE_QUEST			= 6,
+	QUEST_SHARE_MSG_FINISH_QUEST			= 7,
+	QUEST_SHARE_MSG_CANT_BE_SHARED_TODAY		= 8, //VLack: the following 4 messages (from 8 to 11) are unused on ArcEmu, but for completeness I have included them here, maybe we'll need them later...
+	QUEST_SHARE_MSG_SHARING_TIMER_EXPIRED		= 9,
+	QUEST_SHARE_MSG_NOT_IN_PARTY			= 10,
+	QUEST_SHARE_MSG_DIFFERENT_SERVER_DAILY		= 11,
 };
 
 #define wowice_QUEST_REPEATABLE 1
@@ -161,8 +165,8 @@ struct Quest
 
 	char * objectivetexts[4];
 
-	uint32 required_item[4];
-	uint32 required_itemcount[4];
+	uint32 required_item[6];
+	uint32 required_itemcount[6];
 
 	int32 required_mob[4]; //positive is NPC, negative is GO
 	uint32 required_mobcount[4];
@@ -212,6 +216,7 @@ struct Quest
 	uint32 completionemotedelay[4];
 	uint32 completeemote;
 	uint32 incompleteemote;
+	uint32 iscompletedbyspelleffect;
 
 	/* this marks the end of the fields loaded from db - don't remove the comment please */
 
@@ -252,6 +257,7 @@ public:
 	void Init(Quest* quest, Player* plr, uint32 slot);
 
 	bool CanBeFinished();
+    void Complete();
 	void SubtractTime(uint32 value);
 	void SaveToDB(QueryBuffer * buf);
 	bool LoadFromDB(Field *fields);
@@ -277,8 +283,9 @@ public:
 
 	WoWICE_INLINE uint32 GetBaseField(uint32 slot)
 	{
-		return PLAYER_QUEST_LOG_1_1 + (slot * 4);
+		return PLAYER_QUEST_LOG_1_1 + (slot * 5);
 	}
+	ARCEMU_INLINE int32 GetSlot() { return m_slot; }
 
 private:
 	uint32 completed;

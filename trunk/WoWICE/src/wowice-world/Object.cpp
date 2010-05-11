@@ -22,92 +22,6 @@ using namespace std;
 #define M_H_PI		1.57079632679489661923
 #define M_Q_PI		0.785398163397448309615
 
-static float DamageToRageConversionTable[PLAYER_LEVEL_CAP+1]=
-{
-	0.0f,
-	3.33333332596f,
-	2.32494760373f,
-	1.78264780661f,
-	1.44396357117f,
-	1.2123533165f,
-	1.04397785496f,
-	0.916056052096f,
-	0.815576431602f,
-	0.734567160417f,
-	0.66787149277f,
-	0.612005960162f,
-	0.564532608393f,
-	0.523694129722f,
-	0.488191825581f,
-	0.457045164141f,
-	0.429499969492f,
-	0.404966667879f,
-	0.382977704896f,
-	0.363157531812f,
-	0.345201035638f,
-	0.328857765668f,
-	0.313920217094f,
-	0.300215004319f,
-	0.287596125288f,
-	0.27593976089f,
-	0.265140216201f,
-	0.255106721412f,
-	0.24576088725f,
-	0.23703466382f,
-	0.228868690383f,
-	0.221210951417f,
-	0.214015674635f,
-	0.20724242161f,
-	0.200855332852f,
-	0.194822497576f,
-	0.189115424762f,
-	0.183708597032f,
-	0.178579092584f,
-	0.17370626337f,
-	0.169071460011f,
-	0.164657795691f,
-	0.160449942759f,
-	0.156433956854f,
-	0.152597124314f,
-	0.148927829351f,
-	0.145415438059f,
-	0.142050196824f,
-	0.138823143098f,
-	0.1357260268f,
-	0.132751240913f,
-	0.129891760035f,
-	0.127141085846f,
-	0.124493198595f,
-	0.121942513852f,
-	0.119483843862f,
-	0.117112362949f,
-	0.114823576474f,
-	0.112613292937f,
-	0.110477598847f,
-	0.108412836061f,
-	0.106415581293f,
-	0.104482627572f,
-	0.102610967429f,
-	0.100797777624f,
-	0.0990404052564f,
-	0.0973363551185f,
-	0.0956832781503f,
-	0.094078960901f,
-	0.0925213158854f,
-	0.0910083727537f,
-#if PLAYER_LEVEL_CAP==80
-	0.0910083727537f,
-	0.0910083727537f,
-	0.0910083727537f,
-	0.0910083727537f,
-	0.0910083727537f,
-	0.0910083727537f,
-	0.0910083727537f,
-	0.0910083727537f,
-	0.0910083727537f,
-#endif
-};
-
 void Object::SetRotation( uint64 guid )
 {
 	WorldPacket data(SMSG_AI_REACTION, 12);
@@ -152,7 +66,7 @@ Object::Object() : m_position(0,0,0,0), m_spawnLocation(0,0,0,0)
 	m_faction = NULL;
 	m_factionDBC = NULL;
 
-	m_instanceId = 0;
+	m_instanceId = -1;
 	Active = false;
 	m_inQueue = false;
 	m_extensions = NULL;
@@ -172,13 +86,9 @@ Object::Object() : m_position(0,0,0,0), m_spawnLocation(0,0,0,0)
 Object::~Object( )
 {
 	if(m_objectTypeId != TYPEID_ITEM)
-		ASSERT(!m_inQueue);
+		Wowice::Util::WOWICE_ASSERT(   !m_inQueue);
 
-	if (this->IsInWorld() && m_objectTypeId != TYPEID_ITEM && m_objectTypeId != TYPEID_CONTAINER)
-	{
-		this->RemoveFromWorld(false);
-		this->ClearInRangeSet();
-	}
+	Wowice::Util::WOWICE_ASSERT( !IsInWorld() );
 
 	// for linux
 	m_instanceId = -1;
@@ -208,7 +118,7 @@ uint32 Object::BuildCreateUpdateBlockForPlayer(ByteBuffer *data, Player *target)
 	uint8 updatetype = UPDATETYPE_CREATE_OBJECT;
 	if(m_objectTypeId == TYPEID_CORPSE)
 	{
-		if(m_uint32Values[CORPSE_FIELD_DISPLAY_ID] == 0)
+		if(static_cast<Corpse*>(this)->GetDisplayId() == 0)
 			return 0;
 		updatetype = UPDATETYPE_CREATE_YOURSELF;
 	}
@@ -234,7 +144,7 @@ uint32 Object::BuildCreateUpdateBlockForPlayer(ByteBuffer *data, Player *target)
 		// gameobject/dynamicobject
 	case TYPEID_GAMEOBJECT:
 		flags = 0x0350;
-		if( m_uint32Values[GAMEOBJECT_DISPLAYID]==3831 ) flags=0x0252; //Deeprun Tram proper flags as of 3.2.0.
+		if( static_cast<GameObject*>(this)->GetDisplayId()==3831 ) flags= 0x0252; //Deeprun Tram proper flags as of 3.2.0.
 		break;
 
 	case TYPEID_DYNAMICOBJECT:
@@ -290,7 +200,7 @@ uint32 Object::BuildCreateUpdateBlockForPlayer(ByteBuffer *data, Player *target)
 	*data << updatetype;
 
 	// we shouldn't be here, under any circumstances, unless we have a wowguid..
-	ASSERT(m_wowGuid.GetNewGuidLen());
+	Wowice::Util::WOWICE_ASSERT(   m_wowGuid.GetNewGuidLen() > 0);
 	*data << m_wowGuid;
 	
 	*data << m_objectTypeId;
@@ -827,7 +737,7 @@ void Object::_BuildValuesUpdate(ByteBuffer * data, UpdateMask *updateMask, Playe
 		reset = true;
 	}
 
-	ASSERT( updateMask && updateMask->GetCount() == m_valuesCount );
+	Wowice::Util::WOWICE_ASSERT(    updateMask && updateMask->GetCount()  == m_valuesCount );
 	uint32 bc;
 	uint32 values_count;
 	if( m_valuesCount > ( 2 * 0x20 ) )//if number of blocks > 2->  unit and player+item container
@@ -878,29 +788,6 @@ void Object::BuildHeartBeatMsg(WorldPacket *data) const
 	*data << getMSTime();
 	*data << m_position;
 	*data << m_position.o;
-}
-
-WorldPacket * Object::BuildTeleportAckMsg(const LocationVector & v)
-{
-	///////////////////////////////////////
-	//Update player on the client with TELEPORT_ACK
-	static_cast< Player* >( this )->SetPlayerStatus( TRANSFER_PENDING );
-
-	WorldPacket * data = new WorldPacket(MSG_MOVE_TELEPORT_ACK, 80);
-	*data << GetNewGUID();
-
-	//First 4 bytes = no idea what it is
-	*data << uint32(2); // flags
-//	*data << uint32(0); // mysterious value #1
-	*data << getMSTime();
-	*data << uint16(0);
-
-	*data << float(0);
-	*data << v;
-	*data << v.o;
-	*data << uint16(2);
-	*data << uint8(0);
-	return data;
 }
 
 bool Object::SetPosition(const LocationVector & v, bool allowPorting /* = false */)
@@ -1134,11 +1021,13 @@ void Object::AddToWorld()
 	m_inQueue = true;
 
 	// correct incorrect instance id's
-	m_instanceId = m_mapMgr->GetInstanceID();
+	mSemaphoreTeleport = false;
+	m_inQueue = false;
 
 	mapMgr->AddObject(this);
 
-	mSemaphoreTeleport = false;
+	// call virtual function to handle stuff.. :P
+	OnPushToWorld();
 }
 
 void Object::AddToWorld(MapMgr * pMapMgr)
@@ -1494,72 +1383,14 @@ void Object::SetFloatValue( const uint32 index, const float value )
 }
 
 
-void Object::SetFlag( const uint32 index, uint32 newFlag )
-{
-	ASSERT( index < m_valuesCount );
-
-	//no change -> no update
-	if((m_uint32Values[ index ] & newFlag)==newFlag)
-		return;
-
-	m_uint32Values[ index ] |= newFlag;
-
-	if(IsInWorld())
-	{
-		m_updateMask.SetBit( index );
-
-		if(!m_objectUpdated)
-		{
-			m_mapMgr->ObjectUpdated(this);
-			m_objectUpdated = true;
-		}
-	}
-}
-
-
-void Object::RemoveFlag( const uint32 index, uint32 oldFlag )
-{
-	ASSERT( index < m_valuesCount );
-
-	//no change -> no update
-	if((m_uint32Values[ index ] & oldFlag)==0)
-		return;
-
-	m_uint32Values[ index ] &= ~oldFlag;
-
-	if(IsInWorld())
-	{
-		m_updateMask.SetBit( index );
-
-		if(!m_objectUpdated)
-		{
-			m_mapMgr->ObjectUpdated(this);
-			m_objectUpdated = true;
-		}
-	}
-}
-
-////////////////////////////////////////////////////////////
-
 float Object::CalcDistance(Object *Ob)
 {
-	ASSERT(Ob != NULL);
+	Wowice::Util::WOWICE_ASSERT(   Ob != NULL);
 	return CalcDistance(this->GetPositionX(), this->GetPositionY(), this->GetPositionZ(), Ob->GetPositionX(), Ob->GetPositionY(), Ob->GetPositionZ());
 }
 float Object::CalcDistance(float ObX, float ObY, float ObZ)
 {
 	return CalcDistance(this->GetPositionX(), this->GetPositionY(), this->GetPositionZ(), ObX, ObY, ObZ);
-}
-float Object::CalcDistance(Object *Oa, Object *Ob)
-{
-	ASSERT(Oa != NULL);
-	ASSERT(Ob != NULL);
-	return CalcDistance(Oa->GetPositionX(), Oa->GetPositionY(), Oa->GetPositionZ(), Ob->GetPositionX(), Ob->GetPositionY(), Ob->GetPositionZ());
-}
-float Object::CalcDistance(Object *Oa, float ObX, float ObY, float ObZ)
-{
-	ASSERT(Oa != NULL);
-	return CalcDistance(Oa->GetPositionX(), Oa->GetPositionY(), Oa->GetPositionZ(), ObX, ObY, ObZ);
 }
 
 float Object::CalcDistance(float OaX, float OaY, float OaZ, float ObX, float ObY, float ObZ)
@@ -1572,7 +1403,7 @@ float Object::CalcDistance(float OaX, float OaY, float OaZ, float ObX, float ObY
 
 bool Object::IsWithinDistInMap(Object* obj, const float dist2compare) const
 {
-	ASSERT(obj != NULL);
+	Wowice::Util::WOWICE_ASSERT(   obj != NULL);
 	float xdest = this->GetPositionX() - obj->GetPositionX();
 	float ydest = this->GetPositionY() - obj->GetPositionY();
 	float zdest = this->GetPositionZ() - obj->GetPositionZ();
@@ -1581,7 +1412,7 @@ bool Object::IsWithinDistInMap(Object* obj, const float dist2compare) const
 
 bool Object::IsWithinLOSInMap(Object* obj)
 {
-	ASSERT(obj != NULL);
+	Wowice::Util::WOWICE_ASSERT(   obj != NULL);
     if (!IsInMap(obj)) return false;
 	LocationVector location;
     location = obj->GetPosition();
@@ -1605,7 +1436,7 @@ float Object::calcAngle( float Position1X, float Position1Y, float Position2X, f
 {
 	float dx = Position2X-Position1X;
 	float dy = Position2Y-Position1Y;
-	double angle=0.0f;
+	double angle= 0.0f;
 
 	// Calculate angle
 	if (dx == 0.0)
@@ -1645,7 +1476,7 @@ float Object::calcRadAngle( float Position1X, float Position1Y, float Position2X
 {
 	double dx = double(Position2X-Position1X);
 	double dy = double(Position2Y-Position1Y);
-	double angle=0.0;
+	double angle= 0.0;
 
 	// Calculate angle
 	if (dx == 0.0)
@@ -1900,67 +1731,13 @@ void Object::DealDamage(Unit *pVictim, uint32 damage, uint32 targetEvent, uint32
 
 	if( damage > 14000 && this != pVictim && this->IsPlayer() && !static_cast< Player* >(this)->GetSession()->HasPermissions() && sWorld.m_limits.enable )
 	{
-		if(spellId && sWorld.m_limits.spellDamageCap > 0)
-		{
-			if((damage > sWorld.m_limits.spellDamageCap) && this!=pVictim && this->IsPlayer() && !((Player*)this)->GetSession()->HasPermissions())
-			{
-				SpellEntry* spellInfo = dbcSpell.LookupEntryForced(spellId);
-				char dmglog[256];
-				snprintf(dmglog, 256, "Dealt %u damage with spell %u ( %s )", damage, spellId, (spellInfo != NULL) ? spellInfo->Name : "ERROR (NULL SPELL)");
-				sCheatLog.writefromsession(((Player*)this)->GetSession(),dmglog);
-				if(sWorld.m_limits.broadcast) // send info to online GM
-				{
-					string gm_ann = MSG_COLOR_GREEN;
-					gm_ann += "|Hplayer:";
-					gm_ann += ((Player*)this)->GetName();
-					gm_ann += "|h[";
-					gm_ann += ((Player*)this)->GetName();
-					gm_ann += "]|h: ";
-					gm_ann += MSG_COLOR_YELLOW;
-					gm_ann += dmglog;
-					sWorld.SendGMWorldText(gm_ann.c_str());
-				}
-				if(sWorld.m_limits.disconnect)
-				{
-					((Player*)this)->GetSession()->Disconnect();
-				}
-				else // no disconnect, we'll just set it to the cap. it's been logged and gms have been notified (if configured)
-				{
-					damage = sWorld.m_limits.spellDamageCap;
-				}
-			}
-		}
-		else // !spellId
-		{
-			if((sWorld.m_limits.autoattackDamageCap > 0) && (damage > sWorld.m_limits.autoattackDamageCap) && (this!=pVictim) && (this->IsPlayer()) && !((Player*)this)->GetSession()->HasPermissions())
-			{
-				char dmglog[64];
-				snprintf(dmglog, 64, "Dealt %u damage with Auto Attack", damage);
-				sCheatLog.writefromsession(((Player*)this)->GetSession(),dmglog);
-				if(sWorld.m_limits.broadcast) // send info to GM
-				{
-					string gm_ann = MSG_COLOR_GREEN;
-					gm_ann += "|Hplayer:";
-					gm_ann += ((Player*)this)->GetName();
-					gm_ann += "|h[";
-					gm_ann += ((Player*)this)->GetName();
-					gm_ann += "]|h: ";
-					gm_ann += MSG_COLOR_YELLOW;
-					gm_ann += dmglog;
-					sWorld.SendGMWorldText(gm_ann.c_str());
-				}
-				if(sWorld.m_limits.disconnect)
-				{
-					((Player*)this)->GetSession()->Disconnect();
-				}
-				else // no disconnect, we'll just set it to the cap. it's been logged and gms have been notified (if configured)
-				{
-					damage = sWorld.m_limits.autoattackDamageCap;
-				}
-			}
-		}
+		Player *p = static_cast< Player* >( this );
+		damage = p->CheckDamageLimits( damage, spellId );
 	}
-	if( this->IsUnit() && pVictim->IsUnit() && pVictim != this )
+
+
+
+	if( IsUnit() && pVictim->IsUnit() && pVictim != this )
 	{
 		// Set our attack target to the victim.
 		static_cast< Unit* >( this )->CombatStatus.OnDamageDealt( pVictim );
@@ -2046,57 +1823,10 @@ void Object::DealDamage(Unit *pVictim, uint32 damage, uint32 targetEvent, uint32
 		{
 			// Tagging
 			Creature *victim = static_cast<Creature*>(pVictim);
-			bool taggable;
-			if(victim->GetCreatureInfo() && victim->GetCreatureInfo()->Type == UNIT_TYPE_CRITTER || victim->IsPet())
-				taggable = false;
-			else taggable = true;
-
-			if(!victim->Tagged && taggable)
-			{
-				victim->Tagged = true;
-				victim->TaggerGuid = plr->GetGUID();
-
-				/* set loot method */
-				if( plr->GetGroup() != NULL )
-					victim->m_lootMethod = plr->GetGroup()->GetMethod();
-
-				// For new players who get a create object
-				uint32 Flags = pVictim->m_uint32Values[UNIT_DYNAMIC_FLAGS];
-				Flags |= U_DYN_FLAG_TAPPED_BY_PLAYER;
-
-				pVictim->m_uint32Values[UNIT_DYNAMIC_FLAGS] |= U_DYN_FLAG_TAGGED_BY_OTHER;
-
-				// Update existing players.
-				ByteBuffer buf(500);
-				ByteBuffer buf1(500);
-
-				pVictim->BuildFieldUpdatePacket(&buf1, UNIT_DYNAMIC_FLAGS, Flags);
-				pVictim->BuildFieldUpdatePacket(&buf, UNIT_DYNAMIC_FLAGS, pVictim->m_uint32Values[UNIT_DYNAMIC_FLAGS]);
-
-				// Loop inrange set, append to their update data.
-				for(std::set<Player*>::iterator itr = m_inRangePlayers.begin(); itr != m_inRangePlayers.end(); ++itr)
-				{
-					if (static_cast< Player* >(plr)->InGroup())
-					{
-						if (static_cast< Player* >(*itr)->GetGroup() && static_cast< Player* >(plr)->GetGroup()->GetID() == static_cast< Player* >(*itr)->GetGroup()->GetID())
-						{
-							(*itr)->PushUpdateData(&buf1, 1);
-						}
-						else
-						{
-							(*itr)->PushUpdateData(&buf, 1);
-						}
-
-					}
-					else
-					{
-						(*itr)->PushUpdateData(&buf, 1);
-					}
-				}
-
-				// Update ourselves
-				plr->PushUpdateData(&buf1, 1);
-
+			
+			if( victim->IsTaggable() ){
+				victim->Tag( plr->GetGUID() );
+				plr->TagUnit( victim );
 			}
 		}
 	}
@@ -2693,231 +2423,6 @@ void Object::DealDamage(Unit *pVictim, uint32 damage, uint32 targetEvent, uint32
 										sEventMgr.ModifyEventTimeLeft(this,EVENT_LASTKILLWITHHONOR_FLAG_EXPIRE,20000);
 									}
 
-									if( pTagger->GetSummon() && pTagger->GetSummon()->CanGainXP() )
-									{
-										xp = CalculateXpToGive( pVictim, pTagger->GetSummon() );
-										if( xp > 0 )
-											pTagger->GetSummon()->GiveXP( xp );
-									}
-								}
-							}
-							if( !pVictim->IsPlayer() )
-							{
-								sQuestMgr.OnPlayerKill( pTagger, static_cast< Creature* >( pVictim ) );
-								if(pVictim->IsCreature())
-								{
-									// code stolen from Unit::GiveGroupXP()
-									if(pTagger->InGroup())
-									{
-										Group *pGroup = pTagger->GetGroup();
-										//since group is small we can afford to do this rather then recheck again the whole active player set
-										Player *active_player_list[MAX_GROUP_SIZE_RAID];
-										Player *pGroupGuy = NULL;
-										int active_player_count=0;
-										GroupMembersSet::iterator itr;
-										pGroup->Lock();
-										for(uint32 i = 0; i < pGroup->GetSubGroupCount(); ++i) {
-											for(itr = pGroup->GetSubGroup(i)->GetGroupMembersBegin(); itr != pGroup->GetSubGroup(i)->GetGroupMembersEnd(); ++itr)
-											{
-												pGroupGuy = (*itr)->m_loggedInPlayer;
-												if( pGroupGuy &&
-													pGroupGuy->isAlive() &&
-													pVictim->GetMapMgr() == pGroupGuy->GetMapMgr() &&
-													pGroupGuy->GetDistanceSq(pVictim)<100*100
-												)
-												{
-													active_player_list[active_player_count] = pGroupGuy;
-													active_player_count++;
-												}
-											}
-										}
-										pGroup->Unlock();
-										if(active_player_count<1) //killer is always close to the victim. This should never execute
-										{
-											active_player_list[0] = pTagger;
-											active_player_count=1;
-										}
-										for(int i = 0; i < active_player_count; ++i)
-										{
-											Player * plr = active_player_list[i];
-#ifdef ENABLE_ACHIEVEMENTS
-											plr->GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_KILL_CREATURE, pVictim->GetEntry(), 1, 0);
-											plr->GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_KILL_CREATURE_TYPE, highGUID, lowGUID, 0);
-#endif
-										}
-									}
-									else // not in group, just update for pTagger
-									{
-#ifdef ENABLE_ACHIEVEMENTS
-										pTagger->GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_KILL_CREATURE, pVictim->GetEntry(), 1, 0);
-										pTagger->GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_KILL_CREATURE_TYPE, highGUID, lowGUID, 0);
-#endif
-									}
-								}
-							}
-						}
-					}
-					else if (uTagger->IsPet())
-					{
-						Pet* petTagger = static_cast<Pet*>(uTagger);
-						if (petTagger != NULL)
-						{
-							Player* petOwner = petTagger->GetPetOwner();
-							if( petOwner != NULL)
-							{
-								if( petOwner->InGroup() )
-								{
-									//Calc Group XP
-									petOwner->GiveGroupXP( pVictim, petOwner );
-								}
-								else if( IsUnit() )
-								{
-									uint32 xp = CalculateXpToGive( pVictim, petOwner );
-									if( xp > 0 )
-									{
-										petOwner->GiveXP( xp, victimGuid, true );
-
-										this->SetFlag(UNIT_FIELD_AURASTATE,AURASTATE_FLAG_LASTKILLWITHHONOR);
-										if(!sEventMgr.HasEvent(this,EVENT_LASTKILLWITHHONOR_FLAG_EXPIRE))
-										{
-											sEventMgr.AddEvent((Unit*)this,&Unit::EventAurastateExpire,(uint32)AURASTATE_FLAG_LASTKILLWITHHONOR,EVENT_LASTKILLWITHHONOR_FLAG_EXPIRE,20000,1,0);
-										}
-										else
-										{
-											sEventMgr.ModifyEventTimeLeft(this,EVENT_LASTKILLWITHHONOR_FLAG_EXPIRE,20000);
-										}
-
-										if( petTagger->CanGainXP() )
-										{
-											xp = CalculateXpToGive( pVictim, petTagger );
-											if( xp > 0 )
-												petTagger->GiveXP( xp );
-										}
-									}
-								}
-								if(pVictim->GetTypeId() != TYPEID_PLAYER)
-								{
-									sQuestMgr.OnPlayerKill( petOwner, static_cast< Creature* >( pVictim ) );
-									if(pVictim->IsCreature())
-									{
-										if(petOwner->InGroup())
-										{
-											Group *pGroup = petOwner->GetGroup();
-											// since group is small we can afford to do this rather then recheck again the whole active player set
-											// This needs to be looked at..
-											Player *active_player_list[MAX_GROUP_SIZE_RAID];
-											Player *pGroupGuy = NULL;
-											int active_player_count = 0;
-											GroupMembersSet::iterator itr;
-											pGroup->Lock();
-											for(uint32 i = 0; i < pGroup->GetSubGroupCount(); ++i) {
-												for(itr = pGroup->GetSubGroup(i)->GetGroupMembersBegin(); itr != pGroup->GetSubGroup(i)->GetGroupMembersEnd(); ++itr)
-												{
-													pGroupGuy = (*itr)->m_loggedInPlayer;
-													if( pGroupGuy &&
-														pGroupGuy->isAlive() &&
-														//
-														pVictim->GetMapMgr() == pGroupGuy->GetMapMgr() &&
-														pGroupGuy->GetDistanceSq(pVictim)<100*100
-													)
-													{
-														active_player_list[active_player_count] = pGroupGuy;
-														active_player_count++;
-													}
-												}
-											}
-											pGroup->Unlock();
-											//killer is always close to the victim. This should never execute
-											if(active_player_count < 1) 
-											{
-												active_player_list[0] = petOwner;
-												active_player_count=1;
-											}
-											for(int i = 0; i < active_player_count; ++i)
-											{
-												Player * plr = active_player_list[i];
-#ifdef ENABLE_ACHIEVEMENTS
-												plr->GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_KILL_CREATURE, pVictim->GetEntry(), 1, 0);
-												plr->GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_KILL_CREATURE_TYPE, highGUID, lowGUID, 0);
-#endif
-											}
-										}
-										else // not in group, just update for petOwner
-										{
-#ifdef ENABLE_ACHIEVEMENTS
-											petOwner->GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_KILL_CREATURE, pVictim->GetEntry(), 1, 0);
-											petOwner->GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_KILL_CREATURE_TYPE, highGUID, lowGUID, 0);
-#endif									
-										}
-									}
-								}
-							}
-						}
-					}
-				}
-				// ----------------------------- XP --------------
-
-                
-
-			/* ----------------------------- PET XP HANDLING END-------------- */
-
-			/* ----------------------------- PET DEATH HANDLING -------------- */
-				if( pVictim->IsPet() )
-				{
-					Pet* pPet = static_cast< Pet* >( pVictim );
-
-					// dying pet looses 1 happiness level (not in BG)
-					if( !pPet->IsSummon() && !pPet->IsInBg() )
-					{
-						uint32 hap = pPet->GetUInt32Value( UNIT_FIELD_POWER5 );
-						hap = hap - PET_HAPPINESS_UPDATE_VALUE > 0 ? hap - PET_HAPPINESS_UPDATE_VALUE : 0;
-						pPet->SetUInt32Value( UNIT_FIELD_POWER5, hap );
-					}
-
-					pPet->DelayedRemove( false, true );
-				}
-				/* ----------------------------- PET DEATH HANDLING END -------------- */
-				else if( pVictim->GetUInt64Value( UNIT_FIELD_CHARMEDBY ) )
-				{
-					//remove owner warlock soul link from caster
-					Unit *owner=pVictim->GetMapMgr()->GetUnit( pVictim->GetUInt64Value( UNIT_FIELD_CHARMEDBY ) );
-					if( owner != NULL && owner->IsPlayer())
-						static_cast< Player* >( owner )->EventDismissPet();
-				}
-			}
-            // Clear owner, except pets
-            if( !pVictim->IsPet() && pVictim->GetUInt64Value( UNIT_FIELD_CREATEDBY ) != 0 )
-                pVictim->SetUInt64Value( UNIT_FIELD_CREATEDBY, 0 );
-            // Same as the above
-            if( pVictim->IsCreature() )
-			{
-                Creature *pCreature = static_cast<Creature*>( pVictim );
-                if( pCreature->GetOwner() != NULL )
-				{
-                    pCreature->GetOwner()->RemoveGuardianRef( pCreature );
-					pCreature->SetOwner( NULL );
-				}
-            }
-
-#ifdef ENABLE_ACHIEVEMENTS
-			if(isCritter)
-			{
-				if(IsPlayer()) // Player killed a critter
-				{
-					((Player*)this)->GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_KILL_CREATURE, pVictim->GetEntry(), 1, 0);
-					((Player*)this)->GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_KILL_CREATURE_TYPE, highGUID, lowGUID, 0);
-				}
-				else if(IsPet()) // Player's pet killed a critter
-				{
-					((Pet*)this)->GetPetOwner()->GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_KILL_CREATURE, pVictim->GetEntry(), 1, 0);
-					((Pet*)this)->GetPetOwner()->GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_KILL_CREATURE_TYPE, highGUID, lowGUID, 0);
-				}
-			}
-#endif
-		}
-		else if( pVictim->GetTypeId() == TYPEID_PLAYER )
-		{
-
 			/* -------------------- RESET BREATH STATE ON DEATH -------------- */
 			static_cast< Player* >( pVictim )->m_UnderwaterTime = 0;
 			static_cast< Player* >( pVictim )->m_UnderwaterState = 0;
@@ -2925,7 +2430,7 @@ void Object::DealDamage(Unit *pVictim, uint32 damage, uint32 targetEvent, uint32
 			static_cast< Player* >( pVictim )->m_SwimmingTime = 0;
 
 			/* -------------------- KILL PET / GUARDIANS WHEN PLAYER DIES ---------------*/
-			static_cast< Player* >( pVictim )->DismissActivePet();
+			static_cast< Player* >( pVictim )->DismissActivePets();
 			pVictim->RemoveAllGuardians();
 		}
 		else sLog.outError("DealDamage for Unknown Object.");
@@ -2934,14 +2439,6 @@ void Object::DealDamage(Unit *pVictim, uint32 damage, uint32 targetEvent, uint32
 	{
 		if(pVictim != this /* && updateskill */)
 		{
-			// Send AI Reaction UNIT vs UNIT
-			/* Weird: why should WE react on OUR damage?
-			If meaning of this is to get reaction of victim, then its already handled few rows below...
-			if( GetTypeId() ==TYPEID_UNIT )
-			{
-				static_cast< Unit* >( this )->GetAIInterface()->AttackReaction( pVictim, damage, spellId );
-			}*/
-
 			// Send AI Victim Reaction
 			if( this->IsPlayer() || this->IsCreature() )
 			{
@@ -2952,23 +2449,20 @@ void Object::DealDamage(Unit *pVictim, uint32 damage, uint32 targetEvent, uint32
 				else
 				{
 					// Defensive pet
-					Pet* pPet = static_cast< Player* >( pVictim )->GetSummon();
-					if( pPet != NULL && pPet->GetPetState() != PET_STATE_PASSIVE )
+					std::list<Pet*> summons = static_cast< Player* >( pVictim )->GetSummons();
+					for(std::list<Pet*>::iterator itr = summons.begin(); itr != summons.end(); ++itr)
 					{
-						pPet->GetAIInterface()->AttackReaction( static_cast< Unit* >( this ), 1, 0 );
-						pPet->HandleAutoCastEvent( AUTOCAST_EVENT_OWNER_ATTACKED );
+						Pet* petTagger = static_cast<Pet*>(uTagger);
+						if (petTagger != NULL)
+						{
+							pPet->GetAIInterface()->AttackReaction( static_cast< Unit* >( this ), 1, 0 );
+							pPet->HandleAutoCastEvent( AUTOCAST_EVENT_OWNER_ATTACKED );
+						}
 					}
 				}
 			}
 		}
-
-		// TODO: Mark victim as a HK
-		/*if( static_cast< Player* >( pVictim )->GetCurrentBattleground() != NULL && static_cast< Player* >( this )->GetCurrentBattleground() != NULL)
-		{
-
-		}*/
-
-		pVictim->SetUInt32Value( UNIT_FIELD_HEALTH, health - damage );
+		pVictim->ModHealth(-(int32)damage);
 	}
 }
 
@@ -2980,7 +2474,7 @@ void Object::SpellNonMeleeDamageLog(Unit *pVictim, uint32 spellID, uint32 damage
 	if(!pVictim || !pVictim->isAlive())
 		return;
 
-	SpellEntry *spellInfo = dbcSpell.LookupEntry( spellID );
+	SpellEntry *spellInfo = dbcSpell.LookupEntryForced( spellID );
 	if(!spellInfo)
         return;
 
@@ -3032,11 +2526,11 @@ void Object::SpellNonMeleeDamageLog(Unit *pVictim, uint32 spellID, uint32 damage
 //==========================================================================================
 		if( res < 0 )
 			res = 0;
-		else if( spellInfo->spell_can_crit == true )
+		else if( !( spellInfo->AttributesExB & ATTRIBUTESEXB_CANT_CRIT ) )
 		{
 //------------------------------critical strike chance--------------------------------------
 			// lol ranged spells were using spell crit chance
-			float CritChance=0.0f;
+			float CritChance= 0.0f;
 			if( spellInfo->is_ranged_spell )
 			{
 
@@ -3193,18 +2687,16 @@ void Object::SpellNonMeleeDamageLog(Unit *pVictim, uint32 spellID, uint32 damage
 			pctmod = 0.15f;
 
 		uint32 hp = static_cast<uint32>( 0.05f * pl->GetUInt32Value( UNIT_FIELD_MAXHEALTH ) );
-		uint32 spellpower = static_cast<uint32>( pctmod * pl->GetUInt32Value( PLAYER_FIELD_MOD_DAMAGE_DONE_POS ) );
+		uint32 spellpower = static_cast<uint32>( pctmod * pl->GetPosDamageDoneMod(SCHOOL_NORMAL) );
 
 		if( spellpower > hp )
 			spellpower = hp;
 
-		SpellEntry * entry = dbcSpell.LookupEntry( 44413 );
+		SpellEntry * entry = dbcSpell.LookupEntryForced( 44413 );
 		if( !entry ) 
 			return;
 
 		Spell * sp = new Spell( pl, entry, true, NULL );
-		if ( !sp )
-			return;
 		sp->GetProto()->EffectBasePoints[0] = spellpower;
 		SpellCastTargets targets;
 		targets.m_unitTarget = pl->GetGUID();
@@ -3250,13 +2742,13 @@ void Object::SpellNonMeleeDamageLog(Unit *pVictim, uint32 spellID, uint32 damage
 	SendSpellNonMeleeDamageLog(this, pVictim, spellID, float2int32(res), static_cast<uint8>( school ), abs_dmg, dmg.resisted_damage, false, 0, critical, IsPlayer());
 	DealDamage( pVictim, float2int32( res ), 2, 0, spellID );
 
-	if( this->IsUnit() && allowProc && spellInfo->Id != 25501 && spellInfo->noproc == false )
+	if( IsUnit() && allowProc && spellInfo->Id != 25501 && spellInfo->noproc == false )
 	{
-		int32 dmg = float2int32(res);
+		int32 dmg2 = float2int32(res);
 
-		pVictim->HandleProc( vproc, static_cast< Unit* >( this ), spellInfo, dmg, abs_dmg);
+		pVictim->HandleProc( vproc, static_cast< Unit* >( this ), spellInfo, dmg2, abs_dmg);
 		pVictim->m_procCounter = 0;
-		static_cast< Unit* >( this )->HandleProc( aproc, pVictim, spellInfo, dmg, abs_dmg);
+		static_cast< Unit* >( this )->HandleProc( aproc, pVictim, spellInfo, dmg2, abs_dmg);
 		static_cast< Unit* >( this )->m_procCounter = 0;
 	}
 	if( this->IsPlayer() )
@@ -3264,100 +2756,95 @@ void Object::SpellNonMeleeDamageLog(Unit *pVictim, uint32 spellID, uint32 damage
 			static_cast< Player* >( this )->m_casted_amount[school] = ( uint32 )res;
 	}
 
-	if( !(dmg.full_damage == 0 && abs_dmg) )
-	{
-		//Only pushback the victim current spell if it's not fully absorbed
-		if( pVictim->GetCurrentSpell() )
-			pVictim->GetCurrentSpell()->AddTime( school );
-	}
-
-//==========================================================================================
-//==============================Post Damage Processing======================================
-//==========================================================================================
-	if( (int32)dmg.resisted_damage == dmg.full_damage && !abs_dmg )
-	{
-		//Magic Absorption
-		if( pVictim->IsPlayer() )
-		{
-			if( static_cast< Player* >( pVictim )->m_RegenManaOnSpellResist )
-			{
-				Player* pl = static_cast< Player* >( pVictim );
-				uint32 maxmana = pl->GetUInt32Value( UNIT_FIELD_MAXPOWER1 );
-
-				//TODO: wtf is this ugly mess of casting bullshit
-				uint32 amount = uint32(float( float(maxmana)*pl->m_RegenManaOnSpellResist));
-
-				pVictim->Energize( pVictim, 29442, amount, POWER_TYPE_MANA );
-			}
-			// we still stay in combat dude
-			static_cast< Player* >(pVictim)->CombatStatusHandler_ResetPvPTimeout();
+			/* -------------------- KILL PET / GUARDIANS WHEN PLAYER DIES ---------------*/
+			static_cast< Player* >( pVictim )->DismissActivePet();
+			pVictim->RemoveAllGuardians();
 		}
-		if( IsPlayer() )
-			static_cast< Player* >(this)->CombatStatusHandler_ResetPvPTimeout();
+		else sLog.outError("DealDamage for Unknown Object.");
 	}
-	if( school == SHADOW_DAMAGE )
+	else /* ---------- NOT DEAD YET --------- */
 	{
-		if( IsPlayer() && ((Unit*)this)->isAlive() && ((Player*)this)->getClass() == PRIEST )
-			((Player*)this)->VampiricSpell(float2int32(res), pVictim);
-
-		if( pVictim->isAlive() && this->IsUnit() )
+		if(pVictim != this /* && updateskill */)
 		{
-			//Shadow Word:Death
-			if( spellID == 32379 || spellID == 32996 || spellID == 48157 || spellID == 48158 ) 
+			// Send AI Reaction UNIT vs UNIT
+			/* Weird: why should WE react on OUR damage?
+			If meaning of this is to get reaction of victim, then its already handled few rows below...
+			if( GetTypeId() ==TYPEID_UNIT )
 			{
-				uint32 damage = (uint32)( res + abs_dmg );
-				uint32 absorbed = static_cast< Unit* >( this )->AbsorbDamage( school, &damage );
-				DealDamage( static_cast< Unit* >( this ), damage, 2, 0, spellID );
-				SendSpellNonMeleeDamageLog( this, this, spellID, damage, static_cast<uint8>( school ), absorbed, 0, false, 0, false, this->IsPlayer() );
+				static_cast< Unit* >( this )->GetAIInterface()->AttackReaction( pVictim, damage, spellId );
+			}*/
+
+			// Send AI Victim Reaction
+			if( this->IsPlayer() || this->IsCreature() )
+			{
+				if( !pVictim->IsPlayer() )
+				{
+					static_cast< Creature* >( pVictim )->GetAIInterface()->AttackReaction( static_cast< Unit* >( this ), damage, spellId );
+				}
+				else
+				{
+					// Defensive pet
+					Pet* pPet = static_cast< Player* >( pVictim )->GetSummon();
+					if( pPet != NULL && pPet->GetPetState() != PET_STATE_PASSIVE )
+					{
+						pPet->GetAIInterface()->AttackReaction( static_cast< Unit* >( this ), 1, 0 );
+						pPet->HandleAutoCastEvent( AUTOCAST_EVENT_OWNER_ATTACKED );
+					}
+				}
 			}
 		}
+
+		// TODO: Mark victim as a HK
+		/*if( static_cast< Player* >( pVictim )->GetCurrentBattleground() != NULL && static_cast< Player* >( this )->GetCurrentBattleground() != NULL)
+		{
+
+		}*/
+
+		pVictim->SetUInt32Value( UNIT_FIELD_HEALTH, health - damage );
 	}
 }
 
-//*****************************************************************************************
-//* SpellLog packets just to keep the code cleaner and better to read
-//*****************************************************************************************
-
-void Object::SendSpellLog(Object *Caster, Object *Target,uint32 Ability, uint8 SpellLogType)
+void Object::SpellNonMeleeDamageLog(Unit *pVictim, uint32 spellID, uint32 damage, bool allowProc, bool static_damage, bool no_remove_auras)
 {
-	if( Caster == NULL || Target == NULL || Ability == 0 ) 
+//==========================================================================================
+//==============================Unacceptable Cases Processing===============================
+//==========================================================================================
+	if(!pVictim || !pVictim->isAlive())
 		return;
 
+	SpellEntry *spellInfo = dbcSpell.LookupEntry( spellID );
+	if(!spellInfo)
+        return;
 
-	WorldPacket data( SMSG_SPELLLOGMISS, 26 );
-	data << Ability;							// spellid
-	data << Caster->GetGUID();					// caster / player
-	data << (uint8)1;							// unknown but I think they are const
-	data << (uint32)1;							// unknown but I think they are const
-	data << Target->GetGUID();					// target
-	data << SpellLogType;						// spelllogtype
-	Caster->SendMessageToSet( &data, true );
-}
-
-
-void Object::SendSpellNonMeleeDamageLog( Object* Caster, Object* Target, uint32 SpellID, uint32 Damage, uint8 School, uint32 AbsorbedDamage, uint32 ResistedDamage, bool PhysicalDamage, uint32 BlockedDamage, bool CriticalHit, bool bToset )
-{
-	if( !Caster || !Target || !SpellID )
+	if (this->IsPlayer() && !static_cast< Player* >( this )->canCast(spellInfo))
 		return;
 	
 	uint32 Overkill = 0;
-	if( Damage > Target->GetUInt32Value( UNIT_FIELD_HEALTH ) )
+	
+    if( Damage > Target->GetUInt32Value( UNIT_FIELD_HEALTH ) )
 		Overkill = Damage - Target->GetUInt32Value( UNIT_FIELD_HEALTH );
 
 	WorldPacket data( SMSG_SPELLNONMELEEDAMAGELOG, 48 );
+
 	data << Target->GetNewGUID();
 	data << Caster->GetNewGUID();
-	data << SpellID;                    // SpellID / AbilityID
-	data << Damage;                     // All Damage
-	data << Overkill;					// Overkill
-	data << uint8(g_spellSchoolConversionTable[School]);                     // School
-	data << AbsorbedDamage;             // Absorbed Damage
-	data << ResistedDamage;             // Resisted Damage
-	data << uint8(PhysicalDamage);      // Physical Damage (true/false)
-	data << uint8(0);                   // unknown or it binds with Physical Damage
-	data << BlockedDamage;		     // Physical Damage (true/false)
-	data << uint8(CriticalHit ? 7 : 5);                   // unknown const
-	data << uint32(0);
+	data << uint32( SpellID );                    // SpellID / AbilityID
+	data << uint32( Damage );                     // All Damage
+	data << uint32( Overkill );					// Overkill
+	data << uint8( g_spellSchoolConversionTable[School] );   // School
+	data << uint32( AbsorbedDamage );             // Absorbed Damage
+	data << uint32( ResistedDamage );             // Resisted Damage
+	data << uint8( PhysicalDamage );      // Physical Damage (true/false)
+	data << uint8( 0 );                   // unknown or it binds with Physical Damage
+    data << uint32( BlockedDamage );		     // Physical Damage (true/false)
+
+    // unknown const
+    if( CriticalHit )
+        data << uint8( 7 );
+    else
+        data << uint8( 5 );
+
+    data << uint32( 0 );
 
 	Caster->SendMessageToSet( &data, bToset );
 }
@@ -3367,80 +2854,270 @@ void Object::SendAttackerStateUpdate( Object* Caster, Object* Target, dealdamage
 	if (!Caster || !Target || !Dmg)
 		return;
 
-	WorldPacket data(SMSG_ATTACKERSTATEUPDATE, 70);
-	//0x4--dualwield,0x10 miss,0x20 absorbed,0x80 crit,0x4000 -glancing,0x8000-crushing
-	//only for melee!
-
-	/*if (!(HitStatus & (HITSTATUS_MISS))) 
-	{
-		HitStatus|= 0x00800000;
-	}*/
+	WorldPacket data( SMSG_ATTACKERSTATEUPDATE, 70 );
 
 	uint32 Overkill = 0;
+
 	if( Damage > Target->GetUInt32Value( UNIT_FIELD_MAXHEALTH ) )
 		Overkill = Damage - Target->GetUInt32Value( UNIT_FIELD_HEALTH );
  
-	data << (uint32)HitStatus;
+	data << uint32( HitStatus );
 	data << Caster->GetNewGUID();
 	data << Target->GetNewGUID();
 
-	data << Damage;						// Realdamage
-	data << Overkill;					// Overkill
-	data << (uint8)1;					// Damage type counter / swing type
+	data << uint32( Damage );						// Realdamage
+	data << uint32( Overkill );					// Overkill
+	data << uint8( 1 );					// Damage type counter / swing type
 
-	data << (uint32)g_spellSchoolConversionTable[Dmg->school_type];				  // Damage school
-	data << (float)Dmg->full_damage;	// Damage float
-	data << (uint32)Dmg->full_damage;	// Damage amount
-	if (HitStatus & HITSTATUS_ABSORBED) {
-		data << (uint32)Abs;				// Damage absorbed
+	data << uint32( g_spellSchoolConversionTable[Dmg->school_type] );				  // Damage school
+	data << float( Dmg->full_damage );	// Damage float
+	data << uint32( Dmg->full_damage );	// Damage amount
+
+	if( HitStatus & HITSTATUS_ABSORBED ) {
+		data << uint32( Abs );				// Damage absorbed
 	}
-	if (HitStatus & HITSTATUS_RESIST) {
-		data << (uint32)Dmg->resisted_damage;	// Damage resisted
+
+	if( HitStatus & HITSTATUS_RESIST ){
+		data << uint32( Dmg->resisted_damage );	// Damage resisted
 	}
-//	data << (uint8)1;					// unknown - VLack: Victim state or target state on other emulators; maybe this is in the VState variable...
-	data << (uint8)VState;
-//	if(HitStatus & HITSTATUS_BLOCK)
-		data << (uint32)0;				// can be 0,1000 or -1
-//	else
-//		data << (uint32)0x03e8;				// can be 0,1000 or -1
-	data << (uint32)0;
-	if (HitStatus & HITSTATUS_BLOCK) {
-		data << (uint32)BlockedDamage;		// Damage amount blocked
+
+	data << uint8( VState );
+	data << uint32( 0 );				// can be 0,1000 or -1
+	data << uint32( 0 );
+
+	if( HitStatus & HITSTATUS_BLOCK ){
+		data << uint32( BlockedDamage );		// Damage amount blocked
 	}
-	if (HitStatus & 0x00800000) {
-		data << (uint32)0;				// unknown
+
+
+	if ( HitStatus & HITSTATUS_UNK2 ){
+		data << uint32( 0 );				// unknown
 	}
-	if(HitStatus & HITSTATUS_unk)
+
+	if( HitStatus & HITSTATUS_UNK )
 	{
-		data << uint32(0);
-		data << float(0);
-		data << float(0);
-		data << float(0);
-		data << float(0);
-		data << float(0);
-		data << float(0);
-		data << float(0);
-		data << float(0);
-		for(uint8 i = 0; i < 5; ++i)
-		{
-			data << float(0);
-			data << float(0);
-		}
-		data << uint32(0);
+		data << uint32( 0 );
+		data << float( 0 );
+		data << float( 0 );
+		data << float( 0 );
+		data << float( 0 );
+		data << float( 0 );
+		data << float( 0 );
+		data << float( 0 );
+		data << float( 0 );
+
+		data << float( 0 ); // Found in loop
+		data << float( 0 );	// Found in loop
+		data << uint32( 0 );
 	}
-//	data << (uint32)0;					// HitNumber?
-//	data << (uint32)VState;				// new victim state
+
+	SendMessageToSet(&data, Caster->IsPlayer());
+}
+
+					res *= b;
+				}
+
+void Object::EventSpellDamage(uint64 Victim, uint32 SpellID, uint32 Damage)
+{
+	if( !IsInWorld() )
+		return;
+
+				if (pVictim->GetTypeId() == TYPEID_UNIT && static_cast<Creature*>(pVictim)->GetCreatureInfo() && static_cast<Creature*>(pVictim)->GetCreatureInfo()->Rank != ELITE_WORLDBOSS)
+					pVictim->Emote( EMOTE_ONESHOT_WOUNDCRITICAL );
+				/*aproc |= PROC_ON_SPELL_CRIT_HIT;
+				vproc |= PROC_ON_SPELL_CRIT_HIT_VICTIM;*/
+
+				switch( spellInfo->Spell_Dmg_Type )
+				{
+				case SPELL_DMG_TYPE_RANGED:	{
+						aproc |= PROC_ON_RANGED_CRIT_ATTACK;
+						vproc |= PROC_ON_RANGED_CRIT_ATTACK_VICTIM;
+					}break;
+
+				case SPELL_DMG_TYPE_MELEE:{
+						aproc |= PROC_ON_CRIT_ATTACK;
+						vproc |= PROC_ON_CRIT_HIT_VICTIM;
+					}break;
+
+				case SPELL_DMG_TYPE_MAGIC:{
+						aproc |= PROC_ON_SPELL_CRIT_HIT;
+						vproc |= PROC_ON_SPELL_CRIT_HIT_VICTIM;
+					}break;
+				}
+			}
+		}
+	}
+//==========================================================================================
+//==============================Post Roll Calculations======================================
+//==========================================================================================
+
+//------------------------------absorption--------------------------------------------------
+	uint32 ress=(uint32)res;
+	uint32 abs_dmg = pVictim->AbsorbDamage(school, &ress);
+	uint32 ms_abs_dmg= pVictim->ManaShieldAbsorb(ress);
+	if (ms_abs_dmg)
+	{
+		if(ms_abs_dmg > ress)
+			ress = 0;
+		else
+			ress-=ms_abs_dmg;
+
+		abs_dmg += ms_abs_dmg;
+	}
+
+void Object::Deactivate(MapMgr * mgr)
+{
+	if ( mgr == NULL )
+		return;
+
+	// Incanter's Absorption
+	if( pVictim->IsPlayer() && pVictim->HasAurasWithNameHash( SPELL_HASH_INCANTER_S_ABSORPTION ) )
+	{
+	case TYPEID_UNIT:
+		// check iterator
+		if(mgr->creature_iterator != mgr->activeCreatures.end() && (*mgr->creature_iterator) == TO_CREATURE(this))
+			++mgr->creature_iterator;
+		mgr->activeCreatures.erase((Creature*)this);
+		break;
+
+	case TYPEID_GAMEOBJECT:
+		mgr->activeGameObjects.insert( ( GameObject* )this );
+		break;
+	}
+	// Objects are active so set to true.
+	Active = true;
+}
+
+void Object::SetByte(uint32 index, uint32 index1,uint8 value)
+{
+	Wowice::Util::WOWICE_ASSERT(    index < m_valuesCount );
+	// save updating when val isn't changing.
+
+	if(ress < 0) ress = 0;
+
+	res=(float)ress;
+	dealdamage dmg;
+	dmg.school_type = school;
+	dmg.full_damage = ress;
+	dmg.resisted_damage = 0;
+
+	if(res <= 0)
+		dmg.resisted_damage = dmg.full_damage;
+
+	if(IsInWorld())
+	{
+		res = float(dmg.full_damage);
+		dmg.resisted_damage = dmg.full_damage;
+	}
+
+	// Paladin: Blessing of Sacrifice, and Warlock: Soul Link
+	if( pVictim->m_damageSplitTarget)
+	{
+		res = (float)pVictim->DoDamageSplitTarget((uint32)res, school, false);
+	}
+
+}
+
+	if( this->IsUnit() && allowProc && spellInfo->Id != 25501 && spellInfo->noproc == false )
+	{
+		int32 dmg = float2int32(res);
+
+    if( !( uint8( m_uint32Values[ index ] >> offset ) & newFlag ) )
+    {
+        m_uint32Values[ index ] |= uint32( uint32( newFlag ) << offset );
+
+	if( !(dmg.full_damage == 0 && abs_dmg) )
+	{
+		//Only pushback the victim current spell if it's not fully absorbed
+		if( pVictim->GetCurrentSpell() )
+			pVictim->GetCurrentSpell()->AddTime( school );
+	}
+
+            if(!m_objectUpdated)
+            {
+                m_mapMgr->ObjectUpdated(this);
+                m_objectUpdated = true;
+            }
+        }
+    }
+}
+
+void Object::RemoveByteFlag( uint16 index, uint8 offset, uint8 oldFlag )
+{
+	Wowice::Util::WOWICE_ASSERT(    index < m_valuesCount );
+	Wowice::Util::WOWICE_ASSERT(    offset < 4 );
+	
+	offset <<= 3;
+
+				//TODO: wtf is this ugly mess of casting bullshit
+				uint32 amount = uint32(float( float(maxmana)*pl->m_RegenManaOnSpellResist));
+
+        if(IsInWorld())
+        {
+			m_updateMask.SetBit( index );
+
+            if(!m_objectUpdated)
+            {
+                m_mapMgr->ObjectUpdated(this);
+                m_objectUpdated = true;
+            }
+        }
+    }
+}
+
+void Object::SetZoneId(uint32 newZone)
+{
+	m_zoneId = newZone;
+
+	if( m_objectTypeId == TYPEID_PLAYER && static_cast< Player* >( this )->GetGroup() )
+		static_cast< Player* >( this )->GetGroup()->HandlePartialChange( PARTY_UPDATE_FLAG_ZONEID, static_cast< Player* >( this ) );
+}
+
+void Object::PlaySoundToSet(uint32 sound_entry)
+{
+	WorldPacket data(SMSG_PLAY_SOUND, 4);
+	data << sound_entry;
+	
+    SendMessageToSet(&data, true);
+}
+
+void Object::_SetExtension(const string& name, void* ptr)
+{
+	if( m_extensions == NULL )
+		m_extensions = new ExtensionSet;
+
+	m_extensions->insert( make_pair( name, ptr ) );
+}
+
+void Object::SetZoneId(uint32 newZone)
+{
+	m_zoneId = newZone;
 
 	SendMessageToSet(&data, Caster->IsPlayer());
 }
 
 int32 Object::event_GetInstanceID()
 {
-	// return -1 for non-inworld.. so we get our shit moved to the right thread
-	if(!IsInWorld())
-		return -1;
-	else
-		return m_instanceId;
+	if (IsPlayer())
+	{
+		return static_cast< Player* >( this )->GetTeam();
+	}
+	if (IsPet())
+	{
+		if (static_cast< Pet* >( this )->GetPetOwner() != NULL)
+		{
+			return static_cast< Pet* >( this )->GetPetOwner()->GetTeam();
+		}
+	}
+	if (IsUnit() && !IsPlayer() && static_cast< Creature* >( this )->IsTotem() )
+	{
+		if (static_cast< Creature* >( this )->GetOwner() != NULL)
+		{
+			return static_cast< Creature* >( this )->GetOwner()->GetTeam();
+		}
+	}
+
+	return static_cast<uint32>(-1);
 }
 
 void Object::EventSpellDamage(uint64 Victim, uint32 SpellID, uint32 Damage)

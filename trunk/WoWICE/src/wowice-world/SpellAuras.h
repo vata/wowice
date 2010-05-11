@@ -302,7 +302,7 @@ enum MOD_TYPES
 	SPELL_AURA_INCREASE_SPELL_DOT_DAMAGE_PCT = 271,
 	SPELL_AURA_272 = 272,
 	SPELL_AURA_273 = 273,
-	SPELL_AURA_274 = 274,
+	SPELL_AURA_CONSUMES_NO_AMMO = 274,
 	SPELL_AURA_275 = 275,
 	SPELL_AURA_276 = 276,
 	SPELL_AURA_277 = 277,
@@ -335,7 +335,17 @@ enum MOD_TYPES
 	SPELL_AURA_304 = 304,
 	SPELL_AURA_305 = 305,
 	SPELL_AURA_306 = 306,
-    TOTAL_SPELL_AURAS = 307,
+    SPELL_AURA_307 = 307,
+    SPELL_AURA_308 = 308,
+    SPELL_AURA_309 = 309,
+    SPELL_AURA_310 = 310,
+    SPELL_AURA_311 = 311,
+    SPELL_AURA_312 = 312,
+    SPELL_AURA_313 = 313,
+    SPELL_AURA_314 = 314,
+    SPELL_AURA_315 = 315,
+    SPELL_AURA_316 = 316,
+    TOTAL_SPELL_AURAS = 317,
 };
 
 enum AuraTickFlags
@@ -468,6 +478,7 @@ public:
 	Object* GetCaster();
 	WoWICE_INLINE uint64 GetCasterGUID(){return m_casterGuid;}
 	Unit* GetUnitCaster();
+	Player* GetPlayerCaster();
 	WoWICE_INLINE Unit* GetTarget() { return m_target; }
 
 	Aura* StrongerThat(Aura *aur);
@@ -488,7 +499,7 @@ public:
 
 	bool HasModType( uint32 type )
 	{
-		for( uint8 x = 0; x <= m_modcount; ++x )
+		for( uint8 x = 0; x < m_modcount; ++x )
 			if( m_modList[x].m_type == type )
 				return true;
 		return false;
@@ -705,12 +716,14 @@ public:
 	void SpellAuraAllowOnlyAbility(bool apply);
 	void SpellAuraIncreaseAPbyStatPct(bool apply);
 	void SpellAuraModSpellDamageDOTPct(bool apply);
+	void SpellAuraConsumeNoAmmo( bool apply );
 	void SpellAuraIgnoreShapeshift(bool apply);
 	void SpellAuraPhase(bool apply);
 	void SpellAuraModIgnoreArmorPct(bool apply);
 	void SpellAuraModBaseHealth(bool apply);
 	void SpellAuraModAttackPowerOfArmor(bool apply);
 	void SpellAuraReflectSpellsInfront(bool apply);
+	void SpellAuraCallStabledPet(bool apply);
 	void UpdateAuraModDecreaseSpeed();
 
 	void SendModifierLog(int32 ** m,int32 v,uint32* mask,uint8 type,bool pct = false);
@@ -732,6 +745,9 @@ public:
 	void EventPeriodicHealPct(float);
 	void EventPeriodicManaPct(float);
 	void EventPeriodicRegenManaStatPct(uint32 perc,uint32 stat);
+	void EventPeriodicTriggerDummy();
+
+
 	void RelocateEvents();
 	int32 event_GetInstanceID();
 

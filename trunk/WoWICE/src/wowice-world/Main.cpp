@@ -14,15 +14,11 @@
  */
 
 #include "StdAfx.h"
-//#include <vld.h>
-
-#ifdef WIN32
-#include "CrashHandler.h"
-#endif
 
 #ifndef WIN32
 #include <sys/resource.h>
 #endif
+#include "CrashHandler.h"
 
 uint8 loglevel = DEFAULT_LOG_LEVEL;
 
@@ -52,17 +48,17 @@ int unix_main(int argc, char ** argv)
 int win32_main( int argc, char ** argv )
 {
 	SetThreadName( "Main Thread" );
-	StartCrashHandler();
+
+    StartCrashHandler();
 
 	//Andy: windows only, helps fight heap allocation on allocations lower then 16KB
-	unsigned long arg=2;
+	unsigned long arg = 2;
 	HeapSetInformation(GetProcessHeap(), HeapCompatibilityInformation, &arg, sizeof(arg));
+    
+    THREAD_TRY_EXECUTION
+        sMaster.Run( argc, argv );
+    THREAD_HANDLE_CRASH
 
-	THREAD_TRY_EXECUTION
-	{
-		sMaster.Run( argc, argv );
-	}
-	THREAD_HANDLE_CRASH;
 	exit( 0 );
 }
 

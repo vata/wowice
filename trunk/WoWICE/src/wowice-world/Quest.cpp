@@ -27,64 +27,71 @@ WorldPacket* WorldSession::BuildQuestQueryResponse(Quest *qst)
 	LocalizedQuest * lci = (language>0) ? sLocalizationMgr.GetLocalizedQuest(qst->id, language) : NULL;
 	uint32 i;
    
-	*data << uint32(qst->id);					   // Quest ID
-	*data << uint32(2);							 // Unknown, always seems to be 2
+	*data << uint32(qst->id);						// Quest ID
+	*data << uint32(2);								// Unknown, always seems to be 2
 	*data << uint32(qst->max_level);				// Quest level
+	*data << uint32(qst->min_level);				// Quest required level
 
 	if(qst->quest_sort > 0)
-		*data << int32(-(int32)qst->quest_sort);	  // Negative if pointing to a sort.
+		*data << int32(-(int32)qst->quest_sort);	// Negative if pointing to a sort.
 	else
-		*data << uint32(qst->zone_id);			  // Positive if pointing to a zone.
+		*data << uint32(qst->zone_id);				// Positive if pointing to a zone.
 
-	*data << uint32(qst->type);					 // Info ID / Type
-	*data << qst->suggestedplayers;								// suggested players
-	*data << uint32(qst->required_rep_faction);	 // Faction ID
-	*data << uint32(qst->required_rep_value);	   // Faction Amount
-	*data << uint32(0);							 // Unknown (always 0)
-	*data << uint32(0);							 // Unknown (always 0)
+	*data << uint32(qst->type);						// Info ID / Type
+	*data << qst->suggestedplayers;					// suggested players
+	*data << uint32(qst->required_rep_faction);		// Faction ID
+	*data << uint32(qst->required_rep_value);		// Faction Amount
+	*data << uint32(0);								// Unknown (always 0)
+	*data << uint32(0);								// Unknown (always 0)
 	*data << uint32(qst->next_quest_id);			// Next Quest ID
-	*data << uint32( sQuestMgr.GenerateRewardMoney( _player, qst ) );			 // Copper reward
- // disabled for dirty fix remove this   *data << uint32(qst->reward_xp_as_money);	   // Copper given instead of XP
-	/**data << uint32(0);
-	*data << uint32(0);			
-	*data << uint32(271);
-	*data << uint32(69);
-	*data << uint32(56);
-	*data << uint32(2);*/
-	// unk
-	// effect
-	// unk
-	// bonus honor
-	// srcitem
-	// flags
-	
-	*data << uint32(qst->reward_money<0 ? -qst->reward_money : 0);		   // Required Money
-	*data << uint32(qst->effect_on_player);		 // Spell casted on player upon completion
-	*data << uint32(qst->reward_spell);			 // Spell added to spellbook upon completion
-	*data << qst->bonushonor;								// 2.3.0 - bonus honor
-	*data << uint32(qst->srcitem);				  // Item given at the start of a quest (srcitem)
-	*data << uint32(qst->quest_flags);			  // Quest Flags
-	*data << qst->rewardtitleid;								// 2.4.0 unk
+	*data << uint32(0);								// Column id +1 from QuestXp.dbc, entry is quest level
+	*data << uint32( sQuestMgr.GenerateRewardMoney( _player, qst ) );	// Copper reward
+	*data << uint32(qst->reward_money<0 ? -qst->reward_money : 0);		// Required Money
+	*data << uint32(qst->effect_on_player);			// Spell casted on player upon completion
+	*data << uint32(qst->reward_spell);				// Spell added to spellbook upon completion
+	*data << uint32(qst->bonushonor);				// 2.3.0 - bonus honor
+	*data << float(0);								// 3.3.0 - some multiplier for honor
+	*data << uint32(qst->srcitem);					// Item given at the start of a quest (srcitem)
+	*data << uint32(qst->quest_flags);				// Quest Flags
+	*data << qst->rewardtitleid;					// 2.4.0 unk
 	*data << uint32(0);								// playerkillcount
 	*data << qst->rewardtalents;
+	*data << uint32(0);								// 3.3.0 Unknown
+	*data << uint32(0);								// 3.3.0 Unknown
 
 	// (loop 4 times)
 	for(i = 0; i < 4; ++i)
 	{
-		*data << qst->reward_item[i];			   // Forced Reward Item [i]
-		*data << qst->reward_itemcount[i];		  // Forced Reward Item Count [i]
+		*data << qst->reward_item[i];				// Forced Reward Item [i]
+		*data << qst->reward_itemcount[i];			// Forced Reward Item Count [i]
 	}
 
 	// (loop 6 times)
 	for(i = 0; i < 6; ++i)
 	{
-		*data << qst->reward_choiceitem[i];		 // Choice Reward Item [i]
+		*data << qst->reward_choiceitem[i];			// Choice Reward Item [i]
 		*data << qst->reward_choiceitemcount[i];	// Choice Reward Item Count [i]
 	}
 
-	*data << qst->point_mapid;					  // Unknown
-	*data << qst->point_x;						  // Unknown
-	*data << qst->point_y;						  // Unknown
+	// (loop 5 times) - these 3 loops are here to allow displaying rep rewards in client (not handled in core yet)
+	for(i = 0; i < 5; ++i)
+	{
+		*data << uint32(qst->reward_repfaction[i]);	// reward factions ids
+	}
+
+	for(i = 0; i < 5; ++i)
+	{
+		*data << uint32(0);							// column index in QuestFactionReward.dbc but use unknown
+	}
+
+	for(i = 0; i < 5; ++i)					// Unknown
+	{
+		*data << uint32(0);
+	}
+
+	*data << qst->point_mapid;						// Unknown
+	*data << qst->point_x;							// Unknown
+	*data << qst->point_y;							// Unknown
 	*data << qst->point_opt;						// Unknown
 	
 	if(lci)
@@ -93,29 +100,30 @@ WorldPacket* WorldSession::BuildQuestQueryResponse(Quest *qst)
 		*data << lci->Objectives;
 		*data << lci->Details;
 		*data << lci->EndText;
+		*data << uint8(0);
 	}
 	else
 	{
-		*data << qst->title;							// Title / name of quest
-		*data << qst->objectives;					   // Objectives / description
-		*data << qst->details;						  // Details
-		*data << qst->endtext;						  // Subdescription
+		*data << qst->title;						// Title / name of quest
+		*data << qst->objectives;					// Objectives / description
+		*data << qst->details;						// Details
+		*data << qst->endtext;						// Subdescription
+		*data << uint8(0);							// most 3.3.0 quests i seen have something like "Return to NPCNAME"
 	}
 
 	for(i = 0; i < 4; ++i)
 	{
-		*data << qst->required_mob[i];			  // Kill mob entry ID [i]
-		*data << qst->required_mobcount[i];		 // Kill mob count [i]
-		*data << (uint32)0; // Unknown
+		*data << qst->required_mob[i];				// Kill mob entry ID [i]
+		*data << qst->required_mobcount[i];			// Kill mob count [i]
+		*data << uint32(0);							// Unknown
+		*data << uint32(0);							// 3.3.0 Unknown
 	}
 
-	for(i = 0; i < 4; ++i)
+	for(i = 0; i < 6; ++i)
 	{
-		*data << qst->required_item[i];			 // Collect item [i]
+		*data << qst->required_item[i];				// Collect item [i]
 		*data << qst->required_itemcount[i];		// Collect item count [i]
 	}
-	*data << (uint32)0; // 5th Collect item id
-	*data << (uint32)0; // 5th Collect item count
 
 	if(lci)
 	{
@@ -145,7 +153,7 @@ QuestLogEntry::QuestLogEntry()
 	m_quest = NULL;
 	mDirty = false;
 	m_slot = -1;
-	completed=0;
+	completed= 0;
 }
 
 QuestLogEntry::~QuestLogEntry()
@@ -155,8 +163,8 @@ QuestLogEntry::~QuestLogEntry()
 
 void QuestLogEntry::Init(Quest* quest, Player* plr, uint32 slot)
 {
-	ASSERT(quest);
-	ASSERT(plr);
+	Wowice::Util::WOWICE_ASSERT(   quest != NULL );
+	Wowice::Util::WOWICE_ASSERT(   plr != NULL );
 
 	m_quest = quest;
 	m_plr = plr;
@@ -197,7 +205,8 @@ void QuestLogEntry::Init(Quest* quest, Player* plr, uint32 slot)
 	else
 		m_time_left = 0;
 
-	CALL_QUESTSCRIPT_EVENT(this, OnQuestStart)(plr, this);
+	if (!plr->GetSession()->m_loggingInPlayer) //quest script should not be called on login
+		CALL_QUESTSCRIPT_EVENT(this, OnQuestStart)(plr, this);
 }
 
 void QuestLogEntry::ClearAffectedUnits()
@@ -223,20 +232,34 @@ bool QuestLogEntry::IsUnitAffected(Unit* target)
 
 void QuestLogEntry::SaveToDB(QueryBuffer * buf)
 {
-	ASSERT(m_slot != -1);
+	Wowice::Util::WOWICE_ASSERT(   m_slot != -1);
 	if(!mDirty)
 		return;
 
-	//Made this into a replace not an insert
-	//CharacterDatabase.Execute("DELETE FROM questlog WHERE player_guid=%u AND quest_id=%u", m_plr->GetGUIDLow(), m_quest->id);
 	std::stringstream ss;
-	ss << "REPLACE INTO questlog VALUES(";
+
+    ss << "DELETE FROM questlog WHERE player_guid = ";
+    ss << m_plr->GetLowGUID();
+    ss << " AND quest_id = ";
+    ss << m_quest->id;
+    ss << ";";
+
+    if( buf == NULL )
+		CharacterDatabase.Execute( ss.str().c_str() );
+	else
+		buf->AddQueryStr(ss.str());
+
+    ss.rdbuf()->str("");
+
+	ss << "INSERT INTO questlog VALUES(";
 	ss << m_plr->GetLowGUID() << "," << m_quest->id << "," << m_slot << "," << m_time_left;
 	for(int i = 0; i < 4; ++i)
 		ss << "," << m_explored_areas[i];
 	
 	for(int i = 0; i < 4; ++i)
 		ss << "," << m_mobcount[i];
+
+    ss << "," << uint32( completed );
 
 	ss << ")";
 	
@@ -250,7 +273,7 @@ bool QuestLogEntry::LoadFromDB(Field *fields)
 {
 	// playerguid,questid,timeleft,area0,area1,area2,area3,kill0,kill1,kill2,kill3
 	int f = 3;
-	ASSERT(m_plr && m_quest);
+	Wowice::Util::WOWICE_ASSERT(   m_plr && m_quest);
 	m_time_left = fields[f].GetUInt32();	f++;
 	for(int i = 0; i < 4; ++i)
 	{
@@ -262,10 +285,17 @@ bool QuestLogEntry::LoadFromDB(Field *fields)
 	{
 		m_mobcount[i] = fields[f].GetUInt32();	f++;
 		if(GetQuest()->required_mobtype[i] == QUEST_MOB_TYPE_CREATURE)
+		{
 			CALL_QUESTSCRIPT_EVENT(this, OnCreatureKill)(GetQuest()->required_mob[i], m_plr, this);
+		}
 		else
+		{
 			CALL_QUESTSCRIPT_EVENT(this, OnGameObjectActivate)(GetQuest()->required_mob[i], m_plr, this);
+		}
 	}
+
+    completed = fields[f].GetUInt32();
+
 	mDirty = false;
 	return true;
 }
@@ -273,6 +303,13 @@ bool QuestLogEntry::LoadFromDB(Field *fields)
 bool QuestLogEntry::CanBeFinished()
 {
 	uint32 i;
+
+    if( m_quest->iscompletedbyspelleffect && !completed )
+        return false;
+
+    if( completed )
+        return true;
+
 	for(i = 0; i < 4; ++i)
 	{
 		if(m_quest->required_mob[i])
@@ -310,7 +347,7 @@ bool QuestLogEntry::CanBeFinished()
 	}
 
 	//Check for Gold & AreaTrigger Requirements
-	if ( m_quest->reward_money < 0 && m_plr->GetUInt32Value( PLAYER_FIELD_COINAGE ) < uint32(-m_quest->reward_money) )
+	if ( m_quest->reward_money < 0 && m_plr->GetGold() < uint32(-m_quest->reward_money) )
 		return false;
 
 	for(i = 0; i < 4; ++i)
@@ -335,28 +372,28 @@ void QuestLogEntry::SubtractTime(uint32 value)
 
 void QuestLogEntry::SetMobCount(uint32 i, uint32 count)
 {
-	ASSERT(i<4);
+	Wowice::Util::WOWICE_ASSERT(   i<4);
 	m_mobcount[i] = count;
 	mDirty = true;
 }
 
 void QuestLogEntry::IncrementMobCount(uint32 i)
 {
-	ASSERT(i<4);
+	Wowice::Util::WOWICE_ASSERT(   i<4);
 	++m_mobcount[i];
 	mDirty = true;
 }
 
 void QuestLogEntry::SetTrigger(uint32 i)
 {
-	ASSERT(i<4);
+	Wowice::Util::WOWICE_ASSERT(   i<4);
 	m_explored_areas[i] = 1;
 	mDirty = true;
 }
 
 void QuestLogEntry::SetSlot(int32 i)
 {
-	ASSERT(i!=-1);
+	Wowice::Util::WOWICE_ASSERT(   i!=-1);
 	m_slot = i;
 }
 
@@ -365,7 +402,8 @@ void QuestLogEntry::Finish()
 	uint32 base = GetBaseField(m_slot);
 	m_plr->SetUInt32Value(base + 0, 0);
 	m_plr->SetUInt32Value(base + 1, 0);
-	m_plr->SetUInt32Value(base + 2, 0);
+	m_plr->SetUInt64Value(base + 2, 0);
+	m_plr->SetUInt32Value(base + 4, 0);
 
 	// clear from player log
 	m_plr->SetQuestLogSlot(NULL, m_slot);
@@ -386,7 +424,7 @@ void QuestLogEntry::UpdatePlayerFields()
 	uint32 field0 = 0; // 0x01000000 = "Objective Complete" - 0x02 = Quest Failed - 0x04 = Quest Accepted
 
 	// next field is count (kills, etc)
-	uint32 field1 = 0;
+	uint64 field1 = 0;
 
 	// explored areas
 	if(m_quest->count_requiredtriggers)
@@ -462,13 +500,13 @@ void QuestLogEntry::UpdatePlayerFields()
 		for(int i = 0; i < 4; ++i)
 		{
 			if( m_quest->required_mob[i] && m_mobcount[i] > 0 )
-				p[i] |= (uint8)m_mobcount[i];
+				p[2*i] |= (uint8)m_mobcount[i];
 		}
 	}
 
 	m_plr->SetUInt32Value(base + 1, field0);
-	m_plr->SetUInt32Value(base + 2, field1);
-	m_plr->SetUInt32Value(base + 3, ( m_time_left ? (uint32)(UNIXTIME+m_time_left/1000) : 0 ) );
+	m_plr->SetUInt64Value(base + 2, field1);
+	m_plr->SetUInt32Value(base + 4, ( m_time_left ? (uint32)(UNIXTIME+m_time_left/1000) : 0 ) );
 }
 
 void QuestLogEntry::SendQuestComplete()
@@ -486,5 +524,7 @@ void QuestLogEntry::SendUpdateAddKill(uint32 i)
 	sQuestMgr.SendQuestUpdateAddKill(m_plr, m_quest->id, m_quest->required_mob[i], m_mobcount[i], m_quest->required_mobcount[i], 0);
 }
 
-
+void QuestLogEntry::Complete(){
+    completed = 1;
+}
 

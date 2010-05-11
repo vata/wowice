@@ -308,7 +308,7 @@ pSpellAura SpellAuraHandler[TOTAL_SPELL_AURAS]={
 		&Aura::SpellAuraNULL,//289 unused
 		&Aura::SpellAuraNULL,//290 unused
 		&Aura::SpellAuraNULL,//291 unused
-		&Aura::SpellAuraNULL,//292 call stabled pet
+		&Aura::SpellAuraCallStabledPet,//292 call stabled pet
 		&Aura::SpellAuraNULL,//293 2 test spells
 		&Aura::SpellAuraNULL,//294 2 spells, possible prevent mana regen
 		&Aura::SpellAuraNULL,//295
@@ -323,6 +323,17 @@ pSpellAura SpellAuraHandler[TOTAL_SPELL_AURAS]={
 		&Aura::SpellAuraNULL,//304
 		&Aura::SpellAuraNULL,//305
 		&Aura::SpellAuraNULL,//306
+        &Aura::SpellAuraNULL,//307
+        &Aura::SpellAuraNULL,//308
+        &Aura::SpellAuraNULL,//309
+        &Aura::SpellAuraNULL,//310
+        &Aura::SpellAuraNULL,//311
+        &Aura::SpellAuraNULL,//312
+        &Aura::SpellAuraNULL,//313
+        &Aura::SpellAuraNULL,//314
+        &Aura::SpellAuraNULL,//315
+        &Aura::SpellAuraNULL //316
+
 };
 
 const char* SpellAuraNames[TOTAL_SPELL_AURAS] = {
@@ -1952,15 +1963,15 @@ void Aura::SpellAuraDummy(bool apply)
 	{
 		if(apply)
 		{
-			uint32 mod1 = m_target->GetUInt32Value(UNIT_FIELD_RESISTANCES);
+			uint32 mod1 = m_target->GetResistance(NORMAL_DAMAGE);
 			uint32 mod2 = m_spellProto->EffectBasePoints[0] + 1; //Thanks Andy for pointing out that BasePoints
 			uint32 mod3 = m_spellProto->EffectBasePoints[1] + 1; //Should always be used instead of static modifiers.
 			mod->realamount = (mod->m_amount + (mod1/mod3)*mod2 );
-			m_target->ModUnsigned32Value(UNIT_FIELD_ATTACK_POWER_MODS,mod->realamount);
+			m_target->ModAttackPowerMods(mod->realamount);
 		}
 		else
 		{
-			m_target->ModUnsigned32Value(UNIT_FIELD_ATTACK_POWER_MODS, -mod->realamount);
+			m_target->ModAttackPowerMods(-mod->realamount);
 		}
 
 		m_target->CalcDamage();
@@ -2018,11 +2029,11 @@ void Aura::SpellAuraDummy(bool apply)
 				SM_FIValue( GetUnitCaster()->SM_FCharges, &charges, GetSpellProto()->SpellGroupType );
 				SM_PIValue( GetUnitCaster()->SM_PCharges, &charges, GetSpellProto()->SpellGroupType );
 #ifdef COLLECTION_OF_UNTESTED_STUFF_AND_TESTERS
-				float spell_flat_modifers=0;
-				float spell_pct_modifers=0;
+				float spell_flat_modifers= 0;
+				float spell_pct_modifers= 0;
 				SM_FIValue(GetUnitCaster()->SM_FCharges,&spell_flat_modifers,GetSpellProto()->SpellGroupType);
 				SM_FIValue(GetUnitCaster()->SM_PCharges,&spell_pct_modifers,GetSpellProto()->SpellGroupType);
-				if(spell_flat_modifers!=0 || spell_pct_modifers!=0)
+				if(spell_flat_modifers!= 0 || spell_pct_modifers!= 0)
 					printf("!!!!!spell charge bonus mod flat %f , spell range bonus pct %f , spell range %f, spell group %u\n",spell_flat_modifers,spell_pct_modifers,maxRange,m_spellInfo->SpellGroupType);
 #endif
 			}
@@ -2054,7 +2065,7 @@ void Aura::SpellAuraDummy(bool apply)
 
 			if(!apply)
 			{
-				m_target->SetUInt64Value(PLAYER_FARSIGHT,0);
+				m_target->SetFarsightTarget(0);
 				Creature *summon = m_target->GetMapMgr()->GetCreature(m_target->GetUInt32Value(UNIT_FIELD_SUMMON));
 				m_target->SetUInt64Value(UNIT_FIELD_SUMMON, 0);
 				m_target->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_LOCK_PLAYER);
@@ -2079,7 +2090,7 @@ void Aura::SpellAuraDummy(bool apply)
 					if(summon)
 						summon->DeleteMe();
 					pCaster->m_eyeofkilrogg = 0;
-					pCaster->SetUInt64Value(PLAYER_FARSIGHT,0);
+					pCaster->SetFarsightTarget(0);
 				}
 			}
 		}break;
@@ -2126,7 +2137,7 @@ void Aura::SpellAuraDummy(bool apply)
 					summon->RemoveFromWorld(false,true);
 					delete summon;
 				}
-				m_target->SetUInt64Value(PLAYER_FARSIGHT,0);
+				m_target->SetFarsightTarget(0);
 #endif
 			}
 		}break;
@@ -2178,7 +2189,7 @@ void Aura::SpellAuraDummy(bool apply)
 			if(apply)
 				p_target->m_lifetapbonus=mod->m_amount;
 			else
-				p_target->m_lifetapbonus=0;
+				p_target->m_lifetapbonus= 0;
 		}break;
 	case 20608://Reincarnation
 		{
@@ -2338,7 +2349,7 @@ void Aura::SpellAuraDummy(bool apply)
 				plr->GetMapMgr()->ChangeFarsightLocation(plr, NULL);
 
 				Creature * farsight = plr->GetMapMgr()->GetCreature(plr->GetUInt32Value(PLAYER_FARSIGHT));
-				plr->SetUInt64Value(PLAYER_FARSIGHT, 0);
+				plr->SetFarsightTarget(0);
 				if(farsight)
 				{
 					farsight->RemoveFromWorld(false,true);
