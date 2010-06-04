@@ -60,6 +60,7 @@ enum ServerHookEvents
 	SERVER_HOOK_EVENT_ON_PRE_DIE	        = 28,	//general unit die, not only based on players
 	SERVER_HOOK_EVENT_ON_ADVANCE_SKILLLINE  = 29,
     SERVER_HOOK_EVENT_ON_DUEL_FINISHED      = 30,
+	SERVER_HOOK_EVENT_ON_AURA_REMOVE		= 31,
 
 	NUM_SERVER_HOOKS,
 };
@@ -85,12 +86,12 @@ typedef void(*tOnDeath)(Player * pPlayer);
 typedef bool(*tOnRepop)(Player * pPlayer);
 typedef void(*tOnEmote)(Player * pPlayer, uint32 Emote, Unit * pUnit);
 typedef void(*tOnEnterCombat)(Player * pPlayer, Unit * pTarget);
-typedef bool(*tOnCastSpell)(Player * pPlayer, SpellEntry * pSpell);
+typedef bool(*tOnCastSpell)(Player * pPlayer, SpellEntry * pSpell, Spell * spell);
 typedef void(*tOnTick)();
 typedef bool(*tOnLogoutRequest)(Player * pPlayer);
 typedef void(*tOnLogout)(Player * pPlayer);
 typedef void(*tOnQuestAccept)(Player * pPlayer, Quest * pQuest, Object * pQuestGiver);
-typedef void(*tOnZone)(Player * pPlayer, uint32 Zone);
+typedef void(*tOnZone)(Player * pPlayer, uint32 Zone, uint32 oldzone);
 typedef bool(*tOnChat)(Player * pPlayer, uint32 Type, uint32 Lang, const char * Message, const char * Misc);
 typedef void(*tOnLoot)(Player * pPlayer, Unit * pTarget, uint32 Money, uint32 ItemId);
 typedef bool(*ItemScript)(Item * pItem, Player * pPlayer);
@@ -104,6 +105,7 @@ typedef void(*tOnPostLevelUp)(Player * pPlayer);
 typedef bool(*tOnPreUnitDie)(Unit *killer, Unit *target);
 typedef void(*tOnAdvanceSkillLine)(Player * pPlayer, uint32 SkillLine, uint32 Current);
 typedef void(*tOnDuelFinished)(Player * Winner, Player * Looser);
+typedef void(*tOnAuraRemove)(Aura * aura);
 
 class Spell;
 class Aura;
@@ -234,17 +236,17 @@ public:
 
 	virtual void OnCombatStart(Unit* mTarget) {}
 	virtual void OnCombatStop(Unit* mTarget) {}
-	virtual void OnDamageTaken(Unit* mAttacker, float fAmount) {}
+	virtual void OnDamageTaken(Unit* mAttacker, uint32 fAmount) {}
 	virtual void OnCastSpell(uint32 iSpellId) {}
 	virtual void OnTargetParried(Unit* mTarget) {}
 	virtual void OnTargetDodged(Unit* mTarget) {}
 	virtual void OnTargetBlocked(Unit* mTarget, int32 iAmount) {}
-	virtual void OnTargetCritHit(Unit* mTarget, float fAmount) {}
+	virtual void OnTargetCritHit(Unit* mTarget, int32 fAmount) {}
 	virtual void OnTargetDied(Unit* mTarget) {}
 	virtual void OnParried(Unit* mTarget) {}
 	virtual void OnDodged(Unit* mTarget) {}
 	virtual void OnBlocked(Unit* mTarget, int32 iAmount) {}
-	virtual void OnCritHit(Unit* mTarget, float fAmount) {}
+	virtual void OnCritHit(Unit* mTarget, int32 fAmount) {}
 	virtual void OnHit(Unit* mTarget, float fAmount) {}
 	virtual void OnDied(Unit *mKiller) {}
 	virtual void OnAssistTargetDied(Unit* mAssistTarget) {}
@@ -273,7 +275,15 @@ class SERVER_DECL GameObjectAIScript
 {
 public:
 	GameObjectAIScript(GameObject* goinstance);
-	virtual ~GameObjectAIScript() {}
+	virtual ~GameObjectAIScript()
+	{
+		//GetScript() returns NULL if the destructor is called by GameObject::~GameObject()
+		if( _gameobject->GetScript() != NULL )
+		{
+			sLog.outError("GameObjectAIScript of GameObject %u is not being deleted by GameObject::~GameObject()", _gameobject->GetEntry());
+			Wowice::Util::WOWICE_ASSERT( false );
+		}
+	}
 
 	virtual void OnCreate() {}
 	virtual void OnSpawn() {}
@@ -384,11 +394,11 @@ public:
 	bool OnRepop(Player * pPlayer);
 	void OnEmote(Player * pPlayer, uint32 Emote, Unit * pUnit);
 	void OnEnterCombat(Player * pPlayer, Unit * pTarget);
-	bool OnCastSpell(Player * pPlayer, SpellEntry * pSpell);
+	bool OnCastSpell(Player * pPlayer, SpellEntry * pSpell, Spell * spell);
 	bool OnLogoutRequest(Player * pPlayer);
 	void OnLogout(Player * pPlayer);
 	void OnQuestAccept(Player * pPlayer, Quest * pQuest, Object * pQuestGiver);
-	void OnZone(Player * pPlayer, uint32 Zone);
+	void OnZone(Player * pPlayer, uint32 Zone, uint32 oldZone);
 	bool OnChat(Player * pPlayer, uint32 Type, uint32 Lang, const char * Message, const char * Misc);
 	void OnLoot(Player * pPlayer, Unit * pTarget, uint32 Money, uint32 ItemId);
 	void OnFullLogin(Player * pPlayer);
@@ -403,6 +413,7 @@ public:
 	bool OnPreUnitDie(Unit *Killer, Unit *Victim);
 	void OnAdvanceSkillLine(Player * pPlayer, uint32 SkillLine, uint32 Current);
 	void OnDuelFinished(Player * Winner, Player * Looser);
+	void OnAuraRemove(Aura * aura);
 };
 
 #define sScriptMgr ScriptMgr::getSingleton()

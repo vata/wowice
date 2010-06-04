@@ -32,6 +32,8 @@ libshared_a_SOURCES = \
     FastQueue.h \
     Threading/Mutex.cpp \
     Threading/ThreadPool.cpp \
+    Threading/Atomicity.cpp  \
+    Threading/Atomicity.h   \
     Storage.h \
     wowice_getopt.h \
     wowice_getopt.cpp \

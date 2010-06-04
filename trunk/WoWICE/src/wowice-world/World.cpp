@@ -42,7 +42,6 @@ World::World()
 
 	mQueueUpdateInterval = 10000;
 	PeakSessionCount = 0;
-	mInWorldPlayerCount = 0;
 	mAcceptedConnections = 0;
 	gm_skip_attunement = false;
 	show_gm_in_who_list = true;
@@ -149,6 +148,9 @@ World::~World()
 	{
 		delete i->second;
 	}
+
+	Log.Notice("SpellProcMgr", "~SpellProcMgr()");
+	delete SpellProcMgr::getSingletonPtr();
 
 	//eventholder = 0;
 	delete eventholder;
@@ -383,6 +385,7 @@ bool World::SetInitialWorldSettings()
 	new AddonMgr;
 	new WorldLog;
 	new ChatHandler;
+	new SpellProcMgr;
 
 	// grep: this only has to be done once between version updates
 	// to re-fill the table.
@@ -775,6 +778,9 @@ void World::UpdateSessions(uint32 diff)
 	SessionSet::iterator itr, it2;
 	WorldSession *session;
 	int result;
+
+	SessionsMutex.Acquire();
+
 	for(itr = Sessions.begin(); itr != Sessions.end();)
 	{
 		session = (*itr);
@@ -796,6 +802,8 @@ void World::UpdateSessions(uint32 diff)
 			Sessions.erase(it2);
 		}
 	}
+
+	SessionsMutex.Release();
 }
 
 std::string World::GenerateName(uint32 type)
@@ -1066,7 +1074,7 @@ Task * TaskList::GetTask()
 void TaskList::spawn()
 {
 	running = true;
-	thread_count = 0;
+	thread_count.SetVal(0);
 
 	uint32 threadcount;
 	if(Config.MainConfig.GetBoolDefault("Startup", "EnableMultithreadedLoading", true))
@@ -1162,7 +1170,7 @@ bool TaskExecutor::run()
 
 void TaskList::waitForThreadsToExit()
 {
-	while(thread_count)
+	while(thread_count.GetVal())
 	{
 		Sleep(20);
 	}
@@ -1235,7 +1243,7 @@ void World::Rehash(bool load)
 	mQueueUpdateInterval = Config.MainConfig.GetIntDefault("Server", "QueueUpdateInterval", 5000);
 	SetKickAFKPlayerTime(Config.MainConfig.GetIntDefault("Server", "KickAFKPlayers", 0));
 	sLog.SetScreenLoggingLevel(Config.MainConfig.GetIntDefault("LogLevel", "Screen", 1));
-	sLog.SetFileLoggingLevel(Config.MainConfig.GetIntDefault("LogLevel", "File", -1));
+	sLog.SetFileLoggingLevel(Config.MainConfig.GetIntDefault("LogLevel", "File", -1), "file.log");
 	Log.log_level = Config.MainConfig.GetIntDefault("LogLevel", "Screen", 1);
 	gm_skip_attunement = Config.MainConfig.GetBoolDefault("Server", "SkipAttunementsForGM", true);
 	Collision = Config.MainConfig.GetBoolDefault("Server", "Collision", 0);
@@ -1909,9 +1917,6 @@ void World::PollCharacterInsertQueue(DatabaseConnection * con)
 			// create his playerinfo in the server
 			PlayerInfo * inf = new PlayerInfo();
 			inf->acct = f[1].GetUInt32();
-#ifdef VOICE_CHAT
-			inf->groupVoiceId = -1;
-#endif
 
 			while(*p != 0)
 			{

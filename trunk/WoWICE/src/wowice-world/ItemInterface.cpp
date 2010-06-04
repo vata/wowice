@@ -99,19 +99,19 @@ void ItemInterface::m_DestroyForPlayer()
 					{
 						if(pItem->IsContainer())
 						{
-							((Container*)(pItem))->DestroyForPlayer( m_pOwner );
+							m_pOwner->SendDestroyObject( pItem->GetGUID() );
 						}
 						else
 						{
-							pItem->DestroyForPlayer( m_pOwner );
+							m_pOwner->SendDestroyObject( pItem->GetGUID() );
 						}
 					}
 				}
-				((Container*)(m_pItems[i]))->DestroyForPlayer( m_pOwner );
+				m_pOwner->SendDestroyObject( m_pItems[ i ]->GetGUID() );
 			}
 			else
 			{
-				m_pItems[i]->DestroyForPlayer( m_pOwner );
+				m_pOwner->SendDestroyObject( m_pItems[ i ]->GetGUID() );
 			}
 		}
 	}
@@ -1621,7 +1621,7 @@ AddItemResult ItemInterface::AddItemToFreeSlot(Item *item)
 	uint32 i = 0;
 	bool result2;
 	AddItemResult result3;
-	Player* p = item->GetOwner();
+	Player* p = m_pOwner;
 	uint32 itemMaxStack = item->GetProto()->MaxCount;
 
 	//detect special bag item
@@ -1930,7 +1930,7 @@ int8 ItemInterface::CanEquipItemInSlot2( int8 DstInvSlot, int8 slot, Item* item,
 	{
 		for( uint32 count = 0; count < item->GetSocketsCount(); count++ )
 		{
-			EnchantmentInstance *ei = item->GetEnchantment( 2 + count );
+			EnchantmentInstance *ei = item->GetEnchantment( SOCK_ENCHANTMENT_SLOT1 + count );
 			if (ei 
 				&& ei->Enchantment->GemEntry //huh ? Gem without entry ?
 				)
@@ -2835,7 +2835,7 @@ void ItemInterface::EmptyBuyBack()
 	 {
 		 if (m_pBuyBack[j] != NULL)
 		 {
-			 m_pBuyBack[j]->DestroyForPlayer(m_pOwner);
+			 m_pOwner->SendDestroyObject( m_pBuyBack[ j ]->GetGUID() );
 			 m_pBuyBack[j]->DeleteFromDB();
 
 			 if(m_pBuyBack[j]->IsContainer())
@@ -2870,7 +2870,7 @@ void ItemInterface::AddBuyBackItem(Item *it,uint32 price)
 	{
 		if(m_pBuyBack[0] != NULL)
 		{		   
-			 m_pBuyBack[0]->DestroyForPlayer(m_pOwner);
+			m_pOwner->SendDestroyObject( m_pBuyBack[ 0 ]->GetGUID() );
 			 m_pBuyBack[0]->DeleteFromDB();
 
 			 if(m_pBuyBack[0]->IsContainer())
@@ -3643,7 +3643,7 @@ bool ItemInterface::IsEquipped(uint32 itemid)
 			// check gems as well
 			for( uint32 count= 0; count<it->GetSocketsCount(); count++ )
 			{
-				EnchantmentInstance *ei = it->GetEnchantment(2+count);
+				EnchantmentInstance *ei = it->GetEnchantment(SOCK_ENCHANTMENT_SLOT1 + count);
 				
 				if (ei && ei->Enchantment)
 				{
@@ -3694,7 +3694,7 @@ uint32 ItemInterface::GetEquippedCountByItemLimit(uint32 LimitId)
 		{
 			for( uint32 socketcount = 0; socketcount < it->GetSocketsCount(); socketcount++ )
 			{
-				EnchantmentInstance *ei = it->GetEnchantment( 2 + socketcount );
+				EnchantmentInstance *ei = it->GetEnchantment( SOCK_ENCHANTMENT_SLOT1 + socketcount );
 				if (ei && ei->Enchantment)
 				{
 					ItemPrototype * ip = ItemPrototypeStorage.LookupEntry(ei->Enchantment->GemEntry);
@@ -4000,7 +4000,7 @@ bool ItemInterface::AddItemById( uint32 itemid, uint32 count, int32 randomprop )
 			if( randomprop < 0 )
 				item->SetRandomSuffix( -randomprop );
 			else
-				item->SetRandomProperty( randomprop );
+				item->SetItemRandomPropertyId( randomprop );
 
 			item->ApplyRandomProperties( false );
 		}

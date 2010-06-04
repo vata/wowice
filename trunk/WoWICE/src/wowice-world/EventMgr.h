@@ -237,49 +237,21 @@ struct SERVER_DECL TimedEvent
 	uint16 repeats;
 	bool deleted;
 	int instanceId;
-	volatile long ref;
+	Wowice::Threading::AtomicCounter ref;
 
 	static TimedEvent * Allocate(void* object, CallbackBase* callback, uint32 flags, time_t time, uint32 repeat);
 
-#ifdef WIN32
+
 	void DecRef()
 	{
-		if( InterlockedDecrement( &ref ) == 0 )
+		if( --ref == 0 )
 		{
 			delete cb;
 			delete this;
 		}
 	}
 
-	void IncRef() { InterlockedIncrement( &ref ); }
-#else
-
-#if defined( __GNUC__ ) && ( defined( __i386__  ) || defined( __ia64__ ) )
-	// These are GNU specific atomic operators, they only work on certain platforms
-	// those x86 and x64 surely supports them, no idea about others
-	void IncRef(){ __sync_add_and_fetch( &ref, 1 ); }
-	
-	void DecRef(){ 
-		if( __sync_add_and_fetch( &ref, -1 ) == 0 ){
-			delete cb;
-			delete this;
-		}
-	}
-#else
 	void IncRef() { ++ref; }
-    
-	void DecRef()
-	{
-		--ref;
-		if(ref == 0)
-		{
-			 delete cb;
-			 delete this;
-		}
-	}
-#endif
-#endif
-
 };
 
 class EventMgr;
@@ -373,44 +345,53 @@ public:
 
 	EventableObjectHolder * GetEventHolder(int32 InstanceId)
 	{
+		holderLock.AcquireReadLock();
+
 		HolderMap::iterator itr = mHolders.find(InstanceId);
-		if(itr == mHolders.end()) return 0;
+		
+		if(itr == mHolders.end()){
+			holderLock.ReleaseReadLock();
+			return 0;
+		}
+
+		holderLock.ReleaseReadLock();
+
 		return itr->second;
 	}
 
 	void AddEventHolder(EventableObjectHolder * holder, int32 InstanceId)
 	{
-		holderLock.Acquire();
+		holderLock.AcquireWriteLock();
 		mHolders.insert( HolderMap::value_type( InstanceId, holder) );
-		holderLock.Release();
+		holderLock.ReleaseWriteLock();
 	}
 
 	void RemoveEventHolder(int32 InstanceId)
 	{
-		holderLock.Acquire();
+		holderLock.AcquireWriteLock();
 		mHolders.erase(InstanceId);
-		holderLock.Release();
+		holderLock.ReleaseWriteLock();
 	}
 
 	void RemoveEventHolder(EventableObjectHolder * holder)
 	{
-		holderLock.Acquire();
+		holderLock.AcquireWriteLock();
 		HolderMap::iterator itr = mHolders.begin();
 		for(; itr != mHolders.end(); ++itr)
 		{
 			if(itr->second == holder)
 			{
 				mHolders.erase(itr);
-				holderLock.Release();
+				holderLock.ReleaseWriteLock();
 				return;
 			}
 		}
-		holderLock.Release();
+		holderLock.ReleaseWriteLock();
 	}
 
 protected:
 	HolderMap mHolders;
-	Mutex holderLock;
+	RWLock holderLock;
 };
 
 #define sEventMgr EventMgr::getSingleton()

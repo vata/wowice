@@ -68,12 +68,14 @@
 #include "../wowice-shared/CircularQueue.h"
 #include "../wowice-shared/Threading/RWLock.h"
 #include "../wowice-shared/Threading/Condition.h"
+#include "../wowice-shared/Threading/Atomicity.h"
 #include "../wowice-shared/wowice_getopt.h"
 
 #ifdef WIN32
 #include "printStackTrace.h"
 #endif
 
+#include "WUtil.h"
 #include "UpdateFields.h"
 #include "UpdateMask.h"
 #include "Opcodes.h"
@@ -84,9 +86,8 @@
 #include "EventableObject.h"
 #include "Object.h"
 #include "LootMgr.h"
+#include "SpellProc.h"
 #include "Unit.h"
-
-#include "WUtil.h"
 
 #ifdef ENABLE_ACHIEVEMENTS
 #include "AchievementMgr.h"
@@ -163,7 +164,6 @@
 #include "DatabaseCleaner.h"
 #include "DayWatcherThread.h"
 #include "CommonScheduleThread.h"
-#include "VoiceChatHandler.h"
 #include "LocalizationMgr.h"
 #include "CollideInterface.h"
 #include "Master.h"

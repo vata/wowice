@@ -41,6 +41,9 @@ enum MailTypes
 	NORMAL,
 	COD,
 	AUCTION,
+	CREATURE,
+	GAMEOBJECT,
+	ITEM
 };
 
 enum MailError

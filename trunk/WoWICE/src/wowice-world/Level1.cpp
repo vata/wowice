@@ -195,10 +195,16 @@ bool ChatHandler::HandleGPSCommand(const char* args, WorldSession *m_session)
 	else
 		obj = (Object*)m_session->GetPlayer();
 
-	AreaTable * at = dbcArea.LookupEntry(obj->GetMapMgr()->GetAreaID(obj->GetPositionX(), obj->GetPositionY()));
-	if(!at) return true;
-
 	char buf[328];
+	AreaTable * at = dbcArea.LookupEntryForced(obj->GetMapMgr()->GetAreaID(obj->GetPositionX(), obj->GetPositionY()));
+	if(!at)
+	{
+		snprintf((char*)buf, 328, "|cff00ff00Current Position: |cffffffffMap: |cff00ff00%d |cffffffffX: |cff00ff00%f |cffffffffY: |cff00ff00%f |cffffffffZ: |cff00ff00%f |cffffffffOrientation: |cff00ff00%f|r",
+			(unsigned int)obj->GetMapId(), obj->GetPositionX(), obj->GetPositionY(), obj->GetPositionZ(), obj->GetOrientation());
+		SystemMessage(m_session, buf);
+		return true;
+	}
+
 	snprintf((char*)buf, 328, "|cff00ff00Current Position: |cffffffffMap: |cff00ff00%d |cffffffffZone: |cff00ff00%u |cffffffffArea: |cff00ff00%u  |cffffffffX: |cff00ff00%f |cffffffffY: |cff00ff00%f |cffffffffZ: |cff00ff00%f |cffffffffOrientation: |cff00ff00%f |cffffffffArea Name: |cff00ff00%s |r",
 		(unsigned int)obj->GetMapId(), at->ZoneId,at->AreaId, obj->GetPositionX(), obj->GetPositionY(), obj->GetPositionZ(), obj->GetOrientation(),at->name);
 	
@@ -210,7 +216,7 @@ bool ChatHandler::HandleGPSCommand(const char* args, WorldSession *m_session)
 		FILE* gpslog = fopen(FormatOutputString("logs","gps",false).c_str(), "at");
 		if(gpslog)
 		{
-			fprintf(gpslog, "%d, %u, %u, %f, %f, %f, %f, \"%s\"",
+			fprintf(gpslog, "%d, %u, %u, %f, %f, %f, %f, \'%s\'",
 				(unsigned int)obj->GetMapId(), at->ZoneId,at->AreaId, obj->GetPositionX(), obj->GetPositionY(), obj->GetPositionZ(), obj->GetOrientation(),at->name);
 // ".gps 1 comment" will save comment after the gps data
 			if(*(args+1) == ' ')
@@ -243,7 +249,7 @@ bool ChatHandler::HandleKickCommand(const char* args, WorldSession *m_session)
 		if(reason)
 			kickreason = reason;
 
-		BlueSystemMessage(m_session, "Attempting to kick %s from the server for \"%s\".", chr->GetName(), kickreason.c_str());
+		BlueSystemMessage(m_session, "Attempting to kick %s from the server for \'%s\'.", chr->GetName(), kickreason.c_str());
 		sGMLog.writefromsession(m_session, "Kicked player %s from the server for %s", chr->GetName(), kickreason.c_str());
 		if(!m_session->CanUseCommand('z') && chr->GetSession()->CanUseCommand('z'))
 		{
@@ -276,7 +282,7 @@ bool ChatHandler::HandleKickCommand(const char* args, WorldSession *m_session)
 bool ChatHandler::HandleAddInvItemCommand(const char *args, WorldSession *m_session)
 {
 	uint32 itemid, count=1;
-	int32 randomprop=0;
+	int32 randomprop= 0;
 	int32 numadded = 0;
 
 	if(strlen(args) < 1)
@@ -375,7 +381,7 @@ bool ChatHandler::HandleSummonCommand(const char* args, WorldSession *m_session)
 			return true;
 		}
 
-		if (chr->IsBeingTeleported() == true) 
+		if (chr->GetMapMgr() == NULL)
 		{
 			snprintf((char*)buf,256, "%s is already being teleported.", chr->GetName());
 			SystemMessage(m_session, buf);
@@ -404,7 +410,7 @@ bool ChatHandler::HandleSummonCommand(const char* args, WorldSession *m_session)
 			chr->_Relocate(plr->GetMapId(),plr->GetPosition(),false,false,plr->GetInstanceID());
 		else
 		{
-			sEventMgr.AddEvent(chr,&Player::EventPortToGM,plr,0,1,1,0);
+			sEventMgr.AddEvent(chr,&Player::EventPortToGM,plr,0,1,1, EVENT_FLAG_DO_NOT_EXECUTE_IN_WORLD_CONTEXT);
 		}
 	}
 	else
@@ -480,7 +486,7 @@ bool ChatHandler::HandleAppearCommand(const char* args, WorldSession *m_session)
 			return true;
 		}
 
-		if (chr->IsBeingTeleported())
+		if (chr->GetMapMgr() == NULL)
 		{
 			snprintf((char*)buf,256, "%s is already being teleported.", chr->GetName());
 			SystemMessage(m_session, buf);
@@ -536,7 +542,7 @@ bool ChatHandler::HandleTaxiCheatCommand(const char* args, WorldSession *m_sessi
 	else
 		return false;
 
-	for (uint8 i=0; i<12; i++)
+	for (uint8 i= 0; i<12; i++)
 	{
 		if(stricmp(args, "on") == 0)
 		{
@@ -681,7 +687,7 @@ bool ChatHandler::HandleGetSkillLevelCommand(const char *args, WorldSession *m_s
 
     char * SkillName = SkillNameManager->SkillNames[skill];
 
-    if (SkillName==0)
+    if (SkillName== 0)
     {
         BlueSystemMessage(m_session, "Skill: %u does not exists", skill);
         return false;
@@ -765,7 +771,7 @@ bool ChatHandler::HandleEmoteCommand(const char* args, WorldSession *m_session)
 	uint32 emote = atoi((char*)args);
 	Unit* target = this->getSelectedCreature(m_session);
 	if(!target) return false;
-	if(target) target->SetUInt32Value(UNIT_NPC_EMOTESTATE,emote);
+	if(target) target->SetEmoteState(emote);
 
 	return true;
 }
@@ -791,7 +797,7 @@ bool ChatHandler::HandleModifyGoldCommand(const char* args, WorldSession *m_sess
 	
 	sGMLog.writefromsession( m_session, "used modify gold on %s, gold: %d", chr->GetName(), total );
 
-	int32 newgold = chr->GetUInt32Value( PLAYER_FIELD_COINAGE ) + total;
+	int32 newgold = chr->GetGold() + total;
 
 	if(newgold < 0)
 	{
@@ -827,14 +833,14 @@ bool ChatHandler::HandleModifyGoldCommand(const char* args, WorldSession *m_sess
 	// Check they don't have more than the max gold
 	if(sWorld.GoldCapEnabled)
     {
-        if((chr->GetUInt32Value(PLAYER_FIELD_COINAGE) + newgold) > sWorld.GoldLimit)
+        if( (chr->GetGold() + newgold) > sWorld.GoldLimit)
         {
-			RedSystemMessage(m_session, "Maximum amount of gold is %u and %s already has %u", (sWorld.GoldLimit/10000), chr->GetName(), (chr->GetUInt32Value(PLAYER_FIELD_COINAGE)/10000));
+			RedSystemMessage(m_session, "Maximum amount of gold is %u and %s already has %u", (sWorld.GoldLimit/10000), chr->GetName(), (chr->GetGold()/10000));
             return true;
         }
     }
 
-	chr->SetUInt32Value( PLAYER_FIELD_COINAGE, newgold );
+	chr->SetGold( newgold );
 	
 	return true;
 }
@@ -849,12 +855,12 @@ bool ChatHandler::HandleTriggerCommand(const char* args, WorldSession* m_session
 	int32 instance_id;
 	uint32 trigger_id;
 	int valcount = sscanf(args, "%u %d", (unsigned int*)&trigger_id, (int*)&instance_id);
-	if(!valcount)
+	if(valcount < 1)
 		return false;
 	if(valcount == 1)
 		instance_id = 0;
 
-	AreaTriggerEntry *entry = dbcAreaTrigger.LookupEntry(trigger_id);
+	AreaTriggerEntry *entry = dbcAreaTrigger.LookupEntryForced(trigger_id);
 	if(trigger_id == 0 || entry == NULL)
 	{
 		RedSystemMessage(m_session, "Could not find trigger %s", args);
@@ -911,7 +917,7 @@ bool ChatHandler::HandleNpcSpawnLinkCommand(const char* args, WorldSession *m_se
 		return false;
 
 	int valcount = sscanf(args, "%u", (unsigned int*)&id);
-	if(valcount)
+	if(valcount == 1)
 	{
 		snprintf(sql, 512, "UPDATE creature_spawns SET npc_respawn_link = '%u' WHERE id = '%u'", (unsigned int)id, (unsigned int)target->GetSQL_id());
 		WorldDatabase.Execute( sql );
@@ -944,11 +950,9 @@ bool ChatHandler::HandleModifyTPsCommand(const char* args, WorldSession *m_sessi
 		SystemMessage(m_session, "Enter two amounts to modify your target's both specs to (enter 0 to that spec at default).");
 		return true;
 	}
-
-	if(TP1)
-		Pl->m_specs[SPEC_PRIMARY].m_customTalentPointOverride = TP1;
-	if(TP2)
-		Pl->m_specs[SPEC_SECONDARY].m_customTalentPointOverride = TP2;
+	
+	Pl->m_specs[SPEC_PRIMARY].m_customTalentPointOverride = TP1;
+	Pl->m_specs[SPEC_SECONDARY].m_customTalentPointOverride = TP2;
 	Pl->smsg_TalentsInfo(false);
 	return true;
 }
@@ -971,10 +975,10 @@ bool ChatHandler::HandleAchievementCompleteCommand(const char * args, WorldSessi
 	}
 
 	uint32 achievement_id = atol(args);
-	if(achievement_id==0)
+	if(achievement_id== 0)
 	{
 		achievement_id = GetAchievementIDFromLink(args);
-		if(achievement_id==0)
+		if(achievement_id== 0)
 		{
 			if( stricmp(args,"all") == 0 )
 			{
@@ -1014,7 +1018,7 @@ bool ChatHandler::HandleAchievementCriteriaCommand(const char * args, WorldSessi
 	uint32 criteria_id = atol(args);
 	if( criteria_id == 0 )
 	{
-		if( stricmp(args,"all")==0 )
+		if( stricmp(args,"all")== 0 )
 		{
 			plr->GetAchievementMgr().GMCompleteCriteria(m_session, -1);
 			SystemMessage(m_session,"All achievement criteria have now been completed for that player.");
@@ -1055,7 +1059,7 @@ bool ChatHandler::HandleAchievementResetCommand(const char * args, WorldSession 
 	if(strnicmp(args, "criteria ", 9) == 0)
 	{
 		achievement_id = atol(args+9);
-		if(achievement_id==0)
+		if(achievement_id== 0)
 		{
 			if(stricmp(args+9,"all") != 0)
 			{
@@ -1074,10 +1078,10 @@ bool ChatHandler::HandleAchievementResetCommand(const char * args, WorldSession 
 	else
 	{
 		achievement_id = atol(args);
-		if(achievement_id==0)
+		if(achievement_id== 0)
 		{
 			achievement_id = GetAchievementIDFromLink(args);
-			if(achievement_id==0)
+			if(achievement_id== 0)
 				return false;
 		}
 	}
@@ -1146,9 +1150,8 @@ bool ChatHandler::HandleLookupAchievementCmd(const char* args, WorldSession* m_s
 	wowice_TOLOWER(x);
 	GreenSystemMessage(m_session, "Starting search of achievement `%s`...", x.c_str());
 	uint32 t = getMSTime();
-	uint32 i, j, numFound=0;
+	uint32 i, j, numFound= 0;
 	string y, recout;
-	std::set<uint8, uint32> foundList;
 	char playerGUID[17];
 	snprintf(playerGUID,17,I64FMT,m_session->GetPlayer()->GetGUID());
 
@@ -1159,7 +1162,7 @@ bool ChatHandler::HandleLookupAchievementCmd(const char* args, WorldSession* m_s
 		bool foundmatch;
 		for( i = 0; i < j && numFound < 25; ++i )
 		{
-			AchievementEntry const* achievement = dbcAchievementStore.LookupRow(i);
+			AchievementEntry const* achievement = dbcAchievementStore.LookupRowForced(i);
 			if(achievement)
 			{
 				if( foundList.find(achievement->ID) != foundList.end() )
@@ -1199,7 +1202,7 @@ bool ChatHandler::HandleLookupAchievementCmd(const char* args, WorldSession* m_s
 				recout += ": |cfffff000|Hachievement:";
 				recout += strm.str();
 				recout += ":";
-				recout += (char*)playerGUID;
+				recout += (const char*)playerGUID;
 				time_t completetime = m_session->GetPlayer()->GetAchievementMgr().GetCompletedTime(achievement);
 				if( completetime )
 				{
@@ -1243,7 +1246,7 @@ bool ChatHandler::HandleLookupAchievementCmd(const char* args, WorldSession* m_s
 		j = dbcAchievementCriteriaStore.GetNumRows();
 		for( i = 0; i < j && numFound < 25; ++i )
 		{
-			AchievementCriteriaEntry const* criteria = dbcAchievementCriteriaStore.LookupRow(i);
+			AchievementCriteriaEntry const* criteria = dbcAchievementCriteriaStore.LookupRowForced(i);
 			if( criteria )
 			{
 				if( foundList.find(criteria->ID) != foundList.end() )
@@ -1265,7 +1268,7 @@ bool ChatHandler::HandleLookupAchievementCmd(const char* args, WorldSession* m_s
 				recout += ": |cfffff000";
 				recout += criteria->name;
 				strm.str("");
-				AchievementEntry const* achievement = dbcAchievementStore.LookupEntry(criteria->referredAchievement);
+				AchievementEntry const* achievement = dbcAchievementStore.LookupEntryForced(criteria->referredAchievement);
 				if( achievement )
 				{
 					// create achievement link
@@ -1275,7 +1278,7 @@ bool ChatHandler::HandleLookupAchievementCmd(const char* args, WorldSession* m_s
 					recout += ": |cfffff000|Hachievement:";
 					recout += strm.str();
 					recout += ":";
-					recout += (char*)playerGUID;
+					recout += (const char*)playerGUID;
 					time_t completetime = m_session->GetPlayer()->GetAchievementMgr().GetCompletedTime(achievement);
 					if( completetime )
 					{

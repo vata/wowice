@@ -395,6 +395,10 @@ Unit::Unit()
 	asc_frozen = 0;
 	asc_enraged = 0;
 	asc_seal = 0;
+	asc_bleed = 0;
+
+	Tagged = false;
+	TaggerGuid = 0;
 }
 
 Unit::~Unit()
@@ -780,7 +784,7 @@ bool Unit::canReachWithAttack(Unit *pVictim)
 			lat = ( lat > 500 ) ? 500 : lat;
 
 			// calculate the added distance
-			attackreach += ( m_runSpeed * 0.001f ) * float( lat );
+			attackreach += m_runSpeed * 0.001f * lat;
 		}
 
 		if( static_cast< Player* >( this )->m_isMoving )
@@ -927,48 +931,47 @@ uint32 Unit::HandleProc( uint32 flag, Unit* victim, SpellEntry* CastingSpell, ui
 		return 0;
 	}
 
-#if 0
-	//will be used only on new system
-	ProcCondSharedDataStruct sharedprocdata;
-	sharedprocdata.owner = this;
-	sharedprocdata.ProcFlags = flag;
-	sharedprocdata.CastingSpell = CastingSpell;
-	sharedprocdata.Fulldmg = dmg;
-	sharedprocdata.Absdmg = abs;
-	sharedprocdata.victim = victim;
-#endif
-
-	std::list< uint32 > remove;
-	std::list< struct ProcTriggerSpell >::iterator itr,itr2;
+	std::list<SpellProc*>::iterator itr,itr2;
 	for( itr = m_procSpells.begin(); itr != m_procSpells.end(); )  // Proc Trigger Spells for Victim
 	{
 		itr2 = itr;
 		++itr;
-		if( itr2->deleted )
+
+		SpellProc* spell_proc = *itr2;
+
+		// Check if list item was deleted elsewhere, so here it's removed and freed
+		if( spell_proc->mDeleted )
 		{
 			if( can_delete )
 				m_procSpells.erase( itr2 );
 			continue;
 		}
 
-		//flags can be mixed, we test them in mixed way. Maybe we should handle each one ?
-		if( !( itr2->procFlags & flag ) )
+		// A spell cannot proc itself
+		if( CastingSpell != NULL && CastingSpell->Id == spell_proc->mSpell->Id )
 			continue;
 
-		if( CastingSpell != NULL )
-		{
-			if(	CastingSpell->Id == itr2->spellId )
-				continue;
-		}
+		// Check if this can proc
+		if( ! spell_proc->CanProc( victim, CastingSpell ) )
+			continue;
 
-		uint32 spellId = itr2->spellId;
-		if( !spellId )
-			continue; //there are procs without spells ?
+		// Check for flags
+		if( ! spell_proc->CheckProcFlags( flag ) )
+			continue;
 
-		//lookupentry returns first spell for wrong ids to avoid crash, there is no need for NULL check
-		SpellEntry* spe  = dbcSpell.LookupEntry( spellId );
+		// Check proc class mask
+		if( flag & PROC_ON_CAST_SPELL && CastingSpell && ! spell_proc->CheckClassMask(victim, CastingSpell) )
+			continue;
 
-		uint32 origId = itr2->origId;
+		uint32 spellId = spell_proc->mSpell->Id;
+
+		SpellEntry* spe = spell_proc->mSpell;
+
+		uint32 origId;		
+		if( spell_proc->mOrigSpell != NULL )
+			origId = spell_proc->mOrigSpell->Id;
+		else
+			origId = 0;
 		SpellEntry* ospinfo = dbcSpell.LookupEntry( origId );//no need to check if exists or not since we were not able to register this trigger if it would not exist :P
 
 		/*if( itr2->procFlags & PROC_ON_CAST_SPECIFIC_SPELL || itr2->procFlags & PROC_ON_CAST_SPELL) {
@@ -1005,23 +1008,7 @@ uint32 Unit::HandleProc( uint32 flag, Unit* victim, SpellEntry* CastingSpell, ui
 					continue;
 		}
 
-#if 0
-		if( itr2->spellId < MAX_SPELL_ID_FROMDBC && G_ProcCondHandlers[ itr2->spellId ] )
-		{
-			sharedprocdata.cur_itr = itr2;
-			ProcCondHandlerRes res = (*G_ProcCondHandlers[ itr2->spellId ])( &sharedprocdata );
-			if( res == PROCCOND_BREAK_EXECUTION )
-				continue;
-			else if( res == PROCCOND_FATAL_EXIT )
-			{
-				//this is panic situation and should not happen !
-				bProcInUse = false;
-				return;
-			}
-		}
-#endif
-
-		uint32 proc_Chance = itr2->procChance;
+		uint32 proc_Chance = spell_proc->CalcProcChance( victim, CastingSpell );
 
 		// feral = no procs (need a better way to do this)
 		/*if( this->IsPlayer() && static_cast<Player*>(this)->GetShapeShift() )
@@ -1067,9 +1054,9 @@ uint32 Unit::HandleProc( uint32 flag, Unit* victim, SpellEntry* CastingSpell, ui
 
 			if( mh != NULL && of != NULL )
 			{
-				float mhs = float( mh->GetProto()->Delay );
-				float ohs = float( of->GetProto()->Delay );
-				proc_Chance = FL2UINT( ( mhs + ohs ) * 0.001f * ppm / 0.6f );
+				uint32 mhs = mh->GetProto()->Delay;
+				uint32 ohs = of->GetProto()->Delay;
+				proc_Chance = float2int32( ( mhs + ohs ) * 0.001f * ppm / 0.6f );
 			}
 			else if( mh != NULL )
 			{
@@ -1198,9 +1185,9 @@ uint32 Unit::HandleProc( uint32 flag, Unit* victim, SpellEntry* CastingSpell, ui
 						CastingSpell->Id == 16953 ||
 						CastingSpell->Id == 16959)
 						continue;
-					if( CastingSpell->Effect[0] != 80 &&
-						CastingSpell->Effect[1] != 80 &&
-						CastingSpell->Effect[2] != 80 &&
+					if( CastingSpell->Effect[0] != SPELL_EFFECT_ADD_COMBO_POINTS &&
+						CastingSpell->Effect[1] != SPELL_EFFECT_ADD_COMBO_POINTS &&
+						CastingSpell->Effect[2] != SPELL_EFFECT_ADD_COMBO_POINTS &&
 						CastingSpell->NameHash != SPELL_HASH_MANGLE___CAT )
 						continue;
 				}break;
@@ -1636,8 +1623,8 @@ uint32 Unit::HandleProc( uint32 flag, Unit* victim, SpellEntry* CastingSpell, ui
 							continue;
 						if( flag & PROC_ON_SPELL_CRIT_HIT )
 						{
-							itr2->procCharges++;
-							if( itr2->procCharges >= 3 ) //whatch that number cause it depends on original stack count !
+							spell_proc->mProcCharges++;
+							if( spell_proc->mProcCharges >= 3 ) //whatch that number cause it depends on original stack count !
 							{
 								RemoveAllAuraByNameHash( SPELL_HASH_COMBUSTION );
 								continue;
@@ -2428,11 +2415,6 @@ uint32 Unit::HandleProc( uint32 flag, Unit* victim, SpellEntry* CastingSpell, ui
 						if( CastingSpell->NameHash != SPELL_HASH_LIFE_TAP )
 							continue;
 					}break;
-				case 37193:
-					{
-						if (!CastingSpell || CastingSpell->NameHash != SPELL_HASH_HOLY_SHIELD)
-							continue;
-					}break;
 				case 37196:
 				case 43838:
 					{
@@ -2551,14 +2533,6 @@ uint32 Unit::HandleProc( uint32 flag, Unit* victim, SpellEntry* CastingSpell, ui
 					}break;
 
 					//http://www.wowhead.com/?item=32492 Ashtongue Talisman of Lethality
-				case 40461:
-					{
-						if( CastingSpell == NULL )
-							continue;
-						//we need a finishing move for this
-						if(!(CastingSpell->c_is_flags & SPELL_FLAG_IS_FINISHING_MOVE) || victim==this)
-							continue;
-					}break;
 				case 37445: //using a mana gem grants you 225 spell damage for 15 sec
 					{
 						if (!CastingSpell || CastingSpell->NameHash != SPELL_HASH_REPLENISH_MANA)
@@ -2586,7 +2560,7 @@ uint32 Unit::HandleProc( uint32 flag, Unit* victim, SpellEntry* CastingSpell, ui
 			continue;
 
 		SpellCastTargets targets;
-		if( itr2->procFlags & PROC_TARGET_SELF )
+		if( spell_proc->mProcFlags & PROC_TARGET_SELF )
 			targets.m_unitTarget = GetGUID();
 		else
 			targets.m_unitTarget = victim->GetGUID();
@@ -2598,7 +2572,7 @@ uint32 Unit::HandleProc( uint32 flag, Unit* victim, SpellEntry* CastingSpell, ui
 		//Spell *spell = new Spell(this,spellInfo,false,0,true,false);
 		if( spellId == 974 || spellId == 32593 || spellId == 32594 || spellId == 49283 || spellId == 49284 ) // Earth Shield handler
 		{
-			spell->pSpellId=itr2->spellId;
+			spell->pSpellId=spellId;
 			spell->SpellEffectDummy(0);
 			delete spell;
 			spell = NULL;
@@ -2952,7 +2926,7 @@ void Unit::CalculateResistanceReduction(Unit *pVictim,dealdamage * dmg, SpellEnt
 	else
 	{
 		// applying resistance to other type of damage
-		int32 RResist = float2int32( float(pVictim->GetResistance( (*dmg).school_type ) + ((pVictim->getLevel() > getLevel()) ? (pVictim->getLevel() - this->getLevel()) * 5 : 0)) - PowerCostPctMod[(*dmg).school_type] );
+		int32 RResist = float2int32( (pVictim->GetResistance( (*dmg).school_type ) + ((pVictim->getLevel() > getLevel()) ? (pVictim->getLevel() - this->getLevel()) * 5 : 0)) - PowerCostPctMod[(*dmg).school_type] );
 		if (RResist<0)
 			RResist = 0;
 		AverageResistance = (float)(RResist) / (float)(getLevel() * 5) * 0.75f;
@@ -3736,7 +3710,7 @@ void Unit::Strike( Unit* pVictim, uint32 weapon_damage_type, SpellEntry* ability
 			}
 
 			if( pct_dmg_mod > 0 )
-				dmg.full_damage = float2int32( dmg.full_damage *  ( float( pct_dmg_mod) / 100.0f ) );
+				dmg.full_damage = dmg.full_damage * pct_dmg_mod / 100;
 
 			dmg.full_damage += add_damage;
 
@@ -3806,7 +3780,7 @@ void Unit::Strike( Unit* pVictim, uint32 weapon_damage_type, SpellEntry* ability
 					float damage_reduction = (high_dmg_mod + low_dmg_mod) / 2.0f;
 					if(damage_reduction > 0)
 					{
-							dmg.full_damage = float2int32(damage_reduction * float(dmg.full_damage));
+							dmg.full_damage = float2int32(damage_reduction * dmg.full_damage);
 					}
 					hit_status |= HITSTATUS_GLANCING;
 				}
@@ -3822,10 +3796,11 @@ void Unit::Strike( Unit* pVictim, uint32 weapon_damage_type, SpellEntry* ability
 
 						if( shield->GetProto()->InventoryType == INVTYPE_SHIELD )
 						{
-							float block_multiplier = ( 100.0f + float( static_cast< Player* >( pVictim )->m_modblockabsorbvalue ) ) / 100.0f;
+							float block_multiplier = ( 100.0f + static_cast< Player* >( pVictim )->m_modblockabsorbvalue ) / 100.0f;
 							if( block_multiplier < 1.0f )block_multiplier = 1.0f;
 
-							blocked_damage = float2int32( (float( shield->GetProto()->Block ) + ( float( static_cast< Player* >( pVictim )->m_modblockvaluefromspells + pVictim->GetUInt32Value( PLAYER_RATING_MODIFIER_BLOCK ) )) + ( ( float( pVictim->GetStat(STAT_STRENGTH) ) / 20.0f ) - 1.0f ) ) * block_multiplier);
+							blocked_damage = float2int32( (shield->GetProto()->Block + ( ( static_cast< Player* >( pVictim )->m_modblockvaluefromspells + pVictim->GetUInt32Value( PLAYER_RATING_MODIFIER_BLOCK ) )) + ( ( pVictim->GetStat(STAT_STRENGTH) / 2.0f ) - 1.0f ) ) * block_multiplier);
+
 							if( Rand( m_BlockModPct ) )
 								blocked_damage *= 2;
 						}
@@ -3863,7 +3838,7 @@ void Unit::Strike( Unit* pVictim, uint32 weapon_damage_type, SpellEntry* ability
 					{
 						int32 dmg_bonus_pct = 100;
 						SM_FIValue(SM_PCriticalDamage,&dmg_bonus_pct,ability->SpellGroupType);
-						dmgbonus = float2int32( float(dmgbonus) * (float(dmg_bonus_pct)/100.0f) );
+						dmgbonus = dmgbonus * dmg_bonus_pct / 100;
 					}
 
 					//sLog.outString( "DEBUG: After CritMeleeDamageTakenPctMod: %u" , dmg.full_damage );
@@ -3871,8 +3846,7 @@ void Unit::Strike( Unit* pVictim, uint32 weapon_damage_type, SpellEntry* ability
 					{
 						if( weapon_damage_type != RANGED )
 						{
-							float critextra=float(static_cast< Player* >( this )->m_modphyscritdmgPCT);
-							dmg.full_damage += int32((float(dmg.full_damage)*critextra/100.0f));
+							dmg.full_damage += dmg.full_damage * static_cast< Player* >( this )->m_modphyscritdmgPCT / 100;
 						}
 						if(!pVictim->IsPlayer())
 							dmg.full_damage += float2int32(dmg.full_damage*static_cast< Player* >( this )->IncreaseCricticalByTypePCT[((Creature*)pVictim)->GetCreatureInfo() ? ((Creature*)pVictim)->GetCreatureInfo()->Type : 0]);
@@ -3916,8 +3890,8 @@ void Unit::Strike( Unit* pVictim, uint32 weapon_damage_type, SpellEntry* ability
 						else sEventMgr.ModifyEventTimeLeft( this, EVENT_CRIT_FLAG_EXPIRE, 5000 );
 					}
 
-					CALL_SCRIPT_EVENT(pVictim, OnTargetCritHit)(this, float(dmg.full_damage));
-					CALL_SCRIPT_EVENT(this, OnCritHit)(pVictim, float(dmg.full_damage));
+					CALL_SCRIPT_EVENT(pVictim, OnTargetCritHit)(this, dmg.full_damage);
+					CALL_SCRIPT_EVENT(this, OnCritHit)(pVictim, dmg.full_damage);
 				}
 				break;
 //--------------------------------crushing blow---------------------------------------------
@@ -6383,7 +6357,6 @@ bool Unit::IsDazed()
 void Unit::UpdateVisibility()
 {
 	ByteBuffer buf(3000);
-	InRangeSet::iterator itr, it3;
 	uint32 count;
 	bool can_see;
 	bool is_visible;
@@ -6400,7 +6373,7 @@ void Unit::UpdateVisibility()
 			++itr2;
 
 			can_see = plr->CanSee(pObj);
-			is_visible = plr->GetVisibility(pObj, &it3);
+			is_visible = plr->IsVisible( pObj->GetGUID() );
 			if(can_see)
 			{
 				if(!is_visible)
@@ -6408,15 +6381,15 @@ void Unit::UpdateVisibility()
 					buf.clear();
 					count = pObj->BuildCreateUpdateBlockForPlayer( &buf, plr );
 					plr->PushCreationData(&buf, count);
-					plr->AddVisibleObject(pObj);
+					plr->AddVisibleObject(pObj->GetGUID());
 				}
 			}
 			else
 			{
 				if(is_visible)
 				{
-					pObj->DestroyForPlayer(plr);
-					plr->RemoveVisibleObject(it3);
+					plr->SendDestroyObject( pObj->GetGUID() );
+					plr->RemoveVisibleObject( pObj->GetGUID() );
 				}
 			}
 
@@ -6424,7 +6397,7 @@ void Unit::UpdateVisibility()
 			{
 				pl = static_cast< Player* >( pObj );
 				can_see = pl->CanSee( plr );
-				is_visible = pl->GetVisibility( plr, &it3 );
+				is_visible = pl->IsVisible( plr->GetGUID() );
 				if( can_see )
 				{
 					if(!is_visible)
@@ -6439,8 +6412,8 @@ void Unit::UpdateVisibility()
 				{
 					if(is_visible)
 					{
-						plr->DestroyForPlayer(pl);
-						pl->RemoveVisibleObject(it3);
+						pl->SendDestroyObject( plr->GetGUID() );
+						pl->RemoveVisibleObject( plr->GetGUID() );
 					}
 				}
 			}
@@ -7544,7 +7517,7 @@ void Unit::setAttackTimer(int32 time, bool offhand)
 	if(!time)
 		time = offhand ? m_uint32Values[UNIT_FIELD_BASEATTACKTIME+1] : m_uint32Values[UNIT_FIELD_BASEATTACKTIME];
 
-	time = std::max(1000,float2int32(float(time)*GetCastSpeedMod()));
+	time = std::max(1000,float2int32(time * GetCastSpeedMod()));
 	if(time>300000)		// just in case.. shouldn't happen though
 		time=offhand ? m_uint32Values[UNIT_FIELD_BASEATTACKTIME+1] : m_uint32Values[UNIT_FIELD_BASEATTACKTIME];
 
@@ -7967,3 +7940,133 @@ void Unit::RemoveGarbage(){
 
 }
 
+void Unit::Tag( uint64 TaggerGUID ){
+	Tagged = true;
+	this->TaggerGuid = TaggerGUID;
+	m_uint32Values[ UNIT_DYNAMIC_FLAGS ] |= U_DYN_FLAG_TAGGED_BY_OTHER;
+
+}
+
+void Unit::UnTag(){
+	Tagged = false;
+	TaggerGuid = 0;
+	m_uint32Values[ UNIT_DYNAMIC_FLAGS ] &= ~U_DYN_FLAG_TAGGED_BY_OTHER;
+}
+
+bool Unit::IsTagged(){
+	return Tagged;
+}
+
+bool Unit::IsTaggable(){
+	if( !IsPet() && !Tagged )
+		return true;
+	else
+		return false;
+}
+
+uint64 Unit::GetTaggerGUID(){
+	return TaggerGuid;
+}
+
+bool Unit::isLootable(){
+	if( IsTagged() && !IsPet() && !isCritter() && !( IsPlayer() && !IsInBg() ) && GetCreatedByGUID() == 0 )
+		return true;
+	else
+		return false;
+}
+
+void Unit::AddProcTriggerSpell(uint32 spell_id, uint32 orig_spell_id, uint64 caster, uint32 procChance, uint32 procFlags, uint32 procCharges, uint32 *groupRelation, uint32 *procClassMask, Object *obj)
+{
+	AddProcTriggerSpell(dbcSpell.LookupEntryForced(spell_id), dbcSpell.LookupEntryForced(orig_spell_id), caster, procChance, procFlags, procCharges, groupRelation, procClassMask, obj);
+}
+
+void Unit::AddProcTriggerSpell(SpellEntry *spell, SpellEntry *orig_spell, uint64 caster, uint32 procChance, uint32 procFlags, uint32 procCharges, uint32 *groupRelation, uint32 *procClassMask, Object *obj)
+{
+	SpellProc *sp = sSpellProcMgr.NewSpellProc(this, spell, orig_spell, caster, procChance, procFlags, procCharges, groupRelation, procClassMask, obj);
+	if( sp == NULL )
+	{
+		if( orig_spell != NULL )
+			sLog.outError("Spell id %u tried to add a non-existent spell to Unit %p as SpellProc", orig_spell->Id, this);
+		else
+			sLog.outError("Something tried to add a non-existent spell to Unit %p as SpellProc", this);
+		return;
+	}
+	m_procSpells.push_back(sp);
+}
+
+void Unit::AddProcTriggerSpell(SpellEntry *sp, uint64 caster, uint32 *groupRelation, uint32 *procClassMask, Object *obj)
+{
+	AddProcTriggerSpell(sp, sp, caster, sp->procChance, sp->procFlags, sp->procCharges, groupRelation, procClassMask, obj);
+}
+
+void Unit::RemoveProcTriggerSpell(uint32 spellId, uint64 guid)
+{
+	for(std::list<SpellProc*>::iterator itr = m_procSpells.begin(); itr != m_procSpells.end(); ++itr)
+	{
+		SpellProc* sp = *itr;
+		if(sp->mSpell->Id == spellId && sp->mCaster == guid && !sp->mDeleted)
+		{
+			sp->mDeleted = true;
+			return;
+		}
+	}
+}
+
+void Unit::RemoveProcTriggerSpell(uint32 spellId)
+{
+	for(std::list<SpellProc*>::iterator itr = m_procSpells.begin(); itr != m_procSpells.end(); ++itr)
+	{
+		SpellProc* sp = *itr;
+		if(sp->mSpell->Id == spellId && !sp->mDeleted)
+		{
+			sp->mDeleted = true;
+			return;
+		}
+	}
+}
+
+void Unit::TakeDamage(Unit *pAttacker, uint32 damage, uint32 spellid, bool no_remove_auras ){}
+void Unit::Die( Unit *pAttacker, uint32 damage, uint32 spellid ){}
+
+void Unit::SendPeriodicAuraLog( const WoWGuid& CasterGUID, const WoWGuid& TargetGUID, uint32 SpellID, uint32 School, uint32 Amount, uint32 abs_dmg, uint32 resisted_damage, uint32 Flags ){
+		WorldPacket data( SMSG_PERIODICAURALOG, 46 );
+
+		data << TargetGUID;		   // target guid
+		data << CasterGUID;		   // caster guid
+		data << uint32( SpellID );						// spellid
+		data << uint32( 1 );					  // unknown? need research?
+		data << uint32( Flags | 0x1 );			// aura school
+		data << uint32( Amount );						 // amount of done to target / heal / damage
+		data << uint32( 0 );				 // cebernic: unknown?? needs more research, but it should fix unknown damage type with suffered.
+		data << uint32( g_spellSchoolConversionTable[School] );
+		data << uint32( abs_dmg );
+		data << uint32( resisted_damage );
+
+		SendMessageToSet( &data, true );
+}
+
+void Unit::SendPeriodicHealAuraLog( const WoWGuid& CasterGUID, const WoWGuid& TargetGUID, uint32 SpellID, uint32 amt ){
+	WorldPacket data( SMSG_PERIODICAURALOG, 32 );
+	
+	data << TargetGUID;
+	data << CasterGUID;
+	data << SpellID;
+	data << uint32( 1 );
+	data << uint32( FLAG_PERIODIC_HEAL );
+	data << uint32( amt );
+	
+	SendMessageToSet(&data,true);
+}
+
+
+void Unit::Phase(uint8 command, uint32 newphase ){
+
+	Object::Phase( command, newphase );
+
+	for( std::set<Object*>::iterator itr=m_objectsInRange.begin(); itr!=m_objectsInRange.end(); ++itr ){
+		if ( (*itr)->IsUnit() )
+			static_cast< Unit* >( *itr )->UpdateVisibility();
+	}
+	
+	UpdateVisibility();
+}

@@ -25,7 +25,7 @@ void LocalizationMgr::Shutdown()
 #define SAFE_FREE_PTR(x) if(deletedPointers.find((x)) == deletedPointers.end()) { deletedPointers.insert((x)); free((x)); }
 
 	set<void*> deletedPointers;
-	uint32 maxid=0;
+	uint32 maxid= 0;
 	uint32 i,j;
 	vector<pair<uint32,uint32> >::iterator xtr = m_languages.begin();
 	for(; xtr != m_languages.end(); ++xtr)
@@ -113,7 +113,7 @@ void LocalizationMgr::Shutdown()
 	delete [] m_WorldBroadCast;
 	delete [] m_WorldMapInfo;
 	m_languages.clear();
-	Log.Notice("LocalizationMgr", "Pointer cleanup completed in %.4f seconds.", float(float(getMSTime()-t) / 1000.0f));
+	Log.Notice("LocalizationMgr", "Pointer cleanup completed in %.4f seconds.", (getMSTime()-t) / 1000.0f);
 #undef SAFE_FREE_PTR
 }
 
@@ -185,7 +185,7 @@ void LocalizationMgr::Reload(bool first)
 		char * lbp = strchr(lb,'=');
 		if(lbp== NULL)
 			continue;
-		*lbp=0;
+		*lbp= 0;
 		lbp++;
 
 		ll1 = string(lb);
@@ -540,9 +540,9 @@ void LocalizationMgr::Reload(bool first)
 	{
 		uint32 source_language_id = GetLanguageId(itr->second);
 		uint32 dest_language_id = GetLanguageId(itr->first);
-		if(source_language_id==0 || dest_language_id == 0)
+		if(source_language_id== 0 || dest_language_id == 0)
 		{
-			Log.Error("LocalizationMgr", "Invalid locale conversion string specified: %u->%u (%s->%s)", source_language_id, dest_language_id, itr->second.c_str(), itr->first.c_str());
+			sLog.outError("LocalizationMgr", "Invalid locale conversion string specified: %u->%u (%s->%s)", source_language_id, dest_language_id, itr->second.c_str(), itr->first.c_str());
 			continue;
 		}
 

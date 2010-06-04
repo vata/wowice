@@ -61,7 +61,7 @@ PatchMgr::PatchMgr()
 		if(hFile == INVALID_HANDLE_VALUE)
 			continue;
 
-		Log.Notice("PatchMgr", "Found patch for b%u locale `%s`.", srcversion,locality);
+		Log.Notice("PatchMgr", "Found patch for %u locale `%s`.", srcversion,locality);
 		pPatch = new Patch;
 		size = GetFileSize(hFile, &sizehigh);
 		pPatch->FileSize = size;
@@ -279,7 +279,7 @@ struct TransferInitiatePacket
 {
 	uint8 cmd;
 	uint8 strsize;
-	char name[5];
+	char name[6];
 	uint64 filesize;
 	uint8 md5hash[MD5_DIGEST_LENGTH];
 };
@@ -338,7 +338,7 @@ bool PatchMgr::InitiatePatch(Patch * pPatch, AuthSocket * pClient)
 
 	init.cmd = 0x30;
 	init.strsize=5;
-	init.name[0] = 'P'; init.name[1] = 'a'; init.name[2] = 't'; init.name[3] = 'c'; init.name[4] = 'h'; init.name[5] = 0;
+	init.name[0] = 'P'; init.name[1] = 'a'; init.name[2] = 't'; init.name[3] = 'c'; init.name[4] = 'h'; init.name[5] = '\0';
 	init.filesize = pPatch->FileSize;
 	memcpy(init.md5hash, pPatch->MD5, MD5_DIGEST_LENGTH);
 

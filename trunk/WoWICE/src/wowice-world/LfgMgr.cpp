@@ -81,7 +81,7 @@ bool LfgMgr::AttemptLfgJoin(Player * pl, uint32 LfgDungeonId)
 	return false;
 }
 
-void LfgMgr::SetPlayerInLFGqueue(Player *pl,uint32 LfgDungeonId)
+void LfgMgr::SetPlayerInLFGqueue(Player *pl, uint32 LfgDungeonId)
 {
 	if( pl == NULL )
 		return;
@@ -124,8 +124,8 @@ void LfgMgr::RemovePlayerFromLfgQueues(Player * pl)
 		if( pl->LfmDungeonId < MAX_DUNGEONS )
 			m_lookingForMore[pl->LfmDungeonId].remove(pl);
 
-		pl->LfmDungeonId=0;
-		pl->LfmType=0;
+		pl->LfmDungeonId= 0;
+		pl->LfmType= 0;
 	}
 
 	m_lock.Release();
@@ -149,7 +149,7 @@ void LfgMgr::RemovePlayerFromLfgQueue( Player* plr, uint32 LfgDungeonId )
 
 void LfgMgr::UpdateLfgQueue(uint32 LfgDungeonId)
 {
-	if( LfgDungeonId > MAX_DUNGEONS )
+	if( LfgDungeonId >= MAX_DUNGEONS )
 		return;
 
 	LfgPlayerList possibleGroupLeaders;

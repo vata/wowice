@@ -31,18 +31,6 @@
  */
 //#define USE_MEMORY_MAPPING_FOR_MAPS
 
-/** Enable/disable wowice's Voice Chat support.
- * While not completely finished (but close!) you can link your wowice server to a voice chat
- * server (also compiled by default) and use the client's ingame voice chat function.
- * At the moment it is only good for joining, you can't leave a voice channel yet :P
- * Also, it only works for parties. Custom chat channels are not fully supported yet.
- * However, if you want to play around with it, feel free to enable this define.
- */
-
-#ifdef ENABLE_VOICE_CHAT
-#define VOICE_CHAT 1
-#endif
-
 /** Enable/Disable achievement mgr
  * In short: This is to test my theory on the achievement system using a fuckton of ram - Hasbro
  * Default: Enabled
@@ -90,6 +78,10 @@
 
 //#define _SELF_ITEM_QUERY_TEST_ "\x2d\x50\x32\x57\x4f\x57\0"
 
+// LOGON_MINBUILD minimum allowed build number that the logonserver will allow clients to connect with
+#define LOGON_MINBUILD 11723
+// LOGON_MAXBUILD maximum allowed build number that the logonserver will allow clients to connect with
+#define LOGON_MAXBUILD 11723
 
 #endif		// __wowiceCONFIG_H
 

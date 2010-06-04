@@ -404,25 +404,7 @@ struct DamageSplitTarget
 	void * creator;
 };
 
-#ifndef NEW_PROCFLAGS
-struct ProcTriggerSpell
-{
-	//  ProcTriggerSpell() : origId(0), trigger(0), spellId(0), caster(0), procChance(0), procFlags(0), procCharges(0) { }
-	uint32 origId;
-	// uint32 trigger;
-	uint32 spellId;
-	uint64 caster;
-	uint32 procChance;
-	uint32 procFlags;
-	uint32 procCharges;
-	//    SpellEntry *ospinfo;
-	//    SpellEntry *spinfo;
-	uint32 LastTrigger;
-	uint32 ProcType; //0=triggerspell/1=triggerclassspell
-	uint32 groupRelation[3];
-	bool deleted;
-};
-#else
+#ifdef NEW_PROCFLAGS
 struct ProcTriggerSpell
 {
 	uint32 spellId;
@@ -750,52 +732,6 @@ public:
 
 	void RelocateEvents();
 	int32 event_GetInstanceID();
-
-	WoWICE_INLINE void SendPeriodicHealAuraLog(uint32 amt)
-	{
-		WorldPacket data(32);
-		data.SetOpcode(SMSG_PERIODICAURALOG);
-		data << m_target->GetNewGUID();
-		FastGUIDPack(data, m_casterGuid);
-		data << GetSpellProto()->Id;
-		data << uint32(1);
-		data << uint32(FLAG_PERIODIC_HEAL);
-		data << uint32(amt);
-		m_target->SendMessageToSet(&data,true);
-	}
-	// log message's
-	WoWICE_INLINE void SendPeriodicAuraLog(Unit * Caster, Unit * Target, uint32 SpellID, uint32 School, uint32 Amount, uint32 abs_dmg, uint32 resisted_damage, uint32 Flags)
-	{
-		WorldPacket data(SMSG_PERIODICAURALOG, 46);
-		data << Target->GetNewGUID();		   // target guid
-		data << Caster->GetNewGUID();		   // caster guid
-		data << SpellID;						// spellid
-		data << (uint32)1;					  // unknown? need research?
-		data << uint32(Flags | 0x1);			// aura school
-		data << Amount;						 // amount of done to target / heal / damage
-		data << (uint32)0;				 // cebernic: unknown?? needs more research, but it should fix unknown damage type with suffered.
-		data << g_spellSchoolConversionTable[School];
-		data << uint32(abs_dmg);
-		data << uint32(resisted_damage);
-		Caster->SendMessageToSet(&data, true);
-	}
-
-	void SendPeriodicAuraLog(const uint64& CasterGuid, Unit * Target, uint32 SpellID, uint32 School, uint32 Amount, uint32 abs_dmg, uint32 resisted_damage, uint32 Flags)
-	{
-		WorldPacket data(SMSG_PERIODICAURALOG, 46);
-		data << Target->GetNewGUID();		   // target guid
-		FastGUIDPack(data, CasterGuid);		 // caster guid
-		data << SpellID;						// spellid
-		data << (uint32)1;					  // unknown?? need research?
-		data << uint32(Flags | 0x1);			// aura school
-		data << Amount;						 // amount of done to target / heal / damage
-		data << (uint32)0;				 // cebernic: unknown?? needs more research, but it should fix unknown damage type with suffered.
-		data << g_spellSchoolConversionTable[School];
-		data << uint32(abs_dmg);
-		data << uint32(resisted_damage);
-		Target->SendMessageToSet(&data, true);
-	}
-
 	bool WasCastInDuel() { return m_castInDuel; }
 
 	SpellEntry * m_spellProto;

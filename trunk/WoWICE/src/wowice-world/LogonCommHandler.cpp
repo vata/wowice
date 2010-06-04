@@ -397,11 +397,11 @@ void LogonCommHandler::LoadRealmConfiguration()
 			uint32 type;
 
 			// process realm type
-			if( stricmp(rt.c_str(), "pvp")==0 )
+			if( stricmp(rt.c_str(), "pvp")== 0 )
 				type = REALMTYPE_PVP;
-			else if( stricmp(rt.c_str(), "rp")==0 )
+			else if( stricmp(rt.c_str(), "rp")== 0 )
 				type = REALMTYPE_RP;
-			else if( stricmp(rt.c_str(), "rppvp")==0 )
+			else if( stricmp(rt.c_str(), "rppvp")== 0 )
 				type = REALMTYPE_RPPVP;
 			else
 				type = REALMTYPE_NORMAL;
@@ -543,5 +543,5 @@ void LogonCommHandler::RefreshRealmPop()
 {
 	// Get realm player limit, it's better that we get the player limit once and save it! <-done
 	// Calc pop: 0 >= low, 1 >= med, 2 >= hig, 3 >= full
-	server_population = float(((sWorld.getPlayerCount()) * 3) / pLimit);
+	server_population = sWorld.getPlayerCount() * 3.0f / pLimit;
 }

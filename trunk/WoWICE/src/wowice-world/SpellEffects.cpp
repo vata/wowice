@@ -154,7 +154,7 @@ pSpellEffect SpellEffectsHandler[TOTAL_SPELL_EFFECTS]={
 	&Spell::SpellEffectNULL,					// Summon Pet: http://www.thottbot.com/s23498 - 135
 	&Spell::SpellEffectRestoreHealthPct,		// Restore Health % - 136 // http://www.thottbot.com/s41542 and http://www.thottbot.com/s39703
 	&Spell::SpellEffectRestorePowerPct,			// Restore Power % - 137 // http://www.thottbot.com/s41542
-	&Spell::SpellEffectNULL,					// unknown - 138 // related to superjump or even "*jump" spells http://www.thottbot.com/?e=Unknown%20138
+	&Spell::SpellEffectKnockBack2,				// knockback2 - 138 // related to superjump or even "*jump" spells http://www.thottbot.com/?e=Unknown%20138
 	&Spell::SpellEffectNULL,					// Remove Quest - 139 // no spells
 	&Spell::SpellEffectTriggerSpell,			// triggers a spell from target back to caster - used at Malacrass f.e.
 	&Spell::SpellEffectNULL,					// unknown - 141 // triggers spell, magic one,  (Mother spell) http://www.thottbot.com/s41065
@@ -320,7 +320,7 @@ const char* SpellEffectNames[TOTAL_SPELL_EFFECTS] = {
 	"UNKNOWN15",                 //    135
 	"UNKNOWN16",                 //    136
 	"UNKNOWN17",                 //    137
-	"UNKNOWN18",                 //    138
+	"KNOCKBACK2",                 //    138
 	"UNKNOWN19",                 //    139
 	"UNKNOWN20",                 //    140
 	"UNKNOWN21",                 //    141
@@ -2888,7 +2888,7 @@ void Spell::SpellEffectCreateItem(uint32 i) // Create item
 				sLog.outError( "DB Error: Item %u has unknown RandomPropId %u", m_itemProto->ItemId, m_itemProto->RandomPropId );
 			else
 			{
-				newItem->SetRandomProperty(iRandomProperty->ID);
+				newItem->SetItemRandomPropertyId(iRandomProperty->ID);
 				newItem->ApplyRandomProperties(false);
 			}
 		}
@@ -3244,6 +3244,20 @@ void Spell::SpellEffectSummon(uint32 i)
 			summon->AddSpell(dbcSpell.LookupEntry(58875), true); // Spirit walk
 			summon->AddSpell(dbcSpell.LookupEntry(58857), true); // Twin Howl
 			summon->AddSpell(dbcSpell.LookupEntry(58861), true); // Spirit Bash
+
+			//Second wolf
+			Pet *summon2 = objmgr.CreatePet(GetProto()->EffectMiscValue[i]);
+			LocationVector* lv = new LocationVector(p_caster->GetPositionX() - 2.0f, p_caster->GetPositionY() - 2.0f, p_caster->GetPositionZ());
+			summon2->CreateAsSummon(GetProto()->EffectMiscValue[i], ci, NULL, p_caster, GetProto(), 4, GetDuration(), lv, false);
+			delete lv;
+			summon2->GetAIInterface()->SetUnitToFollowAngle(float(-(M_PI/2)));
+			
+			//Spells
+			summon2->AddSpell(dbcSpell.LookupEntry(58877), true); // Spirit Hunt
+			summon2->AddSpell(dbcSpell.LookupEntry(58875), true); // Spirit walk
+			summon2->AddSpell(dbcSpell.LookupEntry(58857), true); // Twin Howl
+			summon2->AddSpell(dbcSpell.LookupEntry(58861), true); // Spirit Bash
+
 		}break;
 	case 27893: // Dancing Rune Weapon
 		{
@@ -3328,15 +3342,9 @@ void Spell::SpellEffectSummon(uint32 i)
 				pCreature->CastSpell(pCreature,50142,true);
 			}
 
-			if ( MiscValue == 31893 || MiscValue == 31894 || MiscValue == 31895 || MiscValue == 31896 || MiscValue == 31897 || MiscValue == 31883) //Light wells!
-			{
-				pCreature->CastSpell(pCreature, 59907, true);
-				sEventMgr.AddEvent(pCreature, &Creature::SafeDelete, EVENT_CREATURE_REMOVE_CORPSE, 180000, 1, 0);
-				break;
-			}
 			pCreature->PushToWorld(u_caster->GetMapMgr());
 
-			sEventMgr.AddEvent(pCreature, &Creature::SafeDelete, EVENT_CREATURE_REMOVE_CORPSE, GetDuration(), 1, 0);
+			sEventMgr.AddEvent(pCreature, &Creature::RemoveFromWorld, false, true, EVENT_CREATURE_REMOVE_CORPSE, GetDuration(), 1, EVENT_FLAG_DO_NOT_EXECUTE_IN_WORLD_CONTEXT);
 		}break;
 	}
 }
@@ -3378,13 +3386,13 @@ void Spell::SpellEffectLeap(uint32 i) // Leap
 
 		uint8 steps = 20; // higher precision, but more performance waste, radius =20.0f may each 1y will be checked.
 		float radius_steps = radius / steps;
-		uint8 i =0;
+		uint8 j = 0;
 
 		float _SharpCounter = 0.0f;
-		for ( i = 1; i < steps; i++ )
+		for ( j = 1; j < steps; j++ )
 		{
-			newposX = posX + ( float(i) * radius_steps * cosf( ori ) );
-			newposY = posY + ( float(i) * radius_steps * sinf( ori ) );
+			newposX = posX + ( j * radius_steps * cosf( ori ) );
+			newposY = posY + ( j * radius_steps * sinf( ori ) );
 			newposZ =  m_caster->GetMapMgr()->GetFirstZWithCPZ(newposX,newposY,posZ);
 
 			if ( newposZ != NO_WMO_HEIGHT ) flag |= _COLLIDED;
@@ -6561,7 +6569,21 @@ void Spell::SpellEffectSummonObjectSlot(uint32 i)
 
 	// spawn a new one
 	GoSummon = u_caster->GetMapMgr()->CreateGameObject(GetProto()->EffectMiscValue[i]);
-	if(! GoSummon->CreateFromProto(GetProto()->EffectMiscValue[i], m_caster->GetMapId(), m_caster->GetPositionX(), m_caster->GetPositionY(), m_caster->GetPositionZ(), m_caster->GetOrientation() ))
+	float x, y, z;
+	if( m_targets.m_targetMask & TARGET_FLAG_DEST_LOCATION )
+	{
+		x = m_targets.m_destX;
+		y = m_targets.m_destY;
+		z = m_targets.m_destZ;
+	}
+	else
+	{
+		x = m_caster->GetPositionX();
+		y = m_caster->GetPositionY();
+		z = m_caster->GetPositionZ();
+	}
+	
+	if( !GoSummon->CreateFromProto(GetProto()->EffectMiscValue[i], m_caster->GetMapId(), x, y, z, m_caster->GetOrientation() ))
 	{
 		delete GoSummon;
 		return;
@@ -6643,19 +6665,18 @@ void Spell::SpellEffectDestroyAllTotems(uint32 i)
 {
 	if(!p_caster || !p_caster->IsInWorld()) return;
 
-	float RetreivedMana = 0.0f;
-	for(uint32 x=0;x<4;x++)
+	uint32 RetreivedMana = 0;
+	for(uint32 x= 0;x<4;x++)
 	{
 		// atm totems are considered creatures
 		if(p_caster->m_TotemSlots[x])
 		{
-			uint32 SpellID = p_caster->m_TotemSlots[x]->GetUInt32Value(UNIT_CREATED_BY_SPELL);
-			SpellEntry * sp = dbcSpell.LookupEntry(SpellID);
+			uint32 SpellID = p_caster->m_TotemSlots[x]->GetCreatedBySpell();
+			SpellEntry * sp = dbcSpell.LookupEntryForced(SpellID);
 			if (!sp)
 				continue;
 
-			float pts = float(GetProto()->EffectBasePoints[i]+1) / 100.0f;
-			RetreivedMana += float(sp->manaCost) * pts;
+			RetreivedMana += sp->manaCost * (GetProto()->EffectBasePoints[i]+1) / 100;
 
 			p_caster->m_TotemSlots[x]->TotemExpire();
 		}
@@ -7027,7 +7048,7 @@ void Spell::SpellEffectPlayerPull( uint32 i )
 	Player* p_target = static_cast< Player* >( unitTarget );
 
 	// calculate destination
-	float pullD = p_target->CalcDistance( m_caster ) - p_target->GetFloatValue( UNIT_FIELD_BOUNDINGRADIUS ) - m_caster->GetFloatValue( UNIT_FIELD_BOUNDINGRADIUS ) - 1.0f;
+	float pullD = p_target->CalcDistance( m_caster ) - p_target->GetBoundingRadius() - (u_caster ? u_caster->GetBoundingRadius() : 0) - 1.0f;
 	float pullO = p_target->calcRadAngle( p_target->GetPositionX(), p_target->GetPositionY(), m_caster->GetPositionX(), m_caster->GetPositionY() );
 	float pullX = p_target->GetPositionX() + pullD * cosf( pullO );
 	float pullY = p_target->GetPositionY() + pullD * sinf( pullO );
@@ -7315,14 +7336,6 @@ void Spell::SpellEffectCreateItem2(uint32 i) // Create item
 	{
 		// provide player with item loot (clams)
 		// TODO: Finish this
-		/*if( !i_caster->loot )
-		{
-		i_caster->loot = new Loot;
-		lootmgr.FillItemLoot( i_caster->loot, i_caster->GetEntry() );
-		}
-		p_caster->SetLootGUID( i_caster->GetGUID() );
-		p_caster->SendLoot( i_caster->GetGUID(), LOOT_DISENCHANTING );
-		*/	
 	}
 }
 
@@ -7341,7 +7354,7 @@ void Spell::SpellEffectMilling(uint32 i)
 	if( !itemTarget->loot )
 	{
 		itemTarget->loot = new Loot;
-		lootmgr.FillMillingLoot( itemTarget->loot , itemTarget->GetEntry());
+		lootmgr.FillItemLoot( itemTarget->loot, itemTarget->GetEntry() );
 	}
 
 	if ( itemTarget->loot->items.size() > 0 )

@@ -62,6 +62,9 @@ class SpeedCheatDetector;
 #define TOTAL_RUNE_TYPES 4
 #define MAX_RUNE_VALUE 1
 
+#define TEAM_ALLIANCE 0
+#define TEAM_HORDE 1
+
 //====================================================================
 //  Inventory
 //  Holds the display id and item type id for objects in
@@ -270,7 +273,13 @@ enum RankTitles
 	PVPTITLE_RELENTLESS_GLADIATOR			= 134,
 	PVPTITLE_GRAND_CRUSADER					= 135,
 	PVPTITLE_THE_ARGENT_DEFENDER			= 136,
-	PVPTITLE_END							= 137,
+	PVPTITLE_THE_PATIENT                    = 137,
+	PVPTITLE_THE_LIGHT_OF_THE_DAWN          = 138,
+	PVPTITLE_BANE_OF_THE_FALLEN_KING        = 139,
+	PVPTITLE_THE_KINGSLAYER                 = 140,
+	PVPTITLE_OF_THE_ASHEN_VERDICT           = 141,
+	PVPTITLE_WRATHFUL_GLADIATOR             = 142,
+	PVPTITLE_END                            = 143
 };
 
 enum PvPAreaStatus
@@ -299,6 +308,16 @@ enum PlayerSpeedType
     FLY	            = 6,
 };
 
+/*
+Exalted	        1,000	 Access to racial mounts. Capped at 999.7
+Revered	        21,000	 Heroic mode keys for Outland dungeons
+Honored	        12,000	 10% discount from faction vendors
+Friendly	    6,000
+Neutral	        3,000
+Unfriendly	    3,000	 Cannot buy, sell or interact.
+Hostile	        3,000	 You will always be attacked on sight
+Hated	        36,000
+*/
 enum Standing
 {
     STANDING_HATED,
@@ -624,35 +643,13 @@ const float dodgeRatio[PLAYER_LEVEL_CAP][12] = {
 #endif
 };
 
-/*
-Exalted	        1,000	 Access to racial mounts. Capped at 999.7
-Revered	        21,000	 Heroic mode keys for Outland dungeons
-Honored	        12,000	 10% discount from faction vendors
-Friendly	    6,000
-Neutral	        3,000
-Unfriendly	    3,000	 Cannot buy, sell or interact.
-Hostile	        3,000	 You will always be attacked on sight
-Hated	        36,000
-*/
-enum FactionRating
-{
-	HATED,
-	HOSTILE,
-	UNFRIENDLY,
-	NEUTRAL,
-	FRIENDLY,
-	HONORED,
-	REVERED,
-	EXALTED
-};
-
 struct FactionReputation
 {
 	int32 standing;
 	uint8 flag;
 	int32 baseStanding;
-	WoWICE_INLINE int32 CalcStanding() { return standing - baseStanding; }
-	WoWICE_INLINE bool Positive() { return standing >= 0; }
+	 int32 CalcStanding() { return standing - baseStanding; }
+	 bool Positive() { return standing >= 0; }
 };
 
 typedef HM_NAMESPACE::hash_map<uint32, uint32> PlayerInstanceMap;
@@ -674,9 +671,6 @@ struct PlayerInfo
 	int8 subGroup;
 	Mutex savedInstanceIdsLock;
 	PlayerInstanceMap savedInstanceIds[NUM_INSTANCE_MODES];
-#ifdef VOICE_CHAT
-	int8 groupVoiceId;
-#endif
 
 	Player * m_loggedInPlayer;
 	Guild * guild;
@@ -687,9 +681,9 @@ struct PlayerPet
 {
 	string name;
 	uint32 entry;
-	string fields;
 	uint32 xp;
 	bool active;
+	bool alive;
 	char stablestate;
 	uint32 number;
 	uint32 level;
@@ -700,6 +694,11 @@ struct PlayerPet
 	uint32 reset_cost;
 	uint32 spellid;
     uint32 petstate;
+	uint32 talentpoints;
+	uint32 current_power;
+	uint32 current_hp;
+	uint32 current_happiness;
+	uint32 renamable;
 };
 enum MeetingStoneQueueStatus
 {
@@ -801,7 +800,7 @@ enum DUEL_WINNER
 	DUEL_WINNER_RETREAT,
 };
 #define PLAYER_ATTACK_TIMEOUT_INTERVAL	5000
-#define PLAYER_FORCED_RESURECT_INTERVAL	360000 // 1000*60*6= 6 minutes
+#define PLAYER_FORCED_RESURRECT_INTERVAL	360000 // 1000*60*6= 6 minutes
 
 struct PlayerSkill
 {
@@ -873,7 +872,7 @@ struct PlayerSpec
 {
 	std::map<uint32, uint8> talents;	// map of <talentId, talentRank>
 	uint16 glyphs[GLYPHS_COUNT];
-	ActionButton mActions[PLAYER_ACTION_BUTTON_SIZE];
+	ActionButton mActions[PLAYER_ACTION_BUTTON_COUNT];
 	uint32 m_customTalentPointOverride;
 
 	uint32 GetFreePoints(Player * Pl);
@@ -913,8 +912,6 @@ public:
 
 	Player ( uint32 guid );
 	~Player ( );
-
-	bool IsPlayer() { return true; }
 
 	void EventGroupFullUpdate();
 
@@ -975,7 +972,7 @@ protected:
 
 /***********************************************************************************
 	AFTER THIS POINT, public and private ARE PASSED AROUND LIKE A CHEAP WH*RE :P
-	Let's keeps thing clean (use encapsulation) above this like. Thanks.
+	Let's keeps thing clean (use encapsulation) above this line. Thanks.
 ***********************************************************************************/
 
 public:
@@ -996,18 +993,6 @@ protected:
 
 public:
     void RemoveItemByGuid( uint64 GUID );
-	float m_MasterShapeshift;
-	int32 pandemicDamagePerc;
-	int8 improvedFearVal;
-	uint8 deathEmrDrain;
-	uint8 deathEmrShadow;
-	uint8 improvedSoulLeech;
-	int8 conflagrCritCoef;
-	int8 immolateBonus;	
-	int8 felSynergyChance;
-	int8 felSynergyPctBonus;
-	uint32 demonicEmpathySpell;
-	uint32 activePotionSpid;
 
 	//! Okay to remove from world
 	bool ok_to_remove;
@@ -1020,6 +1005,12 @@ public:
 	void SendDungeonDifficulty();
 	void SendRaidDifficulty();
 	void SendExploreXP( uint32 areaid, uint32 xp );
+	void SendDestroyObject( uint64 GUID );
+
+    void OutPacket( uint16 opcode, uint16 len, const void *data );
+    void SendPacket( WorldPacket *packet );
+    void SendMessageToSet(WorldPacket *data, bool self, bool myteam_only = false );
+    void OutPacketToSet(uint16 Opcode, uint16 Len, const void * Data, bool self );
 
 	void AddToWorld();
 	void AddToWorld(MapMgr * pMapMgr);
@@ -1027,12 +1018,11 @@ public:
 	bool Create ( WorldPacket &data );
 
 	void Update( uint32 time );
-	void BuildEnumData( WorldPacket * p_data );
     void BuildFlagUpdateForNonGroupSet(uint32 index, uint32 flag);
 	std::string m_afk_reason;
 	void SetAFKReason(std::string reason) { m_afk_reason = reason; };
-	WoWICE_INLINE const char* GetName() { return m_name.c_str(); }
-	WoWICE_INLINE std::string* GetNameString() { return &m_name; }
+	 const char* GetName() { return m_name.c_str(); }
+	 std::string* GetNameString() { return &m_name; }
 	void Die();
 	//void KilledMonster(uint32 entry, const uint64 &guid);
 	void GiveXP(uint32 xp, const uint64 &guid, bool allowbonus);   // to stop rest xp being given
@@ -1045,8 +1035,8 @@ public:
     /************************************************************************/
     /* Taxi                                                                 */
     /************************************************************************/
-    WoWICE_INLINE TaxiPath*    GetTaxiPath() { return m_CurrentTaxiPath; }
-    WoWICE_INLINE bool         GetTaxiState() { return m_onTaxi; }
+     TaxiPath*    GetTaxiPath() { return m_CurrentTaxiPath; }
+     bool         GetTaxiState() { return m_onTaxi; }
     const uint32&       GetTaximask( uint8 index ) const { return m_taximask[index]; }
     void                LoadTaxiMask(const char* data);
     void                TaxiStart(TaxiPath* path, uint32 modelid, uint32 start_node);
@@ -1054,11 +1044,11 @@ public:
     void                EventDismount(uint32 money, float x, float y, float z);
     void                EventTaxiInterpolate();
 
-    WoWICE_INLINE void         SetTaxiState    (bool state) { m_onTaxi = state; }
-    WoWICE_INLINE void         SetTaximask     (uint8 index, uint32 value ) { m_taximask[index] = value; }
-    WoWICE_INLINE void         SetTaxiPath     (TaxiPath *path) { m_CurrentTaxiPath = path; }
-    WoWICE_INLINE void         SetTaxiPos()	{m_taxi_pos_x = m_position.x; m_taxi_pos_y = m_position.y; m_taxi_pos_z = m_position.z;}
-    WoWICE_INLINE void         UnSetTaxiPos()	{m_taxi_pos_x = 0; m_taxi_pos_y = 0; m_taxi_pos_z = 0; }
+     void         SetTaxiState    (bool state) { m_onTaxi = state; }
+     void         SetTaximask     (uint8 index, uint32 value ) { m_taximask[index] = value; }
+     void         SetTaxiPath     (TaxiPath *path) { m_CurrentTaxiPath = path; }
+     void         SetTaxiPos()	{m_taxi_pos_x = m_position.x; m_taxi_pos_y = m_position.y; m_taxi_pos_z = m_position.z;}
+     void         UnSetTaxiPos()	{m_taxi_pos_x = 0; m_taxi_pos_y = 0; m_taxi_pos_z = 0; }
 
 	// Taxi related variables
 	vector<TaxiPath*>   m_taxiPaths;
@@ -1088,15 +1078,15 @@ public:
 
 	int32                GetOpenQuestSlot();
 	QuestLogEntry*       GetQuestLogForEntry(uint32 quest);
-	WoWICE_INLINE QuestLogEntry*GetQuestLogInSlot(uint32 slot)  { return m_questlog[slot]; }
-    WoWICE_INLINE uint32        GetQuestSharer()                { return m_questSharer; }
+	 QuestLogEntry*GetQuestLogInSlot(uint32 slot)  { return m_questlog[slot]; }
+     uint32        GetQuestSharer()                { return m_questSharer; }
 
-    WoWICE_INLINE void         SetQuestSharer(uint32 guid)     { m_questSharer = guid; }
+     void         SetQuestSharer(uint32 guid)     { m_questSharer = guid; }
     void                SetQuestLogSlot(QuestLogEntry *entry, uint32 slot);
 
-    WoWICE_INLINE void         PushToRemovedQuests(uint32 questid)	{ m_removequests.insert(questid);}
-	WoWICE_INLINE void			PushToFinishedDailies(uint32 questid) { DailyMutex.Acquire(); m_finishedDailies.insert(questid); DailyMutex.Release();}
-	WoWICE_INLINE bool		HasFinishedDaily(uint32 questid) { return (m_finishedDailies.find(questid) == m_finishedDailies.end() ? false : true); }
+     void         PushToRemovedQuests(uint32 questid)	{ m_removequests.insert(questid);}
+	 void			PushToFinishedDailies(uint32 questid) { DailyMutex.Acquire(); m_finishedDailies.insert(questid); DailyMutex.Release();}
+	 bool		HasFinishedDaily(uint32 questid) { return (m_finishedDailies.find(questid) == m_finishedDailies.end() ? false : true); }
     void                AddToFinishedQuests(uint32 quest_id);
     void                EventTimedQuestExpire(Quest *qst, QuestLogEntry *qle, uint32 log_slot);
 	void				AreaExploredOrEventHappens( uint32 questId ); // scriptdev2
@@ -1112,10 +1102,7 @@ public:
 	void                RemoveQuestMob(uint32 entry);
 
     //Quest related variables
-	uint32 m_questbarrier1[25];
     QuestLogEntry*      m_questlog[25];
-	uint32 m_questbarrier2[25];
-    std::set<uint32>    m_QuestGOInProgress;
     std::set<uint32>    m_removequests;
     std::set<uint32>    m_finishedQuests;
 	Mutex				DailyMutex;
@@ -1126,12 +1113,14 @@ public:
 	std::set<uint32>    quest_mobs;
 
     void EventPortToGM(Player *p);
-	WoWICE_INLINE uint32 GetTeam() { return m_team; }
-	WoWICE_INLINE uint32 GetTeamInitial() { return myRace->team_id==7 ? 0 : 1; }
-	WoWICE_INLINE void SetTeam(uint32 t) { m_team = t; m_bgTeam=t; }
-	WoWICE_INLINE void ResetTeam() { m_team = myRace->team_id==7 ? 0 : 1; m_bgTeam=m_team; }
+	 uint32 GetTeam() { return m_team; }
+	 uint32 GetTeamInitial() { return myRace->team_id==7 ? TEAM_ALLIANCE : TEAM_HORDE; }
+	 void SetTeam(uint32 t) { m_team = t; m_bgTeam=t; }
+	 void ResetTeam() { m_team = myRace->team_id==7 ? TEAM_ALLIANCE : TEAM_HORDE; m_bgTeam=m_team; }
+	 bool IsTeamHorde() { return m_team == TEAM_HORDE; }
+	 bool IsTeamAlliance() { return m_team == TEAM_ALLIANCE; }
 
-	WoWICE_INLINE bool IsInFeralForm()
+	 bool IsInFeralForm()
 	{
 		int s = GetShapeShift();
 		if( s <= 0 )
@@ -1142,7 +1131,9 @@ public:
 		//Shady: actually ghostwolf form doesn't use weapon too.
 	}
 	void CalcDamage();
-	uint32 GetMainMeleeDamage(uint32 AP_owerride); //i need this for windfury
+	uint32 GetMainMeleeDamage(uint32 AP_owerride); // I need this for windfury
+	uint32 GetFlametongueDMG(uint32 spellid); // For flametongue
+    uint32 GetMaxLevel(){ return GetUInt32Value(PLAYER_FIELD_MAX_LEVEL); }
 
     const uint64& GetSelection( ) const { return m_curSelection; }
 	const uint64& GetTarget( ) const { return m_curTarget; }
@@ -1162,6 +1153,7 @@ public:
 	void removeSpellByHashName(uint32 hash);
 	bool removeSpell(uint32 SpellID, bool MoveToDeleted, bool SupercededSpell, uint32 SupercededSpellID);
 	bool removeDeletedSpell( uint32 SpellID );
+	void SendPreventSchoolCast(uint32 SpellSchool, uint32 unTimeMs);
 
     // PLEASE DO NOT INLINE!
     void AddOnStrikeSpell(SpellEntry* sp, uint32 delay)
@@ -1205,7 +1197,6 @@ public:
     /************************************************************************/
 	void                setAction(uint8 button, uint16 action, uint8 type, uint8 misc);
 	void                SendInitialActions();
-    bool                m_actionsDirty;
 
     /************************************************************************/
     /* Reputation                                                           */
@@ -1238,17 +1229,17 @@ public:
     /************************************************************************/
     /* PVP                                                                  */
     /************************************************************************/
-	WoWICE_INLINE uint8 GetPVPRank()
+	 uint8 GetPVPRank()
 	{
 		return (uint8)((GetUInt32Value(PLAYER_BYTES_3) >> 24) & 0xFF);
 	}
-	WoWICE_INLINE void SetPVPRank(int newrank)
+	 void SetPVPRank(int newrank)
 	{
 		SetUInt32Value(PLAYER_BYTES_3, ((GetUInt32Value(PLAYER_BYTES_3) & 0x00FFFFFF) | (uint8(newrank) << 24)));
 	}
 	uint32 GetMaxPersonalRating();
 
-	WoWICE_INLINE bool HasTitle( RankTitles title )
+	 bool HasTitle( RankTitles title )
 	{
 		return ( GetUInt64Value( PLAYER__FIELD_KNOWN_TITLES + ( ( title >> 6 ) << 1 )  ) & ( uint64(1) << ( title % 64 ) ) ) != 0;
 	}
@@ -1259,8 +1250,8 @@ public:
     /* Groups                                                               */
     /************************************************************************/
 	void                SetInviter(uint32 pInviter) { m_GroupInviter = pInviter; }
-	WoWICE_INLINE uint32       GetInviter() { return m_GroupInviter; }
-	WoWICE_INLINE bool         InGroup() { return (m_playerInfo->m_Group != NULL && !m_GroupInviter); }
+	uint32       GetInviter() { return m_GroupInviter; }
+	bool         InGroup() { return (m_playerInfo->m_Group != NULL && !m_GroupInviter); }
 	bool                IsGroupLeader()
 	{
 		if(m_playerInfo->m_Group != NULL)
@@ -1270,11 +1261,11 @@ public:
 		}
 		return false;
 	}
-	WoWICE_INLINE int          HasBeenInvited() { return m_GroupInviter != 0; }
-	WoWICE_INLINE Group*       GetGroup() { return m_playerInfo ? m_playerInfo->m_Group : NULL; }
-	WoWICE_INLINE int8		   GetSubGroup() { return m_playerInfo->subGroup; }
+	 int          HasBeenInvited() { return m_GroupInviter != 0; }
+	 Group*       GetGroup() { return m_playerInfo ? m_playerInfo->m_Group : NULL; }
+	 int8		   GetSubGroup() { return m_playerInfo->subGroup; }
     bool                IsGroupMember(Player *plyr);
-	WoWICE_INLINE bool         IsBanned()
+	 bool         IsBanned()
 	{
 		if(m_banned)
 		{
@@ -1283,26 +1274,26 @@ public:
 		}
 		return false;
 	}
-    WoWICE_INLINE void         SetBanned() { m_banned = 4;}
-	WoWICE_INLINE void         SetBanned(string Reason) { m_banned = 4; m_banreason = Reason;}
-	WoWICE_INLINE void         SetBanned(uint32 timestamp, string& Reason) { m_banned = timestamp; m_banreason = Reason; }
-	WoWICE_INLINE void         UnSetBanned() { m_banned = 0; }
-	WoWICE_INLINE string       GetBanReason() {return m_banreason;}
+     void         SetBanned() { m_banned = 4;}
+	 void         SetBanned(string Reason) { m_banned = 4; m_banreason = Reason;}
+	 void         SetBanned(uint32 timestamp, string& Reason) { m_banned = timestamp; m_banreason = Reason; }
+	 void         UnSetBanned() { m_banned = 0; }
+	 string       GetBanReason() {return m_banreason;}
 
     /************************************************************************/
     /* Guilds                                                               */
     /************************************************************************/
-	WoWICE_INLINE Guild *		GetGuild() { return m_playerInfo->guild; }
-	WoWICE_INLINE bool			IsInGuild() {return (m_uint32Values[PLAYER_GUILDID] != 0) ? true : false;}
-	WoWICE_INLINE uint32		GetGuildId() { return m_uint32Values[PLAYER_GUILDID]; }
+	 Guild *		GetGuild() { return m_playerInfo->guild; }
+	 bool			IsInGuild() {return (m_uint32Values[PLAYER_GUILDID] != 0) ? true : false;}
+	 uint32		GetGuildId() { return m_uint32Values[PLAYER_GUILDID]; }
 	void						SetGuildId(uint32 guildId);
-	WoWICE_INLINE uint32		GetGuildRank() { return m_uint32Values[PLAYER_GUILDRANK]; }
-	WoWICE_INLINE GuildRank*	GetGuildRankS() { return m_playerInfo->guildRank; }
+	 uint32		GetGuildRank() { return m_uint32Values[PLAYER_GUILDRANK]; }
+	 GuildRank*	GetGuildRankS() { return m_playerInfo->guildRank; }
 	void						SetGuildRank(uint32 guildRank);
 	uint32						GetGuildInvitersGuid() { return m_invitersGuid; }
 	void						SetGuildInvitersGuid( uint32 guid ) { m_invitersGuid = guid; }
 	void						UnSetGuildInvitersGuid() { m_invitersGuid = 0; }
-	WoWICE_INLINE GuildMember * GetGuildMember() { return m_playerInfo->guildMember; }
+	 GuildMember * GetGuildMember() { return m_playerInfo->guildMember; }
 
     /************************************************************************/
     /* Duel                                                                 */
@@ -1312,11 +1303,15 @@ public:
 	void                EndDuel(uint8 WinCondition);
 	void                DuelCountdown();
 	void                SetDuelStatus(uint8 status) { m_duelStatus = status; }
-	WoWICE_INLINE uint8        GetDuelStatus() { return m_duelStatus; }
+	 uint8        GetDuelStatus() { return m_duelStatus; }
 	void                SetDuelState(uint8 state) { m_duelState = state; }
-	WoWICE_INLINE uint8        GetDuelState() { return m_duelState; }
+	 uint8        GetDuelState() { return m_duelState; }
     // duel variables
     Player*             DuelingWith;
+	void				SetDuelArbiter( uint64 guid ) { SetUInt64Value(PLAYER_DUEL_ARBITER, guid); }
+	uint64				GetDuelArbiter() { return GetUInt64Value(PLAYER_DUEL_ARBITER); }
+	void				SetDuelTeam( uint32 team ) { SetUInt32Value(PLAYER_DUEL_TEAM, team); }
+	uint32				GetDuelTeam() { return GetUInt32Value(PLAYER_DUEL_TEAM); }
 
     /************************************************************************/
     /* Trade                                                                */
@@ -1334,12 +1329,30 @@ public:
     /************************************************************************/
     /* Pets                                                                 */
     /************************************************************************/
-	WoWICE_INLINE void			SetSummon(Pet *pet) { m_Summon = pet; }
-	WoWICE_INLINE Pet*			GetSummon(void) { return m_Summon; }
+	void			AddSummon(Pet *pet) { m_Summons.push_front(pet); }
+	Pet*			GetSummon(void) //returns 1st summon
+	{ 
+		if( !m_Summons.empty() )
+			return m_Summons.front();
+		else
+			return NULL;
+	}
+	std::list<Pet*> GetSummons(void) { return m_Summons; }
+	void			RemoveSummon(Pet *pet)
+	{ 
+		for(std::list<Pet*>::iterator itr = m_Summons.begin(); itr != m_Summons.end(); ++itr)
+		{
+			if( *itr == pet )
+			{
+				m_Summons.erase(itr);
+				break;
+			}
+		}
+	}
 	uint32						GeneratePetNumber(void);
 	void						RemovePlayerPet(uint32 pet_number);
-	WoWICE_INLINE void			AddPlayerPet(PlayerPet* pet, uint32 index) { m_Pets[index] = pet; }
-	WoWICE_INLINE PlayerPet*	GetPlayerPet(uint32 idx)
+	 void			AddPlayerPet(PlayerPet* pet, uint32 index) { m_Pets[index] = pet; }
+	 PlayerPet*	GetPlayerPet(uint32 idx)
 	{
 		std::map<uint32, PlayerPet*>::iterator itr = m_Pets.find(idx);
 		if(itr != m_Pets.end()) return itr->second;
@@ -1348,10 +1361,10 @@ public:
 	}
 	void						SpawnPet(uint32 pet_number);
 	void						SpawnActivePet();
-	void						DismissActivePet();
-	WoWICE_INLINE uint8         GetPetCount(void) { return (uint8)m_Pets.size(); }
-	WoWICE_INLINE void			SetStableSlotCount(uint8 count) { m_StableSlotCount = count; }
-	WoWICE_INLINE uint8			GetStableSlotCount(void) { return m_StableSlotCount; }
+	void						DismissActivePets();
+	 uint8         GetPetCount(void) { return (uint8)m_Pets.size(); }
+	 void			SetStableSlotCount(uint8 count) { m_StableSlotCount = count; }
+	 uint8			GetStableSlotCount(void) { return m_StableSlotCount; }
 	uint32						GetUnstabledPetNumber(void)
 	{
 		if(m_Pets.size() == 0) return 0;
@@ -1368,18 +1381,22 @@ public:
     /************************************************************************/
     /* Item Interface                                                       */
     /************************************************************************/
-	WoWICE_INLINE ItemInterface* GetItemInterface() { return m_ItemInterface; } // Player Inventory Item storage
-	WoWICE_INLINE void			ApplyItemMods(Item *item, int16 slot, bool apply,bool justdrokedown=false) {  _ApplyItemMods(item, slot, apply,justdrokedown); }
-	WoWICE_INLINE bool			HasItemCount( uint32 item, uint32 count, bool inBankAlso = false ) const;
+	 ItemInterface* GetItemInterface() { return m_ItemInterface; } // Player Inventory Item storage
+	 void			ApplyItemMods(Item *item, int16 slot, bool apply,bool justdrokedown=false) {  _ApplyItemMods(item, slot, apply,justdrokedown); }
+	 bool			HasItemCount( uint32 item, uint32 count, bool inBankAlso = false ) const;
     // item interface variables
     ItemInterface *     m_ItemInterface;
+	int32 GetVisibleBase( int16 slot ) { return (PLAYER_VISIBLE_ITEM_1_ENTRYID + (slot * PLAYER_VISIBLE_ITEM_LENGTH)); }
 
     /************************************************************************/
     /* Loot                                                                 */
     /************************************************************************/
-	WoWICE_INLINE const uint64& GetLootGUID() const { return m_lootGuid; }
-	WoWICE_INLINE void         SetLootGUID(const uint64 &guid) { m_lootGuid = guid; }
-	void                SendLoot(uint64 guid,uint8 loot_type);
+	const uint64& GetLootGUID() const { return m_lootGuid; }
+	void SetLootGUID(const uint64 &guid) { m_lootGuid = guid; }
+	void SendLoot(uint64 guid,uint8 loot_type, uint32 mapid);
+	void SendLootUpdate( Object *o );
+	void TagUnit( Object *o );
+	void SendPartyKillLog( uint64 GUID );
     // loot variables
     uint64              m_lootGuid;
     uint64              m_currentLoot;
@@ -1388,7 +1405,7 @@ public:
     /************************************************************************/
     /* World Session                                                        */
     /************************************************************************/
-	WoWICE_INLINE WorldSession* GetSession() const { return m_session; }
+	 WorldSession* GetSession() const { return m_session; }
 	void SetSession(WorldSession *s) { m_session = s; }
 	void SetBindPoint(float x, float y, float z, uint32 m, uint32 v) { m_bind_pos_x = x; m_bind_pos_y = y; m_bind_pos_z = z; m_bind_mapid = m; m_bind_zoneid = v;}
 	void SendDelayedPacket(WorldPacket *data, bool bDeleteOnSend)
@@ -1403,15 +1420,13 @@ public:
 
 	// Talents
 	// These functions build a specific type of A9 packet
-	uint32 __fastcall BuildCreateUpdateBlockForPlayer( ByteBuffer *data, Player *target );
+	uint32  BuildCreateUpdateBlockForPlayer( ByteBuffer *data, Player *target );
 	void DestroyForPlayer( Player *target ) const;
 	void SetTalentHearthOfWildPCT(int value){hearth_of_wild_pct=value;}
 	void EventTalentHearthOfWildChange(bool apply);
 	void GiveTalent(uint32 numtalents);
 
 	std::list<LoginAura> loginauras;
-
-    std::set<uint32> OnMeleeAuras;
 
     /************************************************************************/
     /* Player loading and savings                                           */
@@ -1479,11 +1494,9 @@ public:
 	void EventAttackStop();
 	void EventAttackUpdateSpeed() { }
 	void EventDeath();
-	void EventPotionCooldown();
 	//Note:ModSkillLine -> value+=amt;ModSkillMax -->value=amt; --weird
 	float GetSkillUpChance(uint32 id);
-	//WoWICE_INLINE std::list<struct skilllines>getSkillLines() { return m_skilllines; }
-	float SpellCrtiticalStrikeRatingBonus;
+	// std::list<struct skilllines>getSkillLines() { return m_skilllines; }
 	float SpellHasteRatingBonus;
 	void ModAttackSpeed( int32 mod, ModType type );
 	void UpdateAttackSpeed();
@@ -1493,35 +1506,34 @@ public:
 	float GetParryChance();
 	void UpdateChances();
 	void UpdateStats();
-	void UpdateHit(int32 hit);
 
 	bool canCast(SpellEntry *m_spellInfo);
-	WoWICE_INLINE float GetSpellCritFromSpell() { return m_spellcritfromspell; }
-	WoWICE_INLINE float GetHitFromSpell() { return m_hitfromspell; }
+	 float GetSpellCritFromSpell() { return m_spellcritfromspell; }
+	 float GetHitFromSpell() { return m_hitfromspell; }
 	void SetSpellCritFromSpell(float value) { m_spellcritfromspell = value; }
 	void SetHitFromSpell(float value) { m_hitfromspell = value; }
-	WoWICE_INLINE uint32 GetHealthFromSpell() { return m_healthfromspell; }
-	WoWICE_INLINE uint32 GetManaFromSpell() { return m_manafromspell; }
+	 uint32 GetHealthFromSpell() { return m_healthfromspell; }
+	 uint32 GetManaFromSpell() { return m_manafromspell; }
 	void SetHealthFromSpell(uint32 value) { m_healthfromspell = value;}
 	void SetManaFromSpell(uint32 value) { m_manafromspell = value;}
 	uint32 CalcTalentResetCost(uint32 resetnum);
 	void SendTalentResetConfirm();
 	void SendPetUntrainConfirm();
 	uint32 GetTalentResetTimes() { return m_talentresettimes; }
-	WoWICE_INLINE void SetTalentResetTimes(uint32 value) { m_talentresettimes = value; }
+	 void SetTalentResetTimes(uint32 value) { m_talentresettimes = value; }
 	void SetPlayerStatus(uint8 pStatus) { m_status = pStatus; }
-	WoWICE_INLINE uint8 GetPlayerStatus() { return m_status; }
+	 uint8 GetPlayerStatus() { return m_status; }
 	const float& GetBindPositionX( ) const { return m_bind_pos_x; }
 	const float& GetBindPositionY( ) const { return m_bind_pos_y; }
 	const float& GetBindPositionZ( ) const { return m_bind_pos_z; }
 	const uint32& GetBindMapId( ) const { return m_bind_mapid; }
 	const uint32& GetBindZoneId( ) const { return m_bind_zoneid; }
-	WoWICE_INLINE uint8 GetShapeShift()
+	 uint8 GetShapeShift()
 	{
 		return GetByte(UNIT_FIELD_BYTES_2,3);
 	}
 
-	WoWICE_INLINE uint32 GetShapeShiftMask()
+	 uint32 GetShapeShiftMask()
 	{
 		return ( (uint32)1 << (GetShapeShift() - 1) );
 	}
@@ -1561,7 +1573,6 @@ public:
 	void CleanupGossipMenu();
 	void Gossip_Complete();
 	int m_lifetapbonus;
-	uint32 m_lastShotTime;
 	bool m_requiresNoAmmo;
 
 	// scriptdev2
@@ -1575,36 +1586,17 @@ public:
 	bool m_bUnlimitedBreath;
 	uint32 m_UnderwaterTime;
 	uint32 m_UnderwaterState;
-	uint32 m_SwimmingTime;
-	uint32 m_BreathDamageTimer;
 	// Visible objects
 	bool CanSee(Object* obj);
-	WoWICE_INLINE bool IsVisible(Object* pObj) { return !(m_visibleObjects.find(pObj) == m_visibleObjects.end()); }
+	 bool IsVisible( uint64 pObj ) { return !(m_visibleObjects.find(pObj) == m_visibleObjects.end()); }
 	void AddInRangeObject(Object* pObj);
 	void OnRemoveInRangeObject(Object* pObj);
 	void ClearInRangeSet();
-	WoWICE_INLINE void AddVisibleObject(Object* pObj) { m_visibleObjects.insert(pObj); }
-	WoWICE_INLINE void RemoveVisibleObject(Object* pObj) { m_visibleObjects.erase(pObj); }
-	WoWICE_INLINE void RemoveVisibleObject(InRangeSet::iterator itr) { m_visibleObjects.erase(itr); }
-	WoWICE_INLINE InRangeSet::iterator FindVisible(Object * obj) { return m_visibleObjects.find(obj); }
-	WoWICE_INLINE void RemoveIfVisible(Object * obj)
-	{
-		InRangeSet::iterator itr = m_visibleObjects.find(obj);
-		if(itr == m_visibleObjects.end())
-			return;
-
-		m_visibleObjects.erase(obj);
-		PushOutOfRange(obj->GetNewGUID());
-	}
-
-	WoWICE_INLINE bool GetVisibility(Object * obj, InRangeSet::iterator *itr)
-	{
-		*itr = m_visibleObjects.find(obj);
-		return ((*itr) != m_visibleObjects.end());
-	}
-
-	WoWICE_INLINE InRangeSet::iterator GetVisibleSetBegin() { return m_visibleObjects.begin(); }
-	WoWICE_INLINE InRangeSet::iterator GetVisibleSetEnd() { return m_visibleObjects.end(); }
+	 void AddVisibleObject( uint64 pObj ) { m_visibleObjects.insert(pObj); }
+	 void RemoveVisibleObject( uint64 pObj ) { m_visibleObjects.erase(pObj); }
+	 void RemoveVisibleObject( std::set< uint64 >::iterator itr) { m_visibleObjects.erase(itr); }
+	 std::set< uint64 >::iterator FindVisible( uint64 obj ) { return m_visibleObjects.find(obj); }	 
+	 void RemoveIfVisible( uint64 obj );
 
 	//Transporters
 	bool m_lockTransportVariables;
@@ -1624,7 +1616,6 @@ public:
 	void SendInitialLogonPackets();
 	void Reset_Spells();
 	void Reset_Talents();
-	void Reset_ToLevel1();
 	// Battlegrounds xD
 	CBattleground * m_bg;
 	CBattleground * m_pendingBattleground;
@@ -1652,39 +1643,26 @@ public:
 	void UpdateNearbyGameObjects();
 
 	void CalcResistance(uint32 type);
-	WoWICE_INLINE float res_M_crit_get(){return m_resist_critical[0];}
-	WoWICE_INLINE void res_M_crit_set(float newvalue){m_resist_critical[0]=newvalue;}
-	WoWICE_INLINE float res_R_crit_get(){return m_resist_critical[1];}
-	WoWICE_INLINE void res_R_crit_set(float newvalue){m_resist_critical[1]=newvalue;}
+	 float res_M_crit_get(){return m_resist_critical[0];}
+	 void res_M_crit_set(float newvalue){m_resist_critical[0]=newvalue;}
+	 float res_R_crit_get(){return m_resist_critical[1];}
+	 void res_R_crit_set(float newvalue){m_resist_critical[1]=newvalue;}
 	uint32 FlatResistanceModifierPos[7];
 	uint32 FlatResistanceModifierNeg[7];
 	uint32 BaseResistanceModPctPos[7];
 	uint32 BaseResistanceModPctNeg[7];
 	uint32 ResistanceModPctPos[7];
 	uint32 ResistanceModPctNeg[7];
-	uint32 m_ExpertiseMod;
 	float m_resist_critical[2];//when we are a victim we can have talents to decrease chance for critical hit. This is a negative value and it's added to critchances
 	float m_resist_hit[2];			// 0 = melee; 1= ranged;
 	int32 m_resist_hit_spell[7];	// spell resist per school
 	float m_attack_speed[3];
-	float SpellDmgDoneByAttribute[5][7];
 	float SpellHealDoneByAttribute[5][7];
 	uint32 m_modphyscritdmgPCT;
 	uint32 m_RootedCritChanceBonus; // Class Script Override: Shatter
 	uint32 m_IncreaseDmgSnaredSlowed;
-	uint32 m_MoltenFuryDmgBonus;    // http://www.wowhead.com/?spell=31680
-	uint32 ShatteredBarrierMod;		// For Shattered Barrier http://www.wowhead.com/?spell=54787
-	uint32 FieryPaybackModHP35;		// for Fiery Payback
-	uint32 TormentTheWeakDmgBns;
-	uint32 ArcanePotencyMod;
-	uint64 LivingBmbTgt;
-	uint32 JungleKingMod;
-	int32 FittestSurvivalMod;
-	uint8  StunDamageReductPct;		// For Primal Tenacity  DK Talent
-	bool isGuardianSpirit;
+	//uint32 FieryPaybackModHP35;		// for Fiery Payback
  
-	//megai2: incr type, incr idx, src type, src idx, pct, real amt
-	int32 ModStatByAttr[5][7][5][7][2];
 	void ApplyStatByAttrMod(uint8 dstType, uint8 dstIdx, uint8 srcType, uint8 srcIdx);
 
 	uint32 m_ModInterrMRegenPCT;
@@ -1710,7 +1688,7 @@ public:
 		uint32 mRatingToPoint[37]; //block, skill.. cant be decimal values
 	};
 */
-	WoWICE_INLINE uint32* GetPlayedtime() { return m_playedtime; };
+	 uint32* GetPlayedtime() { return m_playedtime; };
 	void CalcStat(uint32 t);
 	float CalcRating(uint32 t);
 	void RegenerateMana(bool is_interrupted);
@@ -1722,15 +1700,15 @@ public:
 	uint32 SoulStoneReceiver;
 	void removeSoulStone();
 
-    WoWICE_INLINE uint32 GetSoulStoneReceiver(){return SoulStoneReceiver;}
-    WoWICE_INLINE void SetSoulStoneReceiver(uint32 StoneGUID){SoulStoneReceiver = StoneGUID;}
-    WoWICE_INLINE uint32 GetSoulStone(){return SoulStone;}
-    WoWICE_INLINE void SetSoulStone(uint32 StoneID){SoulStone = StoneID;}
+     uint32 GetSoulStoneReceiver(){return SoulStoneReceiver;}
+     void SetSoulStoneReceiver(uint32 StoneGUID){SoulStoneReceiver = StoneGUID;}
+     uint32 GetSoulStone(){return SoulStone;}
+     void SetSoulStone(uint32 StoneID){SoulStone = StoneID;}
 
 	uint64 misdirectionTarget;
 
-	WoWICE_INLINE uint64 GetMisdirectionTarget(){return misdirectionTarget;}
-	WoWICE_INLINE void SetMisdirectionTarget(uint64 PlayerGUID){misdirectionTarget = PlayerGUID;}
+	 uint64 GetMisdirectionTarget(){return misdirectionTarget;}
+	 void SetMisdirectionTarget(uint64 PlayerGUID){misdirectionTarget = PlayerGUID;}
 
 	bool bReincarnation;
 	bool removeReagentCost;
@@ -1746,7 +1724,6 @@ public:
 	uint8 cannibalizeCount;
 	int32 rageFromDamageDealt;
 	int32 rageFromDamageTaken;
-	int32 runicpowerFromDamageTaken;
 	// GameObject commands
 	inline GameObject* GetSelectedGo()
 	{
@@ -1765,7 +1742,7 @@ public:
 	uint32 m_ShapeShifted;
 	uint32 m_MountSpellId;
 
-	WoWICE_INLINE bool IsMounted() {return (m_MountSpellId!=0 ? true : false); }
+	 bool IsMounted() {return (m_MountSpellId!= 0 ? true : false); }
 
 	void SendMountResult(uint32 result)
 	{
@@ -1794,11 +1771,12 @@ public:
 
 	Object * GetSummonedObject () {return m_SummonedObject;};
 	void SetSummonedObject (Object * t_SummonedObject) {m_SummonedObject = t_SummonedObject;};
-	uint32 roll;
 
 	void ClearCooldownsOnLine(uint32 skill_line, uint32 called_from);
 	void ResetAllCooldowns();
 	void ClearCooldownForSpell(uint32 spell_id);
+
+	void Phase(uint8 command=PHASE_SET, uint32 newphase=1);
 
 	bool bProcessPending;
 	Mutex _bufferS;
@@ -1806,7 +1784,7 @@ public:
     void PushCreationData(ByteBuffer *data, uint32 updatecount);
 	void PushOutOfRange(const WoWGuid & guid);
 	void ProcessPendingUpdates();
-	bool __fastcall CompressAndSendUpdateBuffer(uint32 size, const uint8* update_buffer);
+	bool  CompressAndSendUpdateBuffer(uint32 size, const uint8* update_buffer);
 	void ClearAllPendingUpdates();
 
 	uint32 GetArmorProficiency() { return armor_proficiency; }
@@ -1827,13 +1805,13 @@ public:
 	bool FlyCheat;
 	void ZoneUpdate(uint32 ZoneId);
 	void UpdateChannels(uint16 AreaID);
-	WoWICE_INLINE uint32 GetAreaID() { return m_AreaID; }
+	 uint32 GetAreaID() { return m_AreaID; }
 	void SetAreaID(uint32 area) { m_AreaID = area; }
 	bool IsInCity();
 
 	// Instance IDs
 
-	WoWICE_INLINE uint32 GetPersistentInstanceId(uint32 mapId, uint32 difficulty)
+	 uint32 GetPersistentInstanceId(uint32 mapId, uint32 difficulty)
 	{
 		if(mapId >= NUM_MAPS || difficulty >= NUM_INSTANCE_MODES || m_playerInfo == NULL)
 			return 0;
@@ -1899,8 +1877,7 @@ public:
 	set<Player *> gmTargets;
 	uint32 m_UnderwaterMaxTime;
 	uint32 m_UnderwaterLastDmg;
-	WoWICE_INLINE void setMyCorpse(Corpse * corpse) { myCorpse = corpse; }
-	WoWICE_INLINE Corpse * getMyCorpse() { return myCorpse; }
+	LocationVector getMyCorpseLocation() const { return myCorpseLocation; }
 	bool bCorpseCreateable;
 	uint32 m_resurrectHealth, m_resurrectMana;
 	uint32 m_resurrectInstanceID, m_resurrectMapId;
@@ -1919,6 +1896,12 @@ public:
 	void SafeTeleport(MapMgr * mgr, const LocationVector & vec);
 	void EjectFromInstance();
 	bool raidgrouponlysent;
+
+	void SetDungeonDifficulty( uint32 diff );
+	uint32 GetDungeonDifficulty();
+
+	void SetRaidDifficulty( uint32 diff );
+	uint32 GetRaidDifficulty();
 
 	void EventSafeTeleport(uint32 MapID, uint32 InstanceID, LocationVector vec)
 	{
@@ -1948,10 +1931,30 @@ public:
 	void SetSanctuaryFlag();
 	void RemoveSanctuaryFlag();
 
-    WoWICE_INLINE void AddCoins( int32 coins ){ 
+	/////////////////////////////////////////////////
+	// EASY FUNCTIONS - PLAYER GOLD
+	/////////////////////////////////////////////////
+	 void SetGold( int32 coins ){
+		SetUInt32Value( PLAYER_FIELD_COINAGE, coins );
+	}
+	 void ModGold( int32 coins ){
+		ModUnsigned32Value( PLAYER_FIELD_COINAGE, coins );
+	}
+	 uint32 GetGold(){
+		return GetUInt32Value( PLAYER_FIELD_COINAGE );
+	}
+	 bool HasGold( uint32 coins ){
+		return (GetUInt32Value(PLAYER_FIELD_COINAGE) >= coins);
+	}
+
+	/////////////////////////////////////////////////
+	// DEPRICATED FUNCTIONS USE 
+	// SetGold and ModGold
+	/////////////////////////////////////////////////
+     void GiveGold( int32 coins ){ 
         ModUnsigned32Value( PLAYER_FIELD_COINAGE , coins );
     }
-    WoWICE_INLINE void TakeCoins( int32 coins ){ 
+     void TakeGold( int32 coins ){ 
         ModUnsigned32Value(PLAYER_FIELD_COINAGE, -coins);
     }
 
@@ -1998,9 +2001,9 @@ public:
 	 uint32 GetGlyph( uint32 slot ) { return GetUInt32Value(PLAYER_FIELD_GLYPHS_1 + slot); }
 
 	//! Do this on /pvp off
-	WoWICE_INLINE void ResetPvPTimer();
+	 void ResetPvPTimer();
 	//! Stop the timer for pvp off
-	WoWICE_INLINE void StopPvPTimer() { m_pvpTimer = 0; }
+	 void StopPvPTimer() { m_pvpTimer = 0; }
 
 	//! Called at login to add the honorless buff, etc.
 	void LoginPvPSetup();
@@ -2037,7 +2040,12 @@ public:
     //   None.
     //  
     ////////////////////////////////////////////////////////////////////////////////////////////////
-    void LearnTalent( uint32 talentid, uint32 rank, bool isPreviewed = false ); 
+    void LearnTalent( uint32 talentid, uint32 rank, bool isPreviewed = false );
+
+	void DealDamage(Unit *pVictim, uint32 damage, uint32 targetEvent, uint32 unitEvent, uint32 spellId, bool no_remove_auras = false);
+	void TakeDamage(Unit *pAttacker, uint32 damage, uint32 spellid, bool no_remove_auras = false );
+	void Die( Unit *pAttacker, uint32 damage, uint32 spellid );
+	void knockback( float CasterOrientation, int32 basepoint, uint32 miscvalue, bool invert = false );
 
 	 uint32 LastHonorResetTime() const { return m_lastHonorResetTime; }
 	 void LastHonorResetTime(uint32 val) { m_lastHonorResetTime = val; }
@@ -2048,21 +2056,18 @@ public:
 	uint32 load_health;
 	uint32 load_mana;
 	void CompleteLoading();
-	set<SpellEntry *> castSpellAtLogin;
 	void OnPushToWorld();
 	void OnPrePushToWorld();
 	void OnWorldPortAck();
 	uint32 m_TeleportState;
-	set<Unit*> visiblityChangableSet;
 	bool m_beingPushed;
 	bool CanSignCharter(Charter * charter, Player * requester);
 	Charter * m_charters[NUM_CHARTER_TYPES];
 	uint32 flying_aura;
-	stringstream LoadAuras;
 	bool resend_speed;
 	bool rename_pending;
 	uint32 iInstanceType;
-	WoWICE_INLINE void SetName(string& name) { m_name = name; }
+	 void SetName(string& name) { m_name = name; }
 	// spell to (delay, last time)
 
 	FactionReputation * reputationByListId[128];
@@ -2073,7 +2078,7 @@ public:
 	int8 m_spellcomboPoints; // rogue talent Ruthlessness will change combopoints while consuming them. solutions 1) add post cast prochandling, 2) delay adding the CP
 	void UpdateComboPoints();
 
-	WoWICE_INLINE void AddComboPoints(uint64 target, uint8 count)
+	 void AddComboPoints(uint64 target, uint8 count)
 	{
         if(m_comboTarget == target)
 			m_comboPoints += count;
@@ -2085,7 +2090,7 @@ public:
 		UpdateComboPoints();
 	}
 
-	WoWICE_INLINE void NullComboPoints() { if(!m_retainComboPoints) { m_comboTarget = 0; m_comboPoints = 0; m_spellcomboPoints=0; } UpdateComboPoints(); }
+	 void NullComboPoints() { if(!m_retainComboPoints) { m_comboTarget = 0; m_comboPoints = 0; m_spellcomboPoints= 0; } UpdateComboPoints(); }
 	uint32 m_speedChangeCounter;
 
 	void SendAreaTriggerMessage(const char * message, ...);
@@ -2093,7 +2098,7 @@ public:
 	// Trade Target
 	//Player *getTradeTarget() {return mTradeTarget;};
 
-	WoWICE_INLINE Player * GetTradeTarget()
+	 Player * GetTradeTarget()
 	{
 		if(!IsInWorld()) return 0;
 		return m_mapMgr->GetPlayer((uint32)mTradeTarget);
@@ -2110,7 +2115,7 @@ public:
 	void UnPossess();
 
 	/* Last Speeds */
-	WoWICE_INLINE void UpdateLastSpeeds()
+	 void UpdateLastSpeeds()
 	{
 		m_lastRunSpeed = m_runSpeed;
 		m_lastRunBackSpeed = m_backWalkSpeed;
@@ -2126,7 +2131,7 @@ public:
 		SetPlayerSpeed( RUN, PLAYER_NORMAL_RUN_SPEED );
 		SetPlayerSpeed( SWIM, PLAYER_NORMAL_SWIM_SPEED );
 		SetMovement( MOVE_LAND_WALK, 8 );
-		SetUInt32Value( UNIT_FIELD_HEALTH, GetUInt32Value( UNIT_FIELD_MAXHEALTH ) );
+		SetHealth(GetUInt32Value( UNIT_FIELD_MAXHEALTH ) );
 	}
 
 	LocationVector m_last_group_position;
@@ -2171,6 +2176,14 @@ public:
 	void SendWorldStateUpdate(uint32 WorldState, uint32 Value);
 	void SendCastResult(uint32 SpellId, uint8 ErrorMessage, uint8 MultiCast, uint32 Extra);
 	void Gossip_SendPOI(float X, float Y, uint32 Icon, uint32 Flags, uint32 Data, const char* Name);
+    void SendSpellCooldownEvent( uint32 SpellId );
+    void SendFlatSpellModifier( uint8 spellgroup, uint8 spelltype, int32 v );
+    void SendItemPushResult( bool created, bool recieved, bool sendtoset, bool newitem,  uint8 destbagslot, uint32 destslot, uint32 count, uint32 entry, uint32 suffix, uint32 randomprop, uint32 stack );
+    void SendSetProficiency( uint8 ItemClass, uint32 Proficiency );
+    void SendLoginVerifyWorld( uint32 MapId, float X, float Y, float Z, float O );
+    void SendPlaySpellVisual( uint64 guid, uint32 visualid );
+    void SendNewDrunkState( uint32 state, uint32 itemid );
+
     /************************************************************************/
     /* End of SpellPacket wrapper                                           */
     /************************************************************************/
@@ -2182,7 +2195,7 @@ public:
 	uint64 m_areaSpiritHealer_guid;
 	bool m_finishingmovesdodge;
 
-	WoWICE_INLINE bool IsAttacking() {return m_attacking; }
+	 bool IsAttacking() {return m_attacking; }
 
 	static void InitVisibleUpdateBits();
 	static UpdateMask m_visibleUpdateMask;
@@ -2190,9 +2203,6 @@ public:
 	void CopyAndSendDelayedPacket(WorldPacket * data);
 	void PartLFGChannel();
 	SpeedCheatDetector	*SDetector;
-	int32 armToApValue;
-	int32 armToApCoeff;
-	int32 lastArmToApBonus;
 protected:
 	LocationVector m_summonPos;
 	uint32 m_summonInstanceId;
@@ -2251,7 +2261,7 @@ protected:
 	uint32      m_banned;
 	string      m_banreason;
 	uint32      m_AreaID;
-	Pet*        m_Summon;
+	std::list< Pet* >  m_Summons;
 	uint32      m_PetNumberMax;
 	std::map<uint32, PlayerPet*> m_Pets;
 
@@ -2311,7 +2321,7 @@ protected:
 	// Channels
 	std::set<Channel*> m_channels;
 	// Visible objects
-	std::set<Object*> m_visibleObjects;
+	std::set< uint64 > m_visibleObjects;
 	// Groups/Raids
 	uint32 m_GroupInviter;
 	uint8 m_StableSlotCount;
@@ -2320,7 +2330,8 @@ protected:
 	Object *m_SummonedObject;
 
     // other system
-	Corpse *    myCorpse;
+	LocationVector myCorpseLocation;
+	int32		myCorpseInstanceId;
 
 	uint32      m_lastHonorResetTime;
 	uint32      _fields[PLAYER_END];
@@ -2399,17 +2410,25 @@ public:
 	//ToDo: sort out where all the publics and privates go. This will do for now..
 private:
 	PlayerInfo * m_playerInfo;
+	uint32 m_RaidDifficulty;
+	bool m_XpGain;
+    std::list< Item* > m_GarbageItems;
+
+    void RemoveGarbageItems();
 
 public:
 
-	WoWICE_INLINE PlayerInfo * getPlayerInfo() const { return m_playerInfo; }
+    void AddGarbageItem( Item *it );
+	uint32 CheckDamageLimits( uint32 dmg, uint32 spellid );
+
+	 PlayerInfo * getPlayerInfo() const { return m_playerInfo; }
 
 	void LoadFieldsFromString(const char * string, uint32 firstField, uint32 fieldsNum);
 	void UpdateGlyphs();
 
-	WoWICE_INLINE uint8 GetRune(uint32 index)
+	 uint8 GetRune(uint32 index)
 	{
-		ASSERT(index < 6);
+		Wowice::Util::WOWICE_ASSERT(   index < 6);
 		return m_runes[index];
 	}
 	void ConvertRune(uint8 index, uint8 value);
@@ -2425,31 +2444,11 @@ public:
 	int16 m_vampiricTouch;
 	void VampiricSpell(uint32 dmg, Unit* pTarget);
 
-	/************************************************************************/
-	/* Player Achievements						                            */
-    /************************************************************************/
-/*public:
-	//this may change in time, We will call it each time a new monitored position is reached
-	//it is up to this function to decide if we actually made an achievement in that type or not
-	void Event_Achiement_Received(uint32 achievementtype,uint32 pentry,uint32 pvalue); //entry is not always used
-	void SendAchievmentStatus( uint32 criteriaid, uint32 new_value, uint32 at_stamp=0 );
-	void SendAchievmentEarned( uint32 archiId, uint32 at_stamp=0 );
-	void SendAllAchievementEarned();
-	void SendAllAchievementStatus();
-	void SendAllAchievementData(); //used on login
-public:
-	struct AchievementVal
-	{
-		AchievementVal(){ cur_value = completed_at_stamp = 0; }
-		uint32 cur_value;
-		uint32 completed_at_stamp;
-	};
-	//id and the status
-	std::map<uint32,AchievementVal*> m_achievements;
-//	uint32 m_achievement_points; // for quick check in case it is used as currency*/
+	void ToggleXpGain();
+	bool CanGainXp();
 
 #ifdef ENABLE_ACHIEVEMENTS
-    WoWICE_INLINE AchievementMgr& GetAchievementMgr() { return m_achievementMgr; }
+     AchievementMgr& GetAchievementMgr() { return m_achievementMgr; }
 	AchievementMgr m_achievementMgr;
 #endif
     /************************************************************************/
@@ -2461,8 +2460,6 @@ public:
     /************************************************************************/
 	// VLack: Talent Specs from Aspire, now just the values for an empty packet
 	uint16 m_maxTalentPoints;
-//	uint16 GetMaxTalentPoints();
-//	void ApplySpec(uint8 spec, bool init);
 	uint8 m_talentSpecsCount;
 	uint8 m_talentActiveSpec;
 
@@ -2473,14 +2470,14 @@ public:
     /************************************************************************/
 public:
 
-	WoWICE_INLINE Vehicle * GetVehicle() { return (Vehicle *)m_vehicle; }
-	WoWICE_INLINE int8 GetVehicleSeat() { return m_vehicleSeat; }
-	WoWICE_INLINE void SetVehicle(Vehicle *v, int8 seat)
+	 Vehicle * GetVehicle() { return (Vehicle *)m_vehicle; }
+	 int8 GetVehicleSeat() { return m_vehicleSeat; }
+	 void SetVehicle(Vehicle *v, int8 seat)
 	{
 		m_vehicle = (Unit *)v;
 		m_vehicleSeat = seat;
 	}
-	WoWICE_INLINE void ResetVehicleSettings()
+	 void ResetVehicleSettings()
 	{
 		m_vehicle = NULL;
 		m_vehicleSeat = -1;
@@ -2490,6 +2487,10 @@ private:
 	Unit *		m_vehicle;
 	int8		m_vehicleSeat;
 
+
+public:
+    void SendTeleportAckMsg( const LocationVector &v );
+	void SendUpdateDataToSet( ByteBuffer *groupbuf, ByteBuffer *nongroupbuf, bool sendtoself );
 };
 
 class SkillIterator
@@ -2505,7 +2506,7 @@ public:
 	void BeginSearch()
 	{
 		// iteminterface doesn't use mutexes, maybe it should :P
-		ASSERT(!m_searchInProgress);
+		Wowice::Util::WOWICE_ASSERT(   !m_searchInProgress);
 		m_itr = m_target->m_skills.begin();
 		m_endItr = m_target->m_skills.end();
 		m_searchInProgress=true;
@@ -2514,7 +2515,7 @@ public:
 	void EndSearch()
 	{
 		// nothing here either
-		ASSERT(m_searchInProgress);
+		Wowice::Util::WOWICE_ASSERT(   m_searchInProgress);
 		m_searchInProgress=false;
 	}
 
@@ -2539,8 +2540,8 @@ public:
 		++m_itr;
 	}
 
-	WoWICE_INLINE PlayerSkill* Grab() { return &m_itr->second; }
-	WoWICE_INLINE bool End() { return (m_itr==m_endItr)?true:false; }
+	 PlayerSkill* Grab() { return &m_itr->second; }
+	 bool End() { return (m_itr==m_endItr)?true:false; }
 
 };
 

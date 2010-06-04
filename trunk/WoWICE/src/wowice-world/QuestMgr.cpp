@@ -297,8 +297,8 @@ void QuestMgr::BuildOfferReward(WorldPacket *data, Quest* qst, Object* qst_giver
 	ItemPrototype * it;
 	uint32 i = 0;
 	data->SetOpcode(SMSG_QUESTGIVER_OFFER_REWARD);
-	*data << qst_giver->GetGUID();
-	*data << qst->id;
+	*data << uint64(qst_giver->GetGUID());
+	*data << uint32(qst->id);
 
 	if( lq )
 	{
@@ -313,7 +313,7 @@ void QuestMgr::BuildOfferReward(WorldPacket *data, Quest* qst, Object* qst_giver
 	
 	//uint32 a = 0, b = 0, c = 1, d = 0, e = 1;
 
-	*data << ( qst->next_quest_id ? uint32(1) : uint32(0) );// next quest shit
+	*data << ( qst->next_quest_id ? uint8(1) : uint8(0) );// next quest shit
 	*data << uint32(0);										// maybe required money
 
 	*data << qst->completionemotecount;
@@ -341,7 +341,7 @@ void QuestMgr::BuildOfferReward(WorldPacket *data, Quest* qst, Object* qst_giver
 	*data << qst->count_reward_item;
 	if( qst->count_reward_item )
 	{
-		for( uint32 i = 0; i < 4; ++i )
+		for( i = 0; i < 4; ++i )
 		{
 			if(qst->reward_item[i])
 			{
@@ -353,14 +353,30 @@ void QuestMgr::BuildOfferReward(WorldPacket *data, Quest* qst, Object* qst_giver
 		}
 	}
 	
-
 	*data << GenerateRewardMoney( plr, qst );
-	*data << qst->bonushonor;
+
+	uint32 xp=0;
+	if( plr->getLevel() < plr->GetMaxLevel() )
+	{
+		xp = float2int32(GenerateQuestXP(plr,qst) * sWorld.getRate(RATE_QUESTXP));
+	}
+	*data << uint32(xp); //VLack: The quest will give you this amount of XP
+
+	*data << (qst->bonushonor * 10);
+	*data << float(0);
 	*data << uint32(0);
 	*data << qst->reward_spell;
 	*data << qst->effect_on_player;
 	*data << qst->rewardtitleid;
 	*data << qst->rewardtalents;
+ 	*data << uint32(0); 
+ 	*data << uint32(0); 
+ 	for(i = 0; i < 5; ++i)              // reward factions ids 
+ 	*data << uint32(0); 
+  	for(i = 0; i < 5; ++i)              // columnid in QuestFactionReward.dbc (zero based)? 
+ 	*data << uint32(0); 
+  	for(i = 0; i < 5; ++i)              // reward reputation override? 
+ 	*data << uint32(0); 
 }
 
 void QuestMgr::BuildQuestDetails(WorldPacket *data, Quest* qst, Object* qst_giver, uint32 menutype, uint32 language, Player * plr)
@@ -371,7 +387,7 @@ void QuestMgr::BuildQuestDetails(WorldPacket *data, Quest* qst, Object* qst_give
 	data->SetOpcode( SMSG_QUESTGIVER_QUEST_DETAILS );
 
 	*data << qst_giver->GetGUID();			// npc guid
-	*data << uint64(0);						// (questsharer?) guid
+	*data << uint64( qst_giver->IsPlayer() ? qst_giver->GetGUID() : 0 );						// (questsharer?) guid
 	*data << qst->id;						// quest id
 
 	if(lq)
@@ -387,10 +403,11 @@ void QuestMgr::BuildQuestDetails(WorldPacket *data, Quest* qst, Object* qst_give
 		*data <<  qst->objectives;
 	}
 
-	*data << uint32(1);						// Activate accept
+	*data << uint8(1);						// Activate accept
 	*data << qst->suggestedplayers;			// "Suggested players"
-	*data << uint8(0);						// Added in 3.0.2, name or text(?)
-	*data << uint8(0); //VLack: some 3.1.x thing
+	*data << uint8(0);						// Added in 3.0.2, name or text(?) - or flags nowadays
+	*data << uint8(0); //VLack: some 3.1.x thing - if the client answers, this byte will be sent back in the response, so it could be used for a few interesting things...
+	*data << uint8(0); //new 3.3 - if you set it to 1 then it'll show the quest panel without the decline button, however the accept button won't work either, just closes the dialog. Probably the client expects the server to auto-accept the quest without client side intervention.
 
 
 	ItemPrototype *ip;
@@ -422,11 +439,22 @@ void QuestMgr::BuildQuestDetails(WorldPacket *data, Quest* qst, Object* qst_give
 	}
 
 	*data << GenerateRewardMoney( plr, qst );	// Money reward
-	*data << qst->bonushonor;					// Honor reward
+	*data << uint32(0); //New 3.3 - this is the XP you'll see on the quest reward panel too, but I think it is fine not to show it, because it can change if the player levels up before completing the quest.
+	*data << (qst->bonushonor * 10);					// Honor reward
+	*data << float(0); //New 3.3
 	*data << qst->reward_spell;					// this is the spell (id) the quest finisher teaches you, or the icon of the spell if effect_on_player is not 0
 	*data << qst->effect_on_player;				// this is the spell (id) the quest finisher casts on you as a reward
 	*data << qst->rewardtitleid;				// Title reward (ID)
 	*data << qst->rewardtalents;				// Talent reward
+ 	*data << uint32(0);                                                     // new 3.3.0 
+ 	*data << uint32(0);                                                     // new 3.3.0 
+ 	for(i = 0; i < 5; ++i) 
+ 	*data << uint32(0); 
+ 	for(i = 0; i < 5; ++i) 
+ 	*data << uint32(0); 
+ 	for(i = 0; i < 5; ++i) 
+ 	*data << uint32(0); 
+
 
 	*data << qst->detailemotecount;				// Amount of emotes (4?)
 	for( i = 0; i < qst->detailemotecount; i++ )
@@ -470,15 +498,27 @@ void QuestMgr::BuildRequestItems(WorldPacket *data, Quest* qst, Object* qst_give
 	*data << qst->count_required_item;
 
 	// (loop for each item)
-	for(uint32 i = 0; i < 4; ++i)
+	for(uint32 i = 0; i < 6; ++i)
 	{
 		if(qst->required_item[i] != 0)
 		{
-			*data << qst->required_item[i];
-			*data << qst->required_itemcount[i];
-			it = ItemPrototypeStorage.LookupEntry(qst->required_item[i]);
-			*data << (it ? it->DisplayInfoID : uint32(0));
+ 			*data << qst->required_item[i]; 
+ 			*data << qst->required_itemcount[i]; 
+ 			it = ItemPrototypeStorage.LookupEntry(qst->required_item[i]); 
+ 			*data << (it ? it->DisplayInfoID : uint32(0)); 
 		}
+ 		else 
+ 		{ 
+ 			*data << uint32(0); 
+ 			*data << uint32(0); 
+ 			*data << uint32(0); 
+ 		} 
+ 			*data << uint32(0); 
+ 			*data << uint32(0); 
+ 			*data << uint32(0); 
+ 			*data << uint32(0); 
+ 			*data << uint32(0); 
+ 			*data << uint32(0); 
 	}
 
 	// wtf is this?
@@ -488,9 +528,10 @@ void QuestMgr::BuildRequestItems(WorldPacket *data, Quest* qst, Object* qst_give
 	}
 	else
 	{
-		*data << uint32(2);
+		*data << uint32(3);
 	}
 
+	*data << uint32(4);
 	*data << uint32(8);
 	*data << uint32(10);
 }
@@ -498,15 +539,14 @@ void QuestMgr::BuildRequestItems(WorldPacket *data, Quest* qst, Object* qst_give
 void QuestMgr::BuildQuestComplete(Player*plr, Quest* qst)
 {
 	uint32 xp ;
-	uint32 currtalentpoints = plr->GetUInt32Value(PLAYER_CHARACTER_POINTS1);
+	uint32 currtalentpoints = plr->GetTalentPoints(SPEC_PRIMARY);
 	uint32 rewardtalents = qst->rewardtalents;
 	uint32 playerlevel = plr->getLevel();
-	if(playerlevel >= plr->GetUInt32Value(PLAYER_FIELD_MAX_LEVEL))
+	
+    if( playerlevel >= plr->GetMaxLevel() )
 	{
-		//plr->ModUnsigned32Value(PLAYER_FIELD_COINAGE, qst->reward_xp_as_money);
-		xp = 0;
-	}else
-	{
+        xp = 0;
+	}else{
 		xp = float2int32(GenerateQuestXP(plr,qst) * sWorld.getRate(RATE_QUESTXP));
 		plr->GiveXP(xp, 0, false);
 	}
@@ -520,22 +560,22 @@ void QuestMgr::BuildQuestComplete(Player*plr, Quest* qst)
 
 	WorldPacket data( SMSG_QUESTGIVER_QUEST_COMPLETE,72 );
 
-	data << qst->id;
-	data << xp;
+	data << uint32( qst->id );
+	data << uint32( xp );
 	data << uint32( GenerateRewardMoney( plr, qst ) );
-	data << uint32(0);
-	data << uint32(rewardtalents);
-	data << uint32(qst->count_reward_item); //Reward item count
+	data << uint32(qst->bonushonor * 10);
+	data << uint32( rewardtalents );
+	data << uint32( qst->count_reward_item ); //Reward item count
 
-	for(uint32 i = 0; i < 4; ++i)
+	for( uint32 i = 0; i < 4; ++i)
 	{
-		if(qst->reward_item[i])
+		if( qst->reward_item[i] )
 		{
-			data << qst->reward_item[i];
-			data << qst->reward_itemcount[i];
+			data << uint32( qst->reward_item[i] );
+			data << uint32( qst->reward_itemcount[i] );
 		}
 	}
-	plr->GetSession()->SendPacket(&data);
+	plr->SendPacket( &data );
 }
 
 void QuestMgr::BuildQuestList(WorldPacket *data, Object* qst_giver, Player *plr, uint32 language)
@@ -750,53 +790,56 @@ void QuestMgr::_OnPlayerKill(Player* plr, uint32 entry, bool IsGroupKill)
 		}
 	}
 
-	// Shared kills
-	Player *gplr = NULL;
-
-	if(plr->InGroup())
+	if( IsGroupKill )
 	{
-		if(Group* pGroup = plr->GetGroup())
+		// Shared kills
+		Player *gplr = NULL;
+
+		if(plr->InGroup())
 		{
-//			removed by Zack How the hell will healers get the kills then ?
-//			if(pGroup->GetGroupType() != GROUP_TYPE_PARTY) 
-//				return;  // Raid's don't get shared kills.
-
-			GroupMembersSet::iterator gitr;
-			pGroup->Lock();
-			for(uint32 k = 0; k < pGroup->GetSubGroupCount(); k++)
+			if(Group* pGroup = plr->GetGroup())
 			{
-				for(gitr = pGroup->GetSubGroup(k)->GetGroupMembersBegin(); gitr != pGroup->GetSubGroup(k)->GetGroupMembersEnd(); ++gitr)
+				//removed by Zack How the hell will healers get the kills then ?
+				//if(pGroup->GetGroupType() != GROUP_TYPE_PARTY) 
+				//	return;  // Raid's don't get shared kills.
+
+				GroupMembersSet::iterator gitr;
+				pGroup->Lock();
+				for(uint32 k = 0; k < pGroup->GetSubGroupCount(); k++)
 				{
-					gplr = (*gitr)->m_loggedInPlayer;
-					if(gplr && gplr != plr && plr->isInRange(gplr,300) && gplr->HasQuestMob(entry)) // don't double kills also don't give kills to party members at another side of the world
+					for(gitr = pGroup->GetSubGroup(k)->GetGroupMembersBegin(); gitr != pGroup->GetSubGroup(k)->GetGroupMembersEnd(); ++gitr)
 					{
-						for( i = 0; i < 25; ++i )
+						gplr = (*gitr)->m_loggedInPlayer;
+						if(gplr && gplr != plr && plr->isInRange(gplr,300) && gplr->HasQuestMob(entry)) // don't double kills also don't give kills to party members at another side of the world
 						{
-							qle = gplr->GetQuestLogInSlot(i);
-							if( qle != NULL )
+							for( i = 0; i < 25; ++i )
 							{
-								qst = qle->GetQuest();
-								if(qst != NULL)
+								qle = gplr->GetQuestLogInSlot(i);
+								if( qle != NULL )
 								{
-									for( j = 0; j < 4; ++j )
+									qst = qle->GetQuest();
+									if(qst != NULL)
 									{
-										if( qst->required_mob[j] == 0 )
-											continue;
-
-										if( qst->required_mob[j] == static_cast<int32>( entry ) &&
-											qst->required_mobtype[j] == QUEST_MOB_TYPE_CREATURE &&
-											qle->m_mobcount[j] < qst->required_mobcount[j] )
+										for( j = 0; j < 4; ++j )
 										{
-											// add another kill.
-											// (auto-dirty's it)
-											qle->IncrementMobCount( j );
-											qle->SendUpdateAddKill( j );
-											CALL_QUESTSCRIPT_EVENT( qle, OnCreatureKill )( entry, plr, qle );
-											qle->UpdatePlayerFields();
+											if( qst->required_mob[j] == 0 )
+												continue;
 
-											if( qle->CanBeFinished() )
-												qle->SendQuestComplete();
-											break;
+											if( qst->required_mob[j] == static_cast<int32>( entry ) &&
+												qst->required_mobtype[j] == QUEST_MOB_TYPE_CREATURE &&
+												qle->m_mobcount[j] < qst->required_mobcount[j] )
+											{
+												// add another kill.
+												// (auto-dirty's it)
+												qle->IncrementMobCount( j );
+												qle->SendUpdateAddKill( j );
+												CALL_QUESTSCRIPT_EVENT( qle, OnCreatureKill )( entry, plr, qle );
+												qle->UpdatePlayerFields();
+
+												if( qle->CanBeFinished() )
+													qle->SendQuestComplete();
+												break;
+											}
 										}
 									}
 								}
@@ -804,8 +847,8 @@ void QuestMgr::_OnPlayerKill(Player* plr, uint32 entry, bool IsGroupKill)
 						}
 					}
 				}
+				pGroup->Unlock();
 			}
-			pGroup->Unlock();
 		}
 	}
 }
@@ -979,7 +1022,7 @@ void QuestMgr::GiveQuestRewardReputation(Player* plr, Quest* qst, Object *qst_gi
 				if( static_cast<Creature*>(qst_giver)->m_factionDBC != NULL )
 					fact = static_cast<Creature*>(qst_giver)->m_factionDBC->ID;
 			if( qst_giver->GetTypeId() == TYPEID_GAMEOBJECT )
-				fact = qst_giver->GetUInt32Value(GAMEOBJECT_FACTION );
+				fact = static_cast<GameObject*>(qst_giver)->GetFaction();
 		}
 		else
 		{
@@ -1005,11 +1048,11 @@ void QuestMgr::OnQuestAccepted(Player* plr, Quest* qst, Object *qst_giver)
 void QuestMgr::OnQuestFinished(Player* plr, Quest* qst, Object *qst_giver, uint32 reward_slot)
 {
 	//Re-Check for Gold Requirement (needed for possible xploit) - reward money < 0 means required money
-	if ( qst->reward_money < 0 && plr->GetUInt32Value( PLAYER_FIELD_COINAGE ) < uint32(-qst->reward_money) )
+	if ( qst->reward_money < 0 && plr->GetGold() < uint32(-qst->reward_money) )
 		return;
 
 	// Check they don't have more than the max gold
-	if(sWorld.GoldCapEnabled && (plr->GetUInt32Value(PLAYER_FIELD_COINAGE) + qst->reward_money) > sWorld.GoldLimit)
+	if(sWorld.GoldCapEnabled && (plr->GetGold() + qst->reward_money) > sWorld.GoldLimit)
 	{
 		plr->GetItemInterface()->BuildInventoryChangeError(NULL, NULL, INV_ERR_TOO_MUCH_GOLD);
 		return;
@@ -1022,14 +1065,14 @@ void QuestMgr::OnQuestFinished(Player* plr, Quest* qst, Object *qst_giver, uint3
     
     BuildQuestComplete(plr, qst);
     CALL_QUESTSCRIPT_EVENT(qle, OnQuestComplete)(plr, qle);
-	for (uint32 x=0;x<4;x++)
+	for (uint32 x= 0;x<4;x++)
 	{
-		if (qst->required_spell[x]!=0)
+		if (qst->required_spell[x]!= 0)
 		{
 			if (plr->HasQuestSpell(qst->required_spell[x]))
 				plr->RemoveQuestSpell(qst->required_spell[x]);
 		}
-		else if (qst->required_mob[x]!=0)
+		else if (qst->required_mob[x]!= 0)
 		{
 			if (plr->HasQuestMob(qst->required_mob[x]))
 				plr->RemoveQuestMob(qst->required_mob[x]);
@@ -1082,14 +1125,14 @@ void QuestMgr::OnQuestFinished(Player* plr, Quest* qst, Object *qst_giver, uint3
 							if (itm== NULL)
 								return;
 
-							itm->SetUInt32Value(ITEM_FIELD_STACK_COUNT, uint32(qst->reward_itemcount[i]));
+							itm->SetStackCount(  uint32(qst->reward_itemcount[i]));
 							if( !plr->GetItemInterface()->SafeAddItem(itm,slotresult.ContainerSlot, slotresult.Slot) )
 								itm->DeleteMe();
 						}
 					}
 					else
 					{
-						add->SetCount(add->GetUInt32Value(ITEM_FIELD_STACK_COUNT) + qst->reward_itemcount[i]);
+						add->SetStackCount( add->GetStackCount() + qst->reward_itemcount[i]);
 						add->m_isDirty = true;
 					}
 				}
@@ -1122,7 +1165,7 @@ void QuestMgr::OnQuestFinished(Player* plr, Quest* qst, Object *qst_giver, uint3
 						if (itm== NULL)
 								return;
 
-						itm->SetUInt32Value(ITEM_FIELD_STACK_COUNT, uint32(qst->reward_choiceitemcount[reward_slot]));
+						itm->SetStackCount(  uint32(qst->reward_choiceitemcount[reward_slot]));
 						if( !plr->GetItemInterface()->SafeAddItem(itm,slotresult.ContainerSlot, slotresult.Slot) )
 							itm->DeleteMe();
 
@@ -1130,7 +1173,7 @@ void QuestMgr::OnQuestFinished(Player* plr, Quest* qst, Object *qst_giver, uint3
 				}
 				else
 				{
-					add->SetCount(add->GetUInt32Value(ITEM_FIELD_STACK_COUNT) + qst->reward_choiceitemcount[reward_slot]);
+					add->SetStackCount( add->GetStackCount() + qst->reward_choiceitemcount[reward_slot]);
 					add->m_isDirty = true;
 				}
 			}

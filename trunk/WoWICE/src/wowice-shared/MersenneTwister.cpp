@@ -19,7 +19,7 @@
 #define NUMBER_OF_GENERATORS 5
 Mutex * m_locks[NUMBER_OF_GENERATORS];
 CRandomMersenne * m_generators[NUMBER_OF_GENERATORS];
-uint32 counter= 0;
+Wowice::Threading::AtomicCounter counter;
 
 uint32 generate_seed()
 {
@@ -55,11 +55,9 @@ double RandomDouble()
 {
 	double ret;
 	uint32 c;
-  counter = 0; // added  cebernic: 10/06/2008 why not init ?
-  // might be overflow couple days?
-  for(;;)
+	for(;;)
 	{
-		c=counter%NUMBER_OF_GENERATORS;
+		c = counter.GetVal() % NUMBER_OF_GENERATORS;
 		if(m_locks[c]->AttemptAcquire())
 		{
 			ret = m_generators[c]->Random();
@@ -75,10 +73,9 @@ uint32 RandomUInt(uint32 n)
 {
 	uint32 ret;
 	uint32 c;
-  counter = 0;
-  for(;;)
+	for(;;)
 	{
-		c=counter%NUMBER_OF_GENERATORS;
+		c = counter.GetVal() % NUMBER_OF_GENERATORS;
 		if(m_locks[c]->AttemptAcquire())
 		{
 			ret = m_generators[c]->IRandom(0, n);
@@ -109,10 +106,9 @@ uint32 RandomUInt()
 {
 	uint32 ret;
 	uint32 c;
-  counter = 0;
 	for(;;)
 	{
-		c=counter%NUMBER_OF_GENERATORS;
+		c = counter.GetVal() % NUMBER_OF_GENERATORS;
 		if(m_locks[c]->AttemptAcquire())
 		{
 			ret = m_generators[c]->IRandom(0, RAND_MAX);

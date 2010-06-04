@@ -16,8 +16,6 @@
 #ifndef __UNIT_H
 #define __UNIT_H
 
-#include "WUtil.h"
-
 class AIInterface;
 class DynamicObject;
 
@@ -1043,7 +1041,15 @@ public:
 	void RemoveReflect( uint32 spellid , bool apply);
 	struct DamageSplitTarget *m_damageSplitTarget;
  
-	std::list<struct ProcTriggerSpell> m_procSpells;
+	/********************************************************/
+	/*   ProcTrigger                                        */
+	/********************************************************/
+	std::list<SpellProc*> m_procSpells;
+	void AddProcTriggerSpell(uint32 spell_id, uint32 orig_spell_id, uint64 caster, uint32 procChance, uint32 procFlags, uint32 procCharges, uint32 *groupRelation, uint32 *procClassMask = NULL, Object *obj = NULL);
+	void AddProcTriggerSpell(SpellEntry *spell, SpellEntry *orig_spell, uint64 caster, uint32 procChance, uint32 procFlags, uint32 procCharges, uint32 *groupRelation, uint32 *procClassMask = NULL, Object *obj = NULL);
+	void AddProcTriggerSpell(SpellEntry *sp, uint64 caster, uint32 *groupRelation, uint32 *procClassMask = NULL, Object *obj = NULL);
+	void RemoveProcTriggerSpell(uint32 spellId, uint64 guid);
+	void RemoveProcTriggerSpell(uint32 spellId);
 	std::map<uint32,struct SpellCharge> m_chargeSpells;
 	deque<uint32> m_chargeSpellRemoveQueue;
 	bool m_chargeSpellsInUse;
@@ -1224,6 +1230,7 @@ public:
     }
     void EventStunOrImmobilize(Unit *proc_target,bool is_victim=false);
 
+	// TODO: Remove this hack
     /************************************************************************/
     /* Chill                                                                */
     /************************************************************************/
@@ -1344,6 +1351,7 @@ public:
 	int8 asc_frozen;
 	int8 asc_enraged;
 	int8 asc_seal;
+	int8 asc_bleed;
 
 	uint16 m_noInterrupt;
 	int32 m_rooted;
@@ -1434,6 +1442,17 @@ public:
 		return false;
 	}
 
+	void Phase(uint8 command=PHASE_SET, uint32 newphase=1);
+
+	bool Tagged;
+	uint64 TaggerGuid;
+	void Tag( uint64 TaggerGUID );
+	void UnTag();
+	bool IsTagged();
+	bool IsTaggable();
+	uint64 GetTaggerGUID();
+	bool isLootable();
+
 	void Root();
 	void Unroot();
     bool isRooted(){
@@ -1443,6 +1462,9 @@ public:
         else
             return false;
     }
+
+
+	virtual bool isTrainingDummy(){ return false; }
 
 	void SetFacing(float newo);//only working if creature is idle
 
@@ -1503,6 +1525,8 @@ public:
 	void DispelAll(bool positive);
 
 	void SendPowerUpdate(bool self);
+	void SendPeriodicAuraLog( const WoWGuid& CasterGUID, const WoWGuid& casterGUID, uint32 SpellID, uint32 School, uint32 Amount, uint32 abs_dmg, uint32 resisted_damage, uint32 Flags );
+	void SendPeriodicHealAuraLog( const WoWGuid& CasterGUID, const WoWGuid& TargetGUID, uint32 SpellID, uint32 amt );
 
 	int8 m_hasVampiricTouch;
 	int8 m_hasVampiricEmbrace;
@@ -1693,6 +1717,10 @@ public:
     uint32 GetMaxPower( uint32 index ){ return GetUInt32Value( UNIT_FIELD_MAXPOWER1 + index ); }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+	virtual void TakeDamage(Unit *pAttacker, uint32 damage, uint32 spellid, bool no_remove_auras = false );
+	virtual void Die( Unit *pAttacker, uint32 damage, uint32 spellid );
+	virtual bool isCritter(){ return false; }
 
 protected:
 	Unit ();

@@ -111,7 +111,6 @@ bool MailMessage::AddMessageDataToPacket(WorldPacket& data)
 {
 	uint8 i = 0;
 	uint32 j;
-	size_t pos;
 	vector<uint64>::iterator itr;
 	Item * pItem;
 
@@ -119,25 +118,42 @@ bool MailMessage::AddMessageDataToPacket(WorldPacket& data)
 	if(deleted_flag)
 		return false;
 
-	data << uint16(0x0032);
-	data << message_id;
-	data << uint8(message_type);
-	if(message_type)
-		data << uint32(sender_guid);
+	uint8 guidsize;
+	if( message_type == 0 )
+		guidsize = 8;
 	else
-		data << sender_guid;
+		guidsize = 4;
 
-	data << cod;			// cod
-	data << message_id;		// itempageid
-	data << uint32(0);
-	data << stationery;
-	data << money;		// money
-	data << uint32(0x10);
-	data << float(float(expire_time - (uint32)UNIXTIME) / 86400.0f);
-	data << uint32(0);	// mail template
+	unsigned msize = 2 + 4 + 1 + guidsize + 7 * 4 + ( subject.size() + 1 ) + ( body.size() + 1 ) + 1 + ( items.size() * ( 1 + 2*4 + 7 * ( 3*4 ) + 6*4 + 1 ) );
+
+	data << uint16( msize );   // message size
+	data << uint32( message_id );
+	data << uint8( message_type );
+	
+	switch( message_type ){
+	case NORMAL:
+		data << uint64( sender_guid ); 
+		break;
+	case COD:
+	case AUCTION:
+	case CREATURE:
+	case GAMEOBJECT:
+	case ITEM: 
+		data << uint32(  Wowice::Util::GUID_LOPART( sender_guid ) );
+		break;
+	}
+
+	data << uint32( cod );			// cod
+	data << uint32( 0 );
+	data << uint32( stationery );
+	data << uint32( money );		// money
+	data << uint32( 0x10 );         // "checked" flag
+	data << float( ( expire_time - uint32( UNIXTIME ) ) / 86400.0f );
+	data << uint32( 0 );	// mail template
 	data << subject;
-	pos = data.wpos();
-	data << uint8(items.size());		// item count
+    data << body;
+
+	data << uint8( items.size() );		// item count
 
 	if( !items.empty( ) )
 	{
@@ -147,37 +163,23 @@ bool MailMessage::AddMessageDataToPacket(WorldPacket& data)
 			if( pItem == NULL )
 				continue;
 
-			data << uint8(i++);
-            data << pItem->GetLowGUID();
-			data << pItem->GetEntry();
+			data << uint8( i++ );
+            data << uint32( pItem->GetLowGUID() );
+			data << uint32( pItem->GetEntry() );
 
-			for( j = 0; j < 6; ++j )
-			{
-                /* Don't remove this please - dfighter
-				data << pItem->GetUInt32Value( ITEM_FIELD_ENCHANTMENT_1_1 + ( j * 3 ) );
-				data << pItem->GetUInt32Value( ITEM_FIELD_ENCHANTMENT_2_1 + ( j * 3 ) );
-				data << pItem->GetUInt32Value( ITEM_FIELD_ENCHANTMENT_3_1 + ( j * 3 ) );
-                */
-
-                data << uint32( pItem->GetEnchantmentId( j ) );
-                data << uint32( pItem->GetEnchantmentId( j + 1 * 3 ) );
-                data << uint32( pItem->GetEnchantmentId( j + 2 * 3 ) );
+			for( j = 0; j < 7; ++j ){
+				data << uint32( pItem->GetEnchantmentId( j ) );
+				data << uint32( pItem->GetEnchantmentDuration( j ) );
+				data << uint32( 0 );
 			}
 
             data << uint32( pItem->GetItemRandomPropertyId() );
-            if( ( (int32)pItem->GetItemRandomPropertyId() ) < 0 )
-                data << uint32( pItem->GetItemRandomSuffixFactor() );
-			else
-				data << uint32( 0 );
-
-			data << uint8( pItem->GetStackCount() );
+			data << uint32( pItem->GetItemRandomSuffixFactor() );
+			data << uint32( pItem->GetStackCount() );
 			data << uint32( pItem->GetChargesLeft() );
             data << uint32( pItem->GetDurabilityMax() );
             data << uint32( pItem->GetDurability() );
-			data << uint32( 0 );
-			data << uint32( 0 );
-			data << uint32( 0 );
-			data << uint32( 0 );
+			data << uint8( 0 ); // unknown
 		}
 
 		data.put< uint8 >( pos, i );
@@ -697,7 +699,7 @@ void WorldSession::HandleMailCreateTextItem(WorldPacket & recv_data )
 	if (pItem== NULL)
 		return;
 
-	pItem->SetTextId(message_id);
+	//pItem->SetTextId(message_id);
 	if( _player->GetItemInterface()->AddItemToFreeSlot(pItem) )
 	{
 		// mail now has an item after it
@@ -717,17 +719,23 @@ void WorldSession::HandleMailCreateTextItem(WorldPacket & recv_data )
 
 void WorldSession::HandleItemTextQuery(WorldPacket & recv_data)
 {
-	uint32 message_id;
-	recv_data >> message_id;
+	uint64 itemGuid;
+	recv_data >> itemGuid;
 
 	string body = "Internal Error";
 
-	MailMessage * msg = _player->m_mailBox.GetMessage(message_id);
-	if(msg)
-		body = msg->body;
+	//TODO: Store text in database even after we deleted the mail and access it by item GUID (low guid)
+	Item *pItem = _player->GetItemInterface()->GetItemByGUID(itemGuid);
+	WorldPacket data(SMSG_ITEM_TEXT_QUERY_RESPONSE, body.length() + 9);
+	if(!pItem)
+		data << uint8(1);
+	else
+	{
+		data << uint8(0);
+		data << uint64(itemGuid);
+		data << body;
+	}
 
-	WorldPacket data(SMSG_ITEM_TEXT_QUERY_RESPONSE, body.length() + 5);
-	data << message_id << body;
 	SendPacket(&data);
 }
 
@@ -808,8 +816,8 @@ void MailSystem::SendAutomatedMessage(uint32 type, uint64 sender, uint64 receive
 	msg.body = body;
 	msg.money = money;
 	msg.cod = cod;
-	if( GUID_LOPART(item_guid) != 0 )
-		msg.items.push_back( GUID_LOPART(item_guid) );
+	if( Wowice::Util::GUID_LOPART(item_guid) != 0 )
+		msg.items.push_back( Wowice::Util::GUID_LOPART(item_guid) );
 
 	msg.stationery = stationery;
 	msg.delivery_time = (uint32)UNIXTIME;
