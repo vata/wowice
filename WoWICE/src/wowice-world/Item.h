@@ -114,7 +114,32 @@ enum scalingstatmodtypes {
 	SCALINGSTATSPELLPOWER
 };
 
-#define RANDOM_SUFFIX_MAGIC_CALCULATION( __suffix, __scale ) int32( float( ( float( ( __suffix ) ) * float( ( __scale ) ) ) ) / 10000.0f );
+// -1 from client enchantment slot number
+enum EnchantmentSlot{
+    PERM_ENCHANTMENT_SLOT           = 0,
+    TEMP_ENCHANTMENT_SLOT           = 1,
+    SOCK_ENCHANTMENT_SLOT1          = 2,
+    SOCK_ENCHANTMENT_SLOT2          = 3,
+    SOCK_ENCHANTMENT_SLOT3          = 4,
+    BONUS_ENCHANTMENT_SLOT          = 5,
+    PRISMATIC_ENCHANTMENT_SLOT      = 6,
+    MAX_INSPECTED_ENCHANTMENT_SLOT  = 7,
+
+    PROP_ENCHANTMENT_SLOT_0         = 7,                    // used with RandomSuffix
+    PROP_ENCHANTMENT_SLOT_1         = 8,                    // used with RandomSuffix
+    PROP_ENCHANTMENT_SLOT_2         = 9,                    // used with RandomSuffix and RandomProperty
+    PROP_ENCHANTMENT_SLOT_3         = 10,                   // used with RandomProperty
+    PROP_ENCHANTMENT_SLOT_4         = 11,                   // used with RandomProperty
+    MAX_ENCHANTMENT_SLOT            = 12
+};
+
+
+enum RandomEnchantmentTypes{
+	RANDOMPROPERTY = 1,
+	RANDOMSUFFIX   = 2
+};
+
+#define RANDOM_SUFFIX_MAGIC_CALCULATION( __suffix, __scale ) float2int32( float( __suffix ) * float( __scale ) / 10000.0f );
 
 class SERVER_DECL Item : public Object
 {
@@ -176,32 +201,43 @@ public:
 
 	uint32 GetItemRandomPropertyId() const { return m_uint32Values[ITEM_FIELD_RANDOM_PROPERTIES_ID]; }
 	uint32 GetItemRandomSuffixFactor() { return m_uint32Values[ITEM_FIELD_PROPERTY_SEED]; }
-    void SetItemRandomPropertyId( uint32 id ){ SetUInt32Value( ITEM_FIELD_RANDOM_PROPERTIES_ID, id ); }
-    void SetItemRandomSuffixFactor( uint32 factor ){ SetUInt32Value( ITEM_FIELD_PROPERTY_SEED, factor ); }
-
-	void SetRandomProperty( uint32 id )
-	{
-		SetUInt32Value( ITEM_FIELD_RANDOM_PROPERTIES_ID, id );
+    
+	void SetItemRandomPropertyId( uint32 id ){
 		random_prop = id;
+		SetUInt32Value( ITEM_FIELD_RANDOM_PROPERTIES_ID, id );
+	}
+
+    void SetItemRandomSuffixFactor( uint32 factor ){
+		random_suffix = factor;
+		SetUInt32Value( ITEM_FIELD_PROPERTY_SEED, factor );
 	}
 
 	void SetRandomSuffix( uint32 id )
 	{
 		int32 r_id = -(int32(id));
 		uint32 v = Item::GenerateRandomSuffixFactor( m_itemProto );
-		SetRandomProperty( (uint32)r_id );
+		SetItemRandomPropertyId( (uint32)r_id );
 		SetItemRandomSuffixFactor( v );
 		random_suffix = id;
 	}
 
 	void SetDurability( uint32 Value ) { SetUInt32Value(ITEM_FIELD_DURABILITY, Value ); };
     void SetDurabilityMax( uint32 Value ) { SetUInt32Value(ITEM_FIELD_MAXDURABILITY, Value ); };
-	void SetDurabilityToMax() { SetUInt32Value( ITEM_FIELD_DURABILITY, GetUInt32Value( ITEM_FIELD_MAXDURABILITY ) ); }
+
 	uint32 GetDurability() { return GetUInt32Value( ITEM_FIELD_DURABILITY ); }
 	uint32 GetDurabilityMax() { return GetUInt32Value( ITEM_FIELD_MAXDURABILITY ); }
 
+	void SetDurabilityToMax() { SetUInt32Value( ITEM_FIELD_DURABILITY, GetUInt32Value( ITEM_FIELD_MAXDURABILITY ) ); }
+
     uint32 GetEnchantmentId( uint32 index ){ return GetUInt32Value( ITEM_FIELD_ENCHANTMENT_1_1 + 3 * index ); }
     void SetEnchantmentId( uint32 index, uint32 value ){ SetUInt32Value( ITEM_FIELD_ENCHANTMENT_1_1 + 3 * index, value ); }
+
+    uint32 GetEnchantmentDuration( uint32 index ){ return GetUInt32Value( ITEM_FIELD_ENCHANTMENT_1_1 + 1 + 3 * index ); }
+    void SetEnchantmentDuration( uint32 index, uint32 value ){ SetUInt32Value( ITEM_FIELD_ENCHANTMENT_1_1 + 1 + 3 * index, value ); }
+
+	uint32 GetEnchantmentCharges( uint32 index ){ return GetUInt32Value( ITEM_FIELD_ENCHANTMENT_1_1 + 2 + 3 * index ); }
+	void SetEnchantmentCharges( uint32 index, uint32 value ){ SetUInt32Value( ITEM_FIELD_ENCHANTMENT_1_1 + 2 + 3 * index, value ); }
+
 	void SetTextId( uint32 message_id ) { SetUInt32Value( ITEM_FIELD_ITEM_TEXT_ID, message_id); }
 	uint32 GetTextId() { return GetUInt32Value( ITEM_FIELD_ITEM_TEXT_ID ); }
 
@@ -314,7 +350,16 @@ public:
     void RemoveFromRefundableMap();
 	bool RepairItem(Player * pPlayer, bool guildmoney = false, int32 * pCost = NULL);
 	uint32 RepairItemCost();
-        
+
+	uint32 GetOnUseSpellID( uint32 index ){ return OnUseSpellIDs[ index ]; }
+	bool HasOnUseSpellID( uint32 id ){
+		for( uint32 i = 0; i < 3; ++i )
+			if( OnUseSpellIDs[ i ] == id )
+				return true;
+
+		return false;
+	}
+       
 protected:
 
 	ItemPrototype* m_itemProto;
@@ -324,6 +369,10 @@ protected:
 	uint32 random_prop;
 	uint32 random_suffix;
     time_t ItemExpiresOn; // this is for existingduration
+
+private:
+	// Enchant type 3 spellids, like engineering gadgets appliable to items.
+	uint32 OnUseSpellIDs[ 3 ];
 };
 
 uint32 GetSkillByProto( uint32, uint32 );

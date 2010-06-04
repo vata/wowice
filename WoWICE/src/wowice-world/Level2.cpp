@@ -106,7 +106,7 @@ bool ChatHandler::CreateGuildCommand(const char* args, WorldSession *m_session)
 	{
 		// send message to user
 		char buf[256];
-		snprintf((char*)buf,256,"The name was too long by %u", (uint32)strlen((char*)args)-75);
+		snprintf((char*)buf,256,"The name was too long by %u", (uint32)strlen(args)-75);
 		SystemMessage(m_session, buf);
 		return true;
 	}
@@ -128,7 +128,7 @@ bool ChatHandler::CreateGuildCommand(const char* args, WorldSession *m_session)
 	}
 
 	Charter tempCharter(0, ptarget->GetLowGUID(), CHARTER_TYPE_GUILD);
-	tempCharter.SignatureCount=0;
+	tempCharter.SignatureCount= 0;
 	tempCharter.GuildName = string(args);
 
 	pGuild = Guild::Create();
@@ -166,7 +166,10 @@ bool ChatHandler::HandleDeleteCommand(const char* args, WorldSession *m_session)
 		return true;
 	}
 	sGMLog.writefromsession(m_session, "used npc delete, sqlid %u, creature %s, pos %f %f %f", unit->GetSQL_id(), unit->GetCreatureInfo() ? unit->GetCreatureInfo()->Name : "wtfbbqhax", unit->GetPositionX(), unit->GetPositionY(), unit->GetPositionZ());
-	BlueSystemMessage(m_session, "Deleted creature ID %u", unit->spawnid);
+
+	unit->GetAIInterface()->hideWayPoints( m_session->GetPlayer() );
+    
+    unit->DeleteFromDB();
 
 	if(unit->IsInWorld())
 	{
@@ -188,13 +191,13 @@ bool ChatHandler::HandleDeleteCommand(const char* args, WorldSession *m_session)
 						}
 				}
 				delete unit->m_spawn;
+                unit->m_spawn = NULL;
 			}
 		}
 		unit->RemoveFromWorld(false,true);
 	}
-	unit->DeleteFromDB();
 
-	delete unit;
+	BlueSystemMessage(m_session, "Creature deleted");
 
 	return true;
 }
@@ -261,7 +264,7 @@ bool ChatHandler::HandleItemCommand(const char* args, WorldSession *m_session)
 	if(tmpItem)
 	{
 		std::stringstream ss;
-		ss << "INSERT INTO vendors VALUES ('" << pCreature->GetUInt32Value(OBJECT_FIELD_ENTRY) << "', '" << item << "', '" << amount << "', 0, 0, " << costid << " )" << '\0';
+		ss << "INSERT INTO vendors VALUES ('" << pCreature->GetEntry() << "', '" << item << "', '" << amount << "', 0, 0, " << costid << " )" << '\0';
 		WorldDatabase.Execute( ss.str().c_str() );
 
 		pCreature->AddVendorItem( item, amount, ec );
@@ -308,7 +311,7 @@ bool ChatHandler::HandleItemRemoveCommand(const char* args, WorldSession *m_sess
 	std::stringstream sstext;
 	if(slot != -1)
 	{
-		uint32 creatureId = pCreature->GetUInt32Value(OBJECT_FIELD_ENTRY);
+		uint32 creatureId = pCreature->GetEntry();
 
 		std::stringstream ss;
 		ss << "DELETE FROM vendors WHERE entry = " << creatureId << " AND item = " << itemguid << '\0';
@@ -417,8 +420,8 @@ bool ChatHandler::HandleKillCommand(const char *args, WorldSession *m_session)
 		Player * plr = static_cast< Player* >(target);
 		// cebernic: kill just is kill,don't use dealdamage for it
 		// godcheat will not stop the killing,godcheat for DealDamage() only.
-		//m_session->GetPlayer()->DealDamage(plr, plr->GetUInt32Value(UNIT_FIELD_HEALTH)*2,0,0,0);
-		plr->SetUInt32Value(UNIT_FIELD_HEALTH, 0);
+		//m_session->GetPlayer()->DealDamage(plr, plr->GetHealth()*2,0,0,0);
+		plr->SetHealth(0);
 		plr->KillPlayer();
 		BlueSystemMessageToPlr(plr, "%s killed you with a GM command.", m_session->GetPlayer()->GetName());
 	}
@@ -426,13 +429,11 @@ bool ChatHandler::HandleKillCommand(const char *args, WorldSession *m_session)
 	{
 
 		// Cast insta-kill.
-		SpellEntry * se = dbcSpell.LookupEntry(5);
-		if(se == 0) return false;
+		SpellEntry * se = dbcSpell.LookupEntryForced(5);
+		if(se == NULL) return false;
 
 		SpellCastTargets targets(target->GetGUID());
 		Spell * sp = new Spell(m_session->GetPlayer(), se, true, 0);
-		if (!sp)
-			return true;
 		sp->prepare(&targets);
 
 /*		SpellEntry * se = dbcSpell.LookupEntry(20479);
@@ -459,7 +460,7 @@ bool ChatHandler::HandleKillByPlrCommand( const char *args , WorldSession *m_ses
 	{
 		RedSystemMessage(m_session, "Player %s is already dead.", args);
 	} else {
-		plr->SetUInt32Value(UNIT_FIELD_HEALTH, 0); // Die, insect
+		plr->SetHealth(0); // Die, insect
 		plr->KillPlayer();
 		BlueSystemMessageToPlr(plr, "You were killed by %s with a GM command.", m_session->GetPlayer()->GetName());
 		GreenSystemMessage(m_session, "Killed player %s.", args);
@@ -482,7 +483,7 @@ bool ChatHandler::HandleCastSpellCommand(const char* args, WorldSession *m_sessi
 	}
 
 	uint32 spellid = atol(args);
-	SpellEntry *spellentry = dbcSpell.LookupEntry(spellid);
+	SpellEntry *spellentry = dbcSpell.LookupEntryForced(spellid);
 	if(!spellentry)
 	{
 		RedSystemMessage(m_session, "Invalid spell id!");
@@ -490,11 +491,6 @@ bool ChatHandler::HandleCastSpellCommand(const char* args, WorldSession *m_sessi
 	}
 
 	Spell *sp = new Spell(caster, spellentry, false, NULL);
-	if(!sp)
-	{
-		RedSystemMessage(m_session, "Spell failed creation!");
-		return false;
-	}
 	
 	BlueSystemMessage(m_session, "Casting spell %d on target.", spellid);
 	SpellCastTargets targets;
@@ -528,7 +524,7 @@ bool ChatHandler::HandleCastSpellNECommand(const char* args, WorldSession *m_ses
 	}
 
 	uint32 spellId = atol(args);
-	SpellEntry *spellentry = dbcSpell.LookupEntry(spellId);
+	SpellEntry *spellentry = dbcSpell.LookupEntryForced(spellId);
 	if(!spellentry)
 	{
 		RedSystemMessage(m_session, "Invalid spell id!");
@@ -588,7 +584,7 @@ bool ChatHandler::HandleCastSelfCommand(const char* args, WorldSession *m_sessio
 	}
 
 	uint32 spellid = atol(args);
-	SpellEntry *spellentry = dbcSpell.LookupEntry(spellid);
+	SpellEntry *spellentry = dbcSpell.LookupEntryForced(spellid);
 	if(!spellentry)
 	{
 		RedSystemMessage(m_session, "Invalid spell id!");
@@ -596,11 +592,6 @@ bool ChatHandler::HandleCastSelfCommand(const char* args, WorldSession *m_sessio
 	}
 
 	Spell *sp = new Spell(target, spellentry, false, NULL);
-	if(!sp)
-	{
-		RedSystemMessage(m_session, "Spell failed creation!");
-		return false;
-	}
 	
 	BlueSystemMessage(m_session, "Target is casting spell %d on himself.", spellid);
 	SpellCastTargets targets;
@@ -848,14 +839,14 @@ bool ChatHandler::HandleGOSpawn(const char *args, WorldSession *m_session)
 	GOSpawn * gs = new GOSpawn;
 	gs->entry = go->GetEntry();
 	gs->facing = go->GetOrientation();
-	gs->faction = go->GetUInt32Value(GAMEOBJECT_FACTION);
+	gs->faction = go->GetFaction();
 	gs->flags = go->GetUInt32Value(GAMEOBJECT_FLAGS);
 	gs->id = objmgr.GenerateGameObjectSpawnID();
-//	gs->o = go->GetFloatValue(GAMEOBJECT_ROTATION);
-	gs->o1 = go->GetFloatValue(GAMEOBJECT_PARENTROTATION);
-	gs->o2 = go->GetFloatValue(GAMEOBJECT_PARENTROTATION_02);
-	gs->o3 = go->GetFloatValue(GAMEOBJECT_PARENTROTATION_03);
-	gs->scale = go->GetFloatValue(OBJECT_FIELD_SCALE_X);
+	gs->o = 0.0f;
+	gs->o1 = go->GetParentRotation(0);
+	gs->o2 = go->GetParentRotation(2);
+	gs->o3 = go->GetParentRotation(3);
+	gs->scale = go->GetScale();
 	gs->x = go->GetPositionX();
 	gs->y = go->GetPositionY();
 	gs->z = go->GetPositionZ();
@@ -952,7 +943,7 @@ bool ChatHandler::HandleGOInfo(const char *args, WorldSession *m_session)
 	SystemMessage(m_session, "%s State:%s%u",	MSG_COLOR_GREEN,MSG_COLOR_LIGHTBLUE, GObj->GetByte( GAMEOBJECT_BYTES_1, 0 ) );
 	SystemMessage(m_session, "%s flags:%s%u",	MSG_COLOR_GREEN,MSG_COLOR_LIGHTBLUE, GObj->GetUInt32Value( GAMEOBJECT_FLAGS ) );
 	SystemMessage(m_session, "%s dynflags:%s%u",MSG_COLOR_GREEN,MSG_COLOR_LIGHTBLUE, GObj->GetUInt32Value( GAMEOBJECT_DYNAMIC ) );
-	SystemMessage(m_session, "%s faction:%s%u",	MSG_COLOR_GREEN,MSG_COLOR_LIGHTBLUE, GObj->GetUInt32Value( GAMEOBJECT_FACTION ) );
+	SystemMessage(m_session, "%s faction:%s%u",	MSG_COLOR_GREEN,MSG_COLOR_LIGHTBLUE, GObj->GetFaction() );
 	SystemMessage(m_session, "%s phase:%s%u",	MSG_COLOR_GREEN,MSG_COLOR_LIGHTBLUE, GObj->GetPhase() );
 
 	char gotypetxt[50];
@@ -1000,13 +991,10 @@ bool ChatHandler::HandleGOInfo(const char *args, WorldSession *m_session)
 
 	if( GOInfo->Name )
 		SystemMessage(m_session, "%s Name:%s%s",MSG_COLOR_GREEN,MSG_COLOR_LIGHTBLUE,GOInfo->Name);
-	SystemMessage(m_session, "%s Size:%s%u",MSG_COLOR_GREEN,MSG_COLOR_LIGHTBLUE,GObj->GetFloatValue(OBJECT_FIELD_SCALE_X));
-//	SystemMessage(m_session, "%s Facing:%s%f",MSG_COLOR_GREEN,MSG_COLOR_LIGHTBLUE,GObj->GetFloatValue(GAMEOBJECT_FACING));
-//	SystemMessage(m_session, "%s Rotation:%s%f",MSG_COLOR_GREEN,MSG_COLOR_LIGHTBLUE,GObj->GetFloatValue(GAMEOBJECT_ROTATION));
-//	SystemMessage(m_session, "%s Rotation01:%s%f",MSG_COLOR_GREEN,MSG_COLOR_LIGHTBLUE,GObj->GetFloatValue(GAMEOBJECT_ROTATION_01));
-	SystemMessage(m_session, "%s Parent Rotation O1:%s%f",MSG_COLOR_GREEN,MSG_COLOR_LIGHTBLUE,GObj->GetFloatValue(GAMEOBJECT_PARENTROTATION_01));
-	SystemMessage(m_session, "%s Parent Rotation O2:%s%f",MSG_COLOR_GREEN,MSG_COLOR_LIGHTBLUE,GObj->GetFloatValue(GAMEOBJECT_PARENTROTATION_02));
-	SystemMessage(m_session, "%s Parent Rotation O3:%s%f",MSG_COLOR_GREEN,MSG_COLOR_LIGHTBLUE,GObj->GetFloatValue(GAMEOBJECT_PARENTROTATION_03));
+	SystemMessage(m_session, "%s Size:%s%u",MSG_COLOR_GREEN,MSG_COLOR_LIGHTBLUE,GObj->GetScale());
+	SystemMessage(m_session, "%s Parent Rotation O1:%s%f",MSG_COLOR_GREEN,MSG_COLOR_LIGHTBLUE,GObj->GetParentRotation(1));
+	SystemMessage(m_session, "%s Parent Rotation O2:%s%f",MSG_COLOR_GREEN,MSG_COLOR_LIGHTBLUE,GObj->GetParentRotation(2));
+	SystemMessage(m_session, "%s Parent Rotation O3:%s%f",MSG_COLOR_GREEN,MSG_COLOR_LIGHTBLUE,GObj->GetParentRotation(3));
 
 	return true;
 }
@@ -1072,7 +1060,7 @@ bool ChatHandler::HandleGOScale(const char* args, WorldSession* m_session)
 	}
 	float scale = (float)atof(args);
 	if(!scale) scale = 1;
-	go->SetFloatValue(OBJECT_FIELD_SCALE_X, scale);
+	go->SetScale(  scale);
 	BlueSystemMessage(m_session, "Set scale to %.3f", scale);
 	sGMLog.writefromsession(m_session,"set scale on gameobject %s to %.3f, entry %u",GameObjectNameStorage.LookupEntry(go->GetEntry())->Name,scale,go->GetEntry());
 	uint32 NewGuid = m_session->GetPlayer()->GetMapMgr()->GenerateGameobjectGuid();
@@ -1099,7 +1087,7 @@ bool ChatHandler::HandleReviveStringcommand(const char* args, WorldSession* m_se
 		if(plr->GetInstanceID() == m_session->GetPlayer()->GetInstanceID())
 			plr->RemoteRevive();
 		else
-			sEventMgr.AddEvent(plr, &Player::RemoteRevive, EVENT_PLAYER_REST, 1, 1,0);
+			sEventMgr.AddEvent(plr, &Player::RemoteRevive, EVENT_PLAYER_REST, 1, 1, EVENT_FLAG_DO_NOT_EXECUTE_IN_WORLD_CONTEXT);
 
 		GreenSystemMessage(m_session, "Revived player %s.", args);
 		sGMLog.writefromsession(m_session, "revived player %s", args);
@@ -1140,7 +1128,7 @@ bool ChatHandler::HandleMountCommand(const char *args, WorldSession *m_session)
 		return true;
 	}
 
-	if(m_target->GetUInt32Value(UNIT_FIELD_MOUNTDISPLAYID) != 0)
+	if(m_target->GetMount() != 0)
 	{
 		RedSystemMessage(m_session, "Target is already mounted.");
 		return true;
@@ -1195,7 +1183,7 @@ bool ChatHandler::HandleAddAIAgentCommand(const char* args, WorldSession *m_sess
 	}
 
 	std::stringstream qry;
-	qry << "INSERT INTO ai_agents SET entry = '" << target->GetUInt32Value(OBJECT_FIELD_ENTRY) << "', type = '" << atoi(agent) << "', event = '" << atoi(procEvent)<< "', chance = '" << atoi(procChance)<< "', maxcount = '" << atoi(procCount)<< "', spell = '" << atoi(spellId)<< "', spelltype = '" << atoi(spellType)<< "', targettype_overwrite = '" << atoi(spelltargetType)<< "', cooldown_overwrite = '" << atoi(spellCooldown)<< "', floatMisc1 = '" << atof(floatMisc1)<< "', Misc2  ='" << atoi(Misc2)<< "'";
+	qry << "INSERT INTO ai_agents SET entry = '" << target->GetEntry() << "', type = '" << atoi(agent) << "', event = '" << atoi(procEvent)<< "', chance = '" << atoi(procChance)<< "', maxcount = '" << atoi(procCount)<< "', spell = '" << atoi(spellId)<< "', spelltype = '" << atoi(spellType)<< "', targettype_overwrite = '" << atoi(spelltargetType)<< "', cooldown_overwrite = '" << atoi(spellCooldown)<< "', floatMisc1 = '" << atof(floatMisc1)<< "', Misc2  ='" << atoi(Misc2)<< "'";
 	WorldDatabase.Execute( qry.str().c_str( ) );
 
 	AI_Spell * sp = new AI_Spell;
@@ -1208,9 +1196,9 @@ bool ChatHandler::HandleAddAIAgentCommand(const char* args, WorldSession *m_sess
 	sp->floatMisc1 = (float)atof(floatMisc1);
 	sp->Misc2 = (uint32)atof(Misc2);
 	sp->cooldown = (uint32)atoi(spellCooldown);
-	sp->procCount=0;
-	sp->procCounter=0;
-	sp->cooldowntime=0;
+	sp->procCount= 0;
+	sp->procCounter= 0;
+	sp->cooldowntime= 0;
 	sp->minrange = GetMinRange(dbcSpellRange.LookupEntry(dbcSpell.LookupEntry(atoi(spellId))->rangeIndex));
 	sp->maxrange = GetMaxRange(dbcSpellRange.LookupEntry(dbcSpell.LookupEntry(atoi(spellId))->rangeIndex));
 
@@ -1241,7 +1229,7 @@ bool ChatHandler::HandleListAIAgentCommand(const char* args, WorldSession *m_ses
 	sstext << "agentlist of creature: " << target->GetGUID() << '\n';
 
 	std::stringstream ss;
-	ss << "SELECT * FROM ai_agents where entry=" << target->GetUInt32Value(OBJECT_FIELD_ENTRY);
+	ss << "SELECT * FROM ai_agents where entry=" << target->GetEntry();
 	QueryResult *result = WorldDatabase.Query( ss.str().c_str() );
 
 	if( !result )
@@ -1342,7 +1330,7 @@ bool ChatHandler::HandleNPCEquipOneCommand(const char * args, WorldSession * m_s
 
 	if(ItemID == 0)
 	{
-		SelectedCreature->SetUInt32Value(UNIT_VIRTUAL_ITEM_SLOT_ID, 0);
+		SelectedCreature->SetEquippedItem(MELEE,0);
 		SelectedCreature->SaveToDB();
 		m_session->SystemMessage("Reset item 1 of %s (%u).", SelectedCreature->GetCreatureInfo()->Name, SelectedCreature->GetProto()->Id);
 		return true;
@@ -1354,7 +1342,7 @@ bool ChatHandler::HandleNPCEquipOneCommand(const char * args, WorldSession * m_s
 		m_session->SystemMessage("Item ID: %u does not exist.", ItemID);
 		return true;
 	}
-	SelectedCreature->SetUInt32Value(UNIT_VIRTUAL_ITEM_SLOT_ID, ItemProvided->ItemId);
+	SelectedCreature->SetEquippedItem(MELEE,ItemProvided->ItemId);
 	SelectedCreature->SaveToDB();
 	return true;
 }
@@ -1376,7 +1364,7 @@ bool ChatHandler::HandleNPCEquipTwoCommand(const char * args, WorldSession * m_s
 
 	if(ItemID == 0)
 	{
-		SelectedCreature->SetUInt32Value(UNIT_VIRTUAL_ITEM_SLOT_ID+1, 0);
+		SelectedCreature->SetEquippedItem(OFFHAND,0);
 		SelectedCreature->SaveToDB();
 		m_session->SystemMessage("Reset item 2 of %s (%u).", SelectedCreature->GetCreatureInfo()->Name, SelectedCreature->GetProto()->Id);
 		return true;
@@ -1388,7 +1376,7 @@ bool ChatHandler::HandleNPCEquipTwoCommand(const char * args, WorldSession * m_s
 		m_session->SystemMessage("Item ID: %u does not exist.", ItemID);
 		return true;
 	}
-	SelectedCreature->SetUInt32Value(UNIT_VIRTUAL_ITEM_SLOT_ID+1, ItemProvided->ItemId);
+	SelectedCreature->SetEquippedItem(OFFHAND,ItemProvided->ItemId);
 	SelectedCreature->SaveToDB();
 	return true;
 }
@@ -1410,7 +1398,7 @@ bool ChatHandler::HandleNPCEquipThreeCommand(const char * args, WorldSession * m
 
 	if(ItemID == 0)
 	{
-		SelectedCreature->SetUInt32Value(UNIT_VIRTUAL_ITEM_SLOT_ID+2, 0);
+		SelectedCreature->SetEquippedItem(RANGED,0);
 		SelectedCreature->SaveToDB();
 		m_session->SystemMessage("Reset item 3 of %s (%u).", SelectedCreature->GetCreatureInfo()->Name, SelectedCreature->GetProto()->Id);
 		return true;
@@ -1422,7 +1410,7 @@ bool ChatHandler::HandleNPCEquipThreeCommand(const char * args, WorldSession * m
 		m_session->SystemMessage("Item ID: %u does not exist.", ItemID);
 		return true;
 	}
-	SelectedCreature->SetUInt32Value(UNIT_VIRTUAL_ITEM_SLOT_ID+2, ItemProvided->ItemId);
+	SelectedCreature->SetEquippedItem(RANGED,ItemProvided->ItemId);
 	SelectedCreature->SaveToDB();
 	return true;
 }

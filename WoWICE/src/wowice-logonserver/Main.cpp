@@ -146,6 +146,8 @@ bool startdb()
 	}
 
 	sLog.SetScreenLoggingLevel(Config.MainConfig.GetIntDefault("LogLevel", "Screen", 0));
+	Log.log_level = Config.MainConfig.GetIntDefault("LogLevel", "Screen", 0);
+	sLog.SetFileLoggingLevel(Config.MainConfig.GetIntDefault("LogLevel", "File", -1), "logonserver.log");
 	sLogonSQL = Database::CreateDatabaseInterface( ltype );
 
 	// Initialize it
@@ -375,7 +377,14 @@ void LogonServer::Run(int argc, char ** argv)
 		*/
 		return;
 	}
+
+	/* set new log levels */
+	if( screen_log_level != (int)DEF_VALUE_NOT_SET )
+		sLog.SetScreenLoggingLevel(screen_log_level);
 	
+	if( file_log_level != (int)DEF_VALUE_NOT_SET )
+		sLog.SetFileLoggingLevel(file_log_level, "logonserver.log");
+
 	sLog.outString("The key combination <Ctrl-C> will safely shut down the server at any time.");
 	sLog.outString("");
 	Log.Notice("System","Initializing Random Number Generators...");
@@ -418,8 +427,15 @@ void LogonServer::Run(int argc, char ** argv)
 	//uint32 threaddelay = Config.MainConfig.GetIntDefault("Network", "ThreadDelay", 20);
 	string host = Config.MainConfig.GetStringDefault("Listen", "Host", "0.0.0.0");
 	string shost = Config.MainConfig.GetStringDefault("Listen", "ISHost", host.c_str());
+
+	/* Due to many people's inability to cope with us being out-of-sync with retail sometimes we were forced to hardcode this
 	min_build = Config.MainConfig.GetIntDefault("Client", "MinBuild", 6180);
 	max_build = Config.MainConfig.GetIntDefault("Client", "MaxBuild", 6999);
+	*/
+
+	min_build = LOGON_MINBUILD;
+	max_build = LOGON_MAXBUILD;
+
 	string logon_pass = Config.MainConfig.GetStringDefault("LogonServer", "RemotePassword", "r3m0t3b4d");
 	Sha1Hash hash;
 	hash.UpdateData(logon_pass);
@@ -474,13 +490,13 @@ void LogonServer::Run(int argc, char ** argv)
 	sLog.outString("Success! Ready for connections");
 	while(mrunning && authsockcreated && intersockcreated)
 	{
-		if(!(++loop_counter % 400))	 // 20 seconds
+		if(!(++loop_counter % 20))	 // 20 seconds
 			CheckForDeadSockets();
 
-		if(!(loop_counter%10000))	// 5mins
+		if(!(loop_counter%300))	// 5mins
 			ThreadPool.IntegrityCheck();
 
-		if(!(loop_counter%10))
+		if(!(loop_counter%5))
 		{
 			sInfoCore.TimeoutSockets();
 			sSocketGarbageCollector.Update();
@@ -490,7 +506,7 @@ void LogonServer::Run(int argc, char ** argv)
 		}
 
 		PatchMgr::getSingleton().UpdateJobs();
-		Sleep(10);
+		Sleep(1000);
 	}
 
 	sLog.outString("Shutting down...");

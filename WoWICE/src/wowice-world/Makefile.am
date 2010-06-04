@@ -7,10 +7,7 @@ wowice_world_SOURCES = \
     AchievementMgr.h \
     CollideInterface.cpp \
     CollideInterface.h \
-    VoiceChatClientSocket.cpp \
-    VoiceChatClientSocket.h \
     VoiceChatHandler.cpp \
-    VoiceChatHandler.h \
     DayWatcherThread.cpp \
     DayWatcherThread.h \
     CommonScheduleThread.cpp \
@@ -209,7 +206,20 @@ wowice_world_SOURCES = \
     ConsoleCommands.h \
     ConsoleListener.cpp \
     WUtil.h \
-    WUtil.cpp
+    WUtil.cpp \
+	SpellProc.h\
+	SpellProc.cpp\
+	SpellProc_DeathKnight.cpp\
+	SpellProc_Druid.cpp\
+	SpellProc_Hunter.cpp\
+	SpellProc_Items.cpp\
+	SpellProc_Mage.cpp\
+	SpellProc_Paladin.cpp\
+	SpellProc_Priest.cpp\
+	SpellProc_Rogue.cpp\
+	SpellProc_Shaman.cpp\
+	SpellProc_Warlock.cpp\
+	SpellProc_Warrior.cpp
 	
 wowice_world_LDADD = -lshared -lz -lpcre -lcollision
 

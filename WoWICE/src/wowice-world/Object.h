@@ -37,8 +37,8 @@ enum HIGHGUID_TYPE
 	LOWGUID_ENTRY_MASK				= 0x00FFFFFF,
 };
 
-#define GET_TYPE_FROM_GUID(x) (GUID_HIPART((x)) & HIGHGUID_TYPE_MASK)
-#define GET_LOWGUID_PART(x) (GUID_LOPART((x)) & LOWGUID_ENTRY_MASK)
+#define GET_TYPE_FROM_GUID(x) ( Wowice::Util::GUID_HIPART( (x) ) & HIGHGUID_TYPE_MASK )
+#define GET_LOWGUID_PART(x) ( Wowice::Util::GUID_LOPART( (x) ) & LOWGUID_ENTRY_MASK )
 
 // TODO: fix that type mess
 
@@ -113,6 +113,12 @@ class Player;
 class MapCell;
 class MapMgr;
 class ObjectContainer;
+class DynamicObject;
+class Creature;
+class GameObject;
+class Unit;
+class Group;
+class Pet;
 
 //====================================================================
 //  Object
@@ -129,7 +135,7 @@ public:
 	virtual void Update ( uint32 time ) { }
 
 	//! True if object exists in world, else false
-	WoWICE_INLINE bool IsInWorld() { return m_mapMgr != NULL; }
+	bool IsInWorld() { return m_mapMgr != NULL; }
 	virtual void AddToWorld();
 	virtual void AddToWorld(MapMgr * pMapMgr);
 	void PushToWorld(MapMgr*);
@@ -138,75 +144,64 @@ public:
 	virtual void RemoveFromWorld(bool free_guid);
 
 	//! Guid always comes first
-#ifndef USING_BIG_ENDIAN
-	WoWICE_INLINE const uint64& GetGUID() const { return *((uint64*)m_uint32Values); }
-#else
-	WoWICE_INLINE const uint64 GetGUID() const { return GetUInt64Value(0); }
-#endif
+	const uint64& GetGUID() const{ return GetUInt64Value( OBJECT_FIELD_GUID ); }
+    void SetGUID( uint64 GUID ){ SetUInt64Value( OBJECT_FIELD_GUID, GUID );  }
+    const uint32 GetLowGUID() const { return m_uint32Values[ LOWGUID ]; }
+    uint32 GetHighGUID(){ return m_uint32Values[ HIGHGUID ]; }
+    void SetLowGUID( uint32 val ){ m_uint32Values[ LOWGUID ] = val; }
+    void SetHighGUID( uint32 val ){ m_uint32Values[ HIGHGUID ] = val; }
 
-	WoWICE_INLINE const WoWGuid& GetNewGUID() const { return m_wowGuid; }
-	WoWICE_INLINE uint32 GetEntry(){return m_uint32Values[3];}
+	const WoWGuid& GetNewGUID() const { return m_wowGuid; }
+	uint32 GetEntry(){ return m_uint32Values[ OBJECT_FIELD_ENTRY ]; }
+    void SetEntry( uint32 value ){ SetUInt32Value( OBJECT_FIELD_ENTRY, value ); } 
+    
+    float GetScale(){ return m_floatValues[ OBJECT_FIELD_SCALE_X ]; }
+    void SetScale( float scale ){ SetFloatValue( OBJECT_FIELD_SCALE_X, scale ); };
 
-	WoWICE_INLINE const uint32 GetEntryFromGUID() const
-	{
-/*		uint64 entry = *(uint64*)m_uint32Values;
-		entry >>= 24;
-		return (uint32)(entry & 0xFFFFFFFF);
-*/
-
-		return uint32( (*(uint64*)m_uint32Values >> 24) & 0xFFFFFFFF );
-	}
-
-	WoWICE_INLINE const uint32 GetTypeFromGUID() const { return (m_uint32Values[1] & HIGHGUID_TYPE_MASK); }
-	WoWICE_INLINE const uint32 GetUIdFromGUID() const { return (m_uint32Values[0] & LOWGUID_ENTRY_MASK); }
-	WoWICE_INLINE const uint32 GetLowGUID() const { return (m_uint32Values[0]); }
+	const uint32 GetEntryFromGUID() const{ return uint32( (*(uint64*)m_uint32Values >> 24) & 0xFFFFFFFF ); }
+	const uint32 GetTypeFromGUID() const { return (m_uint32Values[ HIGHGUID ] & HIGHGUID_TYPE_MASK); }
+	const uint32 GetUIdFromGUID() const { return (m_uint32Values[ LOWGUID ] & LOWGUID_ENTRY_MASK); }
 
 	// type
-	WoWICE_INLINE const uint8& GetTypeId() const { return m_objectTypeId; }
-	virtual bool IsUnit()	{ return ( m_objectTypeId == TYPEID_UNIT || m_objectTypeId == TYPEID_PLAYER ); }
-	virtual bool IsPlayer() { return m_objectTypeId == TYPEID_PLAYER; }
+	const uint8& GetTypeId() const { return m_objectTypeId; }
+	bool IsUnit()	{ return ( m_objectTypeId == TYPEID_UNIT || m_objectTypeId == TYPEID_PLAYER ); }
+	bool IsPlayer() { return m_objectTypeId == TYPEID_PLAYER; }
 	virtual bool IsCreature() { return m_objectTypeId == TYPEID_UNIT; }
 	virtual bool IsPet();
-	virtual bool IsGameObject() { return m_objectTypeId == TYPEID_GAMEOBJECT; }
+	bool IsGameObject() { return m_objectTypeId == TYPEID_GAMEOBJECT; }
 
 	//! This includes any nested objects we have, inventory for example.
-	virtual uint32 __fastcall BuildCreateUpdateBlockForPlayer( ByteBuffer *data, Player *target );
-	uint32 __fastcall BuildValuesUpdateBlockForPlayer( ByteBuffer *buf, Player *target );
-	uint32 __fastcall BuildValuesUpdateBlockForPlayer( ByteBuffer * buf, UpdateMask * mask );
-	uint32 __fastcall BuildOutOfRangeUpdateBlock( ByteBuffer *buf );
+	virtual uint32  BuildCreateUpdateBlockForPlayer( ByteBuffer *data, Player *target );
+	uint32  BuildValuesUpdateBlockForPlayer( ByteBuffer *buf, Player *target );
+	uint32  BuildValuesUpdateBlockForPlayer( ByteBuffer * buf, UpdateMask * mask );
+	uint32  BuildOutOfRangeUpdateBlock( ByteBuffer *buf );
 
 	WorldPacket* BuildFieldUpdatePacket(uint32 index,uint32 value);
 	void BuildFieldUpdatePacket(Player* Target, uint32 Index, uint32 Value);
 	void BuildFieldUpdatePacket(ByteBuffer * buf, uint32 Index, uint32 Value);
 
-	void DealDamage(Unit *pVictim, uint32 damage, uint32 targetEvent, uint32 unitEvent, uint32 spellId, bool no_remove_auras = false);
-
-
-	virtual void DestroyForPlayer( Player *target ) const;
+	virtual void DealDamage(Unit *pVictim, uint32 damage, uint32 targetEvent, uint32 unitEvent, uint32 spellId, bool no_remove_auras = false);
 
 	void BuildHeartBeatMsg( WorldPacket *data ) const;
-	WorldPacket * BuildTeleportAckMsg( const LocationVector & v);
-	bool IsBeingTeleported() { return mSemaphoreTeleport; }
-	void SetSemaphoreTeleport(bool semphsetting) { mSemaphoreTeleport = semphsetting; }
 
 	bool SetPosition( float newX, float newY, float newZ, float newOrientation, bool allowPorting = false );
 	bool SetPosition( const LocationVector & v, bool allowPorting = false);
 	void SetRotation( uint64 guid );
 
-	WoWICE_INLINE const float& GetPositionX( ) const { return m_position.x; }
-	WoWICE_INLINE const float& GetPositionY( ) const { return m_position.y; }
-	WoWICE_INLINE const float& GetPositionZ( ) const { return m_position.z; }
-	WoWICE_INLINE const float& GetOrientation( ) const { return m_position.o; }
-	WoWICE_INLINE void SetOrientation( float &o ) { m_position.o = o; }
+	const float& GetPositionX( ) const { return m_position.x; }
+	const float& GetPositionY( ) const { return m_position.y; }
+	const float& GetPositionZ( ) const { return m_position.z; }
+	const float& GetOrientation( ) const { return m_position.o; }
+	void SetOrientation( float &o ) { m_position.o = o; }
 
-	WoWICE_INLINE const float& GetSpawnX( ) const { return m_spawnLocation.x; }
-	WoWICE_INLINE const float& GetSpawnY( ) const { return m_spawnLocation.y; }
-	WoWICE_INLINE const float& GetSpawnZ( ) const { return m_spawnLocation.z; }
-	WoWICE_INLINE const float& GetSpawnO( ) const { return m_spawnLocation.o; }
+	const float& GetSpawnX( ) const { return m_spawnLocation.x; }
+	const float& GetSpawnY( ) const { return m_spawnLocation.y; }
+	const float& GetSpawnZ( ) const { return m_spawnLocation.z; }
+	const float& GetSpawnO( ) const { return m_spawnLocation.o; }
 
-	WoWICE_INLINE const LocationVector & GetPosition() { return m_position; }
-	WoWICE_INLINE LocationVector & GetPositionNC() { return m_position; }
-	WoWICE_INLINE LocationVector * GetPositionV() { return &m_position; }
+	const LocationVector & GetPosition() { return m_position; }
+	LocationVector & GetPositionNC() { return m_position; }
+	LocationVector * GetPositionV() { return &m_position; }
 
 	//! Distance Calculation
 	float CalcDistance(Object* Ob);
@@ -221,49 +216,50 @@ public:
 	bool IsWithinLOS( LocationVector location  );
 
 	//! Only for MapMgr use
-	WoWICE_INLINE MapCell* GetMapCell() const { return m_mapCell; }
+	MapCell* GetMapCell() const { return m_mapCell; }
 	//! Only for MapMgr use
-	WoWICE_INLINE void SetMapCell(MapCell* cell) { m_mapCell = cell; }
+	void SetMapCell(MapCell* cell) { m_mapCell = cell; }
 	//! Only for MapMgr use
-	WoWICE_INLINE MapMgr* GetMapMgr() const { return m_mapMgr; }
+	MapMgr* GetMapMgr() const { return m_mapMgr; }
 
-	WoWICE_INLINE void SetMapId(uint32 newMap) { m_mapId = newMap; }
+	Object * GetMapMgrObject(const uint64 & guid);
+	Pet * GetMapMgrPet(const uint64 & guid);
+	Unit * GetMapMgrUnit(const uint64 & guid);
+	Player * GetMapMgrPlayer(const uint64 & guid);
+	Creature * GetMapMgrCreature(const uint64 & guid);
+	GameObject * GetMapMgrGameObject(const uint64 & guid);
+	DynamicObject * GetMapMgrDynamicObject(const uint64 & guid);
+
+	void SetMapId(uint32 newMap) { m_mapId = newMap; }
 	void SetZoneId(uint32 newZone);
 
-	WoWICE_INLINE const uint32 GetMapId( ) const { return m_mapId; }
-	WoWICE_INLINE const uint32& GetZoneId( ) const { return m_zoneId; }
+	const uint32 GetMapId( ) const { return m_mapId; }
+	const uint32& GetZoneId( ) const { return m_zoneId; }
 
 	//! Get uint32 property
-	WoWICE_INLINE const uint32& GetUInt32Value( uint32 index ) const
+	const uint32& GetUInt32Value( uint32 index ) const
 	{
-		ASSERT( index < m_valuesCount );
+		Wowice::Util::WOWICE_ASSERT(    index < m_valuesCount );
 		return m_uint32Values[ index ];
 	}
 
-	//! Get uint64 property
-#ifdef USING_BIG_ENDIAN
-        __inline const uint64 GetUInt64Value( uint32 index ) const
-#else
-	WoWICE_INLINE const uint64& GetUInt64Value( uint32 index ) const
-#endif
+    const uint64& GetUInt64Value( uint32 index ) const
 	{
-		ASSERT( index + uint32(1) < m_valuesCount );
-#ifdef USING_BIG_ENDIAN
-		/* these have to be swapped here :< */
-		return uint64((uint64(m_uint32Values[index+1]) << 32) | m_uint32Values[index]);
-#else
-		return *((uint64*)&(m_uint32Values[ index ]));
-#endif
+		Wowice::Util::WOWICE_ASSERT(    index + uint32(1) < m_valuesCount );
+
+        uint64 *p = reinterpret_cast< uint64* >( &m_uint32Values[ index ] );
+
+		return *p;
 	}
 
 	//! Get float property
-	WoWICE_INLINE const float& GetFloatValue( uint32 index ) const
+	const float& GetFloatValue( uint32 index ) const
 	{
-		ASSERT( index < m_valuesCount );
+		Wowice::Util::WOWICE_ASSERT(    index < m_valuesCount );
 		return m_floatValues[ index ];
 	}
 
-	void __fastcall ModFloatValue(const uint32 index, const float value );
+	void  ModFloatValue(const uint32 index, const float value );
 	void ModFloatValueByPCT(const uint32 index, int32 byPct );
 	void ModSignedInt32Value(uint32 index, int32 value);
 	void ModUnsigned32Value(uint32 index, int32 mod);
@@ -272,47 +268,43 @@ public:
 	//! Set uint32 property
 	void SetByte(uint32 index, uint32 index1,uint8 value);
 
-	WoWICE_INLINE uint8 GetByte(uint32 i,uint32 i1)
+	uint8 GetByte(uint32 i,uint32 i1)
 	{
-		ASSERT( i < m_valuesCount);
-		ASSERT(i1 < 4);
-#ifdef USING_BIG_ENDIAN
-		return ((uint8*)m_uint32Values)[i*4+(3-i1)];
-#else
+		Wowice::Util::WOWICE_ASSERT(    i < m_valuesCount);
+		Wowice::Util::WOWICE_ASSERT(   i1 < 4);
 		return ((uint8*)m_uint32Values)[i*4+i1];
-#endif
 	}
 
-	void __fastcall SetByteFlag( uint16 index, uint8 offset, uint8 newFlag );
-    void __fastcall RemoveByteFlag( uint16 index, uint8 offset, uint8 newFlag );
+	void  SetByteFlag( uint16 index, uint8 offset, uint8 newFlag );
+    void  RemoveByteFlag( uint16 index, uint8 offset, uint8 newFlag );
 
-	WoWICE_INLINE bool HasByteFlag(uint32 index, uint32 index1, uint8 flag)
+	bool HasByteFlag(uint32 index, uint32 index1, uint8 flag)
 	{
 		return ((GetByte(index, index1) & flag) != 0);
 	}
 
-	WoWICE_INLINE void SetNewGuid(uint32 Guid)
+	void SetNewGuid(uint32 Guid)
 	{
-		SetUInt32Value(OBJECT_FIELD_GUID, Guid);
-		m_wowGuid.Init(GetGUID());
+		SetLowGUID( Guid );
+		m_wowGuid.Init( GetGUID() );
 	}
 
 	void EventSetUInt32Value(uint32 index, uint32 value);
-	void __fastcall SetUInt32Value( const uint32 index, const uint32 value );
+	void  SetUInt32Value( const uint32 index, const uint32 value );
 
 	//! Set uint64 property
-	void __fastcall SetUInt64Value( const uint32 index, const uint64 value );
+	void  SetUInt64Value( const uint32 index, const uint64 value );
 
 	//! Set float property
-	void __fastcall SetFloatValue( const uint32 index, const float value );
+	void  SetFloatValue( const uint32 index, const float value );
 
-	void __fastcall SetFlag( const uint32 index, uint32 newFlag );
+	void  SetFlag( const uint32 index, uint32 newFlag );
 
-	void __fastcall RemoveFlag( const uint32 index, uint32 oldFlag );
+	void  RemoveFlag( const uint32 index, uint32 oldFlag );
 
-	WoWICE_INLINE bool HasFlag( const uint32 index, uint32 flag ) const
+	bool HasFlag( const uint32 index, uint32 flag ) const
 	{
-		ASSERT( index < m_valuesCount );
+		Wowice::Util::WOWICE_ASSERT(    index < m_valuesCount );
 		return (m_uint32Values[ index ] & flag) != 0;
 	}
 
@@ -325,7 +317,7 @@ public:
 
 	bool HasUpdateField(uint32 index)
 	{
-		ASSERT( index < m_valuesCount);
+		Wowice::Util::WOWICE_ASSERT(    index < m_valuesCount);
 		return m_updateMask.GetBit(index);
 	}
 
@@ -347,28 +339,28 @@ public:
 	//! Converts to 360 > x > 0
 	float getEasyAngle( float angle );
 
-	WoWICE_INLINE const float GetDistanceSq(Object* obj)
+	const float GetDistanceSq(Object* obj)
 	{
 		if(obj->GetMapId() != m_mapId) return 40000.0f; //enough for out of range
 		return m_position.DistanceSq(obj->GetPosition());
 	}
 
-	WoWICE_INLINE float GetDistanceSq(LocationVector & comp)
+	float GetDistanceSq(LocationVector & comp)
 	{
 		return comp.DistanceSq(m_position);
 	}
 
-	WoWICE_INLINE float CalcDistance(LocationVector & comp)
+	float CalcDistance(LocationVector & comp)
 	{
 		return comp.Distance(m_position);
 	}
 
-	WoWICE_INLINE const float GetDistanceSq(float x, float y, float z)
+	const float GetDistanceSq(float x, float y, float z)
 	{
 		return m_position.DistanceSq(x, y, z);
 	}
 
-	WoWICE_INLINE const float GetDistance2dSq( Object* obj )
+	const float GetDistance2dSq( Object* obj )
 	{
 		if( obj->GetMapId() != m_mapId )
 			return 40000.0f; //enough for out of range
@@ -376,58 +368,37 @@ public:
 	}
 
 	// In-range object management, not sure if we need it
-	WoWICE_INLINE bool IsInRangeSet( Object* pObj )
+	bool IsInRangeSet( Object* pObj )
 	{
 		return !( m_objectsInRange.find( pObj ) == m_objectsInRange.end() );
 	}
 
-	virtual void AddInRangeObject(Object* pObj)
-	{
-		if( pObj == NULL )
-			return;
-
-		if( pObj == this )
-			printf("We are in range of self!!!\n");
-
-		//Zack: as far as i know list inserts do not corrupt iterators
-		m_objectsInRange.insert( pObj );
-
-		// NOTES: Since someone will come along and try and change it.
-		// Don't reinrepret_cast has to be used static_cast will not work when we are
-		// inside the class we are casting from if we want to cast up the inheritance
-		// chain, as Object has no concept of Player.
-
-		if( pObj->GetTypeId() == TYPEID_PLAYER )
-			m_inRangePlayers.insert( reinterpret_cast< Player* >( pObj ) );
-	}
+	virtual void AddInRangeObject(Object* pObj);
 
 	Mutex m_inrangechangelock;
-	WoWICE_INLINE void AquireInrangeLock(){ m_inrangechangelock.Acquire(); }
-	WoWICE_INLINE void ReleaseInrangeLock(){ m_inrangechangelock.Release(); }
 
-	WoWICE_INLINE void RemoveInRangeObject( Object* pObj )
-	{
-		if( pObj == NULL )
-			return;
+	void RemoveInRangeObject( Object* pObj );
 
-		if( pObj == this )
-			printf("We are in range of self!!\n");
-		AquireInrangeLock();
-		OnRemoveInRangeObject( pObj );
-		m_objectsInRange.erase( pObj );
-		ReleaseInrangeLock();
-	}
+    //////////////////////////////////////////////////////////////////////
+    //void RemoveSelfFromInrangeSets()
+    // Removes the Object from the inrangesets of the Objects in range
+    //
+    // Parameters:
+    //  None
+    //
+    // Return Value:
+    //  None
+    //
+    //
+    ///////////////////////////////////////////////////////////////////////
+    void RemoveSelfFromInrangeSets();
 
-	WoWICE_INLINE bool HasInRangeObjects()
+	bool HasInRangeObjects()
 	{
 		return ( m_objectsInRange.size() > 0 );
 	}
 
-	virtual void OnRemoveInRangeObject( Object * pObj )
-	{
-		if( pObj->GetTypeId() == TYPEID_PLAYER )
-			ASSERT( m_inRangePlayers.erase( reinterpret_cast< Player* >( pObj ) ) == 1 );
-	}
+	virtual void OnRemoveInRangeObject( Object * pObj );
 
 	virtual void ClearInRangeSet()
 	{
@@ -437,67 +408,87 @@ public:
 		m_sameFactsInRange.clear();
 	}
 
-	WoWICE_INLINE size_t GetInRangeCount() { return m_objectsInRange.size(); }
-	WoWICE_INLINE size_t GetInRangePlayersCount() { return m_inRangePlayers.size();}
-	WoWICE_INLINE InRangeSet::iterator GetInRangeSetBegin() { return m_objectsInRange.begin(); }
-	WoWICE_INLINE InRangeSet::iterator GetInRangeSetEnd() { return m_objectsInRange.end(); }
-	WoWICE_INLINE InRangeSet::iterator FindInRangeSet(Object * obj) { return m_objectsInRange.find(obj); }
+	size_t GetInRangeCount() { return m_objectsInRange.size(); }
+	size_t GetInRangePlayersCount() { return m_inRangePlayers.size();}
+	InRangeSet::iterator GetInRangeSetBegin() { return m_objectsInRange.begin(); }
+	InRangeSet::iterator GetInRangeSetEnd() { return m_objectsInRange.end(); }
+	InRangeSet::iterator FindInRangeSet(Object * obj) { return m_objectsInRange.find(obj); }
 
 	void RemoveInRangeObject(InRangeSet::iterator itr)
 	{
-		AquireInrangeLock();
 		OnRemoveInRangeObject(*itr);
 		m_objectsInRange.erase(itr);
-		ReleaseInrangeLock();
 	}
 
-	WoWICE_INLINE bool RemoveIfInRange( Object * obj )
+	bool RemoveIfInRange( Object * obj )
 	{
 		InRangeSet::iterator itr = m_objectsInRange.find(obj);
 		if( obj->GetTypeId() == TYPEID_PLAYER )
-			m_inRangePlayers.erase( reinterpret_cast< Player* >( obj ) );
+			m_inRangePlayers.erase( obj );
 
 		if( itr == m_objectsInRange.end() )
 			return false;
 
-		AquireInrangeLock();
 		m_objectsInRange.erase( itr );
-		ReleaseInrangeLock();
-		return true;
-	}
 
-	WoWICE_INLINE void AddInRangePlayer( Object * obj )
-	{
-		m_inRangePlayers.insert( reinterpret_cast< Player* >( obj ) );
-	}
-
-	WoWICE_INLINE void RemoveInRangePlayer( Object * obj )
-	{
-		m_inRangePlayers.erase( reinterpret_cast< Player* >( obj ) );
+        return true;
 	}
 
 	bool IsInRangeSameFactSet(Object* pObj) { return (m_sameFactsInRange.count(pObj) > 0); }
 	void UpdateSameFactionSet();
-	WoWICE_INLINE std::set<Object*>::iterator GetInRangeSameFactsSetBegin() { return m_sameFactsInRange.begin(); }
-	WoWICE_INLINE std::set<Object*>::iterator GetInRangeSameFactsSetEnd() { return m_sameFactsInRange.end(); }
+	std::set<Object*>::iterator GetInRangeSameFactsSetBegin() { return m_sameFactsInRange.begin(); }
+	std::set<Object*>::iterator GetInRangeSameFactsSetEnd() { return m_sameFactsInRange.end(); }
 
 	bool IsInRangeOppFactSet(Object* pObj) { return (m_oppFactsInRange.count(pObj) > 0); }
 	void UpdateOppFactionSet();
-	WoWICE_INLINE size_t GetInRangeOppFactsSize(){ return m_oppFactsInRange.size(); }
-	WoWICE_INLINE std::set<Object*>::iterator GetInRangeOppFactsSetBegin() { return m_oppFactsInRange.begin(); }
-	WoWICE_INLINE std::set<Object*>::iterator GetInRangeOppFactsSetEnd() { return m_oppFactsInRange.end(); }
-	WoWICE_INLINE std::set<Player*>::iterator GetInRangePlayerSetBegin() { return m_inRangePlayers.begin(); }
-	WoWICE_INLINE std::set<Player*>::iterator GetInRangePlayerSetEnd() { return m_inRangePlayers.end(); }
-	WoWICE_INLINE std::set<Player*> * GetInRangePlayerSet() { return &m_inRangePlayers; };
+	size_t GetInRangeOppFactsSize(){ return m_oppFactsInRange.size(); }
+	std::set<Object*>::iterator GetInRangeOppFactsSetBegin() { return m_oppFactsInRange.begin(); }
+	std::set<Object*>::iterator GetInRangeOppFactsSetEnd() { return m_oppFactsInRange.end(); }
+	std::set<Object*>::iterator GetInRangePlayerSetBegin() { return m_inRangePlayers.begin(); }
+	std::set<Object*>::iterator GetInRangePlayerSetEnd() { return m_inRangePlayers.end(); }
+	std::set<Object*> * GetInRangePlayerSet() { return &m_inRangePlayers; };
 
-	void __fastcall SendMessageToSet(WorldPacket *data, bool self,bool myteam_only=false);
-	WoWICE_INLINE void SendMessageToSet(StackBufferBase * data, bool self) { OutPacketToSet(data->GetOpcode(), data->GetSize(), data->GetBufferPointer(), self); }
-	void OutPacketToSet(uint16 Opcode, uint16 Len, const void * Data, bool self);
+    ///////////////////////////////////////////////////////////////////////////
+    //void OutPacket( uint16 opcode, uint16 len, const void *data )
+    // Sends a packet to the Player
+    //
+    //
+    // Parameters
+    //  uint16 opcode      -   opcode of the packet
+    //  uint16 len         -   length/size of the packet
+    //  const void *data   -   the data that needs to be sent
+    //
+    //
+    // Return value
+    //  none
+    //
+    //////////////////////////////////////////////////////////////////////////
+    virtual void OutPacket( uint16 opcode, uint16 len, const void *data ){};
+
+
+
+    /////////////////////////////////////////////////////////////////////////
+    //void SendPacket( WorldPacket *packet )
+    // Sends a packet to the Player
+    //
+    // Parameters
+    //  WorldPAcket *packet      -     the packet that needs to be sent
+    //
+    //
+    // Return value
+    //  none
+    //
+    ////////////////////////////////////////////////////////////////////////
+    virtual void SendPacket( WorldPacket* packet ){};
+
+	virtual void SendMessageToSet(WorldPacket *data, bool self,bool myteam_only=false);
+	void SendMessageToSet(StackBufferBase * data, bool self) { OutPacketToSet(data->GetOpcode(), static_cast<uint16>( data->GetSize() ), data->GetBufferPointer(), self); }
+	virtual void OutPacketToSet(uint16 Opcode, uint16 Len, const void * Data, bool self);
 
 	//! Fill values with data from a space separated string of uint32s.
 	void LoadValues(const char* data);
 
-	WoWICE_INLINE uint16 GetValuesCount() const { return m_valuesCount; }
+	uint16 GetValuesCount() const { return m_valuesCount; }
 
 	//! Blizzard seem to send those for all object types. weird.
 	float m_walkSpeed;
@@ -514,8 +505,8 @@ public:
 
 	uint32 m_phase; //This stores the phase, if two objects have the same bit set, then they can see each other. The default phase is 0x1.
 
-	WoWICE_INLINE const uint32 GetPhase() { return m_phase; }
-	void Phase(uint8 command=PHASE_SET, uint32 newphase=1);
+	const uint32 GetPhase() { return m_phase; }
+	virtual void Phase(uint8 command=PHASE_SET, uint32 newphase=1);
 
 	void EventSpellDamage(uint64 Victim, uint32 SpellID, uint32 Damage);
 	void SpellNonMeleeDamageLog(Unit *pVictim, uint32 spellID, uint32 damage, bool allowProc, bool static_damage = false, bool no_remove_auras = false);
@@ -534,8 +525,8 @@ public:
 	FactionTemplateDBC *m_faction;
 	FactionDBC *m_factionDBC;
 
-	WoWICE_INLINE void SetInstanceID(int32 instance) { m_instanceId = instance; }
-	WoWICE_INLINE int32 GetInstanceID() { return m_instanceId; }
+	void SetInstanceID(int32 instance) { m_instanceId = instance; }
+	int32 GetInstanceID() { return m_instanceId; }
 
 	int32 event_GetInstanceID();
 
@@ -549,7 +540,7 @@ public:
 	virtual void Deactivate(MapMgr * mgr);
 	//! Player is in pvp queue.
 	bool m_inQueue;
-	WoWICE_INLINE void SetMapMgr(MapMgr * mgr) { m_mapMgr = mgr; }
+	void SetMapMgr(MapMgr * mgr) { m_mapMgr = mgr; }
 	
 	void Delete()
 	{
@@ -560,7 +551,7 @@ public:
 	//! GMScript not used anymore (Dropped for 64bit compatibility).
 	void GMScriptEvent(void * function, uint32 argc, uint32 * argv, uint32 * argt);
 	//! 
-	WoWICE_INLINE size_t GetInRangeOppFactCount() { return m_oppFactsInRange.size(); }
+	size_t GetInRangeOppFactCount() { return m_oppFactsInRange.size(); }
 	//! Play's a sound to players in range.
 	void PlaySoundToSet(uint32 sound_entry);
 	//! Is the player in a battleground?
@@ -568,7 +559,7 @@ public:
 	//! What's their faction? Horde/Ally.
 	uint32 GetTeam();
 	//! Objects directly cannot be in a group.
-	WoWICE_INLINE virtual Group *GetGroup() { return NULL; }
+	virtual Group *GetGroup() { return NULL; }
 
 protected:
 	Object (  );
@@ -604,11 +595,8 @@ protected:
 	LocationVector m_lastMapUpdatePosition;
 	LocationVector m_spawnLocation;
 
-	// Semaphores - needed to forbid two operations on the same object at the same very time (may cause crashing\lack of data)
-	bool mSemaphoreTeleport;
-
 	//! Object properties.
-	union {
+	union{
 		uint32* m_uint32Values;
 		float* m_floatValues;
 	};
@@ -625,7 +613,7 @@ protected:
 	//! Set of Objects in range.
 	//! TODO: that functionality should be moved into WorldServer.
 	std::set<Object*> m_objectsInRange;
-	std::set<Player*> m_inRangePlayers;
+	std::set<Object*> m_inRangePlayers;
 	std::set<Object*> m_oppFactsInRange;
 	std::set<Object*> m_sameFactsInRange;
 

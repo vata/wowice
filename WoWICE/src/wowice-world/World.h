@@ -214,23 +214,8 @@ public:
 
 	void wait();
 	void waitForThreadsToExit();
-	uint32 thread_count;
+	Wowice::Threading::AtomicCounter thread_count;
 	bool running;
-
-	Mutex tcMutex;
-	void incrementThreadCount()
-	{
-		tcMutex.Acquire();
-		++thread_count;
-		tcMutex.Release();
-	}
-
-	void decrementThreadCount()
-	{
-		tcMutex.Acquire();
-		--thread_count;
-		tcMutex.Release();
-	}
 };
 
 enum BasicTaskExecutorPriorities
@@ -244,8 +229,8 @@ class TaskExecutor : public ThreadBase
 {
 	TaskList * starter;
 public:
-	TaskExecutor(TaskList * l) : starter(l) { l->incrementThreadCount(); }
-	~TaskExecutor() { starter->decrementThreadCount(); }
+	TaskExecutor(TaskList * l) : starter(l) { ++l->thread_count; }
+	~TaskExecutor() { --starter->thread_count; }
 
 	bool run();
 };
@@ -301,7 +286,13 @@ public:
 	void RemoveGlobalSession(WorldSession *session);
 	void DeleteSession(WorldSession *session);
 
-	WoWICE_INLINE size_t GetSessionCount() const { return m_sessions.size(); }
+	size_t GetSessionCount(){
+		m_sessionlock.AcquireReadLock();
+		size_t ssize = m_sessions.size();
+		m_sessionlock.ReleaseReadLock();
+
+		return ssize;
+	}
 	uint32 GetNonGmSessionCount();
 	WoWICE_INLINE size_t GetQueueCount() { return mQueuedSessions.size(); }
 	void GetStats(uint32 * GMCount, float * AverageLatency);
@@ -447,7 +438,6 @@ public:
 	bool UnloadMapFiles;
 	bool BreathingEnabled;
 	bool SpeedhackProtection;
-	uint32 mInWorldPlayerCount;
 	uint32 mAcceptedConnections;
 	uint32 SocketSendBufSize;
 	uint32 SocketRecvBufSize;

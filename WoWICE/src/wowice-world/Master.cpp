@@ -291,9 +291,10 @@ bool Master::Run(int argc, char ** argv)
 		DatabaseCleaner::getSingleton().Run();
 		delete DatabaseCleaner::getSingletonPtr();
 		Log.Color(TYELLOW);
-		printf( "\nMaintenence finished. Take a moment to review the output, and hit space to continue startup." );
+		printf( "\nMaintenance finished. Take a moment to review the output.\n" );
 		Log.Color(TNORMAL);
 		fflush(stdout);
+		system("PAUSE");
 	}
 
 	Log.Line();
@@ -319,7 +320,7 @@ bool Master::Run(int argc, char ** argv)
 		sLog.SetScreenLoggingLevel(screen_log_level);
 	
 	if( file_log_level != (int)DEF_VALUE_NOT_SET )
-		sLog.SetFileLoggingLevel(file_log_level);
+		sLog.SetFileLoggingLevel(file_log_level, "file.log");
 
 	// Initialize Opcode Table
 	WorldSession::InitPacketHandlerTable();
@@ -407,12 +408,6 @@ bool Master::Run(int argc, char ** argv)
 	new LogonCommHandler();
 	sLogonCommHandler.Startup();
 
-	/* voicechat */
-#ifdef VOICE_CHAT
-	new VoiceChatHandler();
-	sVoiceChatHandler.Startup();
-#endif
-
 	// Create listener
 	ListenSocket<WorldSocket> * ls = new ListenSocket<WorldSocket>(host.c_str(), wsport);
     bool listnersockcreate = ls->IsOpen();
@@ -447,9 +442,6 @@ bool Master::Run(int argc, char ** argv)
 			g_localTime = *localtime(&curTime);
 		}
 
-#ifdef VOICE_CHAT
-		sVoiceChatHandler.Update();
-#endif
 		sSocketGarbageCollector.Update();
 
 		/* UPDATE */
@@ -587,11 +579,6 @@ bool Master::Run(int argc, char ** argv)
 	Log.Notice( "Network", "Deleting Network Subsystem..." );
 	delete SocketMgr::getSingletonPtr();
 	delete SocketGarbageCollector::getSingletonPtr();
-#ifdef VOICE_CHAT
-	Log.Notice( "VoiceChatHandler", "~VoiceChatHandler()" );
-	delete VoiceChatHandler::getSingletonPtr();
-#endif
-
 
 #ifdef ENABLE_LUA_SCRIPTING
 	sLog.outString("Deleting Script Engine...");

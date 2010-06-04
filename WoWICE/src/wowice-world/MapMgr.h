@@ -291,7 +291,7 @@ public:
 
 private:
 	/* Update System */
-	FastMutex m_updateMutex;		// use a user-mode mutex for extra speed
+	Mutex m_updateMutex;
 	UpdateQueue _updates;
 	PUpdateQueue _processQueue;
 

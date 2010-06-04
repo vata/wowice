@@ -22,16 +22,14 @@ typedef struct
 }logonpacket;
 #pragma pack(pop)
 
-#ifndef USING_BIG_ENDIAN
-WoWICE_INLINE static void swap32(uint32* p) { *p = ((*p >> 24 & 0xff)) | ((*p >> 8) & 0xff00) | ((*p << 8) & 0xff0000) | (*p << 24); }
-#endif
+static void swap32( uint32* p ) { *p = ((*p >> 24 & 0xff)) | ((*p >> 8) & 0xff00) | ((*p << 8) & 0xff0000) | (*p << 24); }
 
 LogonCommClientSocket::LogonCommClientSocket(SOCKET fd) : Socket(fd, 724288, 262444)
 {
 	// do nothing
 	last_ping = last_pong = (uint32)UNIXTIME;
 	remaining = opcode = 0;
-	_id=0;
+	_id= 0;
 	latency = 0;
 	use_crypto = false;
 	authenticated = 0;
@@ -57,12 +55,8 @@ void LogonCommClientSocket::OnRead()
 				_recvCrypto.Process((uint8*)&remaining, (uint8*)&remaining, 4);
 			}
 
-#ifdef USING_BIG_ENDIAN
-			opcode = swap16(opcode);
-#else
 			// convert network byte order
 			swap32(&remaining);
-#endif
 		}
 
 		// do we have a full packet?
@@ -188,15 +182,11 @@ void LogonCommClientSocket::SendPacket(WorldPacket * data, bool no_crypto)
 
 	BurstBegin();
 
-#ifndef USING_BIG_ENDIAN
 	header.opcode = data->GetOpcode();
 	//header.size   = ntohl((u_long)data->size());
 	header.size = (uint32)data->size();
 	swap32(&header.size);
-#else
-	header.opcode = swap16(uint16(data->GetOpcode()));
-	header.size   = data->size();
-#endif
+
 
 	if(use_crypto && !no_crypto)
 		_sendCrypto.Process((unsigned char*)&header, (unsigned char*)&header, 6);
@@ -384,12 +374,9 @@ void LogonCommClientSocket::CompressAndSend(ByteBuffer & uncompressed)
 		return;
 	}
 
-#ifdef USING_BIG_ENDIAN
-	*(uint32*)data.contents() = swap32(uint32(uncompressed.size()));
-#else
 	*(uint32*)data.contents() = (uint32)uncompressed.size();
-#endif
-	data.resize(stream.total_out + 4);
+
+    data.resize(stream.total_out + 4);
 	SendPacket(&data,false);
 }
 

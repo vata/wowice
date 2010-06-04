@@ -803,7 +803,15 @@ void GossipScript::GossipHello(Object* pObject, Player* Plr, bool AutoSend)
 		Menu->AddItem(0, Plr->GetSession()->LocalizedWorldSrv(21), 10);
 
 	if (pCreature->isBanker())
-		Menu->AddItem(0, Plr->GetSession()->LocalizedWorldSrv(17), 6);
+	{
+		if(pCreature->isQuestGiver())
+			Menu->AddItem(0, Plr->GetSession()->LocalizedWorldSrv(17), 6);
+		else
+		{
+			Plr->GetSession()->SendBankerList(pCreature);
+			return;
+		}
+	}
 
 	if (pCreature->isCharterGiver())
 	{
@@ -1062,13 +1070,13 @@ void HookInterface::OnEnterCombat(Player * pPlayer, Unit * pTarget)
 		((tOnEnterCombat)*itr)(pPlayer, pTarget);
 }
 
-bool HookInterface::OnCastSpell(Player * pPlayer, SpellEntry* pSpell)
+bool HookInterface::OnCastSpell(Player * pPlayer, SpellEntry* pSpell, Spell * spell)
 {
 	ServerHookList hookList = sScriptMgr._hooks[SERVER_HOOK_EVENT_ON_CAST_SPELL];
 	bool ret_val = true;
 	for(ServerHookList::iterator itr = hookList.begin(); itr != hookList.end(); ++itr)
 	{
-		bool rv = ((tOnCastSpell)*itr)(pPlayer, pSpell);
+		bool rv = ((tOnCastSpell)*itr)(pPlayer, pSpell, spell);
 		if (rv == false) // never set ret_val back to true, once it's false
 			ret_val = false;
 	}
@@ -1102,11 +1110,11 @@ void HookInterface::OnQuestAccept(Player * pPlayer, Quest * pQuest, Object * pQu
 		((tOnQuestAccept)*itr)(pPlayer, pQuest, pQuestGiver);
 }
 
-void HookInterface::OnZone(Player * pPlayer, uint32 zone)
+void HookInterface::OnZone(Player * pPlayer, uint32 zone, uint32 oldZone)
 {
 	ServerHookList hookList = sScriptMgr._hooks[SERVER_HOOK_EVENT_ON_ZONE];
 	for(ServerHookList::iterator itr = hookList.begin(); itr != hookList.end(); ++itr)
-		((tOnZone)*itr)(pPlayer, zone);
+		((tOnZone)*itr)(pPlayer, zone, oldZone);
 }
 
 bool HookInterface::OnChat(Player * pPlayer, uint32 type, uint32 lang, const char * message, const char * misc)
@@ -1211,4 +1219,11 @@ void HookInterface::OnDuelFinished(Player * Winner, Player * Looser)
        ServerHookList hookList = sScriptMgr._hooks[SERVER_HOOK_EVENT_ON_DUEL_FINISHED];
        for(ServerHookList::iterator itr = hookList.begin(); itr != hookList.end(); ++itr)
                ((tOnDuelFinished)*itr)(Winner, Looser);
+ }
+
+void HookInterface::OnAuraRemove(Aura * aura)
+ {
+       ServerHookList hookList = sScriptMgr._hooks[SERVER_HOOK_EVENT_ON_AURA_REMOVE];
+       for(ServerHookList::iterator itr = hookList.begin(); itr != hookList.end(); ++itr)
+               ((tOnAuraRemove)*itr)(aura);
  }

@@ -30,15 +30,17 @@ Item::Item()//this is called when constructing as container
 	random_suffix = 0;
 	m_mapMgr = 0;
 	m_mapCell = 0;
-	mSemaphoreTeleport = false;
 	m_faction = NULL;
 	m_factionDBC = NULL;
-	m_instanceId = -1;
+	m_instanceId = 0;
 	m_inQueue = false;
 	m_extensions = NULL;
 	m_loadedFromDB = false;
     ItemExpiresOn = 0;
 	Enchantments.clear();
+
+	for( uint32 i = 0; i < 3; ++i )
+		OnUseSpellIDs[ i ] = 0;
 }
 
 void Item::Init( uint32 high, uint32 low )
@@ -63,10 +65,9 @@ void Item::Init( uint32 high, uint32 low )
 
 	m_mapMgr = 0;
 	m_mapCell = 0;
-	mSemaphoreTeleport = false;
 	m_faction = NULL;
 	m_factionDBC = NULL;
-	m_instanceId = -1;
+	m_instanceId = 0;
 	m_inQueue = false;
 	m_extensions = NULL;
 	m_loadedFromDB = false;
@@ -179,10 +180,14 @@ void Item::LoadFromDB(Field* fields, Player* plr, bool light )
 	random_prop = fields[9].GetUInt32();
 	random_suffix = fields[10].GetUInt32();
 
-	if( random_prop )
-		SetRandomProperty( random_prop );
-	else if( random_suffix )
-		SetRandomSuffix( random_suffix );
+	SetItemRandomPropertyId( random_prop );
+
+	int32 rprop = int32( random_prop );
+	// If random properties point is negative that means the item uses random suffix as random enchantment
+	if( rprop < 0 )
+		SetItemRandomSuffixFactor( random_suffix );
+	else
+		SetItemRandomSuffixFactor( 0 );
 
 	SetTextId( fields[11].GetUInt32() );
 
@@ -558,7 +563,7 @@ uint32 GetBuyPriceForItem( ItemPrototype* proto, uint32 count, Player* plr, Crea
 	if( plr != NULL && vendor != NULL )
 	{
 		Standing plrstanding = plr->GetStandingRank( vendor->m_faction->Faction );
-		cost = float2int32( ceilf( float( proto->BuyPrice ) * pricemod[plrstanding] ) );
+		cost = float2int32( ceilf( proto->BuyPrice * pricemod[plrstanding] ) );
 	}
 
 	return cost * count;
@@ -584,14 +589,11 @@ void Item::RemoveFromWorld()
 {
 	// if we have an owner->send destroy
 	if( m_owner != NULL )
-	{
-		DestroyForPlayer( m_owner );
-	}
+		m_owner->SendDestroyObject( GetGUID() );
 
 	if( !IsInWorld() )
 		return;
 
-	mSemaphoreTeleport = true;
 	m_mapMgr->RemoveObject( this, false );
 	m_mapMgr = NULL;
   
@@ -615,45 +617,6 @@ int32 Item::AddEnchantment( EnchantEntry* Enchantment, uint32 Duration, bool Per
 	int32 Slot = Slot_;
 	m_isDirty = true;
 
-/*
-	if(Perm)
-	{
-		if(Slot_)
-		{
-			Slot=Slot_;
-		}
-		else
-        {
-			Slot = FindFreeEnchantSlot(Enchantment);
-        }
-	}
-	else
-	{
-		if(Enchantment->EnchantGroups > 1) // replaceable temp enchants
-		{
-			Slot = 1;
-			RemoveEnchantment(1);
-		}
-		else
-		{
-			Slot = FindFreeEnchantSlot(Enchantment);*/
-			/*
-			Slot = Enchantment->type ? 3 : 0;
-			 //that's 's code
-				for(uint32 Index = ITEM_FIELD_ENCHANTMENT_9_1; Index < ITEM_FIELD_ENCHANTMENT_32_1; Index += 3)
-			{
-				if(m_uint32Values[Index] == 0) break;;	
-				++Slot;
-			}
-
-			//Slot = FindFreeEnchantSlot(Enchantment);
-			// reach max of temp enchants
-			if(Slot >= 11) return -1;
-			*/
-		/*}
-	}   
-*/
-
 	// Create the enchantment struct.
 	EnchantmentInstance Instance;
 	Instance.ApplyTime = UNIXTIME;
@@ -665,10 +628,9 @@ int32 Item::AddEnchantment( EnchantEntry* Enchantment, uint32 Duration, bool Per
 	Instance.RandomSuffix = RandomSuffix;
 
 	// Set the enchantment in the item fields.
-	uint32 EnchantBase = Slot * 3 + ITEM_FIELD_ENCHANTMENT_1_1;
-	SetUInt32Value( EnchantBase, Enchantment->Id );
-	SetUInt32Value( EnchantBase + 1, (uint32)Instance.ApplyTime );
-	SetUInt32Value( EnchantBase + 2, 0 ); // charges
+	SetEnchantmentId( Slot, Enchantment->Id );
+	SetEnchantmentDuration( Slot, (uint32)Instance.ApplyTime );
+	SetEnchantmentCharges( Slot, 0 );
 
 	// Add it to our map.
 	Enchantments.insert(make_pair((uint32)Slot, Instance));
@@ -723,10 +685,9 @@ void Item::RemoveEnchantment( uint32 EnchantmentSlot )
 		ApplyEnchantmentBonus( EnchantmentSlot, REMOVE );
 
 	// Unset the item fields.
-	uint32 EnchantBase = Slot * 3 + ITEM_FIELD_ENCHANTMENT_1_1;
-	SetUInt32Value( EnchantBase + 0, 0 );
-	SetUInt32Value( EnchantBase + 1, 0 );
-	SetUInt32Value( EnchantBase + 2, 0 );
+	SetEnchantmentId( Slot, 0 );
+	SetEnchantmentDuration( Slot, 0 );
+	SetEnchantmentCharges( Slot, 0 );
 
 	// Remove the enchantment event for removal.
 	event_RemoveEvents( EVENT_REMOVE_ENCHANTMENT1 + Slot );
@@ -777,72 +738,14 @@ void Item::ApplyEnchantmentBonus( uint32 Slot, bool Apply )
 			{
 			case 1:		 // Trigger spell on melee attack.
 				{
-					if( Apply && Entry->spell[c] != 0 )
+					if( Apply )
 					{
-						// Create a proc trigger spell
-
-						ProcTriggerSpell TS;
-						TS.caster = m_owner->GetGUID();
-						TS.origId = 0;
-						TS.procFlags = PROC_ON_MELEE_ATTACK;
-						TS.procCharges = 0;
-						/* This needs to be modified based on the attack speed of the weapon.
-						 * Secondly, need to assign some static chance for instant attacks (ss,
-						 * gouge, etc.) */
-						if( !Entry->min[c] && GetProto()->Class == 2 )
-						{
-							float speed = (float)GetProto()->Delay;
-							/////// procChance calc ///////
-							float ppm = 0;
-							SpellEntry* sp = dbcSpell.LookupEntryForced( Entry->spell[c] );
-							if( sp )
-							{
-								switch( sp->NameHash )
-								{
-								case SPELL_HASH_FROSTBRAND_ATTACK:
-									ppm = 9;
-									break;
-								}
-							}
-							if( ppm != 0 )
-							{
-								float pcount = 60/ppm;
-								float chance = (speed/10) / pcount;
-								TS.procChance = (uint32)chance;
-							}
-							else
-								TS.procChance = (uint32)( speed / 600.0f );
-							///////////////////////////////
-						}
-						else
-							TS.procChance = Entry->min[c];
-						Log.Debug( "Enchant", "Setting procChance to %u%%.", TS.procChance );
-						TS.deleted = false;
-						TS.spellId = Entry->spell[c];
-						TS.groupRelation[0] = 0;
-						TS.groupRelation[1] = 0;
-						TS.groupRelation[2] = 0;
-						TS.ProcType = 0;
-						TS.LastTrigger = 0;
-						m_owner->m_procSpells.push_back( TS );
+						if( Entry->spell[c] != 0 )
+							m_owner->AddProcTriggerSpell(Entry->spell[c], 0, m_owner->GetGUID(), Entry->min[c], PROC_ON_MELEE_ATTACK, 0, NULL, NULL, this);
 					}
 					else
 					{
-						// Remove the proctriggerspell
-						uint32 SpellId;
-						list< struct ProcTriggerSpell >::iterator itr2;
-						for( itr2 = m_owner->m_procSpells.begin(); itr2 != m_owner->m_procSpells.end(); )
-						{
-							SpellId = itr2->spellId;
-							/*itr2 = itr++;*/
-							
-							if( SpellId == Entry->spell[c] )
-							{
-								//m_owner->m_procSpells.erase(itr2);
-								itr2->deleted = true;
-							}
-							itr2++;
-						}
+						m_owner->RemoveProcTriggerSpell(Entry->spell[c]);
 					}
 				}break;
 
@@ -940,6 +843,22 @@ void Item::ApplyEnchantmentBonus( uint32 Slot, bool Apply )
 					m_owner->CalcDamage();
 				}break;
 
+			case 7:{
+				if( Apply ){
+					for( uint32 i = 0; i < 3; ++i )
+						OnUseSpellIDs[ i ] = Entry->spell[ i ];
+
+				}else{
+					for( uint32 i = 0; i < 3; ++i )
+						OnUseSpellIDs[ i ] = 0;
+				}
+				   break;}
+
+			case 8:{
+				// Adding a prismatic socket to belt, hands, etc is type 8, it has no bonus to apply HERE
+				break;
+				   }
+
 			default:
 				{
 					sLog.outError( "Unknown enchantment type: %u (%u)", Entry->type[c], Entry->Id );
@@ -977,28 +896,19 @@ void Item::EventRemoveEnchantment( uint32 Slot )
 
 int32 Item::FindFreeEnchantSlot( EnchantEntry* Enchantment, uint32 random_type )
 {	
-	//if(!Enchantment) return -1;
-
-   /* uint32 Slot = Enchantment->type ? 3 : 0;
-	for(uint32 Index = ITEM_FIELD_ENCHANTMENT_09; Index < ITEM_FIELD_ENCHANTMENT_32; Index += 3)
-	{
-		if(m_uint32Values[Index] == 0) return Slot;	
-		++Slot;
-	}*/
-
 	uint32 GemSlotsReserve = GetSocketsCount();
 	if( GetProto()->SocketBonus )
 		GemSlotsReserve++;
 
-	if( random_type == 1 )		// random prop
+	if( random_type == RANDOMPROPERTY )		// random prop
 	{
-		for( uint32 Slot = 8; Slot < 11; ++Slot )
+		for( uint32 Slot = PROP_ENCHANTMENT_SLOT_2; Slot < MAX_ENCHANTMENT_SLOT; ++Slot )
 			if( GetEnchantmentId(Slot) == 0 )
 				return Slot;
 	}
-	else if( random_type == 2 )	// random suffix
+	else if( random_type == RANDOMSUFFIX )	// random suffix
 	{
-		for( uint32 Slot = 6; Slot < 11; ++Slot )
+		for( uint32 Slot = PROP_ENCHANTMENT_SLOT_0; Slot < MAX_ENCHANTMENT_SLOT; ++Slot )
 			if( GetEnchantmentId(Slot) == 0 )
 				return Slot;
 	}
@@ -1014,7 +924,7 @@ int32 Item::FindFreeEnchantSlot( EnchantEntry* Enchantment, uint32 random_type )
 
 int32 Item::HasEnchantment( uint32 Id )
 {
-	for( uint32 Slot = 0; Slot < 11; Slot++ )
+	for( uint32 Slot = 0; Slot < MAX_ENCHANTMENT_SLOT; Slot++ )
 	{
 		if( GetEnchantmentId(Slot) == Id )
 			return Slot;
@@ -1157,6 +1067,9 @@ uint32 Item::GetSocketsCount()
 	for( uint32 x = 0; x < 3; x++ )
 		if( GetProto()->Sockets[x].SocketColor )
 			c++;
+	//prismatic socket
+	if( GetEnchantment(PRISMATIC_ENCHANTMENT_SLOT) != NULL )
+		c++;
 	return c;
 }
 
@@ -1283,7 +1196,7 @@ uint32 Item::CountGemsWithLimitId(uint32 LimitId)
 	uint32 result = 0;
 	for( uint32 count = 0; count < GetSocketsCount(); count++ )
 	{
-		EnchantmentInstance *ei = GetEnchantment( 2 + count );
+		EnchantmentInstance *ei = GetEnchantment( SOCK_ENCHANTMENT_SLOT1 + count );
 		if (ei 
 			&& ei->Enchantment->GemEntry //huh ? Gem without entry ?
 			)

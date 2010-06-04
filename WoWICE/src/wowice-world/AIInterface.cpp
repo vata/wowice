@@ -429,7 +429,7 @@ void AIInterface::HandleEvent(uint32 event, Unit* pUnit, uint32 misc1)
 
 				pUnit->RemoveAura( 24575 );
 
-				CALL_SCRIPT_EVENT(m_Unit, OnDamageTaken)(pUnit, float(misc1));
+				CALL_SCRIPT_EVENT(m_Unit, OnDamageTaken)(pUnit, misc1);
 				if(!modThreatByPtr(pUnit, misc1))
 				{
 					m_aiTargets.insert(TargetMap::value_type(pUnit->GetGUID(), misc1));
@@ -1892,7 +1892,7 @@ Unit* AIInterface::FindTarget()
 		{
             uint64 charmer = target->GetCharmedByGUID();
 
-			Unit* target2 = m_Unit->GetMapMgr()->GetPlayer( Arcemu::Util::GUID_LOPART( charmer ) );
+			Unit* target2 = m_Unit->GetMapMgr()->GetPlayer( Wowice::Util::GUID_LOPART( charmer ) );
 
 			if(target2)
 			{
@@ -1919,10 +1919,7 @@ Unit* AIInterface::FindTargetForSpell(AI_Spell *sp)
 	{
 		if(sp->spellType == STYPE_HEAL)
 		{
-			uint32 cur = m_Unit->GetHealth() + 1;
-			uint32 max = m_Unit->GetMaxHealth() + 1;
-			float healthPercent = float(cur) / float(max);
-			if(healthPercent <= sp->floatMisc1) // Heal ourselves cause we got too low HP
+			if(m_Unit->GetHealthPct() / 100.0f <= sp->floatMisc1) // Heal ourselves cause we got too low HP
 			{
 				m_Unit->SetTargetGUID(  0);
 				return m_Unit;
@@ -1933,10 +1930,7 @@ Unit* AIInterface::FindTargetForSpell(AI_Spell *sp)
 				{
 					continue;
 				}
-				cur = (*i)->GetHealth();
-				max = (*i)->GetMaxHealth();
-				healthPercent = float(cur) / float(max);
-				if(healthPercent <= sp->floatMisc1) // Heal ourselves cause we got too low HP
+				if((*i)->GetHealthPct() / 100.0f <= sp->floatMisc1) // Heal ourselves cause we got too low HP
 				{
 					m_Unit->SetTargetGUID(  (*i)->GetGUID());
 					return (*i); // heal Assist Target which has low HP
@@ -3440,18 +3434,18 @@ SpellCastTargets AIInterface::setSpellTargets(SpellEntry *spellInfo, Unit* targe
 
 	if(m_nextSpell->spelltargetType == TTYPE_SINGLETARGET)
 	{
-		targets.m_targetMask = 2;
+		targets.m_targetMask = TARGET_FLAG_UNIT;
 	}
 	else if(m_nextSpell->spelltargetType == TTYPE_SOURCE)
 	{
-		targets.m_targetMask = 32;
+		targets.m_targetMask = TARGET_FLAG_SOURCE_LOCATION;
 //		targets.m_srcX = m_Unit->GetPositionX();
 //		targets.m_srcY = m_Unit->GetPositionY();
 //		targets.m_srcZ = m_Unit->GetPositionZ();
 	}
 	else if(m_nextSpell->spelltargetType == TTYPE_DESTINATION)
 	{
-		targets.m_targetMask = 64;
+		targets.m_targetMask = TARGET_FLAG_DEST_LOCATION;
 		if( target != NULL )
 		{
 			targets.m_destX = target->GetPositionX();
@@ -3467,7 +3461,7 @@ SpellCastTargets AIInterface::setSpellTargets(SpellEntry *spellInfo, Unit* targe
 	}
 	else if(m_nextSpell->spelltargetType == TTYPE_CASTER)
 	{
-		targets.m_targetMask = 2;
+		targets.m_targetMask = TARGET_FLAG_UNIT;
 		targets.m_unitTarget = m_Unit->GetGUID();
 	}
 

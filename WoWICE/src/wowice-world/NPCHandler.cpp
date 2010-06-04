@@ -402,9 +402,9 @@ void WorldSession::SendAuctionList(Creature* auctioneer)
 	}
 
 	WorldPacket data(MSG_AUCTION_HELLO, 12);
-	data << auctioneer->GetGUID();
+	data << uint64(auctioneer->GetGUID());
 	data << uint32(AH->GetID());
-
+	data << uint8(AH->enabled ? 1 : 0); // Alleycat - Need to correct this properly.
 	SendPacket( &data );
 }
 
@@ -425,7 +425,7 @@ void WorldSession::HandleGossipHelloOpcode( WorldPacket & recv_data )
 
 	//stop when talked to
 	if(qst_giver->GetAIInterface())
-		qst_giver->GetAIInterface()->StopMovement(30);
+		qst_giver->GetAIInterface()->StopMovement(30000);
 
 	// unstealth meh
 	if( _player->IsStealth() )
@@ -434,7 +434,7 @@ void WorldSession::HandleGossipHelloOpcode( WorldPacket & recv_data )
 	// reputation
 	_player->Reputation_OnTalk(qst_giver->m_factionDBC);
 
-	sLog.outDebug( "WORLD: Received CMSG_GOSSIP_HELLO from %u",GUID_LOPART(guid) );
+	sLog.outDebug( "WORLD: Received CMSG_GOSSIP_HELLO from %u",Wowice::Util::GUID_LOPART( guid ) );
 
 	GossipScript * Script = qst_giver->GetCreatureInfo() ? qst_giver->GetCreatureInfo()->gossip_script : NULL;
 	if(!Script)
@@ -449,7 +449,7 @@ void WorldSession::HandleGossipHelloOpcode( WorldPacket & recv_data )
 			return;
 
 		_player->CurrentGossipMenu->BuildPacket(data);
-		uint32 count=0;//sQuestMgr.ActiveQuestsCount(qst_giver, GetPlayer());
+		uint32 count= 0;//sQuestMgr.ActiveQuestsCount(qst_giver, GetPlayer());
 		size_t pos=data.wpos();
 		data << uint32(count);
 		for (it = qst_giver->QuestsBegin(); it != qst_giver->QuestsEnd(); ++it)
@@ -461,27 +461,34 @@ void WorldSession::HandleGossipHelloOpcode( WorldPacket & recv_data )
 				{	
 					ql.insert((*it)->qst->id);
 					count++;
-					data << (*it)->qst->id;
-					/*data << status;//sQuestMgr.CalcQuestStatus(qst_giver, GetPlayer(), *it);
-					data << uint32(0);*/
+
+					uint32 questid = (*it)->qst->id;
+					uint32 icon;
+
 					switch(status)
 					{
 					case QMGR_QUEST_NOT_FINISHED:
-						data << uint32(4) << uint32(0);
+						icon = QMGR_QUEST_REPEATABLE_LOWLEVEL;
 						break;
 
 					case QMGR_QUEST_FINISHED:
-						data << uint32(4) << uint32(1);
+						icon = QMGR_QUEST_REPEATABLE_LOWLEVEL;
 						break;
 
 					case QMGR_QUEST_CHAT:
-						data << QMGR_QUEST_AVAILABLE << uint32(0);
+						icon = QMGR_QUEST_AVAILABLE;
 						break;
 
 					default:
-						data << status << uint32(0);
+						icon = status;
 						break;
 					}
+
+					data << uint32( questid );
+					data << uint32( icon );
+					data << int32( (*it)->qst->min_level );
+					data << uint32( (*it)->qst->quest_flags );
+					data << uint8( 0 );   // 3.3.3 According to Mangos: "changes icon: blue question or yellow exclamation"
 
 					LocalizedQuest * lq = (language>0) ? sLocalizationMgr.GetLocalizedQuest((*it)->qst->id,language):NULL;
 					if(lq)
@@ -591,8 +598,6 @@ void WorldSession::HandleSpiritHealerActivateOpcode( WorldPacket & recv_data )
 			SpellCastTargets targets;
 			targets.m_unitTarget = GetPlayer()->GetGUID();
 			Spell * sp = new Spell(_player,spellInfo,true,NULL);
-			if (!sp)
-				return;
 			sp->prepare(&targets);
 		}
 
@@ -605,7 +610,7 @@ void WorldSession::HandleSpiritHealerActivateOpcode( WorldPacket & recv_data )
 			_player->SetAurDuration(15007,duration); //cebernic: change this to setaurduration() to be refreshed.
 	}
 
-	GetPlayer( )->SetUInt32Value(UNIT_FIELD_HEALTH, GetPlayer()->GetUInt32Value(UNIT_FIELD_MAXHEALTH)/2);
+	GetPlayer( )->SetHealth( GetPlayer()->GetMaxHealth()/2);
 }
 
 //////////////////////////////////////////////////////////////
@@ -622,7 +627,7 @@ void WorldSession::HandleNpcTextQueryOpcode( WorldPacket & recv_data )
 	sLog.outDetail("WORLD: CMSG_NPC_TEXT_QUERY ID '%u'", textID );
 
 	recv_data >> targetGuid;
-	GetPlayer()->SetUInt64Value(UNIT_FIELD_TARGET, targetGuid);
+	GetPlayer()->SetTargetGUID(  targetGuid);
 
 	pGossip = NpcTextStorage.LookupEntry(textID);
 	LocalizedNpcText * lnc = (language>0) ? sLocalizationMgr.GetLocalizedNpcText(textID,language) : NULL;
@@ -657,20 +662,20 @@ void WorldSession::HandleNpcTextQueryOpcode( WorldPacket & recv_data )
 	else 
 	{
 		data << float(1.0f);		// unknown
-		data << (char*)_player->GetSession()->LocalizedWorldSrv(70);
-		data << (char*)_player->GetSession()->LocalizedWorldSrv(70);
+		data << _player->GetSession()->LocalizedWorldSrv(70);
+		data << _player->GetSession()->LocalizedWorldSrv(70);
 		data << uint32(0x00);	// ?
 		data << uint32(0x00);	// ?
-		for(uint32 e=0;e<6;e++)
+		for(uint32 e = 0; e < 6; e++)
 			data << uint32(0x00);
 
-		for(int i=0;i<7;i++)
+		for(int i= 0;i<7;i++)
 		{
 			data << uint32(0x00);
 			data << uint8(0x00) << uint8(0x00);
 			data << uint32(0x00);	// ?
 			data << uint32(0x00);	// ?
-			for(uint32 e=0;e<6;e++)
+			for(uint32 e = 0; e < 6; e++)
 				data << uint32(0x00);	// emote 1
 		}
 	}
@@ -681,7 +686,7 @@ void WorldSession::HandleNpcTextQueryOpcode( WorldPacket & recv_data )
 
 void WorldSession::HandleBinderActivateOpcode( WorldPacket & recv_data )
 {
-	if(!_player->IsInWorld()) return;
+	CHECK_INWORLD_RETURN;
 	uint64 guid;
 	recv_data >> guid;
 
@@ -695,7 +700,6 @@ void WorldSession::HandleBinderActivateOpcode( WorldPacket & recv_data )
 
 void WorldSession::SendInnkeeperBind(Creature* pCreature)
 {
-	if(!_player->IsInWorld()) return;
 	WorldPacket data(45);
 
 	if(!_player->bHasBindDialogOpen)

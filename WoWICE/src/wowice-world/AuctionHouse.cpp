@@ -23,9 +23,7 @@ void Auction::DeleteFromDB()
 
 void Auction::SaveToDB(uint32 AuctionHouseId)
 {
-	CharacterDatabase.Execute("INSERT INTO auctions VALUES(%u, %u, "I64FMTD", %u, %u, %u, %u, %u, %u)",
-		Id, AuctionHouseId, pItem->GetGUID(), Owner, BuyoutPrice, ExpiryTime, HighestBidder, HighestBid,
-		DepositAmount);
+	CharacterDatabase.Execute("INSERT INTO auctions VALUES(%u, %u, "I64FMTD", %u, %u, %u, %u, %u, %u, %u)",Id, AuctionHouseId, pItem->GetGUID(), Owner, StartingPrice, BuyoutPrice, ExpiryTime, HighestBidder, HighestBid, DepositAmount );
 }
 
 void Auction::UpdateInDB()
@@ -38,8 +36,10 @@ AuctionHouse::AuctionHouse(uint32 ID)
 	dbc = dbcAuctionHouse.LookupEntryForced(ID);
 	Wowice::Util::WoWICE_ASSERT(   dbc != NULL );
 
-	cut_percent = float( float(dbc->tax) / 100.0f );
-	deposit_percent = float( float(dbc->fee ) / 100.0f );
+	cut_percent = dbc->tax / 100.0f ;
+	deposit_percent = dbc->fee / 100.0f ;
+
+	enabled = true;
 }
 
 AuctionHouse::~AuctionHouse()
@@ -167,7 +167,7 @@ void AuctionHouse::RemoveAuction(Auction * auct)
 			sMailSystem.SendAutomatedMessage(AUCTION, dbc->id, auct->HighestBidder, subject, body, 0, 0, auct->pItem->GetGUID(), MAIL_STATIONERY_AUCTION );
 
 			// Send a mail to the owner with his cut of the price.
-			uint32 auction_cut = FL2UINT(float(cut_percent * float(auct->HighestBid)));
+			uint32 auction_cut = float2int32(cut_percent * auct->HighestBid);
 			int32 amount = auct->HighestBid - auction_cut + auct->DepositAmount;
 			if(amount < 0)
 				amount = 0;
@@ -193,7 +193,7 @@ void AuctionHouse::RemoveAuction(Auction * auct)
 	case AUCTION_REMOVE_CANCELLED:
 		{
 			snprintf(subject, 100, "%u:0:5", (unsigned int)auct->pItem->GetEntry());
-			uint32 cut = uint32(float(cut_percent * auct->HighestBid));
+			uint32 cut = float2int32(cut_percent * auct->HighestBid);
 			Player * plr = objmgr.GetPlayer(auct->Owner);
 			if( cut && plr && plr->HasGold(cut) )
 				plr->ModGold( -(int32)cut );
@@ -245,14 +245,14 @@ void WorldSession::HandleAuctionListBidderItems( WorldPacket & recv_data )
 
 void Auction::AddToPacket(WorldPacket & data)
 {
-	data << Id;
-	data << pItem->GetEntry();
+	data << uint32( Id );
+	data << uint32( pItem->GetEntry() );
 
-	for (uint32 i = 0; i < 6; i++)
+	for (uint32 i = 0; i < MAX_INSPECTED_ENCHANTMENT_SLOT; i++)
 	{
         data << uint32( pItem->GetEnchantmentId( i ) );   // Enchantment ID
 		data << uint32( pItem->GetEnchantmentApplytime( i ) );						 // Unknown / maybe ApplyTime
-        data << uint32( pItem->GetCharges( i ) );  // charges
+		data << uint32( pItem->GetEnchantmentCharges( i ) );  // charges
 	}
 
     data << pItem->GetItemRandomPropertyId();		 // -ItemRandomSuffix / random property	 : If the value is negative its ItemRandomSuffix if its possitive its RandomItemProperty
@@ -272,20 +272,18 @@ void Auction::AddToPacket(WorldPacket & data)
 	* (Modifier / 10000) * enchantmentvalue = EnchantmentGain;	
 	*/
 	
-	data << uint32(0);				  // Unknown
-	data << uint32(0);				  // Unknown
-	data << uint32(0);				  // Unknown
-	data << pItem->GetStackCount(); // Amount
-	data << uint32(0);				  // Unknown
-	data << uint32(0);				  // Unknown
-	data << uint64(Owner);			  // Owner guid
-	data << HighestBid;				 // Current prize
-	// hehe I know its evil, this creates a nice trough put of money
-	data << uint32(50);				 // Next bid value modifier, like current bid + this value
-	data << BuyoutPrice;				// Buyout
-	data << uint32((ExpiryTime - UNIXTIME) * 1000); // Time left
-	data << uint64(HighestBidder);	  // Last bidder
-	data << HighestBid;				 // The bid of the last bidder
+	data << pItem->GetStackCount();         // Amount
+	data << pItem->GetChargesLeft();        // Charges Left
+	data << uint32(0);                                      // Unknown
+	data << uint64(Owner);                          // Owner guid
+	data << uint32(StartingPrice);          // Starting bid
+	// If there's no bid yet, we should start at starting bid
+	data << uint32((HighestBid > 0 ? 50 : 0));      // Next bid value modifier, like current bid + this value
+	data << uint32(BuyoutPrice);            // Buyout
+	data << uint32((ExpiryTime - UNIXTIME) * 1000);         // Time left
+	data << uint64(HighestBidder);          // Last bidder
+	data << uint32(HighestBid);                     // The bid of the last bidder
+
 }
 
 void AuctionHouse::SendBidListPacket(Player * plr, WorldPacket * packet)
@@ -621,7 +619,8 @@ void WorldSession::HandleAuctionSellItem( WorldPacket & recv_data )
 	Auction * auct = new Auction;
 	auct->BuyoutPrice = buyout;
 	auct->ExpiryTime = (uint32)UNIXTIME + (etime * 60);
-	auct->HighestBid = bid;
+	auct->StartingPrice = bid;
+	auct->HighestBid = 0;
 	auct->HighestBidder = 0;	// hm
 	auct->Id = sAuctionMgr.GenerateAuctionId();
 	auct->Owner = _player->GetLowGUID();
@@ -682,7 +681,7 @@ void AuctionHouse::SendAuctionList(Player * plr, WorldPacket * packet)
 	}
 
 	WorldPacket data(SMSG_AUCTION_LIST_RESULT, 7000);
-	data << uint32(0);
+	data << uint32(0); // count of items
 
 	auctionLock.AcquireReadLock();
 	HM_NAMESPACE::hash_map<uint32, Auction*>::iterator itr = auctions.begin();
@@ -759,6 +758,7 @@ void AuctionHouse::SendAuctionList(Player * plr, WorldPacket * packet)
 
 	// total count
 	data << uint32(1 + counted_items);
+	data << uint32(300);
 
 	auctionLock.ReleaseReadLock();
 	plr->GetSession()->SendPacket(&data);
@@ -830,11 +830,13 @@ void AuctionHouse::LoadAuctions()
 		}
 		auct->pItem = pItem;
 		auct->Owner = fields[3].GetUInt32();
-		auct->BuyoutPrice = fields[4].GetUInt32();
-		auct->ExpiryTime = fields[5].GetUInt32();
-		auct->HighestBidder = fields[6].GetUInt32();
-		auct->HighestBid = fields[7].GetUInt32();
-		auct->DepositAmount = fields[8].GetUInt32();
+		auct->StartingPrice = fields[4].GetUInt32();
+		auct->BuyoutPrice = fields[5].GetUInt32();
+		auct->ExpiryTime = fields[6].GetUInt32();
+		auct->HighestBidder = fields[7].GetUInt32();
+		auct->HighestBid = fields[8].GetUInt32();
+		auct->DepositAmount = fields[9].GetUInt32();
+
 		auct->DeletedReason = 0;
 		auct->Deleted = false;
 

@@ -37,6 +37,7 @@ const char * gZoneGuardsFormat							= "uuu";
 const char * gUnitModelSizeFormat						= "ufu";
 const char * gWorldStringTableFormat					= "us"; // p2wow added [for worldserver common message storage]
 const char * gWorldBroadCastFormat						= "usu";// announce message
+const char * gBattleMasterFormat						= "uu";
 
 /** SQLStorage symbols
  */
@@ -58,6 +59,8 @@ SERVER_DECL SQLStorage<ZoneGuardEntry, HashMapStorageContainer<ZoneGuardEntry> >
 SERVER_DECL SQLStorage<UnitModelSizeEntry, HashMapStorageContainer<UnitModelSizeEntry> >	UnitModelSizeStorage;
 SERVER_DECL SQLStorage<WorldStringTable, HashMapStorageContainer<WorldStringTable> >		WorldStringTableStorage;
 SERVER_DECL SQLStorage<WorldBroadCast, HashMapStorageContainer<WorldBroadCast> >			WorldBroadCastStorage;
+SERVER_DECL SQLStorage<BGMaster, HashMapStorageContainer<BGMaster> >						BGMasterStorage;
+
 
 SERVER_DECL set<string> ExtraMapCreatureTables;
 SERVER_DECL set<string> ExtraMapGameObjectTables;
@@ -506,6 +509,7 @@ void Storage_FillTaskList(TaskList & tl)
 	make_task(UnitModelSizeStorage, UnitModelSizeEntry, HashMapStorageContainer, "unit_display_sizes", gUnitModelSizeFormat);
 	make_task(WorldStringTableStorage, WorldStringTable, HashMapStorageContainer, "worldstring_tables", gWorldStringTableFormat);
 	make_task(WorldBroadCastStorage, WorldBroadCast, HashMapStorageContainer, "worldbroadcast", gWorldBroadCastFormat);
+	make_task(BGMasterStorage, BGMaster, HashMapStorageContainer, "battlemasters", gBattleMasterFormat);
 	
 }
 
@@ -549,6 +553,7 @@ void Storage_Cleanup()
 	UnitModelSizeStorage.Cleanup();
 	WorldStringTableStorage.Cleanup();
 	WorldBroadCastStorage.Cleanup();
+	BGMasterStorage.Cleanup();
 }
 
 vector<pair<string,string> > additionalTables;

@@ -695,6 +695,17 @@ bool ChatHandler::HandleAddSkillCommand(const char* args, WorldSession *m_sessio
 
 bool ChatHandler::HandleNpcInfoCommand(const char *args, WorldSession *m_session)
 {
+
+	static const char *POWERTYPE[] = {
+		"Mana",
+		"Rage",
+		"Focus",
+		"Energy",
+		"Happiness",
+		"Runes",
+		"Runic Power"
+	};
+
     uint32 guid = Wowice::Util::GUID_LOPART(m_session->GetPlayer()->GetSelection());
 	Creature *crt = getSelectedCreature(m_session);
 	if(!crt) return false;
@@ -741,6 +752,13 @@ bool ChatHandler::HandleNpcInfoCommand(const char *args, WorldSession *m_session
 		SystemMessage(m_session, "Combat Support: 0x%.3X", crt->m_faction->FriendlyMask);
 	SystemMessage(m_session, "Health (cur/max): %d/%d", crt->GetHealth(), crt->GetMaxHealth());
 	SystemMessage(m_session, "Mana (cur/max): %d/%d", crt->GetPower( POWER_TYPE_MANA ), crt->GetMaxPower( POWER_TYPE_MANA ) );
+	SystemMessage(m_session, "Happiness (cur/max): %d/%d", crt->GetPower( POWER_TYPE_HAPPINESS ), crt->GetMaxPower( POWER_TYPE_HAPPINESS ) );
+	SystemMessage(m_session, "Focus (cur/max): %d/%d", crt->GetPower( POWER_TYPE_FOCUS ), crt->GetMaxPower( POWER_TYPE_FOCUS ) );
+
+	uint32 powertype = crt->GetPowerType();
+	if( powertype >= 0 && powertype <= 6 )
+		SystemMessage(m_session, "Powertype: %s", POWERTYPE[ powertype ] );
+
 	SystemMessage(m_session, "Armor/Holy/Fire/Nature/Frost/Shadow/Arcane");
 	SystemMessage(m_session, "%d/%d/%d/%d/%d/%d/%d", crt->GetResistance(NORMAL_DAMAGE), crt->GetResistance(HOLY_DAMAGE), crt->GetResistance(FIRE_DAMAGE), crt->GetResistance(NATURE_DAMAGE), crt->GetResistance(FROST_DAMAGE), crt->GetResistance(SHADOW_DAMAGE), crt->GetResistance(ARCANE_DAMAGE));
 	SystemMessage(m_session, "Damage (min/max): %f/%f", crt->GetMinDamage(),crt->GetMaxDamage());
@@ -1203,10 +1221,12 @@ bool ChatHandler::HandleAddItemSetCommand(const char* args, WorldSession* m_sess
 		Item *itm = objmgr.CreateItem((*itr)->ItemId, m_session->GetPlayer());
 		if(!itm) continue;
 		if(itm->GetProto()->Bonding == ITEM_BIND_ON_PICKUP)
+		{
 			if(itm->GetProto()->Flags & ITEM_FLAG_ACCOUNTBOUND) // don't "Soulbind" account-bound items
 				itm->AccountBind();
 			else
-			itm->SoulBind();
+				itm->SoulBind();
+		}
 
 		if(!chr->GetItemInterface()->AddItemToFreeSlot(itm))
 		{
@@ -1216,7 +1236,7 @@ bool ChatHandler::HandleAddItemSetCommand(const char* args, WorldSession* m_sess
 		} else {
 			//SystemMessage(m_session, "Added item: %s [%u]", (*itr)->Name1, (*itr)->ItemId);
 			SlotResult * le = chr->GetItemInterface()->LastSearchResult();
-			chr->GetSession()->SendItemPushResult(itm,false,true,false,true,le->ContainerSlot,le->Slot,1);
+            chr->SendItemPushResult( false,true,false,true,le->ContainerSlot,le->Slot,1 , itm->GetEntry(), itm->GetItemRandomSuffixFactor(), itm->GetItemRandomPropertyId(), itm->GetStackCount()  );
 		}
 	}
 	GreenSystemMessage(m_session, "Added set to inventory complete. Time: %u ms", getMSTime() - start);
@@ -1230,10 +1250,12 @@ bool ChatHandler::HandleCastTimeCheatCommand(const char* args, WorldSession* m_s
 		return true;
 
 	if (!*args)
+	{
 		if (plyr->CastTimeCheat)
 			args = "off";
 		else
 			args = "on";
+	}
 
 	if (stricmp(args, "on") == 0)
 	{
@@ -1262,10 +1284,12 @@ bool ChatHandler::HandleCooldownCheatCommand(const char* args, WorldSession* m_s
 		return true;
 
 	if(!*args)
+	{
 		if (plyr->CooldownCheat)
 			args = "off";
 		else
 			args = "on";
+	}
 
 	if(stricmp(args, "on") == 0)
 	{
@@ -1298,10 +1322,12 @@ bool ChatHandler::HandleGodModeCommand(const char* args, WorldSession* m_session
 		return true;
 
 	if(!*args)
+	{
 		if (plyr->GodModeCheat)
 			args = "off";
 		else
 			args = "on";
+	}
 
 	if(stricmp(args, "on") == 0)
 	{
@@ -1330,10 +1356,12 @@ bool ChatHandler::HandlePowerCheatCommand(const char* args, WorldSession* m_sess
 		return true;
 
 	if(!*args)
+	{
 		if (plyr->PowerCheat)
 			args = "off";
 		else
 			args = "on";
+	}
 
 	if(stricmp(args, "on") == 0)
 	{
@@ -1397,10 +1425,12 @@ bool ChatHandler::HandleFlyCommand(const char* args, WorldSession* m_session)
 		chr = m_session->GetPlayer();
 
 	if(!*args)
+	{
 		if (chr->FlyCheat)
 			args = "off";
 		else
 			args = "on";
+	}
 
 	if(stricmp(args, "on") == 0)
 	{
@@ -1495,11 +1525,16 @@ bool ChatHandler::HandleModifyLevelCommand(const char* args, WorldSession* m_ses
 	plr->ApplyLevelInfo(Info, Level);
 	if( plr->getClass() == WARLOCK )
 	{
-		if( plr->GetSummon() && plr->GetSummon()->IsInWorld() && plr->GetSummon()->isAlive() )
+		std::list<Pet*> summons = plr->GetSummons();
+		for(std::list<Pet*>::iterator itr = summons.begin(); itr != summons.end(); ++itr)
 		{
-			plr->GetSummon()->SetUInt32Value(UNIT_FIELD_LEVEL, Level);
-			plr->GetSummon()->ApplyStatsForLevel();
-			plr->GetSummon()->UpdateSpellList();
+			Pet* summon = *itr;
+			if( summon->IsInWorld() && summon->isAlive() )
+			{
+				summon->setLevel(Level);
+				summon->ApplyStatsForLevel();
+				summon->UpdateSpellList();
+			}
 		}
 	}
 
@@ -1541,7 +1576,7 @@ bool ChatHandler::HandleCreatePetCommand(const char* args, WorldSession* m_sessi
 	sp->y = plr->GetPositionY();
 	//sp->respawnNpcLink = 0;
 	sp->stand_state = 0;
-	sp->channel_spell=sp->channel_target_creature=sp->channel_target_go=0;
+	sp->channel_spell=sp->channel_target_creature=sp->channel_target_go= 0;
 	pCreature->Load(sp, (uint32)NULL, NULL);
 
 	Pet *old_tame = plr->GetSummon();
@@ -1576,9 +1611,9 @@ bool ChatHandler::HandlePetSpawnAIBot(const char* args, WorldSession *m_session)
 	if( !m_session->GetPlayer() )
 		return false; //wtf ?
 
-	uint32 botprice = m_session->GetPlayer()->GetUInt32Value(UNIT_FIELD_LEVEL)*10000; //1 gold per level ?
+	uint32 botprice = m_session->GetPlayer()->getLevel() * 10000; //1 gold per level ?
 
-	if( m_session->GetPlayer()->GetUInt32Value(PLAYER_FIELD_COINAGE) < botprice )
+	if( !m_session->GetPlayer()->HasGold(botprice) )
 	{
 		GreenSystemMessage(m_session, "You need a total of %u coins to afford a bot", botprice);
 		return false;
@@ -1586,7 +1621,7 @@ bool ChatHandler::HandlePetSpawnAIBot(const char* args, WorldSession *m_session)
 
 	uint8 botType = (uint8)atof((char*)args);
 
-	if ( botType!=0 )
+	if ( botType!= 0 )
 	{
 		RedSystemMessage(m_session, "Incorrect value. Accepting value 0 only = healbot :)");
 		return true;
@@ -1668,15 +1703,14 @@ bool ChatHandler::HandleAddPetSpellCommand(const char* args, WorldSession* m_ses
 	if(!plr)
 		return false;
 
-	Pet * pPet = plr->GetSummon();
-	if(pPet == 0)
+	if( plr->GetSummon() == NULL)
 	{
 		RedSystemMessage(m_session, "%s has no pet.", plr->GetName());
 		return true;
 	}
 
 	uint32 SpellId = atol(args);
-	SpellEntry * spell = dbcSpell.LookupEntry(SpellId);
+	SpellEntry * spell = dbcSpell.LookupEntryForced(SpellId);
 	if(!SpellId || !spell)
 	{
 		RedSystemMessage(m_session, "Invalid spell id requested.");
@@ -1725,7 +1759,7 @@ bool ChatHandler::HandleRenamePetCommand(const char* args, WorldSession* m_sessi
 {
 	Player * plr = m_session->GetPlayer();
 	Pet * pPet = plr->GetSummon();
-	if(pPet == 0)
+	if(pPet == NULL)
 	{
 		RedSystemMessage(m_session, "You have no pet.");
 		return true;
@@ -1738,7 +1772,7 @@ bool ChatHandler::HandleRenamePetCommand(const char* args, WorldSession* m_sessi
 	}
 
 	GreenSystemMessage(m_session, "Renamed your pet to %s.", args);
-	pPet->Rename(args);
+	pPet->Rename(args);//support for only 1st pet
 	return true;
 }
 
@@ -1748,11 +1782,14 @@ bool ChatHandler::HandleDismissPetCommand(const char* args, WorldSession* m_sess
 	Pet* pPet = NULL;
 	if(plr)
 	{
-		pPet = plr->GetSummon();
-		if(!pPet)
+		if(plr->GetSummon() == NULL)
 		{
 			RedSystemMessage(m_session, "Player has no pet.");
 			return true;
+		}
+		else
+		{
+			plr->DismissActivePets();
 		}
 	}
 	else
@@ -1774,9 +1811,9 @@ bool ChatHandler::HandleDismissPetCommand(const char* args, WorldSession* m_sess
 			return true;
 		}
 		plr = pPet->GetPetOwner();
+		pPet->Dismiss();
 	}
 
-	pPet->Dismiss();
 	GreenSystemMessage(m_session, "Dismissed %s's pet.", plr->GetName());
 	plr->GetSession()->SystemMessage("%s dismissed your pet.", m_session->GetPlayer()->GetName());
 	return true;
@@ -1833,7 +1870,8 @@ bool ChatHandler::HandlePetLevelCommand(const char* args, WorldSession* m_sessio
 		newLevel = plr->getLevel();
 	}
 
-	pPet->SetUInt32Value( UNIT_FIELD_LEVEL, newLevel );
+	//support for only 1 pet
+	pPet->setLevel(newLevel );
 	pPet->SetUInt32Value( UNIT_FIELD_PETEXPERIENCE, 0 );
 	pPet->SetUInt32Value( UNIT_FIELD_PETNEXTLEVELEXP, pPet->GetNextLevelXP(newLevel) );
 	pPet->ApplyStatsForLevel();
@@ -1999,7 +2037,7 @@ bool ChatHandler::HandleMassSummonCommand(const char* args, WorldSession* m_sess
 	char Buffer[170];
         if(*args == 'a' || *args == 'A')
         {
-            faction=0;
+            faction= 0;
            	snprintf(Buffer,170,"%s%s Has requested a mass summon of all Alliance players. Do not feel obliged to accept the summon, as it is most likely for an event or a test of sorts",MSG_COLOR_GOLD,m_session->GetPlayer()->GetName());
 
         }
@@ -2010,7 +2048,7 @@ bool ChatHandler::HandleMassSummonCommand(const char* args, WorldSession* m_sess
         }
         else  snprintf(Buffer,170,"%s%s Has requested a mass summon of all players. Do not feel obliged to accept the summon, as it is most likely for an event or a test of sorts",MSG_COLOR_GOLD,m_session->GetPlayer()->GetName());
 
-	uint32 c=0;
+	uint32 c= 0;
 
 	for (itr = objmgr._players.begin(); itr != objmgr._players.end(); itr++)
 	{
@@ -2046,7 +2084,7 @@ bool ChatHandler::HandleCastAllCommand(const char* args, WorldSession* m_session
 	}
 	Player * plr;
 	uint32 spellid = atol(args);
-	SpellEntry * info = dbcSpell.LookupEntry(spellid);
+	SpellEntry * info = dbcSpell.LookupEntryForced(spellid);
 	if(!info)
 	{
 		RedSystemMessage(m_session, "Invalid spell specified.");
@@ -2056,7 +2094,7 @@ bool ChatHandler::HandleCastAllCommand(const char* args, WorldSession* m_session
 	// this makes sure no moron casts a learn spell on everybody and wrecks the server
 	for (int i = 0; i < 3; i++)
 	{
-		if (info->Effect[i] == 36) //SPELL_EFFECT_LEARN_SPELL - 36
+		if (info->Effect[i] == SPELL_EFFECT_LEARN_SPELL) //SPELL_EFFECT_LEARN_SPELL - 36
 		{
 			sGMLog.writefromsession(m_session, "used wrong / learnall castall command, spellid %u", spellid);
 			RedSystemMessage(m_session, "Learn spell specified.");
@@ -2080,8 +2118,6 @@ bool ChatHandler::HandleCastAllCommand(const char* args, WorldSession* m_session
 			else
 			{
 				Spell * sp = new Spell(plr, info, true, 0);
-				if (!sp)
-					return true;
 				SpellCastTargets targets(plr->GetGUID());
 				sp->prepare(&targets);
 			}
@@ -2202,7 +2238,7 @@ bool ChatHandler::HandleFormationClearCommand(const char* args, WorldSession * m
 	c->GetAIInterface()->m_formationLinkTarget = 0;
 	c->GetAIInterface()->m_formationFollowAngle = 0.0f;
 	c->GetAIInterface()->m_formationFollowDistance = 0.0f;
-	c->GetAIInterface()->SetUnitToFollow(0);
+	c->GetAIInterface()->ResetUnitToFollow();
 
 	WorldDatabase.Execute("DELETE FROM creature_formations WHERE spawn_id=%u", c->GetSQL_id());
 	return true;
@@ -2215,7 +2251,7 @@ bool ChatHandler::HandleNullFollowCommand(const char* args, WorldSession * m_ses
 
 	// restart movement
 	c->GetAIInterface()->SetAIState(STATE_IDLE);
-	c->GetAIInterface()->SetUnitToFollow(0);
+	c->GetAIInterface()->ResetUnitToFollow();
 
 	sGMLog.writefromsession( m_session, "cancelled npc follow command on %s, sqlid %u", c->GetCreatureInfo()->Name, c->GetSQL_id() );
 	return true;
@@ -2255,10 +2291,12 @@ bool ChatHandler::HandleAuraStackCheatCommand(const char* args, WorldSession * m
 		return true;
 
 	if(!*args)
+	{
 		if (plyr->AuraStackCheat)
 			args = "off";
 		else
 			args = "on";
+	}
 
 	if(stricmp(args, "on") == 0)
 	{
@@ -2287,10 +2325,12 @@ bool ChatHandler::HandleTriggerpassCheatCommand(const char* args, WorldSession *
 		return true;
 
 	if(!*args)
+	{
 		if (plyr->TriggerpassCheat)
 			args = "off";
 		else
 			args = "on";
+	}
 
 	if(stricmp(args, "on") == 0)
 	{
@@ -2378,9 +2418,9 @@ bool ChatHandler::HandlePlayerInfo(const char* args, WorldSession * m_session)
 	char playedTotal[64];
 
 	int seconds = (plr->GetPlayedtime())[0];
-	int mins=0;
-	int hours=0;
-	int days=0;
+	int mins= 0;
+	int hours= 0;
+	int days= 0;
 	if(seconds >= 60)
 	{
 		mins = seconds / 60;
@@ -2406,9 +2446,9 @@ bool ChatHandler::HandlePlayerInfo(const char* args, WorldSession * m_session)
 	snprintf(playedLevel, 64, "[%d days, %d hours, %d minutes, %d seconds]", days, hours, mins, seconds);
 
 	seconds = (plr->GetPlayedtime())[1];
-	mins=0;
-	hours=0;
-	days=0;
+	mins= 0;
+	hours= 0;
+	days= 0;
 	if(seconds >= 60)
 	{
 		mins = seconds / 60;
@@ -2442,7 +2482,7 @@ bool ChatHandler::HandlePlayerInfo(const char* args, WorldSession * m_session)
 	BlueSystemMessage(m_session, "%s is connecting from account '%s'[%u] with permissions '%s'",
 		(plr->getGender()?"She":"He"), sess->GetAccountName().c_str(), sess->GetAccountId(), sess->GetPermissions());
 
-	char *client;
+	const char *client;
 
 	// Clean code says you need to work from highest combined bit to lowest. Second, you need to check if both flags exists.
         if(sess->HasFlag(ACCOUNT_FLAG_XPACK_02) && sess->HasFlag(ACCOUNT_FLAG_XPACK_01))
@@ -2593,7 +2633,7 @@ bool ChatHandler::HandleCreatureSpawnCommand(const char *args, WorldSession *m_s
 
 
 	Creature * p = m_session->GetPlayer()->GetMapMgr()->CreateCreature(entry);
-	ASSERT(p);
+	Wowice::Util::WOWICE_ASSERT(   p != NULL );
 	p->Load(sp, (uint32)NULL, NULL);
 	p->m_loadedFromDB = true;
 	p->PushToWorld(m_session->GetPlayer()->GetMapMgr());
@@ -2741,7 +2781,7 @@ bool ChatHandler::HandleSetStandingCommand(const char * args, WorldSession * m_s
 	if(sscanf(args, "%u %d", (unsigned int*)&faction, (unsigned int*)&standing) != 2)
 		return false;
 	Player * plr = getSelectedChar(m_session, true);
-	if(!plr) return true;;
+	if(!plr) return true;
 
 	BlueSystemMessage(m_session, "Setting standing of %u to %d on %s.", faction, standing, plr->GetName());
 	plr->SetStanding(faction, standing);
@@ -2750,7 +2790,7 @@ bool ChatHandler::HandleSetStandingCommand(const char * args, WorldSession * m_s
 	return true;
 }
 
-void ChatHandler::SendHighlightedName(WorldSession * m_session, const char* prefix, char* full_name, string& lowercase_name, string& highlight, uint32 id)
+void ChatHandler::SendHighlightedName(WorldSession * m_session, const char* prefix, const char* full_name, string& lowercase_name, string& highlight, uint32 id)
 {
 	char message[1024];
 	char start[50];
@@ -2907,7 +2947,7 @@ bool ChatHandler::HandleLookupObjectCommand(const char * args, WorldSession * m_
 		if(!itr->Inc()) break;
 	}
 	itr->Destruct();
-	if (count==0)
+	if (count== 0)
 	{
 		recout="|cff00ccffNo matches found.";
 		SendMultilineMessage(m_session,recout.c_str());
@@ -2995,9 +3035,9 @@ bool ChatHandler::HandleLookupSpellCommand(const char * args, WorldSession * m_s
 			// SendHighlightedName(m_session, "Spell", spell->Name, y, x, spell->Id);
 			// Send spell link instead
 			sprintf((char*)itoabuf,"%u",spell->Id);
-			recout = (char*)itoabuf;
+			recout = (const char*)itoabuf;
 			recout += ": |cff71d5ff|Hspell:";
-			recout += (char*)itoabuf;
+			recout += (const char*)itoabuf;
 			recout += "|h[";
 			recout += spell->Name;
 			recout += "]|h|r";
@@ -3115,8 +3155,8 @@ bool ChatHandler::HandleGORotate(const char * args, WorldSession * m_session)
 	case 'o':
 		if(m_session->GetPlayer()){
 			float ori = m_session->GetPlayer()->GetOrientation();
-			go->SetFloatValue(GAMEOBJECT_PARENTROTATION_02, sinf(ori / 2));
-			go->SetFloatValue(GAMEOBJECT_PARENTROTATION_03, cosf(ori / 2));
+			go->SetParentRotation(2, sinf(ori / 2));
+			go->SetParentRotation(3, cosf(ori / 2));
 			go->SetOrientation(ori);
 			go->UpdateRotation();
 		}
@@ -3172,7 +3212,7 @@ bool ChatHandler::HandleNpcPossessCommand(const char * args, WorldSession * m_se
 	if(!pTarget)
 	{
 		pTarget = getSelectedCreature(m_session, false);
-		if(pTarget && (pTarget->IsPet() || pTarget->GetUInt32Value(UNIT_FIELD_CREATEDBY) != 0))
+		if(pTarget && (pTarget->IsPet() || pTarget->GetCreatedByGUID() != 0))
 			return false;
 	}
 
@@ -3261,7 +3301,7 @@ bool ChatHandler::HandleAIAgentDebugBegin(const char * args, WorldSession * m_se
 	for(list<SpellEntry*>::iterator itr = aiagent_spells.begin(); itr != aiagent_spells.end(); ++itr)
 	{
 		result = WorldDatabase.Query("SELECT * FROM ai_agents WHERE spell = %u", (*itr)->Id);
-		ASSERT(result);
+		Wowice::Util::WOWICE_ASSERT(   result != NULL );
 		spell_thingo t;
 		t.type = result->Fetch()[6].GetUInt32();
 		t.target = result->Fetch()[7].GetUInt32();
@@ -3287,19 +3327,19 @@ SpellCastTargets SetTargets(SpellEntry * sp, uint32 type, uint32 targettype, Uni
 
 	if(targettype == TTYPE_SINGLETARGET)
 	{
-		targets.m_targetMask = 2;
+		targets.m_targetMask = TARGET_FLAG_UNIT;
 		targets.m_unitTarget = dst->GetGUID();
 	}
 	else if(targettype == TTYPE_SOURCE)
 	{
-		targets.m_targetMask = 32;
+		targets.m_targetMask = TARGET_FLAG_SOURCE_LOCATION;
 		targets.m_srcX = src->GetPositionX();
 		targets.m_srcY = src->GetPositionY();
 		targets.m_srcZ = src->GetPositionZ();
 	}
 	else if(targettype == TTYPE_DESTINATION)
 	{
-		targets.m_targetMask = 64;
+		targets.m_targetMask = TARGET_FLAG_DEST_LOCATION;
 		targets.m_destX = dst->GetPositionX();
 		targets.m_destY = dst->GetPositionY();
 		targets.m_destZ = dst->GetPositionZ();
@@ -3328,7 +3368,7 @@ bool ChatHandler::HandleAIAgentDebugContinue(const char * args, WorldSession * m
 		BlueSystemMessage(m_session, "Casting %u, "MSG_COLOR_SUBWHITE"%u remaining.", sp->Id, aiagent_spells.size());
 
 		map<uint32, spell_thingo>::iterator it = aiagent_extra.find(sp->Id);
-		ASSERT(it != aiagent_extra.end());
+		Wowice::Util::WOWICE_ASSERT(   it != aiagent_extra.end());
 
 		SpellCastTargets targets;
 		if(it->second.type == STYPE_BUFF)
@@ -3524,7 +3564,7 @@ bool ChatHandler::HandleArenaSetTeamLeaderCommand(const char * args, WorldSessio
 	switch(arena_team_type)
 	{
 	case 2:
-		real_type=0;
+		real_type= 0;
 		break;
 	case 3:
 		real_type=1;
@@ -3576,7 +3616,7 @@ bool ChatHandler::HandleGenderChanger(const char* args, WorldSession *m_session)
 		SystemMessage(m_session, "Select A Player first.");
 		return true;
 	}
-	uint32 displayId = target->GetUInt32Value( UNIT_FIELD_NATIVEDISPLAYID );
+	uint32 displayId = target->GetNativeDisplayId();
 	if( *args == 0 )
 		gender = target->getGender()== 1 ? 0 : 1;
 	else
@@ -3596,13 +3636,13 @@ bool ChatHandler::HandleGenderChanger(const char* args, WorldSession *m_session)
 
 	if( target->getGender() == 0 )
 	{
-		target->SetUInt32Value( UNIT_FIELD_DISPLAYID, ( target->getRace() == RACE_BLOODELF ) ? ++displayId : --displayId );
-		target->SetUInt32Value( UNIT_FIELD_NATIVEDISPLAYID, displayId );
+		target->SetDisplayId(( target->getRace() == RACE_BLOODELF ) ? ++displayId : --displayId );
+		target->SetNativeDisplayId(displayId );
 	}
 	else
 	{
-		target->SetUInt32Value( UNIT_FIELD_DISPLAYID, ( target->getRace() == RACE_BLOODELF )? --displayId : ++displayId );
-		target->SetUInt32Value( UNIT_FIELD_NATIVEDISPLAYID, displayId );
+		target->SetDisplayId(( target->getRace() == RACE_BLOODELF )? --displayId : ++displayId );
+		target->SetNativeDisplayId(displayId );
 	}
 	target->EventModelChange();
 
@@ -3612,7 +3652,7 @@ bool ChatHandler::HandleGenderChanger(const char* args, WorldSession *m_session)
 
 bool ChatHandler::HandleDispelAllCommand(const char * args, WorldSession * m_session)
 {
-	uint32 pos=0;
+	uint32 pos= 0;
 	if(*args)
 		pos=atoi(args);
 
@@ -3650,7 +3690,7 @@ bool ChatHandler::HandleShowItems(const char * args, WorldSession * m_session)
 	Player * plr = getSelectedChar(m_session, true);
 	if(!plr) return true;
 	BlueSystemMessage(m_session, "Listing items for player %s",plr->GetName());
-	int itemcount=0;
+	int itemcount= 0;
 	ItemIterator itr(plr->GetItemInterface());
 	itr.BeginSearch();
 	for(; !itr.End(); itr.Increment())
@@ -3675,7 +3715,7 @@ bool ChatHandler::HandleShowSkills(const char * args, WorldSession * m_session)
 		return true;
 
 	BlueSystemMessage(m_session, "Listing items for player %s",plr->GetName());
-	int itemcount=0;
+	int itemcount= 0;
 	SkillIterator itr2(plr);
 	itr2.BeginSearch();
 	for(; !itr2.End(); itr2.Increment())
@@ -3806,11 +3846,15 @@ bool ChatHandler::HandleLevelUpCommand(const char* args, WorldSession *m_session
 	plr->ApplyLevelInfo(inf,levels);
 	if(plr->getClass() == WARLOCK)
 	{
-		if( plr->GetSummon() && plr->GetSummon()->IsInWorld() && plr->GetSummon()->isAlive() )
+		std::list<Pet*> summons = plr->GetSummons();
+		for(std::list<Pet*>::iterator itr = summons.begin(); itr != summons.end(); ++itr)
 		{
-			plr->GetSummon()->SetUInt32Value(UNIT_FIELD_LEVEL, levels);
-			plr->GetSummon()->ApplyStatsForLevel();
-			plr->GetSummon()->UpdateSpellList();
+			if( (*itr)->IsInWorld() && (*itr)->isAlive() )
+			{
+				(*itr)->setLevel(levels);
+				(*itr)->ApplyStatsForLevel();
+				(*itr)->UpdateSpellList();
+			}
 		}
 	}
 
@@ -3836,7 +3880,7 @@ bool ChatHandler::HandleFixScaleCommand(const char * args, WorldSession * m_sess
 		return false;
 	}
 
-	pCreature->SetFloatValue(OBJECT_FIELD_SCALE_X, sc);
+	pCreature->SetScale(  sc);
 	pCreature->GetProto()->Scale = sc;
 	WorldDatabase.Execute("UPDATE creature_proto SET scale = '%f' WHERE entry = %u", sc, pCreature->GetEntry());
 	return true;
@@ -3915,7 +3959,7 @@ bool ChatHandler::HandleSetTitle( const char *args, WorldSession *m_session )
 	else
 		plr->SetKnownTitle( static_cast< RankTitles >( -title ), false );
 
-	plr->SetUInt32Value( PLAYER_CHOSEN_TITLE, 0 ); // better remove chosen one
+	plr->SetChosenTitle(0 ); // better remove chosen one
 	SystemMessage( m_session, "Title has been %s.", title > 0 ? "set" : "reset" );
 
     std::stringstream logtext;
@@ -3937,7 +3981,7 @@ bool ChatHandler::HandleNPCLootCommand(const char* args, WorldSession* m_session
 		return false;
 	}
 
-	QueryResult* _result = WorldDatabase.Query("SELECT itemid, percentchance, heroicpercentchance, mincount, maxcount FROM loot_creatures WHERE entryid=%u;", pCreature->GetEntry());
+	QueryResult* _result = WorldDatabase.Query("SELECT itemid, normal10percentchance, heroic10percentchance, normal25percentchance, heroic25percentchance, mincount, maxcount FROM loot_creatures WHERE entryid=%u;", pCreature->GetEntry());
 	if( _result != NULL )
 	{
 		Field* _field;
@@ -3962,7 +4006,7 @@ bool ChatHandler::HandleNPCLootCommand(const char* args, WorldSession* m_session
 				continue;
 			}
 			++numFound;
-			ss << _field[1].GetFloat() << "%c (Heroic " << _field[2].GetFloat() << "%c): ";
+			ss << "(N10 " << _field[1].GetFloat() << "%%) (N25 " << _field[3].GetFloat() << "%%) (H10 " << _field[2].GetFloat() << "%%) (H25 " << _field[4].GetFloat() << "%%): ";
 
 			switch( proto->Quality )
 			{
@@ -3996,7 +4040,7 @@ bool ChatHandler::HandleNPCLootCommand(const char* args, WorldSession* m_session
 			}
 
 			ss << "|" << color.c_str() << "|Hitem:" << proto->ItemId << ":0:0:0:0:0:0:0|h[" << proto->Name1;
-			ss << "]|h|r (" << _field[3].GetUInt32() << "-" << _field[4].GetUInt32() << ")";
+			ss << "]|h|r (" << _field[5].GetUInt32() << "-" << _field[6].GetUInt32() << ")";
 			SystemMessage( m_session, ss.str().c_str(), '%', '%' );
 		} while( _result->NextRow() && (numFound <= 25) );
 		delete _result;

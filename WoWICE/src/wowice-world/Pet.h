@@ -121,10 +121,10 @@ public:
 	~Pet();
 
 	// Override superclass method that returns false
-    //bool IsPet() { return Creature  }
+    bool IsPet() { return true; }
 
 	void LoadFromDB(Player* owner, PlayerPet * pi);
-	void CreateAsSummon(uint32 entry, CreatureInfo *ci, Creature *created_from_creature, Player* owner, SpellEntry *created_by_spell, uint32 type, uint32 expiretime, LocationVector* Vec = NULL);
+	void CreateAsSummon(uint32 entry, CreatureInfo *ci, Creature *created_from_creature, Player* owner, SpellEntry *created_by_spell, uint32 type, uint32 expiretime, LocationVector* Vec = NULL, bool dismiss_old_pet = true);
 
 	virtual void Update(uint32 time);
 	void OnPushToWorld();
@@ -160,8 +160,9 @@ public:
 	void UpdatePetInfo(bool bSetToOffline);
 	void Remove( bool bUpdate, bool bSetOffline );
 	void Dismiss();
+	void setDeathState(DeathState s);
 
-	void DelayedRemove(bool bTime, bool bDeath);
+	void DelayedRemove(bool bTime, uint32 delay = PET_DELAYED_REMOVAL_TIME);
 
 	WoWICE_INLINE Player* GetPetOwner() { return m_Owner; }
 	WoWICE_INLINE void ClearPetOwner() { m_Owner = NULL; }
@@ -172,7 +173,6 @@ public:
 	void ApplySummonLevelAbilities();
 	void ApplyPetLevelAbilities();
 	void UpdateAP();
-	void PetSafeDelete();
 	void LoadPetAuras(int32 id);
 	void SetDefaultActionbar();
 	void SetActionBarSlot(uint32 slot, uint32 spell){ ActionBar[ slot ] = spell; }
@@ -185,19 +185,19 @@ public:
 	uint16 GetSpellState(SpellEntry * sp);
 	bool HasSpell( uint32 SpellID )
 	{
-		SpellEntry * sp = dbcSpell.LookupEntry( SpellID );
+		SpellEntry * sp = dbcSpell.LookupEntryForced( SpellID );
 		if( sp )
 			return mSpells.find( sp ) != mSpells.end();
 		return false;
 	}
 	WoWICE_INLINE void RemoveSpell( uint32 SpellID )
 	{
-		SpellEntry * sp = dbcSpell.LookupEntry( SpellID );
+		SpellEntry * sp = dbcSpell.LookupEntryForced( SpellID );
 		if( sp ) RemoveSpell( sp );
 	}
 	WoWICE_INLINE void SetSpellState( uint32 SpellID, uint16 State )
 	{
-		SpellEntry * sp = dbcSpell.LookupEntry( SpellID );
+		SpellEntry * sp = dbcSpell.LookupEntryForced( SpellID );
 		if( sp ) SetSpellState(sp, State);
 	}
 	WoWICE_INLINE uint16 GetSpellState( uint32 SpellID )
@@ -205,7 +205,7 @@ public:
 		if( SpellID == 0 )
 			return DEFAULT_SPELL_STATE;
 
-		SpellEntry * sp = dbcSpell.LookupEntry( SpellID );
+		SpellEntry * sp = dbcSpell.LookupEntryForced( SpellID );
 		if( sp )
 			return GetSpellState( sp );
 		return DEFAULT_SPELL_STATE;
@@ -215,7 +215,7 @@ public:
 	WoWICE_INLINE PetSpellMap* GetSpells() { return &mSpells; }
 	WoWICE_INLINE bool IsSummon() { return Summon; }
 
-	void __fastcall SetAutoCastSpell(AI_Spell * sp);
+	void  SetAutoCastSpell(AI_Spell * sp);
 	void Rename(string NewName);
 	WoWICE_INLINE string& GetName() { return m_name; }
 	uint32 CanLearnSpell( SpellEntry* sp );
@@ -236,6 +236,10 @@ public:
 	bool IsBeingDeleted(){ return ScheduledForDeletion; }
 
 	virtual Group *GetGroup();
+
+	void DealDamage(Unit *pVictim, uint32 damage, uint32 targetEvent, uint32 unitEvent, uint32 spellId, bool no_remove_auras = false);
+	void TakeDamage(Unit *pAttacker, uint32 damage, uint32 spellid, bool no_remove_auras = false );
+	void Die( Unit *pAttacker, uint32 damage, uint32 spellid );
 
 protected:
 	Player *m_Owner;

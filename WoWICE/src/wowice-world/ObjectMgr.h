@@ -426,6 +426,7 @@ public:
 	typedef std::map<uint32, uint32>                                    PetSpellCooldownMap;
 	typedef std::map<uint32, SpellEntry*>                               TotemSpellMap;
 	typedef std::multimap <uint32,uint32>                               BCEntryStorage;
+	typedef std::map< uint32, SpellTargetConstraint* >					SpellTargetConstraintMap;
 
     // object holders
 	GmTicketList         GM_TicketList;
@@ -438,10 +439,7 @@ public:
 	
 	CorpseMap m_corpses;
 	Mutex _corpseslock;
-	Mutex m_corpseguidlock;
     Mutex _TransportLock;
-	uint32 m_hiCorpseGuid;
-	uint32 m_hiGuildId;
 	
 	Item * CreateItem(uint32 entry,Player * owner);
 	Item * LoadItem(uint64 guid);
@@ -450,23 +448,9 @@ public:
 	// Groups
 	Group * GetGroupByLeader(Player *pPlayer);
 	Group * GetGroupById(uint32 id);
-	uint32 GenerateGroupId()
-	{
-		uint32 r;
-		m_guidGenMutex.Acquire();
-		r = ++m_hiGroupId;
-		m_guidGenMutex.Release();
-		return r;
-	}
 
-	uint32 GenerateGuildId()
-	{
-		uint32 r;
-		m_guidGenMutex.Acquire();
-		r = ++m_hiGuildId;
-		m_guidGenMutex.Release();
-		return r;
-	}
+	uint32 GenerateGroupId();
+	uint32 GenerateGuildId();
 
 	void AddGroup(Group* group)
 	{
@@ -539,24 +523,12 @@ public:
 	std::list<ItemPrototype*>* GetListForItemSet(uint32 setid);
 
 	Pet * CreatePet( uint32 entry );
-	uint32 m_hiPetGuid;
-	uint32 m_hiArenaTeamId;
-	uint32 GenerateArenaTeamId()
-	{
-		uint32 ret;
-		m_arenaTeamLock.Acquire();
-		ret = ++m_hiArenaTeamId;
-		m_arenaTeamLock.Release();
-		return ret;
-	}
-
-	Mutex m_petlock;
+	
+	uint32 GenerateArenaTeamId();
 
 	Player * CreatePlayer();
-	 Mutex m_playerguidlock;
 	PlayerStorageMap _players;
 	RWLock _playerslock;
-	uint32 m_hiPlayerGuid;
 	
 	void AddPlayer(Player * p);//add it to global storage
 	void RemovePlayer(Player *p);
@@ -591,7 +563,7 @@ public:
 	void SetHighestGuids();
 	uint32 GenerateLowGuid(uint32 guidhigh);
 	uint32 GenerateMailID();
-	uint64 GenerateTicketID();
+	uint32 GenerateTicketID();
 	
 	void LoadTransporters();
 	void ProcessGameobjectQuests();
@@ -602,6 +574,7 @@ public:
 
 	void LoadExtraItemStuff();
 	void LoadExtraCreatureProtoStuff();
+	void LoadExtraGameObjectStuff();
 	void LoadProfessionDiscoveries();
 
 	void StoreBroadCastGroupKey();
@@ -619,21 +592,8 @@ public:
 
 	void ResetDailies();
 
-	uint32 GenerateCreatureSpawnID()
-	{
-		m_CreatureSpawnIdMutex.Acquire();
-		uint32 r = ++m_hiCreatureSpawnId;
-		m_CreatureSpawnIdMutex.Release();
-		return r;
-	}
-
-	uint32 GenerateGameObjectSpawnID()
-	{
-		m_GOSpawnIdMutex.Acquire();
-		uint32 r = ++m_hiGameObjectSpawnId;
-		m_GOSpawnIdMutex.Release();
-		return r;
-	}
+	uint32 GenerateCreatureSpawnID();
+	uint32 GenerateGameObjectSpawnID();
 
 	Transporter * GetTransporter(uint32 guid);
 	Transporter * GetTransporterByEntry(uint32 entry);
@@ -678,6 +638,10 @@ public:
 
 	void LoadDisabledSpells();
 	void ReloadDisabledSpells();
+	void LoadSpellTargetConstraints();
+	SpellTargetConstraint* GetSpellTargetConstraintForSpell( uint32 spellid );
+
+
 	WoWICE_INLINE GuildMap::iterator GetGuildsBegin() { return mGuild.begin(); }
 	WoWICE_INLINE GuildMap::iterator GetGuildsEnd() { return mGuild.end(); }
 
@@ -723,6 +687,8 @@ private:
 
 #define GRRR "Group Rest & Relaxation & Recreation"
 
+/*
+
 //////////////////////////////////////////////////////////////////////////////
 // I've been asked if there was an easter egg in the source code
 // No there isn't really, but now here's this easter octagon instead, enjoy!
@@ -748,6 +714,8 @@ private:
 //
 //////////////////////////////////////////////////////////////////////////////
 
+*/
+
 #undef GRRR
 
 #endif
@@ -757,17 +725,21 @@ private:
 protected:
 	BCEntryStorage m_BCEntryStorage; // broadcast system.
 	RWLock playernamelock;
-	uint32 m_mailid;
-	uint64 m_ticketid;
 	// highest GUIDs, used for creating new objects
-	Mutex m_guidGenMutex;
-    union
-    {
-	    uint32 m_hiItemGuid;
-	    uint32 m_hiContainerGuid;
-    };
-	uint32 m_hiGroupId;
-	uint32 m_hiCharterId;
+
+	Wowice::Threading::AtomicCounter m_hiItemGuid;
+	Wowice::Threading::AtomicCounter m_hiGroupId;
+	Wowice::Threading::AtomicCounter m_hiCharterId;
+	Wowice::Threading::AtomicCounter m_hiCreatureSpawnId;
+	Wowice::Threading::AtomicCounter m_hiGameObjectSpawnId;
+	Wowice::Threading::AtomicCounter m_mailid;
+	Wowice::Threading::AtomicCounter m_ticketid;
+	Wowice::Threading::AtomicCounter m_hiCorpseGuid;
+	Wowice::Threading::AtomicCounter m_hiGuildId;
+	Wowice::Threading::AtomicCounter m_hiPetGuid;
+	Wowice::Threading::AtomicCounter m_hiArenaTeamId;
+	Wowice::Threading::AtomicCounter m_hiPlayerGuid;
+
 	RWLock m_charterLock;
 
 	ReputationModMap m_reputation_faction;
@@ -784,13 +756,8 @@ protected:
 	
 	HM_NAMESPACE::hash_map<uint32,WayPointMap*> m_waypoints;//stored by spawnid
 	HM_NAMESPACE::hash_map<uint32,TimedEmoteList*> m_timedemotes;//stored by spawnid
-	uint32 m_hiCreatureSpawnId;
-	
-	Mutex m_CreatureSpawnIdMutex;
-	Mutex m_GOSpawnIdMutex;
 
-	uint32 m_hiGameObjectSpawnId;
-	
+
 	///// Object Tables ////
 	// These tables are modified as creatures are created and destroyed in the world
 

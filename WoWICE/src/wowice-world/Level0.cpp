@@ -273,7 +273,7 @@ bool ChatHandler::HandleInfoCommand(const char* args, WorldSession *m_session)
 	GreenSystemMessage(m_session, "Server Revision: |r%sWoWICE r%u/%s-%s-%s %s(http://code.google.com/p/wowice/)", MSG_COLOR_WHITE,
 		BUILD_REVISION, CONFIG, PLATFORM_TEXT, ARCH, MSG_COLOR_LIGHTBLUE);
 	GreenSystemMessage(m_session, "Server Uptime: |r%s", sWorld.GetUptimeString().c_str());
-	GreenSystemMessage(m_session, "Current Players: |r%d (%d GMs)", count, gm);
+	GreenSystemMessage(m_session, "Current Players: |r%d (%d GMs) (%d Peak)", count, gm,(int)sWorld.PeakSessionCount);
 	GreenSystemMessage(m_session, "Active Thread Count: |r%u", ThreadPool.GetActiveThreadCount());
 	GreenSystemMessage(m_session, "Free Thread Count: |r%u", ThreadPool.GetFreeThreadCount());
 	GreenSystemMessage(m_session, "Average Latency: |r%.3fms", (float)((float)avg / (float)count));
@@ -316,7 +316,7 @@ bool ChatHandler::HandleDismountCommand(const char* args, WorldSession *m_sessio
 		return true;
 	}
 
-	if(m_target->GetUInt32Value(UNIT_FIELD_MOUNTDISPLAYID) == 0)
+	if(m_target->GetMount() == 0)
 	{
 		RedSystemMessage(m_session, "Target is not mounted.");
 		return true;
@@ -424,12 +424,12 @@ bool ChatHandler::HandleRangeCheckCommand( const char *args , WorldSession *m_se
 		return true;
 	}
 	float DistSq = unit->GetDistanceSq( static_cast<Object*>(m_session->GetPlayer()) );
-	m_session->SystemMessage( "GetDistanceSq  :   %u" , FL2UINT( DistSq ) );
+	m_session->SystemMessage( "GetDistanceSq  :   %u" , float2int32( DistSq ) );
 	LocationVector locvec( m_session->GetPlayer()->GetPositionX() , m_session->GetPlayer()->GetPositionY() , m_session->GetPlayer()->GetPositionZ() );
 	float DistReal = unit->CalcDistance( locvec );
-	m_session->SystemMessage( "CalcDistance   :   %u" , FL2UINT( DistReal ) );
+	m_session->SystemMessage( "CalcDistance   :   %u" , float2int32( DistReal ) );
 	float Dist2DSq = unit->GetDistance2dSq( static_cast<Object*>(m_session->GetPlayer()) );
-	m_session->SystemMessage( "GetDistance2dSq:   %u" , FL2UINT( Dist2DSq ) );
+	m_session->SystemMessage( "GetDistance2dSq:   %u" , float2int32( Dist2DSq ) );
 	return true;
 }
 
