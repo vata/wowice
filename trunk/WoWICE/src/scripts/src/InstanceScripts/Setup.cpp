@@ -13,7 +13,6 @@
  * this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "StdAfx.h"
 #include "Setup.h"
 #define SKIP_ALLOCATOR_SHARING 1
 #include <ScriptSetup.h>
@@ -28,17 +27,24 @@ extern "C" SCRIPT_DECL void _exp_script_register(ScriptMgr* mgr)	// Comment any 
 	//Instances
 	SetupArcatraz(mgr);
 	SetupAuchenaiCrypts(mgr);
-	//SetupBlackMorass(mgr);
+	SetupAzjolNerub(mgr);
+	SetupTheBlackMorass(mgr);
 	SetupBlackrockDepths(mgr);
 	SetupBlackrockSpire(mgr);
 	SetupBloodFurnace(mgr);
 	SetupBotanica(mgr);
+	SetupCullingOfStratholme(mgr);
+	SetupDrakTharonKeep(mgr);
 	SetupDeadmines(mgr);
 	SetupDireMaul(mgr);
+	SetupGundrak(mgr);
 	SetupHellfireRamparts(mgr);
+	SetupHallsOfStone(mgr);
+	SetupHallsOfLightning(mgr);
 	SetupManaTombs(mgr);
 	SetupMaraudon(mgr);
-	//SetupOldHillsbradFoothills(mgr);
+	SetupNexus(mgr);
+	SetupOldHillsbradFoothills(mgr);
 	SetupRagefireChasm(mgr);
 	SetupRazorfenDowns(mgr);
 	SetupScarletMonastery(mgr);
@@ -52,6 +58,7 @@ extern "C" SCRIPT_DECL void _exp_script_register(ScriptMgr* mgr)	// Comment any 
 	SetupTheSteamvault(mgr);
 	SetupTheUnderbog(mgr);
 	SetupUldaman(mgr);
+	SetupUtgardeKeep(mgr);
 	SetupTheStockade(mgr);
 	SetupWailingCaverns(mgr);
 	SetupMagistersTerrace(mgr);
@@ -65,21 +72,17 @@ extern "C" SCRIPT_DECL void _exp_script_register(ScriptMgr* mgr)	// Comment any 
 	SetupNaxxramas(mgr);
 	SetupOnyxiasLair(mgr);
 	SetupTheEye(mgr);
+	SetupTheObsidianSanctum(mgr);
+	SetupUlduar(mgr);
+	SetupZulFarrak(mgr);
 	SetupZulGurub(mgr);
 	SetupSerpentshrineCavern(mgr);
-	//SetupMagtheridonsLair(mgr); // This script crashes + leaks
+	SetupMagtheridonsLair(mgr);
 	SetupSunwellPlateau(mgr);
-	//SetupWorldBosses(mgr); 
+	SetupWorldBosses(mgr); 
 	SetupZulAman(mgr);
-	//Events
-	SetupEventDarkPortal(mgr);
 	//Other
 	//SetupGenericAI(mgr);
-
-	// WOTLK
-	SetupDrakTharonKeepBosses(mgr);
-	SetupAhnkahetTheOldKingdom(mgr);
-	SetupTheCullingofStratholme(mgr);
 }
 
 #ifdef WIN32
@@ -90,3 +93,21 @@ BOOL APIENTRY DllMain( HANDLE hModule, DWORD  ul_reason_for_call, LPVOID lpReser
 }
 
 #endif
+
+SP_AI_Spell::SP_AI_Spell()
+{
+	info					= NULL;
+	targettype				= 0;
+	instant					= false;
+	perctrigger				= 0.0f;
+	attackstoptimer			= 0;
+	soundid					= 0;
+	cooldown				= 0;
+	casttime				= 0;
+	reqlvl					= 0;
+	hpreqtocast				= 0.0f;
+	mindist2cast			= 0.0f;
+	maxdist2cast			= 0.0f;
+	minhp2cast				= 0;
+	maxhp2cast				= 0;
+}

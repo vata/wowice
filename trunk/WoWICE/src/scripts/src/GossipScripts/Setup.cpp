@@ -13,7 +13,6 @@
  * this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "StdAfx.h"
 #include "Setup.h"
 #define SKIP_ALLOCATOR_SHARING 1
 #include <ScriptSetup.h>
@@ -31,9 +30,15 @@ extern "C" SCRIPT_DECL void _exp_script_register(ScriptMgr* mgr)
 	SetupMulgoreGossip(mgr);
 	SetupShattrathGossip(mgr);
 	SetupTanarisGossip(mgr);
-	SetupMoongladeScript(mgr);
+	SetupMoongladeGossip(mgr);
 	SetupStormwindGossip(mgr);
-	//SetupWotlkgossips(mgr); //Wotlk gossips incomplete
+	SetupTheramoreGossip(mgr);
+	SetupTeldrassilGossip(mgr);
+	SetupDarkmoonFaireGossip(mgr);
+	SetupDarkmoonFaireBarker(mgr);
+	SetupBoreanTundraGossip(mgr);
+	SetupWyrmrestTempleGossip(mgr);
+	SetupXpEliminatorGossip(mgr);
 }
 
 #ifdef WIN32

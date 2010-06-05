@@ -13,526 +13,386 @@
  * this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "StdAfx.h"
 #include "Setup.h"
 
-/************************************************************************/
-/* Instance_OldHillsbradFoothills.cpp Script                            */
-/************************************************************************/
-
-#define CN_LIEUTENANT_DRAKE 17848
-
-#define FRIGHTENING_SHOUT 33789
-#define WHIRLWIND 33239
-#define MORTAL_STRIKE 17547
-//#define EXPLODING_SHOT 33792 Only in Heroics
-
-class LIEUTENANTDRAKEAI : public CreatureAIScript
+static Location Fires[] =
 {
-public:
-    ADD_CREATURE_FACTORY_FUNCTION(LIEUTENANTDRAKEAI);
-   SP_AI_Spell spells[3];
-   bool m_spellcheck[3];
-
-     LIEUTENANTDRAKEAI(Creature* pCreature) : CreatureAIScript(pCreature)
-    {
-      nrspells = 3;
-      for(int i=0;i<nrspells;i++)
-      {
-         m_spellcheck[i] = false;
-      }
-      
-	  spells[0].info = dbcSpell.LookupEntry(FRIGHTENING_SHOUT);
-      spells[0].targettype = TARGET_VARIOUS;
-      spells[0].instant = true;
-      spells[0].cooldown = 8;
-      spells[0].perctrigger = 0.0f;
-      spells[0].attackstoptimer = 1000;
-	  spells[0].speech = "Run, you blasted cowards!";
-
-      spells[1].info = dbcSpell.LookupEntry(WHIRLWIND);
-      spells[1].targettype = TARGET_VARIOUS;
-      spells[1].instant = true;
-      spells[1].cooldown = 10;
-      spells[1].perctrigger = 0.0f;
-      spells[1].attackstoptimer = 1000;
-	  spells[1].speech = "Time to bleed!";
-	  
-      spells[2].info = dbcSpell.LookupEntry(MORTAL_STRIKE);
-      spells[2].targettype = TARGET_ATTACKING;
-      spells[2].instant = true;
-      spells[2].cooldown = 5;
-      spells[2].perctrigger = 0.0f;
-      spells[2].attackstoptimer = 1000;
-      
-      /*spells[2].info = dbcSpell.LookupEntry(EXPLODING_SHOT);
-      spells[2].targettype = TARGET_ATTACKING;
-      spells[2].instant = true;
-      spells[2].cooldown = 15;
-      spells[2].perctrigger = 0.0f;
-      spells[2].attackstoptimer = 1000;*/
-    }
-    
-    void OnCombatStart(Unit* mTarget)
-    {
-      CastTime();
-      _unit->SendChatMessage(CHAT_MSG_MONSTER_YELL, LANG_UNIVERSAL, "I know what you're up to, and I mean to put an end to it, permanently!");
-      _unit->PlaySoundToSet(10271);
-      RegisterAIUpdateEvent(_unit->GetUInt32Value(UNIT_FIELD_BASEATTACKTIME));
-    }
-
-   void CastTime()
-   {
-      for(int i=0;i<nrspells;i++)
-         spells[i].casttime = spells[i].cooldown;
-   }
-
-   void OnTargetDied(Unit* mTarget)
-    {
-      if(_unit->GetHealthPct() > 0)
-      {
-         _unit->PlaySoundToSet(10271);
-         _unit->SendChatMessage(CHAT_MSG_MONSTER_YELL, LANG_UNIVERSAL, "You will not interfere!");
-      }
-    }
-
-    void OnCombatStop(Unit *mTarget)
-    {
-      CastTime();
-        _unit->GetAIInterface()->setCurrentAgent(AGENT_NULL);
-        _unit->GetAIInterface()->SetAIState(STATE_IDLE);
-        RemoveAIUpdateEvent();
-    }
-
-    void OnDied(Unit * mKiller)
-    {
-      CastTime();
-      _unit->SendChatMessage(CHAT_MSG_MONSTER_YELL, LANG_UNIVERSAL, "Thrall... must not... go free.");
-      _unit->PlaySoundToSet(10271);
-       RemoveAIUpdateEvent();
-    }
-
-    void AIUpdate()
-   {
-      float val = (float)RandomFloat(100.0f);
-      SpellCast(val);
-    }
-
-   void SpellCast(float val)
-   {
-        if(_unit->GetCurrentSpell() == NULL && _unit->GetAIInterface()->GetNextTarget())
-        {
-         float comulativeperc = 0;
-          Unit *target = NULL;
-         for(int i=0;i<nrspells;i++)
-         {
-            spells[i].casttime--;
-            
-            if (m_spellcheck[i])
-            {               
-               spells[i].casttime = spells[i].cooldown;
-               target = _unit->GetAIInterface()->GetNextTarget();
-               switch(spells[i].targettype)
-               {
-                  case TARGET_SELF:
-                  case TARGET_VARIOUS:
-                     _unit->CastSpell(_unit, spells[i].info, spells[i].instant); break;
-                  case TARGET_ATTACKING:
-                     _unit->CastSpell(target, spells[i].info, spells[i].instant); break;
-                  case TARGET_DESTINATION:
-                     _unit->CastSpellAoF(target->GetPositionX(),target->GetPositionY(),target->GetPositionZ(), spells[i].info, spells[i].instant); break;
-               }
-               
- 
-                 if (spells[i].speech != "")
-                 {
-                    _unit->SendChatMessage(CHAT_MSG_MONSTER_YELL, LANG_UNIVERSAL, spells[i].speech.c_str());
-                    _unit->PlaySoundToSet(spells[i].soundid); 
-                 }
-				  
-
-               m_spellcheck[i] = false;
-               return;
-            }
-
-            if ((val > comulativeperc && val <= (comulativeperc + spells[i].perctrigger)) || !spells[i].casttime)
-            {
-               _unit->setAttackTimer(spells[i].attackstoptimer, false);
-               m_spellcheck[i] = true;
-            }
-            comulativeperc += spells[i].perctrigger;
-         }
-      }
-   }
-
-protected:
-
-   int nrspells;
+	{ 2160.68f,     235.382f,   53.8946f,   3.55550f },
+	{ 2162.26f,     237.439f,   56.7303f,   5.97846f },
+	{ 2192.94f,     258.437f,   54.0479f,   4.17990f },
+	{ 2196.59f,     256.212f,   54.5663f,   4.15633f },
+	{ 2207.03f,     259.549f,   62.1383f,   5.43653f },
+	{ 2225.57f,     248.524f,   62.2857f,   5.66430f },
+	{ 2179.05f,     262.558f,   62.2233f,   0.62989f },
+	{ 2071.52f,     108.279f,   54.6802f,   3.91757f },
+	{ 2160.76f,     246.790f,   62.035f,    0.82231f },
+	{ 2195.19f,     257.229f,   58.0637f,   4.13277f },
+	{ 2072.30f,     110.435f,   56.8422f,   2.74732f },
+	{ 2061.12f,     95.2094f,   62.4747f,   2.04439f },
+	{ 2067.92f,     121.267f,   62.7211f,   1.08228f },
+	{ 2110.83f,     46.0729f,   62.0335f,   2.71590f },
+	{ 2118.41f,     52.8182f,   56.0043f,   2.89655f },
+	{ 2120.10f,     51.7093f,   54.6008f,   5.81823f },
+	{ 2082.69f,     71.9957f,   55.8388f,   2.77088f },
+	{ 2087.61f,     57.1432f,   62.1681f,   2.78659f },
+	{ 2083.42f,     70.0828f,   53.7298f,   4.82470f },
+	{ 2077.26f,     140.631f,   62.9179f,   1.05479f },
+	{ 2070.20f,     75.6493f,   61.9173f,   2.12293f }
 };
 
-#define CN_CAPTAIN_SKARLOC 17862
-
-//#define CLEANSE 39078 Needs support
-#define HOLY_LIGHT 43451
-#define HAMMER_OF_JUSTICE 13005
-#define HOLY_SHIELD 31904
-#define DEVOTION_AURA 41452
-//#define CONSECRATION 41541 Only in Heroics
-
-class CAPTAINSKARLOCAI : public CreatureAIScript
+static Location ThrallWP1[] = // pre 2nd boss
 {
-public:
-    ADD_CREATURE_FACTORY_FUNCTION(CAPTAINSKARLOCAI);
-   SP_AI_Spell spells[4];
-   bool m_spellcheck[4];
-
-     CAPTAINSKARLOCAI(Creature* pCreature) : CreatureAIScript(pCreature)
-    {
-      nrspells = 4;
-      for(int i=0;i<nrspells;i++)
-      {
-         m_spellcheck[i] = false;
-      }
-	  
-      spells[0].info = dbcSpell.LookupEntry(HOLY_LIGHT);
-      spells[0].targettype = TARGET_SELF;
-      spells[0].instant = false;
-      spells[0].cooldown = 15;
-      spells[0].perctrigger = 0.0f;
-      spells[0].attackstoptimer = 1000;
-	  
-      spells[0].info = dbcSpell.LookupEntry(HAMMER_OF_JUSTICE);
-      spells[0].targettype = TARGET_ATTACKING;
-      spells[0].instant = true;
-      spells[0].cooldown = 10;
-      spells[0].perctrigger = 0.0f;
-      spells[0].attackstoptimer = 1000;
-
-      spells[1].info = dbcSpell.LookupEntry(HOLY_SHIELD);
-      spells[1].targettype = TARGET_SELF;
-      spells[1].instant = true;
-      spells[1].cooldown = 5;
-      spells[1].perctrigger = 0.0f;
-      spells[1].attackstoptimer = 1000;
-	  
-	  spells[1].info = dbcSpell.LookupEntry(DEVOTION_AURA);
-      spells[1].targettype = TARGET_SELF;
-      spells[1].instant = true;
-      spells[1].cooldown = 5;
-      spells[1].perctrigger = 0.0f;
-      spells[1].attackstoptimer = 1000;
-	  
-	  /*spells[1].info = dbcSpell.LookupEntry(CLEANSE);
-      spells[1].targettype = TARGET_SELF;
-      spells[1].instant = true;
-      spells[1].cooldown = 5;
-      spells[1].perctrigger = 0.0f;
-      spells[1].attackstoptimer = 1000;
-      
-      spells[2].info = dbcSpell.LookupEntry(CONSECRATION);
-      spells[2].targettype = TARGET_SELF;
-      spells[2].instant = true;
-      spells[2].cooldown = 15;
-      spells[2].perctrigger = 0.0f;
-      spells[2].attackstoptimer = 1000;*/
-    }
-    
-    void OnCombatStart(Unit* mTarget)
-    {
-      CastTime();
-      _unit->SendChatMessage(CHAT_MSG_MONSTER_YELL, LANG_UNIVERSAL, "Thrall! You didn't really think you would escape did you? You and your allies shall answer to Blackmoore - after I've had my fun!");
-      _unit->PlaySoundToSet(10271);
-      RegisterAIUpdateEvent(_unit->GetUInt32Value(UNIT_FIELD_BASEATTACKTIME));
-    }
-
-   void CastTime()
-   {
-      for(int i=0;i<nrspells;i++)
-         spells[i].casttime = spells[i].cooldown;
-   }
-
-   void OnTargetDied(Unit* mTarget)
-    {
-      if(_unit->GetHealthPct() > 0)
-      {
-         uint32 sound = 0;
-         char *text;
-         switch(RandomUInt(1))
-         {
-         case 0:
-            sound = 10271;
-            text = "Thrall will never be free!";
-            break;
-         case 1:
-            sound = 10271;
-            text = "Did you really think you would leave here alive?";
-            break;
-         }
-         _unit->PlaySoundToSet(sound);
-         _unit->SendChatMessage(CHAT_MSG_MONSTER_YELL, LANG_UNIVERSAL, text);
-      }
-    }
-
-    void OnCombatStop(Unit *mTarget)
-    {
-      CastTime();
-        _unit->GetAIInterface()->setCurrentAgent(AGENT_NULL);
-        _unit->GetAIInterface()->SetAIState(STATE_IDLE);
-        RemoveAIUpdateEvent();
-    }
-
-    void OnDied(Unit * mKiller)
-    {
-      CastTime();
-      _unit->SendChatMessage(CHAT_MSG_MONSTER_YELL, LANG_UNIVERSAL, "Guards! Urgh..Guards..!");
-      _unit->PlaySoundToSet(10271);
-       RemoveAIUpdateEvent();
-    }
-
-    void AIUpdate()
-   {
-      float val = (float)RandomFloat(100.0f);
-      SpellCast(val);
-    }
-
-   void SpellCast(float val)
-   {
-        if(_unit->GetCurrentSpell() == NULL && _unit->GetAIInterface()->GetNextTarget())
-        {
-         float comulativeperc = 0;
-          Unit *target = NULL;
-         for(int i=0;i<nrspells;i++)
-         {
-            spells[i].casttime--;
-            
-            if (m_spellcheck[i])
-            {               
-               spells[i].casttime = spells[i].cooldown;
-               target = _unit->GetAIInterface()->GetNextTarget();
-               switch(spells[i].targettype)
-               {
-                  case TARGET_SELF:
-                  case TARGET_VARIOUS:
-                     _unit->CastSpell(_unit, spells[i].info, spells[i].instant); break;
-                  case TARGET_ATTACKING:
-                     _unit->CastSpell(target, spells[i].info, spells[i].instant); break;
-                  case TARGET_DESTINATION:
-                     _unit->CastSpellAoF(target->GetPositionX(),target->GetPositionY(),target->GetPositionZ(), spells[i].info, spells[i].instant); break;
-               }
-
-               if (spells[i].speech != "")
-               {
-                  _unit->SendChatMessage(CHAT_MSG_MONSTER_YELL, LANG_UNIVERSAL, spells[i].speech.c_str());
-                  _unit->PlaySoundToSet(spells[i].soundid); 
-               }
-
-               m_spellcheck[i] = false;
-               return;
-            }
-
-            if ((val > comulativeperc && val <= (comulativeperc + spells[i].perctrigger)) || !spells[i].casttime)
-            {
-               _unit->setAttackTimer(spells[i].attackstoptimer, false);
-               m_spellcheck[i] = true;
-            }
-            comulativeperc += spells[i].perctrigger;
-         }
-      }
-   }
-
-protected:
-
-   int nrspells;
+    { 0, 0, 0, 0 },
+    { 2230.29f,	115.049f,	82.2946f,	4.22934f },
+    { 2233.85f,	112.592f,	82.3021f,	5.77657f },
+    { 2231.99f,	108.086f,	82.6628f,	2.69702f },
+    { 2216.39f,	116.700f,	89.4553f,	2.59256f },
+    { 2208.22f,	103.356f,	89.4553f,	2.65854f },
+    { 2198.24f,	109.313f,	89.4553f,	2.60356f },
+    { 2203.42f,	119.908f,	89.4553f,	1.01862f },
+    { 2208.59f,	129.058f,	87.9559f,	2.60984f },
+    { 2195.72f,	136.440f,	88.2164f,	2.62162f },
+    { 2177.87f,	145.974f,	88.2163f,	2.61770f },
+    { 2171.95f,	149.297f,	87.8722f,	4.18456f },
+    { 2164.01f,	137.472f,	84.8832f,	3.90811f },
+    { 2150.95f,	127.355f,	77.7717f,	3.75103f },
+    { 2143.23f,	126.945f,	75.7064f,	2.34045f },
+    { 2139.72f,	135.942f,	72.8990f,	1.76868f },
+    { 2139.86f,	147.191f,	69.7701f,	1.55820f },
+    { 2141.66f,	155.228f,	66.9579f,	1.09010f },
+    { 2146.55f,	164.604f,	64.9990f,	2.45041f },
+    { 2143.41f,	169.553f,	66.2217f,	2.61220f },
+    { 2131.21f,	177.859f,	68.9637f,	2.53759f },
+    { 2118.25f,	186.881f,	68.8476f,	2.53366f },
+    { 2109.50f,	192.808f,	66.2216f,   2.66718f },
+    { 2098.07f,	196.281f,	65.2279f,	2.96406f },
+    { 2088.29f,	206.624f,	64.8821f,	2.43470f },
+    { 2072.24f,	220.331f,	64.8736f,	2.43470f },
+    { 2058.74f,	239.180f,	63.7724f,	2.32396f },
+    { 2054.77f,	243.723f,	63.2682f,	2.39857f }
 };
 
-#define CN_EPOCH_HUNTER 18096
+#define MAX_THRALLWP1 27
 
-#define SAND_BREATH 31478 
-#define IMPENDING_DOOM 19702
-#define KNOCKBACK 26027
-#define MAGIC_DISRUPTION_AURA 33834
+enum Data
+{
+    OHF_DATA_NOT_STARTED = 1,
+    OHF_DATA_IN_PROGRESS = 2,
+    OHF_DATA_PERFORMED = 3,
+    OHF_DATA_DONE = 4
+};
 
-class EPOCHHUNTERAI : public CreatureAIScript
+enum DataIndex
+{
+    OHF_PHASE_1 = 0, // pre bosss spawn
+    OHF_PHASE_2 = 1, // 1st boss
+    OHF_PHASE_3 = 2, // pre 2nd boss, trall escort part 1
+    OHF_PHASE_4 = 3, // 2nd boss
+    OHF_PHASE_5 = 4, // pre 3rd boss, trall escort part 2
+    OHF_PHASE_6 = 5, // 3rd boss
+    OHF_PHASE_DONE = 6, // Event done
+
+    OHF_END = 7
+};
+
+enum OHF_ENTRIES
+{
+    MAP_OLD_HILSBRAD        = 560,
+
+    GO_LODGE_ABLAZE         = 182589,
+    GO_FIRE                 = 183816,
+
+    CN_EROZION              = 18723,
+    CN_BRAZEN               = 18725,
+    CN_LIEUTENANT_DRAKE     = 17848,
+    CN_THRALL               = 17876,
+
+    WS_OLD_HILLSBRAD        = 2436
+};
+
+class OldHilsbradInstance;
+#define GET_OHF(ptr) static_cast< OldHilsbradInstance* >( ptr->GetMapMgr()->GetScript() )
+
+class OldHilsbradInstance : public MoonInstanceScript
+{
+private:
+    int32 m_numBarrel;
+    uint32 m_phaseData[OHF_END];
+
+public:
+    MOONSCRIPT_INSTANCE_FACTORY_FUNCTION( OldHilsbradInstance, MoonInstanceScript );
+	OldHilsbradInstance( MapMgr* pMapMgr ) : MoonInstanceScript( pMapMgr )
+    {
+        m_numBarrel = 0;
+
+        for( int i = 0; i < OHF_END; ++i )
+            m_phaseData[i] = OHF_DATA_NOT_STARTED; 
+    };
+    
+    void OnLoad()
+    {
+        AddWorldState( WS_OLD_HILLSBRAD, 0 );
+    }
+
+    void OnPlayerEnter( Player* pPlayer )
+    {
+        SendWorldStates( pPlayer );
+
+        pPlayer->CastSpell( pPlayer, 35483, true ); // Human illusion
+    };
+
+    void SetData( uint32 pIndex, uint32 pData )
+    {
+        if( pIndex >= OHF_END )
+            return;
+
+        if( pIndex == OHF_PHASE_2 )
+            RemoveWorldStates();
+
+        m_phaseData[pIndex] = pData;
+    };
+
+    uint32 GetData( uint32 pIndex )
+	{
+        if( pIndex >= OHF_END )
+            return 0;
+
+        return m_phaseData[pIndex];
+    };
+
+    void OnGameObjectActivate( GameObject* pGameObject, Player* pPlayer )
+    {
+        if( pGameObject->GetEntry() != GO_LODGE_ABLAZE || GetData( OHF_PHASE_1 ) == OHF_DATA_DONE )
+            return;
+
+        pGameObject->Despawn( 1000, 0 );
+        m_numBarrel++;
+        SetWorldState( WS_OLD_HILLSBRAD, m_numBarrel );
+        if( m_numBarrel != 5 )
+            return;
+
+        SetData( OHF_PHASE_1, OHF_DATA_DONE );
+
+        for( PlayerStorageMap::iterator itr = mInstance->m_PlayerStorage.begin(); itr !=  mInstance->m_PlayerStorage.end(); ++itr )
+	    {
+		    pPlayer = itr->second;
+
+		    QuestLogEntry *qle = pPlayer->GetQuestLogForEntry( 10283 );
+	  	    if( !qle )
+                continue;
+
+		    qle->SetMobCount(0, qle->GetMobCount( 0 ) + 1);
+		    qle->SendUpdateAddKill( 0 );
+		    qle->UpdatePlayerFields();
+	    };
+	        
+        GameObject* pGO = NULL;
+	    for( uint8 i = 0; i < 21; i++ )
+	    {
+		    pGO = SpawnGameObject( GO_FIRE, Fires[i].x, Fires[i].y, Fires[i].z, Fires[i].o );
+		    sEAS.GameobjectDelete( pGO, 10*60*1000);
+	    }
+
+	    SpawnCreature( CN_LIEUTENANT_DRAKE, 2118.310303f, 89.565969f, 52.453037f, 2.027089f );
+    }
+};
+
+enum eGossipTexts
+{
+    EROZION_ON_HELLO = 10475,
+    EROZION_ON_FINISH = 10474,
+    BRAZAN_ON_HELLO = 9779,
+    BRAZAN_NEED_ITEM = 9780,
+    THRALL_ON_HELLO = 9568
+};
+
+class ErozionGossip : public GossipScript
 {
 public:
-    ADD_CREATURE_FACTORY_FUNCTION(EPOCHHUNTERAI);
-   SP_AI_Spell spells[4];
-   bool m_spellcheck[4];
+	void GossipHello(Object* pObject, Player*  Plr, bool AutoSend)
+	{
+		GossipMenu *Menu;
+        OldHilsbradInstance* pInstance = GET_OHF(pObject);
 
-     EPOCHHUNTERAI(Creature* pCreature) : CreatureAIScript(pCreature)
-    {
-      nrspells = 4;
-      for(int i=0;i<nrspells;i++)
-      {
-         m_spellcheck[i] = false;
-      }
-      
-	  spells[0].info = dbcSpell.LookupEntry(SAND_BREATH);
-      spells[0].targettype = TARGET_DESTINATION;
-      spells[0].instant = true;
-      spells[0].cooldown = 15;
-      spells[0].perctrigger = 0.0f;
-      spells[0].attackstoptimer = 1000;
+        if( !pInstance )
+            return;
+        
+        objmgr.CreateGossipMenuForPlayer(&Menu, pObject->GetGUID(), EROZION_ON_HELLO, Plr);
 
-      spells[1].info = dbcSpell.LookupEntry(IMPENDING_DOOM);
-      spells[1].targettype = TARGET_ATTACKING;
-      spells[1].instant = true;
-      spells[1].cooldown = 6;
-      spells[1].perctrigger = 0.0f;
-      spells[1].attackstoptimer = 1000;
-      
-      spells[2].info = dbcSpell.LookupEntry(KNOCKBACK);
-      spells[2].targettype = TARGET_VARIOUS;
-      spells[2].instant = true;
-      spells[2].cooldown = 10;
-      spells[2].perctrigger = 0.0f;
-      spells[2].attackstoptimer = 1000;
-	  
-      spells[3].info = dbcSpell.LookupEntry(MAGIC_DISRUPTION_AURA);
-      spells[3].targettype = TARGET_DESTINATION;
-      spells[3].instant = true;
-      spells[3].cooldown = 8;
-      spells[3].perctrigger = 0.0f;
-      spells[3].attackstoptimer = 1000;
-    }
-    
-    void OnCombatStart(Unit* mTarget)
-    {
-      CastTime();
-	  switch (RandomUInt(1))
-	  {
-	  case 0:
-      _unit->SendChatMessage(CHAT_MSG_MONSTER_YELL, LANG_UNIVERSAL, "Enough! I will erase your very existence!");
-      _unit->PlaySoundToSet(10271);
-	  break;
-	  case 1: 
-      _unit->SendChatMessage(CHAT_MSG_MONSTER_YELL, LANG_UNIVERSAL, "You cannot fight fate!");
-      _unit->PlaySoundToSet(10271);
-	  break;
-	  }
-      RegisterAIUpdateEvent(_unit->GetUInt32Value(UNIT_FIELD_BASEATTACKTIME));
-    }
+        if( pInstance->GetData( OHF_PHASE_1 ) != OHF_DATA_DONE && !Plr->HasItemCount( 25853,1 ) )
+		    Menu->AddItem( 0, "I need a pack of Incendiary Bombs.", 1 );
 
-   void CastTime()
-   {
-      for(int i=0;i<nrspells;i++)
-         spells[i].casttime = spells[i].cooldown;
-   }
+		// It should give another menu if instance is done id: 10474, NYI
 
-   void OnTargetDied(Unit* mTarget)
-    {
-      if(_unit->GetHealthPct() > 0)
-      {
-         uint32 sound = 0;
-         char *text;
-         switch (RandomUInt(1))
-         {
-         case 0:
-            sound = 10271;
-            text = "You are...irrelevant.";
-            break;
-         case 1:
-            sound = 10271;
-            text = "Thrall will remain a slave. Taretha will die. You have failed.";
-            break;
-         }
-         _unit->PlaySoundToSet(sound);
-         _unit->SendChatMessage(CHAT_MSG_MONSTER_YELL, LANG_UNIVERSAL, text);
-      }
-    }
+		if(AutoSend)
+			Menu->SendTo(Plr);
+	}
 
-    void OnCombatStop(Unit *mTarget)
-    {
-      CastTime();
-        _unit->GetAIInterface()->setCurrentAgent(AGENT_NULL);
-        _unit->GetAIInterface()->SetAIState(STATE_IDLE);
-        RemoveAIUpdateEvent();
-    }
+	void GossipSelectOption(Object* pObject, Player*  Plr, uint32 Id, uint32 IntId, const char * Code)
+	{
+		switch (IntId)
+		{
+			case 1:
+                Item* pBombs = objmgr.CreateItem( 25853, Plr);
+                if( pBombs )
+				    Plr->GetItemInterface()->AddItemToFreeSlot( pBombs );
+                break;
+		}
+	}
 
-    void OnDied(Unit * mKiller)
-    {
-      CastTime();
-      _unit->SendChatMessage(CHAT_MSG_MONSTER_YELL, LANG_UNIVERSAL, "No!...The master... will not... be pleased.");
-      _unit->PlaySoundToSet(10271);
-       RemoveAIUpdateEvent();
-    }
+	void Destroy()
+	{
+		delete this;
+	};
+};
 
-    void AIUpdate()
-   {
-      float val = (float)RandomFloat(100.0f);
-      SpellCast(val);
-    }
+class BrazenGossip : public GossipScript
+{
+public:
+	void GossipHello(Object* pObject, Player*  Plr, bool AutoSend)
+	{
+		GossipMenu *Menu;
 
-   void SpellCast(float val)
-   {
-        if(_unit->GetCurrentSpell() == NULL && _unit->GetAIInterface()->GetNextTarget())
-        {
-         float comulativeperc = 0;
-          Unit *target = NULL;
-         for(int i=0;i<nrspells;i++)
-         {
-            spells[i].casttime--;
-            
-            if (m_spellcheck[i])
-            {               
-               spells[i].casttime = spells[i].cooldown;
-               target = _unit->GetAIInterface()->GetNextTarget();
-               switch(spells[i].targettype)
-               {
-                  case TARGET_SELF:
-                  case TARGET_VARIOUS:
-                     _unit->CastSpell(_unit, spells[i].info, spells[i].instant); break;
-                  case TARGET_ATTACKING:
-                     _unit->CastSpell(target, spells[i].info, spells[i].instant); break;
-                  case TARGET_DESTINATION:
-                     _unit->CastSpellAoF(target->GetPositionX(),target->GetPositionY(),target->GetPositionZ(), spells[i].info, spells[i].instant); break;
-               }
+        objmgr.CreateGossipMenuForPlayer(&Menu, pObject->GetGUID(), BRAZAN_ON_HELLO, Plr);
+	    Menu->AddItem( 0, "I am ready to go to Durnholde Keep.", 1 );
 
-			   if (spells[i].info->Id == SAND_BREATH) //Sand Breath has 2 speeches, maybe there is an easier way to do it
-			   {
-			     switch(RandomUInt(1))
-				 {
-				 case 0:
-                   _unit->SendChatMessage(CHAT_MSG_MONSTER_YELL, LANG_UNIVERSAL, "Not so fast!");
-                   _unit->PlaySoundToSet(spells[i].soundid);
-				 break;
-				 case 1:
-                   _unit->SendChatMessage(CHAT_MSG_MONSTER_YELL, LANG_UNIVERSAL, "Struggle as much as you like!");
-                   _unit->PlaySoundToSet(spells[i].soundid);
-				 break;
-				 }
-               }
-               else
-               {			   
-                 if (spells[i].speech != "")
-                 {
-                    _unit->SendChatMessage(CHAT_MSG_MONSTER_YELL, LANG_UNIVERSAL, spells[i].speech.c_str());
-                    _unit->PlaySoundToSet(spells[i].soundid); 
-                 }
-				}   
+		if(AutoSend)
+			Menu->SendTo(Plr);
+	}
 
-               m_spellcheck[i] = false;
-               return;
-            }
-
-            if ((val > comulativeperc && val <= (comulativeperc + spells[i].perctrigger)) || !spells[i].casttime)
+	void GossipSelectOption(Object* pObject, Player*  Plr, uint32 Id, uint32 IntId, const char * Code)
+	{
+        GossipMenu *Menu;
+		switch (IntId)
+		{
+        case 1:
             {
-               _unit->setAttackTimer(spells[i].attackstoptimer, false);
-               m_spellcheck[i] = true;
-            }
-            comulativeperc += spells[i].perctrigger;
-         }
-      }
-   }
+			    if ( !Plr->HasItemCount( 25853,1 ) ) 
+                {
+                    objmgr.CreateGossipMenuForPlayer(&Menu, pObject->GetGUID(), BRAZAN_NEED_ITEM, Plr);
+                    Menu->SendTo(Plr);
+                } 
+                else 
+                {
+				    Plr->TaxiStart( sTaxiMgr.GetTaxiPath( 534 ), 8317, 0 );
+                    Plr->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_MOUNTED_TAXI);
+                }
+            }break;
+		}
+	}
 
-protected:
+	void Destroy()
+	{
+		delete this;
+	};
+}; 
 
-   int nrspells;
+class LieutenantDrakeAI : public MoonScriptCreatureAI
+{
+    OldHilsbradInstance* pInstance;
+
+public:
+    MOONSCRIPT_FACTORY_FUNCTION( LieutenantDrakeAI, MoonScriptCreatureAI );
+ 	LieutenantDrakeAI(Creature* pCreature) : MoonScriptCreatureAI(pCreature)
+ 	{
+		pInstance = GET_OHF(_unit);
+ 	};
+
+    void OnCombatStart( Unit* pTarget )
+    {
+        if( pInstance )
+            pInstance->SetData( OHF_PHASE_2, OHF_DATA_IN_PROGRESS );
+
+        ParentClass::OnCombatStart( pTarget );
+    };
+
+    void OnCombatStop( Unit* pTarget )
+    {
+        if( pInstance )
+            pInstance->SetData( OHF_PHASE_2, OHF_DATA_PERFORMED );
+
+        ParentClass::OnCombatStop( pTarget );
+    };
+};
+
+class ThrallAI : public MoonScriptCreatureAI // this will be replaced with escortAI
+{
+    MOONSCRIPT_FACTORY_FUNCTION( ThrallAI, MoonScriptCreatureAI );
+    ThrallAI(Creature* pCreature) : MoonScriptCreatureAI(pCreature)
+    {
+        SetMoveType(Move_DontMoveWP);
+        for( int i = 1; i < MAX_THRALLWP1; ++i )
+            AddWaypoint( CreateWaypoint( i, 0, Flag_Walk, ThrallWP1[i] ) );
+    };
+
+    void StartEscort( Player* pPlayer )
+    {
+        GameObject* pGO = GetNearestGameObject();
+        if( pGO )
+            pGO->SetState( pGO->GetState() == 1 ? 0 : 1 );
+
+        _unit->SetUInt32Value(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_NONE);
+        SetMoveType(Move_ForwardThenStop);
+    };
+
+    void OnCombatStop(Unit* pTarget)
+    {
+        ParentClass::OnCombatStop(pTarget);
+        SetWaypointToMove( m_currentWp );
+    };
+
+    void OnReachWP(uint32 iWaypointId, bool bForwards)
+    {
+        m_currentWp = iWaypointId;
+    };
+
+    uint32 m_currentWp;
+};
+
+class ThrallGossip : public GossipScript
+{
+public:
+	void GossipHello(Object* pObject, Player*  Plr, bool AutoSend)
+	{
+		GossipMenu *Menu;
+        if( !pObject->IsCreature() )
+            return;
+        
+        objmgr.CreateGossipMenuForPlayer(&Menu, pObject->GetGUID(), THRALL_ON_HELLO, Plr);
+	    Menu->AddItem( 0, "[PH] Start escort.", 1 );
+
+		if(AutoSend)
+			Menu->SendTo(Plr);
+	}
+
+	void GossipSelectOption(Object* pObject, Player*  Plr, uint32 Id, uint32 IntId, const char * Code)
+	{
+		switch (IntId)
+		{
+			case 1:
+                ThrallAI* pThrall = static_cast< ThrallAI* >( TO_CREATURE( pObject )->GetScript() );
+                if( pThrall )
+                    pThrall->StartEscort( Plr );
+                break;
+		}
+	}
+
+	void Destroy()
+	{
+		delete this;
+	};
 };
 
 void SetupOldHillsbradFoothills(ScriptMgr * mgr)
 {
-   mgr->register_creature_script(CN_LIEUTENANT_DRAKE, &LIEUTENANTDRAKEAI::Create);
-   mgr->register_creature_script(CN_EPOCH_HUNTER, &EPOCHHUNTERAI::Create);
-   mgr->register_creature_script(CN_CAPTAIN_SKARLOC, &CAPTAINSKARLOCAI::Create);
+    mgr->register_instance_script( MAP_OLD_HILSBRAD, &OldHilsbradInstance::Create); 
+    mgr->register_creature_script( CN_LIEUTENANT_DRAKE, &LieutenantDrakeAI::Create );
+    mgr->register_creature_script( CN_THRALL, &ThrallAI::Create );
+
+    GossipScript * eGossip = (GossipScript*) new ErozionGossip;
+    mgr->register_gossip_script( CN_EROZION, eGossip );
+    GossipScript * bGossip = (GossipScript*) new BrazenGossip; 
+    mgr->register_gossip_script( CN_BRAZEN, bGossip );
+    GossipScript * tGossip = (GossipScript*) new ThrallGossip;
+    mgr->register_gossip_script( CN_THRALL, tGossip );
 }

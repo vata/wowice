@@ -13,7 +13,6 @@
  * this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "StdAfx.h"
 #include "Setup.h"
 
 /************************************************************************/
@@ -45,12 +44,12 @@ class EmerissAI : public CreatureAIScript
 {
 public:
     ADD_CREATURE_FACTORY_FUNCTION(EmerissAI);
-    SP_AI_Spell spells[6];
-    bool m_spellcheck[6];
+    SP_AI_Spell spells[7];
+    bool m_spellcheck[7];
 
     EmerissAI(Creature* pCreature) : CreatureAIScript(pCreature)
     {
-        nrspells = 6;
+        nrspells = 7;
         for(int i=0;i<nrspells;i++)
         {
             m_spellcheck[i] = false;
@@ -125,7 +124,7 @@ public:
         }
     }
 
-    void OnCombatStop(Unit *mTarget)
+    void OnCombatStop(Unit* mTarget)
     {
         CastTime();
         _unit->GetAIInterface()->setCurrentAgent(AGENT_NULL);
@@ -139,15 +138,17 @@ public:
             spells[i].casttime = spells[i].cooldown;
     }
 
-    void OnDied(Unit * mKiller)
+    void OnDied(Unit* mKiller)
     {
        RemoveAIUpdateEvent();
     }
 
     void AIUpdate()
     {
-        if (!_unit->GetAIInterface()->GetNextTarget()->isInRange(_unit->GetAIInterface()->GetNextTarget(), 20.0))
-            _unit->CastSpell(_unit->GetAIInterface()->GetNextTarget(),TELEPORT,true);
+        // M4ksiu: Someone who wrote this hadn't thought about it much, so it should be rewritten
+		Unit* Target = _unit->GetAIInterface()->GetNextTarget();
+        if ( Target != NULL && !_unit->isInRange( Target, 20.0f ) )
+            _unit->CastSpell( Target, TELEPORT, true );
 
         if (_unit->GetHealthPct() == 25 || _unit->GetHealthPct() == 50 || _unit->GetHealthPct() == 75)
         {
@@ -166,7 +167,7 @@ public:
         if(_unit->GetCurrentSpell() == NULL && _unit->GetAIInterface()->GetNextTarget())
         {
             float comulativeperc = 0;
-            Unit *target = NULL;
+            Unit* target = NULL;
             for(int i=0;i<nrspells;i++)
             {
                 spells[i].casttime--;
@@ -206,6 +207,12 @@ public:
             }
         }
     }
+
+	void Destroy()
+	{
+		delete this;
+	};
+
 protected:
 
     int nrspells;
@@ -308,7 +315,7 @@ public:
         }
     }
 
-    void OnCombatStop(Unit *mTarget)
+    void OnCombatStop(Unit* mTarget)
     {
         Shades = false;
         Shade_timer = 0;
@@ -324,7 +331,7 @@ public:
             spells[i].casttime = spells[i].cooldown;
     }
 
-    void OnDied(Unit * mKiller)
+    void OnDied(Unit* mKiller)
     {
        RemoveAIUpdateEvent();
        Shades = false;
@@ -333,19 +340,21 @@ public:
 
     void SummonShades(Unit* mTarget)
     {
-        Summoned = _unit->GetMapMgr()->GetInterface()->SpawnCreature(CN_SHADESTAERAR, mTarget->GetPositionX(), mTarget->GetPositionY(), mTarget->GetPositionZ(), 0,true, false, _unit->GetUInt32Value(UNIT_FIELD_FACTIONTEMPLATE), 50);
+        Summoned = _unit->GetMapMgr()->GetInterface()->SpawnCreature(CN_SHADESTAERAR, mTarget->GetPositionX(), mTarget->GetPositionY(), mTarget->GetPositionZ(), 0,true, false, _unit->GetFaction(), 50);
         Summoned->GetAIInterface()->SetNextTarget(mTarget);
     }
 
     void AIUpdate()
     {
-        if (!_unit->GetAIInterface()->GetNextTarget()->isInRange(_unit->GetAIInterface()->GetNextTarget(), 20.0))
-            _unit->CastSpell(_unit->GetAIInterface()->GetNextTarget(),TELEPORT,true);
+		// M4ksiu: Someone who wrote this hadn't thought about it much, so it should be rewritten
+		Unit* Target = _unit->GetAIInterface()->GetNextTarget();
+        if ( Target != NULL && !_unit->isInRange( Target, 20.0f ) )
+            _unit->CastSpell( Target, TELEPORT, true );
 
         if (Shades && Shade_timer == 0)
         {
             //Become unbanished again
-            _unit->SetUInt32Value(UNIT_FIELD_FACTIONTEMPLATE, 14);
+            _unit->SetFaction(14);
             //_unit->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
             _unit->GetAIInterface()->SetNextTarget(_unit->GetAIInterface()->GetNextTarget());
             Shades = false;
@@ -358,10 +367,10 @@ public:
         if (_unit->GetHealthPct() == 25 || _unit->GetHealthPct() == 50 || _unit->GetHealthPct() == 75)
         {
             //Inturrupt any spell casting
-            _unit->InterruptSpell();
+			_unit->InterruptSpell();
             //Root self
             _unit->CastSpell(_unit, 23973, true);
-            _unit->SetUInt32Value(UNIT_FIELD_FACTIONTEMPLATE, 35);
+            _unit->SetFaction(35);
             //_unit->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
 
             //Summon shades
@@ -384,7 +393,7 @@ public:
         if(_unit->GetCurrentSpell() == NULL && _unit->GetAIInterface()->GetNextTarget())
         {
             float comulativeperc = 0;
-            Unit *target = NULL;
+            Unit* target = NULL;
             for(int i=0;i<nrspells;i++)
             {
                 spells[i].casttime--;
@@ -423,6 +432,12 @@ public:
             }
         }
     }
+
+	void Destroy()
+	{
+		delete this;
+	};
+
 protected:
 
     Creature* Summoned;
@@ -471,7 +486,7 @@ public:
     void OnCombatStart(Unit* mTarget)
     {
         CastTime();
-        RegisterAIUpdateEvent(_unit->GetUInt32Value(UNIT_FIELD_BASEATTACKTIME));
+        RegisterAIUpdateEvent(_unit->GetBaseAttackTime(MELEE));
     }
 
     void OnTargetDied(Unit* mTarget)
@@ -479,7 +494,7 @@ public:
         //You died kek
     }
 
-    void OnCombatStop(Unit *mTarget)
+    void OnCombatStop(Unit* mTarget)
     {
         _unit->Despawn(15,0);
         _unit->GetAIInterface()->setCurrentAgent(AGENT_NULL);
@@ -494,7 +509,7 @@ public:
             spells[i].casttime = spells[i].cooldown;
     }
 
-    void OnDied(Unit * mKiller)
+    void OnDied(Unit* mKiller)
     {
        RemoveAIUpdateEvent();
        CastTime();
@@ -511,7 +526,7 @@ public:
         if(_unit->GetCurrentSpell() == NULL && _unit->GetAIInterface()->GetNextTarget())
         {
             float comulativeperc = 0;
-            Unit *target = NULL;
+            Unit* target = NULL;
             for(int i=0;i<nrspells;i++)
             {
                 spells[i].casttime--;
@@ -550,6 +565,12 @@ public:
             }
         }
     }
+
+	void Destroy()
+	{
+		delete this;
+	};
+
 protected:
 
     int nrspells;
@@ -644,7 +665,7 @@ public:
         }
     }
 
-    void OnCombatStop(Unit *mTarget)
+    void OnCombatStop(Unit* mTarget)
     {
         CastTime();
         _unit->GetAIInterface()->setCurrentAgent(AGENT_NULL);
@@ -658,7 +679,7 @@ public:
             spells[i].casttime = spells[i].cooldown;
     }
 
-    void OnDied(Unit * mKiller)
+    void OnDied(Unit* mKiller)
     {
         CastTime();
         RemoveAIUpdateEvent();
@@ -666,8 +687,10 @@ public:
 
     void AIUpdate()
     {
-        if (!_unit->GetAIInterface()->GetNextTarget()->isInRange(_unit->GetAIInterface()->GetNextTarget(), 20.0))
-            _unit->CastSpell(_unit->GetAIInterface()->GetNextTarget(),TELEPORT,true);
+		// M4ksiu: Someone who wrote this hadn't thought about it much, so it should be rewritten
+		Unit* Target = _unit->GetAIInterface()->GetNextTarget();
+        if ( Target != NULL && !_unit->isInRange( Target, 20.0f ) )
+            _unit->CastSpell( Target, TELEPORT, true );
 
         if (_unit->GetHealthPct() == 25 || _unit->GetHealthPct() == 50 || _unit->GetHealthPct() == 75)
         {
@@ -693,7 +716,7 @@ public:
         if(_unit->GetCurrentSpell() == NULL && _unit->GetAIInterface()->GetNextTarget())
         {
             float comulativeperc = 0;
-            Unit *target = NULL;
+            Unit* target = NULL;
             for(int i=0;i<nrspells;i++)
             {
                 spells[i].casttime--;
@@ -732,6 +755,12 @@ public:
             }
         }
     }
+
+	void Destroy()
+	{
+		delete this;
+	};
+
 protected:
 
     int nrspells;
@@ -740,7 +769,7 @@ protected:
 // Demented Druid Spirit AI
 #define CN_DEMENTEDDRUID    15260
 
-#define ArcScriptFIRE               27737
+#define MOONFIRE               27737
 
 class DementedDruidSpiritAI : public CreatureAIScript
 {
@@ -757,7 +786,7 @@ public:
             m_spellcheck[i] = false;
         }
 
-        spells[0].info = dbcSpell.LookupEntry(ArcScriptFIRE);
+        spells[0].info = dbcSpell.LookupEntry(MOONFIRE);
         spells[0].targettype = TARGET_ATTACKING;
         spells[0].instant = true;
         spells[0].cooldown = -1;
@@ -769,7 +798,7 @@ public:
     void OnCombatStart(Unit* mTarget)
     {
         CastTime();
-        RegisterAIUpdateEvent(_unit->GetUInt32Value(UNIT_FIELD_BASEATTACKTIME));
+        RegisterAIUpdateEvent(_unit->GetBaseAttackTime(MELEE));
     }
 
     void OnTargetDied(Unit* mTarget)
@@ -777,7 +806,7 @@ public:
         //You died kek
     }
 
-    void OnCombatStop(Unit *mTarget)
+    void OnCombatStop(Unit* mTarget)
     {
         CastTime();
         _unit->Despawn(15,0);
@@ -792,7 +821,7 @@ public:
             spells[i].casttime = spells[i].cooldown;
     }
 
-    void OnDied(Unit * mKiller)
+    void OnDied(Unit* mKiller)
     {
         CastTime();
         RemoveAIUpdateEvent();
@@ -809,7 +838,7 @@ public:
         if(_unit->GetCurrentSpell() == NULL && _unit->GetAIInterface()->GetNextTarget())
         {
             float comulativeperc = 0;
-            Unit *target = NULL;
+            Unit* target = NULL;
             for(int i=0;i<nrspells;i++)
             {
                 spells[i].casttime--;
@@ -848,6 +877,12 @@ public:
             }
         }
     }
+
+	void Destroy()
+	{
+		delete this;
+	};
+
 protected:
 
     int nrspells;
@@ -925,9 +960,9 @@ public:
 
     void OnCombatStart(Unit* mTarget)
     {
-        bool Shade1 = false;
-        bool Shade2 = false;
-        bool Shade3 = false;
+        Shade1 = false;
+        Shade2 = false;
+        Shade3 = false;
         CastTime();
         _unit->SendChatMessage(CHAT_MSG_MONSTER_YELL, LANG_UNIVERSAL, "I can sense the SHADOW on your hearts. There can be no rest for the wicked!");
         RegisterAIUpdateEvent(1000); //Attack time is to slow on this boss
@@ -941,11 +976,11 @@ public:
         }
     }
 
-    void OnCombatStop(Unit *mTarget)
+    void OnCombatStop(Unit* mTarget)
     {
-        bool Shade1 = false;
-        bool Shade2 = false;
-        bool Shade3 = false;
+        Shade1 = false;
+        Shade2 = false;
+        Shade3 = false;
         CastTime();
         _unit->GetAIInterface()->setCurrentAgent(AGENT_NULL);
         _unit->GetAIInterface()->SetAIState(STATE_IDLE);
@@ -958,20 +993,23 @@ public:
             spells[i].casttime = spells[i].cooldown;
     }
 
-    void OnDied(Unit * mKiller)
+    void OnDied(Unit* mKiller)
     {
-        bool Shade1 = false;
-        bool Shade2 = false;
-        bool Shade3 = false;
+        Shade1 = false;
+        Shade2 = false;
+        Shade3 = false;
         CastTime();
         RemoveAIUpdateEvent();
     }
 
     void AIUpdate()
+
     {
         std::list<Player*> mTargets;
-        if (!_unit->GetAIInterface()->GetNextTarget()->isInRange(_unit->GetAIInterface()->GetNextTarget(), 20.0))
-            _unit->CastSpell(_unit->GetAIInterface()->GetNextTarget(),TELEPORT,true);
+        // M4ksiu: Someone who wrote this hadn't thought about it much, so it should be rewritten
+		Unit* Target = _unit->GetAIInterface()->GetNextTarget();
+        if ( Target != NULL && !_unit->isInRange( Target, 20.0f ) )
+            _unit->CastSpell( Target, TELEPORT, true );
 
         if ((_unit->GetHealthPct() == 25 && Shade3 == false) || (_unit->GetHealthPct() == 50 && Shade2 == false) || (_unit->GetHealthPct() == 75 && Shade1 == false))
         {
@@ -1004,7 +1042,7 @@ public:
         if(_unit->GetCurrentSpell() == NULL && _unit->GetAIInterface()->GetNextTarget())
         {
             float comulativeperc = 0;
-            Unit *target = NULL;
+            Unit* target = NULL;
             for(int i=0;i<nrspells;i++)
             {
                 spells[i].casttime--;
@@ -1043,6 +1081,13 @@ public:
             }
         }
     }
+	
+
+	void Destroy()
+	{
+		delete this;
+	};
+
 protected:
 
     bool Shade1; //75%
@@ -1077,7 +1122,7 @@ public:
         //Will nevah happenz! haha
     }
 
-    void OnCombatStop(Unit *mTarget)
+    void OnCombatStop(Unit* mTarget)
     {
         _unit->GetAIInterface()->setCurrentAgent(AGENT_NULL);
         _unit->GetAIInterface()->SetAIState(STATE_IDLE);
@@ -1085,7 +1130,7 @@ public:
         _unit->Despawn(15,0);
     }
 
-    void OnDied(Unit * mKiller)
+    void OnDied(Unit* mKiller)
     {
         RemoveAIUpdateEvent();
     }
@@ -1102,7 +1147,7 @@ public:
                 distance = (*itr)->GetDistanceSq((*itr)->GetPositionX(), (*itr)->GetPositionY(), (*itr)->GetPositionZ());
                 if(distance < 5.0)
                 {
-                    (*itr)->SetUInt32Value(UNIT_FIELD_HEALTH, ((*itr)->GetUInt32Value(UNIT_FIELD_MAXHEALTH)/100)); //Heal him 1%
+                    (*itr)->SetHealth(((*itr)->GetUInt32Value(UNIT_FIELD_MAXHEALTH)/100)); //Heal him 1%
 //                    if((*itr)->GetUInt32Value(UNIT_FIELD_HEALTH) > (*itr)->GetUInt32Value(UNIT_FIELD_MAXHEALTH))
 //                        (*itr)->SetUInt32Value(UNIT_FIELD_HEALTH, (*itr)->GetUInt32Value(UNIT_FIELD_MAXHEALTH)); //Do i need to do this....?
                     _unit->Despawn(1,0);
@@ -1120,6 +1165,11 @@ public:
         //Repeat this, if they move Lethon while the ghosts move, they need to update his position
         CheckDist();
     }
+
+	void Destroy()
+	{
+		delete this;
+	};
 };
 
 
@@ -1234,7 +1284,7 @@ public:
             _unit->SendChatMessage(CHAT_MSG_MONSTER_YELL, LANG_UNIVERSAL, "Your world will die, mortals! Your doom is now at hand!");
             break;
         }
-        RegisterAIUpdateEvent(_unit->GetUInt32Value(UNIT_FIELD_BASEATTACKTIME));
+        RegisterAIUpdateEvent(_unit->GetBaseAttackTime(MELEE));
         CastTime();
     }
 
@@ -1247,7 +1297,7 @@ public:
         }
     }
 
-    void OnCombatStop(Unit *mTarget)
+    void OnCombatStop(Unit* mTarget)
     {
         hounds_timer = 45;
         enrage = 0;
@@ -1263,7 +1313,7 @@ public:
             spells[i].casttime = spells[i].cooldown;
     }
 
-    void OnDied(Unit * mKiller)
+    void OnDied(Unit* mKiller)
     {
         hounds_timer = 45;
         enrage = 0;
@@ -1288,7 +1338,7 @@ public:
         case 1: RandY = 0 + Rand; break;
         }
         Rand = 0;
-        Summoned = _unit->GetMapMgr()->GetInterface()->SpawnCreature(CN_HOUNDS, (float)RandX, (float)RandY, 0, 0,true, false, _unit->GetUInt32Value(UNIT_FIELD_FACTIONTEMPLATE), 50);
+        Summoned = _unit->GetMapMgr()->GetInterface()->SpawnCreature(CN_HOUNDS, (float)RandX, (float)RandY, 0, 0,true, false, _unit->GetFaction(), 50);
         Summoned->GetAIInterface()->SetNextTarget(mTarget);
     }
 
@@ -1319,7 +1369,7 @@ public:
         if(_unit->GetCurrentSpell() == NULL && _unit->GetAIInterface()->GetNextTarget())
         {
             float comulativeperc = 0;
-            Unit *target = NULL;
+            Unit* target = NULL;
             for(int i=0;i<nrspells;i++)
             {
                 spells[i].casttime--;
@@ -1358,6 +1408,12 @@ public:
             }
         }
     }
+
+	void Destroy()
+	{
+		delete this;
+	};
+
 protected:
 
     int Rand;
@@ -1460,7 +1516,7 @@ public:
         spells[7].perctrigger = 0.0f;
         spells[7].attackstoptimer = 1000;
 
-        RegisterAIUpdateEvent(_unit->GetUInt32Value(UNIT_FIELD_BASEATTACKTIME));
+        RegisterAIUpdateEvent(_unit->GetBaseAttackTime(MELEE));
         //Spawn intro.
         _unit->SendChatMessage(CHAT_MSG_MONSTER_YELL, LANG_UNIVERSAL, "I remember well the sting of defeat at the conclusion of the Third War. I have waited far too long for my revenge. Now the shadow of the Legion falls over this world. It is only a matter of time until all of your failed creation... is undone.");
         _unit->PlaySoundToSet(11332);
@@ -1507,7 +1563,7 @@ public:
         }
     }
 
-    void OnCombatStop(Unit *mTarget)
+    void OnCombatStop(Unit* mTarget)
     {
         enrage = 0;
         _unit->SendChatMessage(CHAT_MSG_MONSTER_YELL, LANG_UNIVERSAL, "The universe will be remade.");
@@ -1523,7 +1579,7 @@ public:
             spells[i].casttime = spells[i].cooldown;
     }
 
-    void OnDied(Unit * mKiller)
+    void OnDied(Unit* mKiller)
     {
         enrage = 0;
         _unit->SendChatMessage(CHAT_MSG_MONSTER_YELL, LANG_UNIVERSAL, "");
@@ -1576,7 +1632,7 @@ public:
         if(_unit->GetCurrentSpell() == NULL && _unit->GetAIInterface()->GetNextTarget())
         {
             float comulativeperc = 0;
-            Unit *target = NULL;
+            Unit* target = NULL;
             for(int i=0;i<nrspells;i++)
             {
                 spells[i].casttime--;
@@ -1615,6 +1671,12 @@ public:
             }
         }
     }
+
+	void Destroy()
+	{
+		delete this;
+	};
+
 protected:
 
     int enrage;
@@ -1702,7 +1764,7 @@ public:
         }
     }
 
-    void OnCombatStop(Unit *mTarget)
+    void OnCombatStop(Unit* mTarget)
     {
         masstele = 60;
         _unit->GetAIInterface()->setCurrentAgent(AGENT_NULL);
@@ -1711,7 +1773,7 @@ public:
         CastTime();
     }
 
-    void OnDied(Unit * mKiller)
+    void OnDied(Unit* mKiller)
     {
         masstele = 60;
         RemoveAIUpdateEvent();
@@ -1727,7 +1789,7 @@ public:
 
     void AIUpdate()
     {
-        if(masstele = 0)
+        if(masstele == 0)
         {
 
             _unit->CastSpell(_unit->GetAIInterface()->GetNextTarget(),MASS_TELEPORT, true);
@@ -1747,7 +1809,7 @@ public:
         if(_unit->GetCurrentSpell() == NULL && _unit->GetAIInterface()->GetNextTarget())
         {
             float comulativeperc = 0;
-            Unit *target = NULL;
+            Unit* target = NULL;
             for(int i=0;i<nrspells;i++)
             {
                 spells[i].casttime--;
@@ -1786,6 +1848,12 @@ public:
             }
         }
     }
+
+	void Destroy()
+	{
+		delete this;
+	};
+
 protected:
 
     int masstele;
@@ -1798,21 +1866,22 @@ protected:
 
 #define EARTHQUAKE                 32686          
 #define MARK_OF_DEATH           37128    
-#define CHAIN_LIGHTNING            28167
+#define CHAIN_LIGHTNING            33665
 #define OVERRUN                    32636
-#define ENRAGE                34624                
+#define ENRAGE                33653
 #define AURA_OF_DEATH        37131
+#define SUNDER_ARMOR          33661
 
 class DoomwalkerAI : public CreatureAIScript
 {
 public:
     ADD_CREATURE_FACTORY_FUNCTION(DoomwalkerAI);
-    SP_AI_Spell spells[5];
-    bool m_spellcheck[5];
+    SP_AI_Spell spells[6];
+    bool m_spellcheck[6];
 
     DoomwalkerAI(Creature* pCreature) : CreatureAIScript(pCreature)
     {
-        nrspells = 5;
+        nrspells = 6;
         for(int i=0;i<nrspells;i++)
         {
             m_spellcheck[i] = false;
@@ -1826,12 +1895,12 @@ public:
         spells[0].perctrigger = 0.0f;
         spells[0].attackstoptimer = 1000;
 
-		/*spells[1].info = dbcSpell.LookupEntry(MARK_OF_DEATH);
+		spells[1].info = dbcSpell.LookupEntry(MARK_OF_DEATH);
         spells[1].targettype = TARGET_DESTINATION;
         spells[1].instant = false;
         spells[1].cooldown = -1;
         spells[1].perctrigger = 0.0f;
-        spells[1].attackstoptimer = 1000;*/
+        spells[1].attackstoptimer = 1000;
 
         spells[2].info = dbcSpell.LookupEntry(CHAIN_LIGHTNING);
         spells[2].targettype = TARGET_VARIOUS;
@@ -1853,6 +1922,13 @@ public:
         spells[4].instant = true;
         spells[4].perctrigger = 0.0f;
         spells[4].attackstoptimer = 1000;
+
+		spells[5].info = dbcSpell.LookupEntry(SUNDER_ARMOR);
+		spells[5].targettype = TARGET_ATTACKING;
+        spells[5].instant = true;
+		spells[5].cooldown = 15;
+		spells[5].perctrigger = 0.0f;
+        spells[5].attackstoptimer = 1000;
 
     }
 
@@ -1886,10 +1962,10 @@ public:
                 _unit->PlaySoundToSet(11351);
                 break;
             }
-           // _unit->CastSpell(mTarget, spells[1].info, spells[1].instant);
+           _unit->CastSpell(mTarget, spells[1].info, spells[1].instant);
         }
     }
-    void OnCombatStop(Unit *mTarget)
+    void OnCombatStop(Unit* mTarget)
     {
         _unit->RemoveAura(AURA_OF_DEATH);
         enraged = false;
@@ -1899,7 +1975,7 @@ public:
         CastTime();
     }
 
-    void OnDied(Unit * mKiller)
+    void OnDied(Unit* mKiller)
     {
         _unit->RemoveAura(AURA_OF_DEATH);
         enraged = false;
@@ -1933,7 +2009,7 @@ public:
         if(_unit->GetCurrentSpell() == NULL && _unit->GetAIInterface()->GetNextTarget())
         {
             float comulativeperc = 0;
-            Unit *target = NULL;
+            Unit* target = NULL;
             int RandomSpeach;
             RandomSpeach=rand()%2;
             for(int i=0;i<nrspells;i++)
@@ -1962,7 +2038,7 @@ public:
                 }
                 if (m_spellcheck[0] == true) //Earthquake
                 {
-                    _unit->WipeHateList();
+                    _unit->GetAIInterface()->WipeHateList();
                     switch (RandomSpeach)
                     {
                     case 0:
@@ -1977,7 +2053,7 @@ public:
                 }
                 if (m_spellcheck[3] == true) //Overrun
                 {
-                    _unit->WipeHateList();
+                    _unit->GetAIInterface()->WipeHateList();
                     switch (RandomSpeach)
                     {
                     case 0:
@@ -2004,6 +2080,12 @@ public:
             }
         }
     }
+
+	void Destroy()
+	{
+		delete this;
+	};
+
 protected:
     
     bool enraged; //Just to make sure
@@ -2063,7 +2145,7 @@ public:
     {
 
     }
-    void OnCombatStop(Unit *mTarget)
+    void OnCombatStop(Unit* mTarget)
     {
         _unit->GetAIInterface()->setCurrentAgent(AGENT_NULL);
         _unit->GetAIInterface()->SetAIState(STATE_IDLE);
@@ -2071,7 +2153,7 @@ public:
         CastTime();
     }
 
-    void OnDied(Unit * mKiller)
+    void OnDied(Unit* mKiller)
     {
         RemoveAIUpdateEvent();
         CastTime();
@@ -2095,7 +2177,7 @@ public:
         if(_unit->GetCurrentSpell() == NULL && _unit->GetAIInterface()->GetNextTarget())
         {
             float comulativeperc = 0;
-            Unit *target = NULL;
+            Unit* target = NULL;
             int RandomSpeach;
             RandomSpeach=rand()%2;
             for(int i=0;i<nrspells;i++)
@@ -2136,6 +2218,12 @@ public:
             }
         }
     }
+
+	void Destroy()
+	{
+		delete this;
+	};
+
 protected:
 
     int nrspells;

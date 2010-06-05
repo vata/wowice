@@ -13,93 +13,69 @@
  * this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "StdAfx.h"
 #include "Setup.h"
-
-/************************************************************************/
-/* Spell Defs                                                           */
-/************************************************************************/
 
 bool Execute(uint32 i, Spell* pSpell)
 {
-    uint32 uSpellId = pSpell->GetProto()->Id;
-    uint32 base_dmg = pSpell->damage;
-    /*
-    Attempt to finish off a wounded foe, causing 125 damage and converting each extra point
-    of rage into 3 additional damage.  Only usable on enemies that have less than 20% health.
-    */
+	if( pSpell->p_caster == NULL || pSpell->GetUnitTarget() == NULL)
+		return true;
+	Player* Caster = pSpell->p_caster;
+	Unit* Target = pSpell->GetUnitTarget();
+	uint32 rage = Caster->GetPower( POWER_TYPE_RAGE );
+	if(Caster->HasAura(58367)) // Glyph of Execution: Your Execute ability deals damage as if you had 10 additional rage.
+		rage += 10; 
+	uint32 toadd = 0;
+	int32 dmg = 0.0f;
+	uint32 multiple[] = 
+	{
+		0,
+		3,
+		6,
+		9,
+		12,
+		15,
+		18,
+		21,
+		30,
+		38,
+	};
+	if(rage >= 30)
+		toadd = (multiple[pSpell->GetProto()->RankNumber] * 30);
+	else
+		toadd = (multiple[pSpell->GetProto()->RankNumber] * rage);
 
-    Unit * target = pSpell->GetUnitTarget();
-    if(!target || !pSpell->u_caster) return true;
+	dmg = pSpell->CalculateEffect(i, pSpell->GetUnitTarget());
+	dmg += (Caster->GetAttackPower() * 0.2f);
+	dmg += toadd;
 
-    // "Only usable on enemies that have less than 20% health."
-    if(target->GetHealthPct() > 20)
-    {
-        // send failed
-        pSpell->SendCastResult(SPELL_FAILED_BAD_TARGETS);
-        return true;
-    }
-
-    // get the caster's rage points, and convert them
-    // formula is 3 damage * spell rank * rage points
-    uint32 add_damage = (3 * pSpell->GetProto()->RankNumber);
-    add_damage *= pSpell->u_caster->GetUInt32Value(UNIT_FIELD_POWER2) / 10;   // rage is *10 always
-    
-    // send spell damage log
-    pSpell->u_caster->SpellNonMeleeDamageLog(target, 20647, base_dmg + add_damage, false);
-    // zero rage
-    pSpell->u_caster->SetUInt32Value(UNIT_FIELD_POWER2, 0);
-    return true;
+	Caster->Strike(Target, 0, pSpell->GetProto(), 0, 0, dmg, false, false);
+	return true;
 }
 
-bool Bloodrage(uint32 i, Spell* pSpell)
+bool Vigilance(uint32 i, Spell* pSpell)
 {
-  // Put the player in Combat (gotta find when to put him ooc)
+	if(!pSpell->p_caster)
+		return true;
 
-
-  return true;
+	pSpell->p_caster->ClearCooldownForSpell(355); // Taunt
+	return true;
 }
 
-/* Module info */
 void SetupWarriorSpells(ScriptMgr * mgr)
 {
-    /**** Execute ****/
-    /* log isn't working */
-    /*
-      WORLD: got cast spell packet, spellId - 25236, data length = 9
-      Spell::cast 25236, Unit: 2
-      WORLD: Spell effect id = 3, damage = 925
-      WORLD: Recvd CMSG_ATTACKSWING Message
-      WORLD: Sent SMSG_ATTACKSTART
-      Player::Update:  No valid current selection to attack, stopping attack
-    */
-    mgr->register_dummy_spell(5308, &Execute);     // Rank 1
-    mgr->register_dummy_spell(20658, &Execute);    // Rank 2
-    mgr->register_dummy_spell(20660, &Execute);    // Rank 3
-    mgr->register_dummy_spell(20661, &Execute);    // Rank 4
-    mgr->register_dummy_spell(20662, &Execute);    // Rank 5
-    mgr->register_dummy_spell(25234, &Execute);    // Rank 6
-    mgr->register_dummy_spell(25236, &Execute);    // Rank 7
-	mgr->register_dummy_spell(47470, &Execute);    // Rank 8
-	mgr->register_dummy_spell(47471, &Execute);    // Rank 9
-
-    /**** Bloodrage ****/
-    /* server debug when blood rages is cast */
-    /*
-
-    WORLD: got cast spell packet, spellId - 2687, data length = 6
-    Spell::cast 2687, Unit: 2
-    WORLD: Spell effect id = 30, damage = 100
-    WORLD: Spell effect id = 64, damage = 1
-    Spell::cast 29131, Unit: 2
-    WORLD: Spell effect id = 6, damage = 10
-    WORLD: Spell effect id = 6, damage = 1
-    WORLD: target = 2 , Spell Aura id = 24, SpellId  = 29131, i = 0, apply = true
-    WORLD: target = 2 , Spell Aura id = 94, SpellId  = 29131, i = 1, apply = true
-    WORLD: target = 2 , Spell Aura id = 24, SpellId  = 29131, i = 0, apply = false
-    WORLD: target = 2 , Spell Aura id = 94, SpellId  = 29131, i = 1, apply = false
-    
-    */
-    mgr->register_dummy_spell(2687, &Bloodrage);    // Bloodrage
-    mgr->register_dummy_spell(29131, &Bloodrage);   // Bloodrage this is also called
+	uint32 ExecuteIds[] = 
+	{
+		5308,  // Rank 1
+		20658, // Rank 2
+		20660, // Rank 3
+		20661, // Rank 4
+		20662, // Rank 5
+		25234, // Rank 6
+		25236, // Rank 7
+		47470, // Rank 8
+		47471, // Rank 9
+		0,
+	};
+    mgr->register_dummy_spell(ExecuteIds, &Execute);
+	mgr->register_dummy_spell(50725, &Vigilance);
 }

@@ -13,30 +13,26 @@
  * this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "StdAfx.h"
 #include "Setup.h"
-
-// Archmage Malin
-#define GOSSIP_ARCHMAGE_MALIN    "Can you send me to Theramore? I have an urgent message for Lady Jaina from Highlord Bolvar."
 
 class ArchmageMalin_Gossip : public GossipScript
 {
 public:
-    void GossipHello(Object* pObject, Player * plr, bool AutoSend)
+    void GossipHello(Object* pObject, Player* plr, bool AutoSend)
     {
         GossipMenu *Menu;
         objmgr.CreateGossipMenuForPlayer(&Menu, pObject->GetGUID(), 11469, plr);
 
 		if(plr->GetQuestLogForEntry(11223))
-        Menu->AddItem( 0, GOSSIP_ARCHMAGE_MALIN, 1);
+        Menu->AddItem( 0, "Can you send me to Theramore? I have an urgent message for Lady Jaina from Highlord Bolvar.", 1);
         
         if(AutoSend)
             Menu->SendTo(plr);
     }
 
-    void GossipSelectOption(Object* pObject, Player * plr, uint32 Id, uint32 IntId, const char * Code)
+    void GossipSelectOption(Object* pObject, Player* plr, uint32 Id, uint32 IntId, const char * Code)
     {
-		Creature * pCreature = (pObject->GetTypeId()==TYPEID_UNIT)?((Creature*)pObject):NULL;
+		Creature* pCreature = (pObject->GetTypeId()==TYPEID_UNIT)?(TO_CREATURE(pObject)):NULL;
 		if(pObject->GetTypeId()!=TYPEID_UNIT)
 			return;
 		
@@ -107,15 +103,9 @@ void SWHarborFlyAround::GossipEnd(Object * pObject, Player* Plr)
     GossipScript::GossipEnd(pObject, Plr);
 }
 
-/*********************************************
-// Stormwind Harbor View Taxi End
-**********************************************/
-
-
 void SetupStormwindGossip(ScriptMgr * mgr)
 {
 	GossipScript * ArchmageMalinGossip = (GossipScript*) new ArchmageMalin_Gossip;
-
 	mgr->register_gossip_script(2708, ArchmageMalinGossip); // Archmage Malin
 	GossipScript * SWHARFLY = (GossipScript*) new SWHarborFlyAround();
 	mgr->register_gossip_script(29154, SWHARFLY);

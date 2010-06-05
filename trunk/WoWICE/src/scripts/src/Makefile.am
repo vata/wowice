@@ -1,1 +1,2 @@
-SUBDIRS = InstanceScripts GossipScripts ExtraScripts ServerStatusPlugin SpellHandlers LUAScripting QuestScripts EventScripts MiscScripts
+SUBDIRS = GossipScripts InstanceScripts MiscScripts QuestScripts \
+SpellHandlers ServerStatusPlugin LuaEngine ExtraScripts EventScripts

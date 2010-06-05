@@ -22,8 +22,15 @@
  *
  */
 
-#include "StdAfx.h"
 #include "Setup.h"
+
+struct GameobjectTeleport
+{
+	uint32 mapid;
+	float x,y,z,o;
+	uint32 req_level;
+};
+std::map<uint32,GameobjectTeleport*> m_teleStorage;
 
 class CustomTeleport: public GameObjectAIScript // Custom Portals
 {
@@ -40,20 +47,19 @@ public:
         float x,y,z,orientation;
         uint32 mapid;
 
-        QueryResult *result = NULL;
-        result = WorldDatabase.Query("SELECT * FROM gameobject_teleports WHERE entry = %ld", this->_gameobject->GetEntry());
-        if(result != NULL)
-        {		
-			Field *fields = result->Fetch();
-			uint32 required_level = fields[6].GetInt32();
+		std::map<uint32,GameobjectTeleport*>::iterator itr = m_teleStorage.find(this->_gameobject->GetEntry());
+        if (itr != m_teleStorage.end())
+        {
+			GameobjectTeleport * gt = itr->second;
+			uint32 required_level = gt->req_level;
 
 			if ((required_level == 0) || (required_level <= pPlayer->getLevel()))
 			{
-				mapid = fields[1].GetInt32();
-				x = fields[2].GetFloat();
-				y = fields[3].GetFloat();
-				z = fields[4].GetFloat();
-				orientation = fields[5].GetFloat();
+				mapid = gt->mapid;
+				x = gt->x;
+				y = gt->y;
+				z = gt->z;
+				orientation = gt->o;
 
 				pPlayer->SafeTeleport(mapid, 0, x, y, z, orientation);
 			}
@@ -61,7 +67,6 @@ public:
 			{
 				pPlayer->BroadcastMessage("You must be at least level %ld to use this portal", required_level);
 			}
-            delete result;
         }
     }
     static GameObjectAIScript *Create(GameObject * GO) { return new CustomTeleport(GO); }
@@ -83,12 +88,18 @@ void InitializeGameObjectTeleportTable(ScriptMgr * mgr)
 		}
         do
         {
-            uint32 id = result->Fetch()[0].GetUInt32();
-			uint32 mapid = result->Fetch()[1].GetUInt32();
-			mgr->register_gameobject_script(id, &CustomTeleport::Create);
-
+			GameobjectTeleport * gt = new GameobjectTeleport;
+			Field *fields = result->Fetch();
+			uint32 entry = fields[0].GetUInt32();
+            gt->mapid = fields[1].GetUInt32();
+			gt->x = fields[2].GetFloat();
+			gt->y = fields[3].GetFloat();
+			gt->z = fields[4].GetFloat();
+			gt->o = fields[5].GetFloat();
+			gt->req_level = fields[6].GetUInt32();
+			m_teleStorage[entry] = gt;
+			mgr->register_gameobject_script(entry, &CustomTeleport::Create);
         } while (result->NextRow());
         delete result;
     }
 }
-

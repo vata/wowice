@@ -13,7 +13,6 @@
  * this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "StdAfx.h"
 #include "Setup.h"
 
 /************************************************************************/
@@ -61,7 +60,7 @@ public:
     void OnCombatStart(Unit* mTarget)
     {
 		CastTime();
-		RegisterAIUpdateEvent(_unit->GetUInt32Value(UNIT_FIELD_BASEATTACKTIME));
+		RegisterAIUpdateEvent(_unit->GetBaseAttackTime(MELEE));
     }
 
 	void CastTime()
@@ -74,7 +73,7 @@ public:
     {
     }
 
-    void OnCombatStop(Unit *mTarget)
+    void OnCombatStop(Unit* mTarget)
     {
 		CastTime();
         _unit->GetAIInterface()->setCurrentAgent(AGENT_NULL);
@@ -82,7 +81,7 @@ public:
         RemoveAIUpdateEvent();
     }
 
-    void OnDied(Unit * mKiller)
+    void OnDied(Unit* mKiller)
     {
 		CastTime();
        RemoveAIUpdateEvent();
@@ -99,7 +98,7 @@ public:
         if(_unit->GetCurrentSpell() == NULL && _unit->GetAIInterface()->GetNextTarget())
         {
 			float comulativeperc = 0;
-		    Unit *target = NULL;
+		    Unit* target = NULL;
 			for(int i=0;i<nrspells;i++)
 			{
 				spells[i].casttime--;
@@ -138,6 +137,11 @@ public:
 			}
 		}
 	}
+
+	void Destroy()
+	{
+		delete this;
+	};
 
 protected:
 
@@ -211,7 +215,7 @@ public:
     {
 		_unit->CastSpell(_unit, spells[4].info, spells[4].instant);
 		CastTime();
-		RegisterAIUpdateEvent(_unit->GetUInt32Value(UNIT_FIELD_BASEATTACKTIME));
+		RegisterAIUpdateEvent(_unit->GetBaseAttackTime(MELEE));
     }
 
 	void CastTime()
@@ -224,7 +228,7 @@ public:
     {
     }
 
-    void OnCombatStop(Unit *mTarget)
+    void OnCombatStop(Unit* mTarget)
     {
 		CastTime();
         _unit->GetAIInterface()->setCurrentAgent(AGENT_NULL);
@@ -232,7 +236,7 @@ public:
         RemoveAIUpdateEvent();
     }
 
-    void OnDied(Unit * mKiller)
+    void OnDied(Unit* mKiller)
     {
 		CastTime();
        RemoveAIUpdateEvent();
@@ -249,7 +253,7 @@ public:
         if(_unit->GetCurrentSpell() == NULL && _unit->GetAIInterface()->GetNextTarget())
         {
 			float comulativeperc = 0;
-		    Unit *target = NULL;
+		    Unit* target = NULL;
 			for(int i=0;i<nrspells;i++)
 			{
 				spells[i].casttime--;
@@ -288,6 +292,11 @@ public:
 			}
 		}
 	}
+
+	void Destroy()
+	{
+		delete this;
+	};
 
 protected:
 
@@ -352,7 +361,7 @@ public:
     {
 		_unit->CastSpell(_unit, spells[3].info, spells[3].instant);
 		CastTime();
-		RegisterAIUpdateEvent(_unit->GetUInt32Value(UNIT_FIELD_BASEATTACKTIME));
+		RegisterAIUpdateEvent(_unit->GetBaseAttackTime(MELEE));
     }
 
 	void CastTime()
@@ -365,7 +374,7 @@ public:
     {
     }
 
-    void OnCombatStop(Unit *mTarget)
+    void OnCombatStop(Unit* mTarget)
     {
 		CastTime();
         _unit->GetAIInterface()->setCurrentAgent(AGENT_NULL);
@@ -373,7 +382,7 @@ public:
         RemoveAIUpdateEvent();
     }
 
-    void OnDied(Unit * mKiller)
+    void OnDied(Unit* mKiller)
     {
 		CastTime();
        RemoveAIUpdateEvent();
@@ -390,7 +399,7 @@ public:
         if(_unit->GetCurrentSpell() == NULL && _unit->GetAIInterface()->GetNextTarget())
         {
 			float comulativeperc = 0;
-		    Unit *target = NULL;
+		    Unit* target = NULL;
 			for(int i=0;i<nrspells;i++)
 			{
 				spells[i].casttime--;
@@ -429,6 +438,11 @@ public:
 			}
 		}
 	}
+
+	void Destroy()
+	{
+		delete this;
+	};
 
 protected:
 
@@ -499,7 +513,7 @@ public:
     void OnCombatStart(Unit* mTarget)
     {
 		CastTime();
-		RegisterAIUpdateEvent(_unit->GetUInt32Value(UNIT_FIELD_BASEATTACKTIME));
+		RegisterAIUpdateEvent(_unit->GetBaseAttackTime(MELEE));
     }
 
 	void CastTime()
@@ -512,7 +526,7 @@ public:
     {
     }
 
-    void OnCombatStop(Unit *mTarget)
+    void OnCombatStop(Unit* mTarget)
     {
 		CastTime();
         _unit->GetAIInterface()->setCurrentAgent(AGENT_NULL);
@@ -520,7 +534,7 @@ public:
         RemoveAIUpdateEvent();
     }
 
-    void OnDied(Unit * mKiller)
+    void OnDied(Unit* mKiller)
     {
 		CastTime();
        RemoveAIUpdateEvent();
@@ -537,7 +551,7 @@ public:
         if(_unit->GetCurrentSpell() == NULL && _unit->GetAIInterface()->GetNextTarget())
         {
 			float comulativeperc = 0;
-		    Unit *target = NULL;
+		    Unit* target = NULL;
 			for(int i=0;i<nrspells;i++)
 			{
 				spells[i].casttime--;
@@ -576,6 +590,11 @@ public:
 			}
 		}
 	}
+
+	void Destroy()
+	{
+		delete this;
+	};
 
 protected:
 
@@ -614,7 +633,7 @@ public:
     void OnCombatStart(Unit* mTarget)
     {
 		CastTime();
-		RegisterAIUpdateEvent(_unit->GetUInt32Value(UNIT_FIELD_BASEATTACKTIME));
+		RegisterAIUpdateEvent(_unit->GetBaseAttackTime(MELEE));
     }
 
 	void CastTime()
@@ -627,7 +646,7 @@ public:
     {
     }
 
-    void OnCombatStop(Unit *mTarget)
+    void OnCombatStop(Unit* mTarget)
     {
 		CastTime();
         _unit->GetAIInterface()->setCurrentAgent(AGENT_NULL);
@@ -635,7 +654,7 @@ public:
         RemoveAIUpdateEvent();
     }
 
-    void OnDied(Unit * mKiller)
+    void OnDied(Unit* mKiller)
     {
 		CastTime();
        RemoveAIUpdateEvent();
@@ -652,7 +671,7 @@ public:
         if(_unit->GetCurrentSpell() == NULL && _unit->GetAIInterface()->GetNextTarget())
         {
 			float comulativeperc = 0;
-		    Unit *target = NULL;
+		    Unit* target = NULL;
 			for(int i=0;i<nrspells;i++)
 			{
 				spells[i].casttime--;
@@ -691,6 +710,11 @@ public:
 			}
 		}
 	}
+
+	void Destroy()
+	{
+		delete this;
+	};
 
 protected:
 
@@ -753,7 +777,7 @@ public:
     void OnCombatStart(Unit* mTarget)
     {
 		CastTime();
-		RegisterAIUpdateEvent(_unit->GetUInt32Value(UNIT_FIELD_BASEATTACKTIME));
+		RegisterAIUpdateEvent(_unit->GetBaseAttackTime(MELEE));
     }
 
 	void CastTime()
@@ -766,7 +790,7 @@ public:
     {
     }
 
-    void OnCombatStop(Unit *mTarget)
+    void OnCombatStop(Unit* mTarget)
     {
 		CastTime();
         _unit->GetAIInterface()->setCurrentAgent(AGENT_NULL);
@@ -774,7 +798,7 @@ public:
         RemoveAIUpdateEvent();
     }
 
-    void OnDied(Unit * mKiller)
+    void OnDied(Unit* mKiller)
     {
 		CastTime();
        RemoveAIUpdateEvent();
@@ -791,7 +815,7 @@ public:
         if(_unit->GetCurrentSpell() == NULL && _unit->GetAIInterface()->GetNextTarget())
         {
 			float comulativeperc = 0;
-		    Unit *target = NULL;
+		    Unit* target = NULL;
 			for(int i=0;i<nrspells;i++)
 			{
 				spells[i].casttime--;
@@ -830,6 +854,11 @@ public:
 			}
 		}
 	}
+
+	void Destroy()
+	{
+		delete this;
+	};
 
 protected:
 
@@ -892,7 +921,7 @@ public:
     void OnCombatStart(Unit* mTarget)
     {
 		CastTime();
-		RegisterAIUpdateEvent(_unit->GetUInt32Value(UNIT_FIELD_BASEATTACKTIME));
+		RegisterAIUpdateEvent(_unit->GetBaseAttackTime(MELEE));
     }
 
 	void CastTime()
@@ -905,7 +934,7 @@ public:
     {
     }
 
-    void OnCombatStop(Unit *mTarget)
+    void OnCombatStop(Unit* mTarget)
     {
 		CastTime();
         _unit->GetAIInterface()->setCurrentAgent(AGENT_NULL);
@@ -913,7 +942,7 @@ public:
         RemoveAIUpdateEvent();
     }
 
-    void OnDied(Unit * mKiller)
+    void OnDied(Unit* mKiller)
     {
 		_unit->CastSpell(_unit, spells[3].info, spells[3].instant);
 		CastTime();
@@ -947,7 +976,7 @@ public:
         if(_unit->GetCurrentSpell() == NULL && _unit->GetAIInterface()->GetNextTarget())
         {
 			float comulativeperc = 0;
-		    Unit *target = NULL;
+		    Unit* target = NULL;
 			for(int i=0;i<nrspells;i++)
 			{
 				spells[i].casttime--;
@@ -986,6 +1015,11 @@ public:
 			}
 		}
 	}
+
+	void Destroy()
+	{
+		delete this;
+	};
 
 protected:
 
@@ -1040,7 +1074,7 @@ public:
     void OnCombatStart(Unit* mTarget)
     {
 		CastTime();
-		RegisterAIUpdateEvent(_unit->GetUInt32Value(UNIT_FIELD_BASEATTACKTIME));
+		RegisterAIUpdateEvent(_unit->GetBaseAttackTime(MELEE));
     }
 
 	void CastTime()
@@ -1053,7 +1087,7 @@ public:
     {
     }
 
-    void OnCombatStop(Unit *mTarget)
+    void OnCombatStop(Unit* mTarget)
     {
 		CastTime();
         _unit->GetAIInterface()->setCurrentAgent(AGENT_NULL);
@@ -1061,7 +1095,7 @@ public:
         RemoveAIUpdateEvent();
     }
 
-    void OnDied(Unit * mKiller)
+    void OnDied(Unit* mKiller)
     {
 		CastTime();
        RemoveAIUpdateEvent();
@@ -1078,7 +1112,7 @@ public:
         if(_unit->GetCurrentSpell() == NULL && _unit->GetAIInterface()->GetNextTarget())
         {
 			float comulativeperc = 0;
-		    Unit *target = NULL;
+		    Unit* target = NULL;
 			for(int i=0;i<nrspells;i++)
 			{
 				spells[i].casttime--;
@@ -1117,6 +1151,11 @@ public:
 			}
 		}
 	}
+
+	void Destroy()
+	{
+		delete this;
+	};
 
 protected:
 
@@ -1164,7 +1203,7 @@ public:
     void OnCombatStart(Unit* mTarget)
     {
 		CastTime();
-		RegisterAIUpdateEvent(_unit->GetUInt32Value(UNIT_FIELD_BASEATTACKTIME));
+		RegisterAIUpdateEvent(_unit->GetBaseAttackTime(MELEE));
     }
 
 	void CastTime()
@@ -1177,7 +1216,7 @@ public:
     {
     }
 
-    void OnCombatStop(Unit *mTarget)
+    void OnCombatStop(Unit* mTarget)
     {
 		CastTime();
         _unit->GetAIInterface()->setCurrentAgent(AGENT_NULL);
@@ -1185,7 +1224,7 @@ public:
         RemoveAIUpdateEvent();
     }
 
-    void OnDied(Unit * mKiller)
+    void OnDied(Unit* mKiller)
     {
 		CastTime();
        RemoveAIUpdateEvent();
@@ -1202,7 +1241,7 @@ public:
         if(_unit->GetCurrentSpell() == NULL && _unit->GetAIInterface()->GetNextTarget())
         {
 			float comulativeperc = 0;
-		    Unit *target = NULL;
+		    Unit* target = NULL;
 			for(int i=0;i<nrspells;i++)
 			{
 				spells[i].casttime--;
@@ -1241,6 +1280,11 @@ public:
 			}
 		}
 	}
+
+	void Destroy()
+	{
+		delete this;
+	};
 
 protected:
 
@@ -1303,7 +1347,7 @@ public:
     {
 		_unit->CastSpell(_unit, spells[3].info, spells[3].instant);
 		CastTime();
-		RegisterAIUpdateEvent(_unit->GetUInt32Value(UNIT_FIELD_BASEATTACKTIME));
+		RegisterAIUpdateEvent(_unit->GetBaseAttackTime(MELEE));
     }
 
 	void CastTime()
@@ -1316,7 +1360,7 @@ public:
     {
     }
 
-    void OnCombatStop(Unit *mTarget)
+    void OnCombatStop(Unit* mTarget)
     {
 		CastTime();
         _unit->GetAIInterface()->setCurrentAgent(AGENT_NULL);
@@ -1324,7 +1368,7 @@ public:
         RemoveAIUpdateEvent();
     }
 
-    void OnDied(Unit * mKiller)
+    void OnDied(Unit* mKiller)
     {
 		CastTime();
        RemoveAIUpdateEvent();
@@ -1341,7 +1385,7 @@ public:
         if(_unit->GetCurrentSpell() == NULL && _unit->GetAIInterface()->GetNextTarget())
         {
 			float comulativeperc = 0;
-		    Unit *target = NULL;
+		    Unit* target = NULL;
 			for(int i=0;i<nrspells;i++)
 			{
 				spells[i].casttime--;
@@ -1380,6 +1424,11 @@ public:
 			}
 		}
 	}
+
+	void Destroy()
+	{
+		delete this;
+	};
 
 protected:
 
@@ -1442,7 +1491,7 @@ public:
     {
 		_unit->CastSpell(_unit, spells[3].info, spells[3].instant);
 		CastTime();
-		RegisterAIUpdateEvent(_unit->GetUInt32Value(UNIT_FIELD_BASEATTACKTIME));
+		RegisterAIUpdateEvent(_unit->GetBaseAttackTime(MELEE));
     }
 
 	void CastTime()
@@ -1455,7 +1504,7 @@ public:
     {
     }
 
-    void OnCombatStop(Unit *mTarget)
+    void OnCombatStop(Unit* mTarget)
     {
 		CastTime();
         _unit->GetAIInterface()->setCurrentAgent(AGENT_NULL);
@@ -1463,7 +1512,7 @@ public:
         RemoveAIUpdateEvent();
     }
 
-    void OnDied(Unit * mKiller)
+    void OnDied(Unit* mKiller)
     {
 		CastTime();
        RemoveAIUpdateEvent();
@@ -1480,7 +1529,7 @@ public:
         if(_unit->GetCurrentSpell() == NULL && _unit->GetAIInterface()->GetNextTarget())
         {
 			float comulativeperc = 0;
-		    Unit *target = NULL;
+		    Unit* target = NULL;
 			for(int i=0;i<nrspells;i++)
 			{
 				spells[i].casttime--;
@@ -1519,6 +1568,11 @@ public:
 			}
 		}
 	}
+
+	void Destroy()
+	{
+		delete this;
+	};
 
 protected:
 
@@ -1589,7 +1643,7 @@ public:
     void OnCombatStart(Unit* mTarget)
     {
 		CastTime();
-		RegisterAIUpdateEvent(_unit->GetUInt32Value(UNIT_FIELD_BASEATTACKTIME));
+		RegisterAIUpdateEvent(_unit->GetBaseAttackTime(MELEE));
     }
 
 	void CastTime()
@@ -1602,7 +1656,7 @@ public:
     {
     }
 
-    void OnCombatStop(Unit *mTarget)
+    void OnCombatStop(Unit* mTarget)
     {
 		CastTime();
         _unit->GetAIInterface()->setCurrentAgent(AGENT_NULL);
@@ -1610,7 +1664,7 @@ public:
         RemoveAIUpdateEvent();
     }
 
-    void OnDied(Unit * mKiller)
+    void OnDied(Unit* mKiller)
     {
 		CastTime();
        RemoveAIUpdateEvent();
@@ -1627,7 +1681,7 @@ public:
         if(_unit->GetCurrentSpell() == NULL && _unit->GetAIInterface()->GetNextTarget())
         {
 			float comulativeperc = 0;
-		    Unit *target = NULL;
+		    Unit* target = NULL;
 			for(int i=0;i<nrspells;i++)
 			{
 				spells[i].casttime--;
@@ -1666,6 +1720,11 @@ public:
 			}
 		}
 	}
+
+	void Destroy()
+	{
+		delete this;
+	};
 
 protected:
 
@@ -1711,7 +1770,7 @@ public:
     void OnCombatStart(Unit* mTarget)
     {
 		CastTime();
-		RegisterAIUpdateEvent(_unit->GetUInt32Value(UNIT_FIELD_BASEATTACKTIME));
+		RegisterAIUpdateEvent(_unit->GetBaseAttackTime(MELEE));
     }
 
 	void CastTime()
@@ -1724,7 +1783,7 @@ public:
     {
     }
 
-    void OnCombatStop(Unit *mTarget)
+    void OnCombatStop(Unit* mTarget)
     {
 		CastTime();
         _unit->GetAIInterface()->setCurrentAgent(AGENT_NULL);
@@ -1732,7 +1791,7 @@ public:
         RemoveAIUpdateEvent();
     }
 
-    void OnDied(Unit * mKiller)
+    void OnDied(Unit* mKiller)
     {
 		CastTime();
        RemoveAIUpdateEvent();
@@ -1749,7 +1808,7 @@ public:
         if(_unit->GetCurrentSpell() == NULL && _unit->GetAIInterface()->GetNextTarget())
         {
 			float comulativeperc = 0;
-		    Unit *target = NULL;
+		    Unit* target = NULL;
 			for(int i=0;i<nrspells;i++)
 			{
 				spells[i].casttime--;
@@ -1788,6 +1847,11 @@ public:
 			}
 		}
 	}
+
+	void Destroy()
+	{
+		delete this;
+	};
 
 protected:
 
@@ -1833,7 +1897,7 @@ public:
     void OnCombatStart(Unit* mTarget)
     {
 		CastTime();
-		RegisterAIUpdateEvent(_unit->GetUInt32Value(UNIT_FIELD_BASEATTACKTIME));
+		RegisterAIUpdateEvent(_unit->GetBaseAttackTime(MELEE));
     }
 
 	void CastTime()
@@ -1846,7 +1910,7 @@ public:
     {
     }
 
-    void OnCombatStop(Unit *mTarget)
+    void OnCombatStop(Unit* mTarget)
     {
 		CastTime();
         _unit->GetAIInterface()->setCurrentAgent(AGENT_NULL);
@@ -1854,7 +1918,7 @@ public:
         RemoveAIUpdateEvent();
     }
 
-    void OnDied(Unit * mKiller)
+    void OnDied(Unit* mKiller)
     {
 		CastTime();
        RemoveAIUpdateEvent();
@@ -1871,7 +1935,7 @@ public:
         if(_unit->GetCurrentSpell() == NULL && _unit->GetAIInterface()->GetNextTarget())
         {
 			float comulativeperc = 0;
-		    Unit *target = NULL;
+		    Unit* target = NULL;
 			for(int i=0;i<nrspells;i++)
 			{
 				spells[i].casttime--;
@@ -1910,6 +1974,11 @@ public:
 			}
 		}
 	}
+
+	void Destroy()
+	{
+		delete this;
+	};
 
 protected:
 
@@ -1971,7 +2040,7 @@ public:
     void OnCombatStart(Unit* mTarget)
     {
 		CastTime();
-		RegisterAIUpdateEvent(_unit->GetUInt32Value(UNIT_FIELD_BASEATTACKTIME));
+		RegisterAIUpdateEvent(_unit->GetBaseAttackTime(MELEE));
 		_unit->SendChatMessage(CHAT_MSG_MONSTER_YELL, LANG_UNIVERSAL, "I predict a painful death.");
 		_unit->PlaySoundToSet(11101);
     }
@@ -1982,7 +2051,7 @@ public:
 			spells[i].casttime = spells[i].cooldown;
 	}
 
-    void OnCombatStop(Unit *mTarget)
+    void OnCombatStop(Unit* mTarget)
     {
 		CastTime();
         _unit->GetAIInterface()->setCurrentAgent(AGENT_NULL);
@@ -2004,14 +2073,14 @@ public:
 				_unit->PlaySoundToSet(11102);
 				break;
 			case 1:
-				_unit->SendChatMessage(CHAT_MSG_MONSTER_YELL, LANG_UNIVERSAL, "Yes, the only magical outcome!");	// magical outcome?
+				_unit->SendChatMessage(CHAT_MSG_MONSTER_YELL, LANG_UNIVERSAL, "Yes, the only logical outcome!");	// magical outcome? // Logical Outcome
 				_unit->PlaySoundToSet(11103);
 				break;
 			}
 		}
     }
 
-    void OnDied(Unit * mKiller)
+    void OnDied(Unit* mKiller)
     {
 		CastTime();
        RemoveAIUpdateEvent();
@@ -2036,7 +2105,7 @@ public:
 			_unit->PlaySoundToSet(11104);
 			break;
 		case 1:
-			_unit->SendChatMessage(CHAT_MSG_MONSTER_YELL, LANG_UNIVERSAL, "If my devision is correct, you should be quiet dead!");	// needs checks
+			_unit->SendChatMessage(CHAT_MSG_MONSTER_YELL, LANG_UNIVERSAL, "If my division is correct, you should be quiet dead!");	// corrected
 			_unit->PlaySoundToSet(11105);
 			break;
 		}
@@ -2047,7 +2116,7 @@ public:
         if(_unit->GetCurrentSpell() == NULL && _unit->GetAIInterface()->GetNextTarget())
         {
 			float comulativeperc = 0;
-		    Unit *target = NULL;
+		    Unit* target = NULL;
 			for(int i=0;i<nrspells;i++)
 			{
 				spells[i].casttime--;
@@ -2089,6 +2158,11 @@ public:
 			}
 		}
 	}
+
+	void Destroy()
+	{
+		delete this;
+	};
 
 protected:
 
@@ -2152,8 +2226,8 @@ public:
     void OnCombatStart(Unit* mTarget)
     {
 		CastTime();
-		RegisterAIUpdateEvent(_unit->GetUInt32Value(UNIT_FIELD_BASEATTACKTIME));
-		_unit->SendChatMessage(CHAT_MSG_MONSTER_YELL, LANG_UNIVERSAL, "You have approximately 5 seconds to live!");	// needs checks!
+		RegisterAIUpdateEvent(_unit->GetBaseAttackTime(MELEE));
+		_unit->SendChatMessage(CHAT_MSG_MONSTER_YELL, LANG_UNIVERSAL, "You have approximately five seconds to live!");	// corrected
 		_unit->PlaySoundToSet(11109);
     }
 
@@ -2163,7 +2237,7 @@ public:
 			spells[i].casttime = spells[i].cooldown;
 	}
 
-    void OnCombatStop(Unit *mTarget)
+    void OnCombatStop(Unit* mTarget)
     {
 		CastTime();
         _unit->GetAIInterface()->setCurrentAgent(AGENT_NULL);
@@ -2181,22 +2255,22 @@ public:
 			switch (RandomSpeach)
 			{
 			case 0:
-				_unit->SendChatMessage(CHAT_MSG_MONSTER_YELL, LANG_UNIVERSAL, "Afford gun conclusion!");
+				_unit->SendChatMessage(CHAT_MSG_MONSTER_YELL, LANG_UNIVERSAL, "A foregone conclusion!"); // fixed 
 				_unit->PlaySoundToSet(11110);
 				break;
 			case 1:
-				_unit->SendChatMessage(CHAT_MSG_MONSTER_YELL, LANG_UNIVERSAL, "The processing will continue a schedule!");
+				_unit->SendChatMessage(CHAT_MSG_MONSTER_YELL, LANG_UNIVERSAL, "The processing will continue as scheduled!"); // fixed
 				_unit->PlaySoundToSet(11111);
 				break;
 			}
 		}
     }
 
-    void OnDied(Unit * mKiller)
+    void OnDied(Unit* mKiller)
     {
 		CastTime();
        RemoveAIUpdateEvent();
-		_unit->SendChatMessage(CHAT_MSG_MONSTER_YELL, LANG_UNIVERSAL, "My calculations... did not...");	// ??
+		_unit->SendChatMessage(CHAT_MSG_MONSTER_YELL, LANG_UNIVERSAL, "My calculations... did not...");	// Verified
 		_unit->PlaySoundToSet(11114);
     }
 
@@ -2214,7 +2288,7 @@ public:
 		{
 		case 0:
 			{
-				_unit->SendChatMessage(CHAT_MSG_MONSTER_YELL, LANG_UNIVERSAL, "With the precise <missing_rest_of_text>");	// !!
+				_unit->SendChatMessage(CHAT_MSG_MONSTER_YELL, LANG_UNIVERSAL, "With the precise angle and velocity...");	// Corrected
 				_unit->PlaySoundToSet(11112);
 			}break;
 		case 1:
@@ -2230,7 +2304,7 @@ public:
         if(_unit->GetCurrentSpell() == NULL && _unit->GetAIInterface()->GetNextTarget())
         {
 			float comulativeperc = 0;
-		    Unit *target = NULL;
+		    Unit* target = NULL;
 			for(int i=0;i<nrspells;i++)
 			{
 				spells[i].casttime--;
@@ -2274,6 +2348,11 @@ public:
 			}
 		}
 	}
+
+	void Destroy()
+	{
+		delete this;
+	};
 
 protected:
 
@@ -2348,7 +2427,7 @@ public:
     void OnCombatStart(Unit* mTarget)
     {
 		CastTime();
-		RegisterAIUpdateEvent(_unit->GetUInt32Value(UNIT_FIELD_BASEATTACKTIME));
+		RegisterAIUpdateEvent(_unit->GetBaseAttackTime(MELEE));
 		_unit->SendChatMessage(CHAT_MSG_MONSTER_YELL, LANG_UNIVERSAL, "You should split while you can.");
 		_unit->PlaySoundToSet(11162);
     }
@@ -2359,7 +2438,7 @@ public:
 			spells[i].casttime = spells[i].cooldown;
 	}
 
-    void OnCombatStop(Unit *mTarget)
+    void OnCombatStop(Unit* mTarget)
     {
 		CastTime();
         _unit->GetAIInterface()->setCurrentAgent(AGENT_NULL);
@@ -2388,7 +2467,7 @@ public:
 		}
     }
 
-    void OnDied(Unit * mKiller)
+    void OnDied(Unit* mKiller)
     {
 		CastTime();
        RemoveAIUpdateEvent();
@@ -2407,7 +2486,7 @@ public:
         if(_unit->GetCurrentSpell() == NULL && _unit->GetAIInterface()->GetNextTarget())
         {
 			float comulativeperc = 0;
-		    Unit *target = NULL;
+		    Unit* target = NULL;
 			for(int i=0;i<nrspells;i++)
 			{
 				spells[i].casttime--;
@@ -2446,6 +2525,11 @@ public:
 			}
 		}
 	}
+
+	void Destroy()
+	{
+		delete this;
+	};
 
 protected:
 
@@ -2519,7 +2603,7 @@ public:
     {
 		SummonTimer = 4;
 		CastTime();
-		RegisterAIUpdateEvent(_unit->GetUInt32Value(UNIT_FIELD_BASEATTACKTIME));
+		RegisterAIUpdateEvent(_unit->GetBaseAttackTime(MELEE));
 		//_unit->CastSpell(_unit, spells[0].info, spells[0].instant);
 		_unit->SendChatMessage(CHAT_MSG_MONSTER_YELL, LANG_UNIVERSAL, "Don't value your life very much, do you?");
 		_unit->PlaySoundToSet(11186);
@@ -2531,7 +2615,7 @@ public:
 			spells[i].casttime = spells[i].cooldown;
 	}
 
-    void OnCombatStop(Unit *mTarget)
+    void OnCombatStop(Unit* mTarget)
     {
 		SummonTimer = 4;
 		CastTime();
@@ -2550,18 +2634,18 @@ public:
 			switch (RandomSpeach)
 			{
 			case 0:
-				_unit->SendChatMessage(CHAT_MSG_MONSTER_YELL, LANG_UNIVERSAL, "And don't come back!");	// checks here
+				_unit->SendChatMessage(CHAT_MSG_MONSTER_YELL, LANG_UNIVERSAL, "And don't come back!");	// Verified
 				_unit->PlaySoundToSet(11187);
 				break;
 			case 1:
-				_unit->SendChatMessage(CHAT_MSG_MONSTER_YELL, LANG_UNIVERSAL, "<missing_text>");	// ? ? ! !
+				_unit->SendChatMessage(CHAT_MSG_MONSTER_YELL, LANG_UNIVERSAL, "Endala finel endal!");	// Added
 				_unit->PlaySoundToSet(11188);
 				break;
 			}
 		}
     }
 
-    void OnDied(Unit * mKiller)
+    void OnDied(Unit* mKiller)
     {
 		SummonTimer = 4;
 		CastTime();
@@ -2609,7 +2693,7 @@ public:
         if(_unit->GetCurrentSpell() == NULL && _unit->GetAIInterface()->GetNextTarget())
         {
 			float comulativeperc = 0;
-		    Unit *target = NULL;
+		    Unit* target = NULL;
 			for(int i=0;i<nrspells;i++)
 			{
 				spells[i].casttime--;
@@ -2651,6 +2735,11 @@ public:
 			}
 		}
 	}
+
+	void Destroy()
+	{
+		delete this;
+	};
 
 protected:
 
@@ -2742,7 +2831,7 @@ public:
     {
 		SummonTimer=rand()%16+30;
 		CastTime();
-		RegisterAIUpdateEvent(_unit->GetUInt32Value(UNIT_FIELD_BASEATTACKTIME));
+		RegisterAIUpdateEvent(_unit->GetBaseAttackTime(MELEE));
 		_unit->SendChatMessage(CHAT_MSG_MONSTER_YELL, LANG_UNIVERSAL, "We are on a strict timetable. You will not interfere!");
 		_unit->PlaySoundToSet(11193);
     }
@@ -2753,7 +2842,7 @@ public:
 			spells[i].casttime = spells[i].cooldown;
 	}
 
-    void OnCombatStop(Unit *mTarget)
+    void OnCombatStop(Unit* mTarget)
     {
 		SummonTimer=rand()%16+30;
 		CastTime();
@@ -2783,7 +2872,7 @@ public:
 		}
     }
 
-    void OnDied(Unit * mKiller)
+    void OnDied(Unit* mKiller)
     {
 		SummonTimer=rand()%16+30;
 		CastTime();
@@ -2804,7 +2893,7 @@ public:
 			_unit->CastSpell(_unit, spells[6].info, spells[6].instant);
 			SummonTimer=rand()%16+30;	// 30 - 45
 			_unit->SendChatMessage(CHAT_MSG_MONSTER_YELL, LANG_UNIVERSAL, "Time to supplement my work force.");
-			_unit->PlaySoundToSet(11196);;
+			_unit->PlaySoundToSet(11196);
 		}
 
 		float val = (float)RandomFloat(100.0f);
@@ -2833,7 +2922,7 @@ public:
         if(_unit->GetCurrentSpell() == NULL && _unit->GetAIInterface()->GetNextTarget())
         {
 			float comulativeperc = 0;
-		    Unit *target = NULL;
+		    Unit* target = NULL;
 			for(int i=0;i<nrspells;i++)
 			{
 				spells[i].casttime--;
@@ -2877,6 +2966,11 @@ public:
 			}
 		}
 	}
+
+	void Destroy()
+	{
+		delete this;
+	};
 
 protected:
 

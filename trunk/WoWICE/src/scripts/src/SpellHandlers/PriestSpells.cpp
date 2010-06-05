@@ -13,14 +13,13 @@
  * this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "StdAfx.h"
 #include "Setup.h"
 
 bool Penance(uint32 i, Spell * pSpell)
 {
 	if( !pSpell->p_caster || !pSpell->p_caster->isAlive() || 
 		!pSpell->GetUnitTarget() || !pSpell->GetUnitTarget()->isAlive() )
-		return false;
+		return true;
 
 	Unit *target = pSpell->GetUnitTarget();
 	Player *player = pSpell->p_caster;
@@ -77,9 +76,13 @@ bool Penance(uint32 i, Spell * pSpell)
 
 void SetupPriestSpells(ScriptMgr * mgr)
 {
-    mgr->register_dummy_spell(47540, &Penance);
-	mgr->register_dummy_spell(53005, &Penance);
-	mgr->register_dummy_spell(53006, &Penance);
-	mgr->register_dummy_spell(53007, &Penance);
+	uint32 PenanceIds[] =
+	{
+		47540, // Rank 1
+		53005, // Rank 2
+		53006, // Rank 3
+		53007, // Rank 4
+		0,
+	};
+    mgr->register_dummy_spell(PenanceIds, &Penance);
 }
-

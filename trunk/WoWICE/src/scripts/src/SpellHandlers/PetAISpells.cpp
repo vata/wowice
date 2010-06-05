@@ -1,4 +1,3 @@
-#include "StdAfx.h"
 #include "Setup.h"
 
 class DancingRuneWeaponAI : public CreatureAIScript
@@ -30,7 +29,7 @@ public:
 
 	void OnCombatStart(Unit* mTarget) 
 	{
-		RegisterAIUpdateEvent(_unit->GetUInt32Value(UNIT_FIELD_BASEATTACKTIME));
+		RegisterAIUpdateEvent(_unit->GetBaseAttackTime(MELEE));
 		dpsCycle = 0;
 	}
 	

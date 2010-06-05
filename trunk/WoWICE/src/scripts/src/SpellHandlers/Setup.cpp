@@ -13,7 +13,6 @@
  * this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "StdAfx.h"
 #include "Setup.h"
 #define SKIP_ALLOCATOR_SHARING 1
 #include <ScriptSetup.h>
@@ -30,11 +29,14 @@ extern "C" SCRIPT_DECL void _exp_script_register(ScriptMgr* mgr)
     SetupWarriorSpells(mgr);
     SetupHunterSpells(mgr);
     SetupItemSpells_1(mgr);
+	SetupQuestItems(mgr); //this was commented for crash reason, let see what are those...
     SetupMageSpells(mgr);
     SetupPaladinSpells(mgr);
     SetupRogueSpells(mgr);
 	SetupPriestSpells(mgr);
 	SetupPetAISpells(mgr);
+	SetupDruidSpells(mgr);
+	SetupDeathKnightSpells(mgr);
 }
 
 #ifdef WIN32

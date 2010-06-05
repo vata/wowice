@@ -13,7 +13,6 @@
  * this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "StdAfx.h"
 #include "Setup.h"
 
 //Alice : Correct formula for Rogue - Preparation
@@ -31,8 +30,13 @@ bool Preparation(uint32 i, Spell * pSpell)
 	pSpell->p_caster->ClearCooldownForSpell( 1857 );        // Vanish Rank 2  
 	pSpell->p_caster->ClearCooldownForSpell( 26889 );       // Vanish Rank 3  
 	pSpell->p_caster->ClearCooldownForSpell( 14177 );       // Cold Blood  
-	pSpell->p_caster->ClearCooldownForSpell( 14183 );       // Premeditation  
 	pSpell->p_caster->ClearCooldownForSpell( 36554 );       // Shadowstep  
+	if( pSpell->p_caster->HasAura( 56819 ) )                // Glyph of Preparation item = 42968 casts 57127 that apply aura 56819.
+	{
+		pSpell->p_caster->ClearCooldownForSpell( 13877 );   // Blade Flurry
+		pSpell->p_caster->ClearCooldownForSpell( 51722 );   // Dismantle
+		pSpell->p_caster->ClearCooldownForSpell( 1766 );    // Kick
+	}
 	return true;  
 }
 
@@ -47,7 +51,7 @@ bool Shiv(uint32 i, Spell *pSpell){
 		Item *it = pSpell->p_caster->GetItemInterface()->GetInventoryItem( EQUIPMENT_SLOT_OFFHAND );
 		if(!it) return true;
 
-		EnchantmentInstance * ench = it->GetEnchantment( 1 ); // temp enchantment slot
+		EnchantmentInstance * ench = it->GetEnchantment( TEMP_ENCHANTMENT_SLOT );
 		if(ench) {
 			EnchantEntry* Entry = ench->Enchantment;
 			for( uint32 c = 0; c < 3; c++ )
@@ -97,7 +101,7 @@ bool Shadowstep(uint32 i, Spell* pSpell)
 
 	if( unitTarget->GetTypeId() == TYPEID_UNIT )
 	{
-		if( unitTarget->GetUInt64Value( UNIT_FIELD_TARGET ) != 0 )
+		if( unitTarget->GetTargetGUID() != 0 )
 		{
 			/* We're chasing a target. We have to calculate the angle to this target, this is our orientation. */
 			ang = m_caster->calcAngle(m_caster->GetPositionX(), m_caster->GetPositionY(), unitTarget->GetPositionX(), unitTarget->GetPositionY());
@@ -124,22 +128,43 @@ bool Shadowstep(uint32 i, Spell* pSpell)
 
 	/* Send a movement packet to "charge" at this target. Similar to warrior charge. */
 	p_caster->z_axisposition = 0.0f;
-	p_caster->SafeTeleport(p_caster->GetMapId(), p_caster->GetInstanceID(), LocationVector(new_x, new_y, (unitTarget->GetPositionZ() + 0.1f), unitTarget->GetOrientation()));
+	p_caster->SafeTeleport(p_caster->GetMapId(), p_caster->GetInstanceID(), LocationVector(new_x, new_y, (unitTarget->GetPositionZ() + 0.1f), ang));
 
 	return true;
 }
 
+bool ImprovedSprint(uint32 i, Spell* pSpell)
+{
+	if( i == 0 )
+	{
+		Unit *target = pSpell->GetUnitTarget();
+		if (target == NULL)
+			return true;
+
+		target->RemoveAllAurasByMechanic(MECHANIC_ENSNARED, -1, true);
+		target->RemoveAllAurasByMechanic(MECHANIC_ROOTED, -1, true);
+	}
+	
+	return true;
+}
 
 void SetupRogueSpells(ScriptMgr * mgr)
 {
 	mgr->register_dummy_spell(5938, &Shiv);
 	mgr->register_dummy_spell(14185, &Preparation);
-	mgr->register_dummy_spell(36554, &Shadowstep);
-	mgr->register_dummy_spell(36563, &Shadowstep);
-	mgr->register_dummy_spell(41176, &Shadowstep);
-	mgr->register_dummy_spell(44373, &Shadowstep);
-	mgr->register_dummy_spell(45273, &Shadowstep);
-	mgr->register_dummy_spell(46463, &Shadowstep);
-	mgr->register_dummy_spell(55965, &Shadowstep);
-	mgr->register_dummy_spell(55966, &Shadowstep);
+	uint32 ShadowstepIds[] =
+	{
+		36554,
+		36563,
+		41176,
+		44373,
+		45273,
+		46463,
+		55965,
+		55966,
+		0,
+	};
+	mgr->register_dummy_spell(ShadowstepIds, &Shadowstep); // Alleycat - This should REALLY be handled in the core. It's just a hack fix here.
+
+	mgr->register_dummy_spell(30918, &ImprovedSprint);
 }

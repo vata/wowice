@@ -13,7 +13,6 @@
  * this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "StdAfx.h"
 #include "Setup.h"
 
 /************************************************************************/
@@ -33,16 +32,8 @@
 #define YELL_TIMER				260		// 4 minutes and 20 seconds
 #define ACTIVE_CUBES_TO_BANISH	5		// 5 cubes
 
-// Coords structure to select/list some units by using arrays and vector tables
-struct Coords
-{
-	float x;
-	float y;
-	float z;
-};
-
 // Channelers Coords is list of spawn points of all 5 channelers casting spell on Magtheridon
-struct Coords Channelers[]=
+static Location Channelers[]=
 {
 	{ -55.638000f,   1.869050f, 0.630946f },
 	{ -31.861300f, -35.919399f, 0.630945f },
@@ -52,7 +43,7 @@ struct Coords Channelers[]=
 };
 
 // Columns coords used for Cave In spell to give "collapse" effect
-struct Coords Columns[]=
+static Location Columns[]=
 {
 	{  17.7522f,  34.5464f,  0.144816f },
 	{  19.0966f, -29.2772f,  0.133036f },
@@ -63,7 +54,7 @@ struct Coords Columns[]=
 };
 
 // Cave In Target Triggers coords
-struct Coords CaveInPos[]=
+static Location CaveInPos[]=
 {
 	{ -37.183399f, -19.491400f,  0.312451f },
 	{ -11.374900f, -29.121401f,  0.312463f },
@@ -74,7 +65,7 @@ struct Coords CaveInPos[]=
 };
 
 // Cube Triggers coords
-struct Coords CubeTriggers[]=
+static Location CubeTriggers[]=
 {
 	{ -54.277199f,   2.343740f, 2.404560f },
 	{ -31.471001f, -34.155998f, 2.335100f },
@@ -117,9 +108,9 @@ public:
 		_unit->GetAIInterface()->SetAllowedToEnterCombat(false);
 		RegisterAIUpdateEvent(1000);
 		// We set Gate (if exists) as opened
-		GameObject* Gate = _unit->GetMapMgr()->GetInterface()->GetGameObjectNearestCoords(-72.5866f, 1.559f, 0.0f, 183847);
+		GameObject*  Gate = _unit->GetMapMgr()->GetInterface()->GetGameObjectNearestCoords(-72.5866f, 1.559f, 0.0f, 183847);
 		if (Gate)
-			Gate->SetByte(GAMEOBJECT_BYTES_1, 0, 0);
+			Gate->SetState(0);
 	}
 
 	void AIUpdate()
@@ -196,8 +187,8 @@ public:
 				Magtheridon = _unit->GetMapMgr()->GetInterface()->GetCreatureNearestCoords(-22.657900f, 2.159050f, -0.345542f, 17257);
 				if (Magtheridon && Channeler->isAlive() && !Channeler->GetAIInterface()->GetNextTarget())
 				{
-					Channeler->SetUInt64Value(UNIT_FIELD_CHANNEL_OBJECT, Magtheridon->GetGUID());
-					Channeler->SetUInt32Value(UNIT_CHANNEL_SPELL, SHADOW_GRASP);
+					Channeler->SetChannelSpellTargetGUID(Magtheridon->GetGUID());
+					Channeler->SetChannelSpellId(SHADOW_GRASP);
 				}
 			}
 		}
@@ -216,7 +207,7 @@ public:
 				}
 
 				// Safe check to prevent memory corruptions
-				Unit *Channeler = ChannelersTable[i];
+				Unit* Channeler = ChannelersTable[i];
 				if ( Channeler && !Channeler->IsInWorld() )
 				{
 					ChannelersTable[i] = NULL;
@@ -244,9 +235,7 @@ public:
 						if (BuffedChanneler && BuffedChanneler != Channeler && BuffedChanneler->isAlive())
 						{
 							// We apply Soul Transfer Aura to channeler who should be buffed
-							Aura * aura = new Aura(dbcSpell.LookupEntry(SOUL_TRANSFER), -1, BuffedChanneler, BuffedChanneler);
-							if (!aura)
-								return;
+							Aura* aura = new Aura( dbcSpell.LookupEntry(SOUL_TRANSFER), (uint32)-1, BuffedChanneler, BuffedChanneler );
 							BuffedChanneler->AddAura(aura);
 						}
 					}
@@ -333,9 +322,9 @@ public:
 					Magtheridon->RemoveAura(BANISH);
 
 				// If Gate is found we close it
-				GameObject* Gate = _unit->GetMapMgr()->GetInterface()->GetGameObjectNearestCoords(-72.5866f, 1.559f, 0.0f, 183847);
+				GameObject*  Gate = _unit->GetMapMgr()->GetInterface()->GetGameObjectNearestCoords(-72.5866f, 1.559f, 0.0f, 183847);
 				if (Gate)
-					Gate->SetByte(GAMEOBJECT_BYTES_1, 0, 1);
+					Gate->SetState(1);
 			}
 		}
 		// We use different functions for each phase
@@ -388,7 +377,7 @@ public:
 				Magtheridon = _unit->GetMapMgr()->GetInterface()->GetCreatureNearestCoords(-22.657900f, 2.159050f, -0.345542f, 17257);
 				if (Magtheridon)
 				{
-					Aura *aura = Magtheridon->FindAura(BANISH);
+					Aura* aura = Magtheridon->FindAura(BANISH);
 					if (aura)
 					{
 						EventStarted = false;
@@ -397,7 +386,7 @@ public:
 					}
 				}
 				// Script creates vector "list" of alive channelers and counts those In Combat
-				Unit *Channeler = NULL;
+				Unit* Channeler = NULL;
 				size_t AliveInCombat = 0;
 				std::vector <Unit*> AliveChannelers;
 				for (size_t i = 0; i < ChannelersTable.size(); i++)
@@ -420,9 +409,9 @@ public:
 				// If less than half of alive channelers is out of combat we open Magtheridon's gate
 				if (AliveInCombat < AliveChannelers.size()/2)
 				{
-					GameObject* Gate = _unit->GetMapMgr()->GetInterface()->GetGameObjectNearestCoords(-72.5866f, 1.559f, 0.0f, 183847);
+					GameObject*  Gate = _unit->GetMapMgr()->GetInterface()->GetGameObjectNearestCoords(-72.5866f, 1.559f, 0.0f, 183847);
 					if (Gate)
-						Gate->SetByte(GAMEOBJECT_BYTES_1, 0, 0);
+						Gate->SetState(0);
 				}
 				// After doing our job we can clear temporary channeler list
 				AliveChannelers.clear();
@@ -433,6 +422,11 @@ public:
 			}
 		}
     }
+
+	void Destroy()
+	{
+		delete this;
+	};
 
 protected:
 
@@ -452,15 +446,15 @@ protected:
 class ManticronCubeGO : public GameObjectAIScript
 {
 public:
-	ManticronCubeGO(GameObject* pGameObject) : GameObjectAIScript(pGameObject)
+	ManticronCubeGO(GameObject*  pGameObject) : GameObjectAIScript(pGameObject)
 	{
 		Magtheridon = CubeTrigger = NULL;
 	}
 
-	void OnActivate(Player * pPlayer)
+	void OnActivate(Player*  pPlayer)
 	{
 		// We check if player has aura that prevents anyone from using this GO
-		Aura *aura = pPlayer->FindAura(MIND_EXHAUSTION);
+		Aura* aura = pPlayer->FindAura(MIND_EXHAUSTION);
 		if (aura)
 			return;
 
@@ -493,15 +487,15 @@ public:
 			return;
 
 		// We check if Cube Trigger is not in use
-		if (CubeTrigger && CubeTrigger->GetUInt32Value(UNIT_CHANNEL_SPELL) == SHADOW_GRASP && CubeTrigger->GetUInt64Value(UNIT_FIELD_CHANNEL_OBJECT) == Magtheridon->GetGUID())
+		if (CubeTrigger && CubeTrigger->GetChannelSpellId() == SHADOW_GRASP && CubeTrigger->GetUInt64Value(UNIT_FIELD_CHANNEL_OBJECT) == Magtheridon->GetGUID())
 			return;
 
 		// We set player to channel spell "on Cube"
 		pPlayer->CastSpell(pPlayer, dbcSpell.LookupEntry(SHADOW_GRASP2), false);
 
 		// We trigger channeling spell on Magtheridon for Cube Trigger
-		CubeTrigger->SetUInt64Value(UNIT_FIELD_CHANNEL_OBJECT, Magtheridon->GetGUID());
-		CubeTrigger->SetUInt32Value(UNIT_CHANNEL_SPELL, SHADOW_GRASP);
+		CubeTrigger->SetChannelSpellTargetGUID(Magtheridon->GetGUID());
+		CubeTrigger->SetChannelSpellId(SHADOW_GRASP);
 
 		// We save player data in pointer as well as his position for further use
 		x = pPlayer->GetPositionX();
@@ -518,15 +512,12 @@ public:
 
 	void AIUpdate()
 	{
-		if (!CubeTrigger)
-			return;
-
 		// Channeler settings check
 		// We check if pointer has Channeler data and if so we check if that channeler is alive, in world and if channels Cube
 		if (Channeler && (!Channeler->isAlive() || !Channeler->IsInWorld()))
 		{
-			CubeTrigger->SetUInt64Value(UNIT_FIELD_CHANNEL_OBJECT, 0);
-			CubeTrigger->SetUInt32Value(UNIT_CHANNEL_SPELL, 0);
+			CubeTrigger->SetChannelSpellTargetGUID(0);
+			CubeTrigger->SetChannelSpellId(0);
 
 			Channeler = NULL;
 		}
@@ -539,8 +530,8 @@ public:
 		// If player doesn't have aura we interrupt channeling
 		if (Channeler && (!aura || !Channeler->GetUInt64Value(UNIT_FIELD_CHANNEL_OBJECT)))
 		{
-			CubeTrigger->SetUInt64Value(UNIT_FIELD_CHANNEL_OBJECT, 0);
-			CubeTrigger->SetUInt32Value(UNIT_CHANNEL_SPELL, 0);
+			CubeTrigger->SetChannelSpellTargetGUID(0);
+			CubeTrigger->SetChannelSpellId(0);
 
 			// If player's channeling went over (and he was hit before) aura won't be removed when channeling ends - core bug
 			Channeler->RemoveAura(SHADOW_GRASP2);
@@ -549,14 +540,14 @@ public:
 		}
 
 		// Safe check to prevent crashes when Channeler was nulled
-		if (Magtheridon && !Channeler)
+		if (!Channeler)
 		{
 			uint32 Counter = 0;
 			for (int i = 0; i < 5; i++)
 			{
 				Unit* GlobalCubeTrigger = NULL;
 				GlobalCubeTrigger = _gameobject->GetMapMgr()->GetInterface()->GetCreatureNearestCoords(CubeTriggers[i].x, CubeTriggers[i].y, CubeTriggers[i].z, 17376);
-				if (GlobalCubeTrigger && GlobalCubeTrigger->GetUInt32Value(UNIT_CHANNEL_SPELL) == SHADOW_GRASP && CubeTrigger->GetUInt64Value(UNIT_FIELD_CHANNEL_OBJECT) == Magtheridon->GetGUID())
+				if (GlobalCubeTrigger && GlobalCubeTrigger->GetChannelSpellId() == SHADOW_GRASP && CubeTrigger->GetUInt64Value(UNIT_FIELD_CHANNEL_OBJECT) == Magtheridon->GetGUID())
 					Counter++;
 			}
 
@@ -574,8 +565,8 @@ public:
 		// We check if Magtheridon is spawned, is in world and so on
 		if (!Magtheridon || (Magtheridon && (!Magtheridon->isAlive() || !Magtheridon->IsInWorld() || !Magtheridon->GetAIInterface()->GetNextTarget())))
 		{
-			CubeTrigger->SetUInt64Value(UNIT_FIELD_CHANNEL_OBJECT, 0);
-			CubeTrigger->SetUInt32Value(UNIT_CHANNEL_SPELL, 0);
+			CubeTrigger->SetChannelSpellTargetGUID(0);
+			CubeTrigger->SetChannelSpellId(0);
 		}
 
 		// We count Cubes that channel spell on Magtheridon
@@ -584,13 +575,9 @@ public:
 		{
 			Unit* GlobalCubeTrigger = NULL;
 			GlobalCubeTrigger = _gameobject->GetMapMgr()->GetInterface()->GetCreatureNearestCoords(CubeTriggers[i].x, CubeTriggers[i].y, CubeTriggers[i].z, 17376);
-			if (GlobalCubeTrigger && GlobalCubeTrigger->GetUInt32Value(UNIT_CHANNEL_SPELL) == SHADOW_GRASP && CubeTrigger->GetUInt64Value(UNIT_FIELD_CHANNEL_OBJECT) == Magtheridon->GetGUID())
+			if (GlobalCubeTrigger && GlobalCubeTrigger->GetChannelSpellId() == SHADOW_GRASP && CubeTrigger->GetUInt64Value(UNIT_FIELD_CHANNEL_OBJECT) == Magtheridon->GetGUID())
 				Counter++;
 		}
-
-		// Null pointer check
-		if (!Magtheridon)
-			return;
 
 		// If it's the first and the only one Cube triggering spell we use Magtheridon's yell
 		if (Counter == 1 && !MagYell)
@@ -612,9 +599,7 @@ public:
 				Magtheridon->GetCurrentSpell()->cancel();
 
 			// We add channeling player aura that does not allow that go to be used again in 1.3 min
-			Aura *aura = new Aura(dbcSpell.LookupEntry(MIND_EXHAUSTION), 78000, Magtheridon, Channeler);
-			if (!aura)
-				return;
+			Aura* aura = new Aura( dbcSpell.LookupEntry(MIND_EXHAUSTION),(uint32)78000, Magtheridon, Channeler );
 			Channeler->AddAura(aura);
 
 			MagYell = true;
@@ -632,7 +617,7 @@ public:
 
 	}
 
-	static GameObjectAIScript *Create(GameObject * GO) { return new ManticronCubeGO(GO); }
+	static GameObjectAIScript *Create(GameObject*  GO) { return new ManticronCubeGO(GO); }
 
 protected:
 
@@ -755,20 +740,20 @@ public:
 
 	void OnCombatStart(Unit* mTarget)
     {
-        RegisterAIUpdateEvent(_unit->GetUInt32Value(UNIT_FIELD_BASEATTACKTIME));
+        RegisterAIUpdateEvent(_unit->GetBaseAttackTime(MELEE));
 
 		for (int i = 0; i < nrspells; i++)
 			spells[i].casttime = 0;
     }
 
-    void OnCombatStop(Unit *mTarget)
+    void OnCombatStop(Unit* mTarget)
     {
         _unit->GetAIInterface()->setCurrentAgent(AGENT_NULL);
         _unit->GetAIInterface()->SetAIState(STATE_IDLE);
         RemoveAIUpdateEvent();
     }
 
-	void OnDied(Unit * mKiller)
+	void OnDied(Unit* mKiller)
     {
 		RemoveAIUpdateEvent();
     }
@@ -784,7 +769,7 @@ public:
         if(_unit->GetCurrentSpell() == NULL && _unit->GetAIInterface()->GetNextTarget())
         {
 			float comulativeperc = 0;
-		    Unit *target = NULL;
+		    Unit* target = NULL;
 			for(int i=0;i<nrspells;i++)
 			{
 				if(!spells[i].perctrigger) continue;
@@ -836,7 +821,7 @@ public:
 				if (((spells[i].targettype == TARGET_RANDOM_FRIEND && isFriendly(_unit, (*itr))) || (spells[i].targettype != TARGET_RANDOM_FRIEND && isHostile(_unit, (*itr)) && (*itr) != _unit)) && ((*itr)->GetTypeId()== TYPEID_UNIT || (*itr)->GetTypeId() == TYPEID_PLAYER) && (*itr)->GetInstanceID() == _unit->GetInstanceID()) // isAttackable(_unit, (*itr)) && 
 				{
 					Unit* RandomTarget = NULL;
-					RandomTarget = (Unit*)(*itr);
+					RandomTarget = TO_UNIT(*itr);
 
 					if (RandomTarget->isAlive() && _unit->GetDistance2dSq(RandomTarget) >= mindist2cast*mindist2cast && _unit->GetDistance2dSq(RandomTarget) <= maxdist2cast*maxdist2cast && ((RandomTarget->GetHealthPct() >= minhp2cast && RandomTarget->GetHealthPct() <= maxhp2cast && spells[i].targettype == TARGET_RANDOM_FRIEND) || (_unit->GetAIInterface()->getThreatByPtr(RandomTarget) > 0 && isHostile(_unit, RandomTarget))))
 					{
@@ -853,7 +838,7 @@ public:
 
 			size_t RandTarget = rand()%TargetTable.size();
 
-			Unit * RTarget = TargetTable[RandTarget];
+			Unit*  RTarget = TargetTable[RandTarget];
 
 			if (!RTarget)
 				return;
@@ -870,6 +855,11 @@ public:
 			TargetTable.clear();
 		}
 	}
+
+	void Destroy()
+	{
+		delete this;
+	};
 
 protected:
 
@@ -949,16 +939,16 @@ public:
 
 	void OnCombatStart(Unit* mTarget)
 	{
-		RegisterAIUpdateEvent(_unit->GetUInt32Value(UNIT_FIELD_BASEATTACKTIME));
+		RegisterAIUpdateEvent(_unit->GetBaseAttackTime(MELEE));
 
-		_unit->SetUInt64Value(UNIT_FIELD_CHANNEL_OBJECT, 0);
-		_unit->SetUInt32Value(UNIT_CHANNEL_SPELL, 0);
+		_unit->SetChannelSpellTargetGUID(0);
+		_unit->SetChannelSpellId(0);
 
 		for (int i = 0; i < nrspells; i++)
 			spells[i].casttime = 0;
 	}
 		
-	void OnCombatStop(Unit *mTarget)
+	void OnCombatStop(Unit* mTarget)
 	{
 		_unit->GetAIInterface()->setCurrentAgent(AGENT_NULL);
 		_unit->GetAIInterface()->SetAIState(STATE_IDLE);
@@ -971,26 +961,26 @@ public:
 			Magtheridon = _unit->GetMapMgr()->GetInterface()->GetCreatureNearestCoords(-22.657900f, 2.159050f, -0.345542f, 17257);
 			if (Magtheridon && Magtheridon->HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_ATTACKABLE_9))
 			{
-				_unit->SetUInt64Value(UNIT_FIELD_CHANNEL_OBJECT, Magtheridon->GetGUID());
-				_unit->SetUInt32Value(UNIT_CHANNEL_SPELL, SHADOW_GRASP);
+				_unit->SetChannelSpellTargetGUID(Magtheridon->GetGUID());
+				_unit->SetChannelSpellId(SHADOW_GRASP);
 
 				Magtheridon->CastSpell(Magtheridon, dbcSpell.LookupEntry(BANISH), true);
 			}
 		}
 	}
 
-	void OnDamageTaken(Unit* mAttacker, float fAmount)
+	void OnDamageTaken(Unit* mAttacker, uint32 fAmount)
 	{
 		if (!_unit->GetAIInterface()->GetAllowedToEnterCombat())
 			_unit->GetAIInterface()->SetAllowedToEnterCombat(true);
 	}
 		
-	void OnDied(Unit * mKiller)
+	void OnDied(Unit* mKiller)
 	{
 		RemoveAIUpdateEvent();
 
-		_unit->SetUInt64Value(UNIT_FIELD_CHANNEL_OBJECT, 0);
-		_unit->SetUInt32Value(UNIT_CHANNEL_SPELL, 0);
+		_unit->SetChannelSpellTargetGUID(0);
+		_unit->SetChannelSpellId(0);
 	}
 		
 	void AIUpdate()
@@ -1004,7 +994,7 @@ public:
 		if(_unit->GetCurrentSpell() == NULL && _unit->GetAIInterface()->GetNextTarget())
 		{
 			float comulativeperc = 0;
-			Unit *target = NULL;
+			Unit* target = NULL;
 			for(int i=0;i<nrspells;i++)
 			{
 				if(!spells[i].perctrigger) continue;
@@ -1059,7 +1049,7 @@ public:
 				if (((spells[i].targettype == TARGET_RANDOM_FRIEND && isFriendly(_unit, (*itr))) || (spells[i].targettype != TARGET_RANDOM_FRIEND && isHostile(_unit, (*itr)) && (*itr) != _unit)) && ((*itr)->GetTypeId()== TYPEID_UNIT || (*itr)->GetTypeId() == TYPEID_PLAYER) && (*itr)->GetInstanceID() == _unit->GetInstanceID()) // isAttackable(_unit, (*itr)) && 
 				{
 					Unit* RandomTarget = NULL;
-					RandomTarget = (Unit*)(*itr);
+					RandomTarget = TO_UNIT(*itr);
 
 					if (RandomTarget->isAlive() && _unit->GetDistance2dSq(RandomTarget) >= mindist2cast*mindist2cast && _unit->GetDistance2dSq(RandomTarget) <= maxdist2cast*maxdist2cast && ((RandomTarget->GetHealthPct() >= minhp2cast && RandomTarget->GetHealthPct() <= maxhp2cast && spells[i].targettype == TARGET_RANDOM_FRIEND) || (_unit->GetAIInterface()->getThreatByPtr(RandomTarget) > 0 && isHostile(_unit, RandomTarget))))
 					{
@@ -1076,7 +1066,7 @@ public:
 
 			size_t RandTarget = rand()%TargetTable.size();
 
-			Unit * RTarget = TargetTable[RandTarget];
+			Unit*  RTarget = TargetTable[RandTarget];
 
 			if (!RTarget)
 				return;
@@ -1093,6 +1083,11 @@ public:
 			TargetTable.clear();
 		}
 	}
+
+	void Destroy()
+	{
+		delete this;
+	};
 		
 protected:
 		
@@ -1137,20 +1132,20 @@ public:
 
 	void OnCombatStart(Unit* mTarget)
     {
-        RegisterAIUpdateEvent(_unit->GetUInt32Value(UNIT_FIELD_BASEATTACKTIME));
+        RegisterAIUpdateEvent(_unit->GetBaseAttackTime(MELEE));
 
 		for (int i = 0; i < nrspells; i++)
 			spells[i].casttime = 0;
     }
 
-    void OnCombatStop(Unit *mTarget)
+    void OnCombatStop(Unit* mTarget)
     {
         _unit->GetAIInterface()->setCurrentAgent(AGENT_NULL);
         _unit->GetAIInterface()->SetAIState(STATE_IDLE);
         RemoveAIUpdateEvent();
     }
 
-	void OnDied(Unit * mKiller)
+	void OnDied(Unit* mKiller)
     {
 		RemoveAIUpdateEvent();
     }
@@ -1166,7 +1161,7 @@ public:
         if(_unit->GetCurrentSpell() == NULL && _unit->GetAIInterface()->GetNextTarget())
         {
 			float comulativeperc = 0;
-		    Unit *target = NULL;
+		    Unit* target = NULL;
 			for(int i=0;i<nrspells;i++)
 			{
 				if(!spells[i].perctrigger) continue;
@@ -1218,7 +1213,7 @@ public:
 				if (((spells[i].targettype == TARGET_RANDOM_FRIEND && isFriendly(_unit, (*itr))) || (spells[i].targettype != TARGET_RANDOM_FRIEND && isHostile(_unit, (*itr)) && (*itr) != _unit)) && ((*itr)->GetTypeId()== TYPEID_UNIT || (*itr)->GetTypeId() == TYPEID_PLAYER) && (*itr)->GetInstanceID() == _unit->GetInstanceID()) // isAttackable(_unit, (*itr)) && 
 				{
 					Unit* RandomTarget = NULL;
-					RandomTarget = (Unit*)(*itr);
+					RandomTarget = TO_UNIT(*itr);
 
 					if (RandomTarget->isAlive() && _unit->GetDistance2dSq(RandomTarget) >= mindist2cast*mindist2cast && _unit->GetDistance2dSq(RandomTarget) <= maxdist2cast*maxdist2cast && ((RandomTarget->GetHealthPct() >= minhp2cast && RandomTarget->GetHealthPct() <= maxhp2cast && spells[i].targettype == TARGET_RANDOM_FRIEND) || (_unit->GetAIInterface()->getThreatByPtr(RandomTarget) > 0 && isHostile(_unit, RandomTarget))))
 					{
@@ -1235,7 +1230,7 @@ public:
 
 			size_t RandTarget = rand()%TargetTable.size();
 
-			Unit * RTarget = TargetTable[RandTarget];
+			Unit*  RTarget = TargetTable[RandTarget];
 
 			if (!RTarget)
 				return;
@@ -1252,6 +1247,11 @@ public:
 			TargetTable.clear();
 		}
 	}
+
+	void Destroy()
+	{
+		delete this;
+	};
 
 protected:
 
@@ -1327,10 +1327,10 @@ public:
 		spells[6].instant = true;
 
 		_unit->SetUInt64Value(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_ATTACKABLE_9);
-		Aura * aura = new Aura(dbcSpell.LookupEntry(BANISHMENT), -1, _unit, _unit);
-		if (!aura)
-			return;
+
+		Aura* aura = new Aura( dbcSpell.LookupEntry(BANISHMENT), (uint32)-1, _unit, _unit );
 		_unit->AddAura(aura);
+
 		_unit->CastSpell(_unit, dbcSpell.LookupEntry(BANISH), true);
 		_unit->GetAIInterface()->SetAllowedToEnterCombat(false);
 		_unit->SetUInt32Value(UNIT_FIELD_BYTES_2, 1);
@@ -1344,17 +1344,17 @@ public:
 		timer_quake = timer_enrage = timer_blastNova = timer_caveIn = 0;
 		PhaseSwitch = false;
 
-        RegisterAIUpdateEvent(_unit->GetUInt32Value(UNIT_FIELD_BASEATTACKTIME));
+        RegisterAIUpdateEvent(_unit->GetBaseAttackTime(MELEE));
 
 		for (int i = 0; i < nrspells; i++)
 			spells[i].casttime = 0;
 
-		GameObject *Gate = _unit->GetMapMgr()->GetInterface()->GetGameObjectNearestCoords(-72.5866f, 1.559f, 0.0f, 183847);
+		GameObject* Gate = _unit->GetMapMgr()->GetInterface()->GetGameObjectNearestCoords(-72.5866f, 1.559f, 0.0f, 183847);
 		if (Gate)
-			Gate->SetByte(GAMEOBJECT_BYTES_1, 0, 1);
+			Gate->SetState(1);
     }
 
-    void OnCombatStop(Unit *mTarget)
+    void OnCombatStop(Unit* mTarget)
     {
         _unit->GetAIInterface()->setCurrentAgent(AGENT_NULL);
         _unit->GetAIInterface()->SetAIState(STATE_IDLE);
@@ -1363,24 +1363,24 @@ public:
 		if (_unit->HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_ATTACKABLE_9) || _unit->HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_ATTACKABLE_2))
 			return;
 
-		GameObject* Gate = NULL;
+		GameObject*  Gate = NULL;
 		for (int i = 0; i < 6; i++)
 		{
 			Gate = _unit->GetMapMgr()->GetInterface()->GetGameObjectNearestCoords(Columns[i].x, Columns[i].y, Columns[i].z, 184634+i);
 			if (Gate)
-				Gate->SetByte(GAMEOBJECT_BYTES_1, 0, 1);
+				Gate->SetState(1);
 		}
 
 		Gate = _unit->GetMapMgr()->GetInterface()->GetGameObjectNearestCoords(0.0f, 0.0f, 0.0f, 184653);
 		if (Gate)
-			Gate->SetByte(GAMEOBJECT_BYTES_1, 0, 1);
+			Gate->SetState(1);
 
 		Gate = _unit->GetMapMgr()->GetInterface()->GetGameObjectNearestCoords(-72.5866f, 1.559f, 0.0f, 183847);
 		if (Gate)
-			Gate->SetByte(GAMEOBJECT_BYTES_1, 0, 0);
+			Gate->SetState(0);
     }
 
-	void OnDied(Unit * mKiller)
+	void OnDied(Unit* mKiller)
     {
 		_unit->SendChatMessage(CHAT_MSG_MONSTER_YELL, LANG_UNIVERSAL, "The Legion... will consume you... all....");
 		_unit->PlaySoundToSet(10258);
@@ -1406,7 +1406,7 @@ public:
 
 	void PhaseTwo()
 	{
-		Aura *aura = _unit->FindAura(BANISH);
+		Aura* aura = _unit->FindAura(BANISH);
 
 		if (_unit->GetHealthPct() <= 30)
 		{
@@ -1470,7 +1470,7 @@ public:
 
 	void PhaseThree()
 	{
-		Aura *aura = _unit->FindAura(BANISH);
+		Aura* aura = _unit->FindAura(BANISH);
 
 		timer_quake++;
 		timer_enrage++;
@@ -1529,17 +1529,17 @@ public:
 
 			if (timer_caveIn == 3)
 			{
-				GameObject* Gate = NULL;
+				GameObject*  Gate = NULL;
 				for (int i = 0; i < 6; i++)
 				{
 					Gate = _unit->GetMapMgr()->GetInterface()->GetGameObjectNearestCoords(Columns[i].x, Columns[i].y, Columns[i].z, 184634+i);
 					if (Gate)
-						Gate->SetByte(GAMEOBJECT_BYTES_1, 0, 0);
+						Gate->SetState(0);
 				}
 
 				Gate = _unit->GetMapMgr()->GetInterface()->GetGameObjectNearestCoords(0.0f, 0.0f, 0.0f, 184653);
 				if (Gate)
-					Gate->SetByte(GAMEOBJECT_BYTES_1, 0, 0);
+					Gate->SetState(0);
 			}
 
 			if (timer_caveIn == 5)
@@ -1577,7 +1577,7 @@ public:
         if(_unit->GetCurrentSpell() == NULL && _unit->GetAIInterface()->GetNextTarget())
         {
 			float comulativeperc = 0;
-		    Unit *target = NULL;
+		    Unit* target = NULL;
 			for(int i=0;i<nrspells;i++)
 			{
 				if(!spells[i].perctrigger) continue;
@@ -1629,7 +1629,7 @@ public:
 				if (((spells[i].targettype == TARGET_RANDOM_FRIEND && isFriendly(_unit, (*itr))) || (spells[i].targettype != TARGET_RANDOM_FRIEND && isHostile(_unit, (*itr)) && (*itr) != _unit)) && ((*itr)->GetTypeId()== TYPEID_UNIT || (*itr)->GetTypeId() == TYPEID_PLAYER) && (*itr)->GetInstanceID() == _unit->GetInstanceID()) // isAttackable(_unit, (*itr)) && 
 				{
 					Unit* RandomTarget = NULL;
-					RandomTarget = (Unit*)(*itr);
+					RandomTarget = TO_UNIT(*itr);
 
 					if (RandomTarget->isAlive() && _unit->GetDistance2dSq(RandomTarget) >= mindist2cast*mindist2cast && _unit->GetDistance2dSq(RandomTarget) <= maxdist2cast*maxdist2cast && ((RandomTarget->GetHealthPct() >= minhp2cast && RandomTarget->GetHealthPct() <= maxhp2cast && spells[i].targettype == TARGET_RANDOM_FRIEND) || (_unit->GetAIInterface()->getThreatByPtr(RandomTarget) > 0 && isHostile(_unit, RandomTarget))))
 					{
@@ -1646,7 +1646,7 @@ public:
 
 			size_t RandTarget = rand()%TargetTable.size();
 
-			Unit * RTarget = TargetTable[RandTarget];
+			Unit*  RTarget = TargetTable[RandTarget];
 
 			if (!RTarget)
 				return;
@@ -1663,6 +1663,11 @@ public:
 			TargetTable.clear();
 		}
 	}
+
+	void Destroy()
+	{
+		delete this;
+	};
 	
 protected:
 

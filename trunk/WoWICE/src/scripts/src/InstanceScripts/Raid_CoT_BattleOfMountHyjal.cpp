@@ -13,7 +13,6 @@
  * this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "StdAfx.h"
 #include "Setup.h"
 
 /************************************************************************/
@@ -36,11 +35,52 @@ enum HyjalPhases
 	HYJAL_PHASE_ANETHERON_COMPLETE,
 	HYJAL_PHASE_KAZROGAL_COMPLETE,
 	HYJAL_PHASE_AZGALOR_COMPLETE,
-	HYJAL_PHASE_ARCHIMONDE_COMPLETE
+	HYJAL_PHASE_ARCHIMONDE_COMPLETE,
 };
 
-uint32 HyjalPhase[1000000];
+enum HyjalType
+{
+	HYJAL_TYPE_BASIC = 0,
+	HYJAL_TYPE_END
+};
 
+#define MAP_HYJALPAST 534
+
+class MountHyjalScript : public MoonInstanceScript
+{
+public:
+	MOONSCRIPT_INSTANCE_FACTORY_FUNCTION( MountHyjalScript, MoonInstanceScript );
+	MountHyjalScript( MapMgr* pMapMgr ) : MoonInstanceScript( pMapMgr )
+	{
+		InstanceData[HYJAL_TYPE_BASIC][0] = HYJAL_PHASE_NOT_STARTED;
+	}
+
+	void SetInstanceData( uint32 pType, uint32 pIndex, uint32 pData )
+	{
+		if(pType >= HYJAL_TYPE_END || pIndex >= 10)
+			return;
+
+		InstanceData[pType][pIndex] = pData;
+	}
+
+	uint32 GetInstanceData( uint32 pType, uint32 pIndex )
+	{
+		if(pType >= HYJAL_TYPE_END || pIndex >= 10)
+			return 0;
+
+		return InstanceData[pType][pIndex];
+	}
+
+	void Destroy()
+	{
+		delete this;
+	};
+
+private:
+	uint32 InstanceData[HYJAL_TYPE_END][10]; // Expand this to fit your needs. 
+	// Type 0 = Basic Data;
+	//   Index 0 = Current Phase;
+};
 //Jaina Proudmoore AI & GS
 #define CN_JAINA_PROUDMOORE 17772
 
@@ -51,20 +91,19 @@ public:
 
     JainaProudmooreAI(Creature* pCreature) : CreatureAIScript(pCreature)
     {
-		HyjalPhase[_unit->GetInstanceID()] = HYJAL_PHASE_NOT_STARTED;
 		_unit->SetUInt32Value(UNIT_NPC_FLAGS, 1);
 	}
 };
 
-class SCRIPT_DECL JainaProudmooreGS : public GossipScript
+class JainaProudmooreGS : public GossipScript
 {
 public:
-	void GossipHello(Object * pObject, Player* Plr, bool AutoSend)
+	void GossipHello(Object* pObject, Player* Plr, bool AutoSend)
 	{
 		GossipMenu *Menu;
 		objmgr.CreateGossipMenuForPlayer(&Menu, pObject->GetGUID(), 1, Plr);
 
-		switch(HyjalPhase[pObject->GetInstanceID()])
+		switch(pObject->GetMapMgr()->GetScript()->GetInstanceData(HYJAL_TYPE_BASIC, 0))
 		{
 		case HYJAL_PHASE_NOT_STARTED:
 			Menu->AddItem(0, "We are ready to defend the Alliance base.", 1); 
@@ -83,11 +122,11 @@ public:
 			Menu->SendTo(Plr);
 	}
 
-	void GossipSelectOption(Object * pObject, Player* Plr, uint32 Id, uint32 IntId, const char * Code)
+	void GossipSelectOption(Object* pObject, Player* Plr, uint32 Id, uint32 IntId, const char * Code)
 	{
-		Creature *creature = static_cast<Creature*>(pObject);
+		Creature* creature = TO_CREATURE(pObject);
 
-		switch(HyjalPhase[pObject->GetInstanceID()])
+		switch(pObject->GetMapMgr()->GetScript()->GetInstanceData(HYJAL_TYPE_BASIC, 0))
 		{
 		case HYJAL_PHASE_NOT_STARTED:
 		case HYJAL_PHASE_RAGE_WINTERCHILL_COMPLETE:
@@ -98,7 +137,7 @@ public:
 		creature->SetUInt32Value(UNIT_NPC_FLAGS, 0);
 	}
 
-	void GossipEnd(Object * pObject, Player* Plr) { GossipScript::GossipEnd(pObject, Plr); }
+	void GossipEnd(Object* pObject, Player* Plr) { GossipScript::GossipEnd(pObject, Plr); }
 	void Destroy() { delete this; }
 };
 
@@ -116,15 +155,15 @@ public:
 	}
 };
 
-class SCRIPT_DECL ThrallGS : public GossipScript
+class ThrallGS : public GossipScript
 {
 public:
-	void GossipHello(Object * pObject, Player* Plr, bool AutoSend)
+	void GossipHello(Object* pObject, Player* Plr, bool AutoSend)
 	{
 		GossipMenu *Menu;
 		objmgr.CreateGossipMenuForPlayer(&Menu, pObject->GetGUID(), 1, Plr);
 
-		switch(HyjalPhase[pObject->GetInstanceID()])
+		switch(pObject->GetMapMgr()->GetScript()->GetInstanceData(HYJAL_TYPE_BASIC, 0))
 		{
 		case HYJAL_PHASE_ANETHERON_COMPLETE:
 			Menu->AddItem(0, "We're here to help! The Alliance are overrun.", 1); 
@@ -139,11 +178,11 @@ public:
 			Menu->SendTo(Plr);
 	}
 
-	void GossipSelectOption(Object * pObject, Player* Plr, uint32 Id, uint32 IntId, const char * Code)
+	void GossipSelectOption(Object* pObject, Player* Plr, uint32 Id, uint32 IntId, const char * Code)
 	{
-		Creature *creature = static_cast<Creature*>(pObject);
+		Creature* creature = TO_CREATURE(pObject);
 
-		switch(HyjalPhase[pObject->GetInstanceID()])
+		switch(pObject->GetMapMgr()->GetScript()->GetInstanceData(HYJAL_TYPE_BASIC, 0))
 		{
 			case HYJAL_PHASE_ANETHERON_COMPLETE:
 			case HYJAL_PHASE_KAZROGAL_COMPLETE:
@@ -153,7 +192,7 @@ public:
 		creature->SetUInt32Value(UNIT_NPC_FLAGS, 0);
 	}
 
-	void GossipEnd(Object * pObject, Player* Plr) { GossipScript::GossipEnd(pObject, Plr); }
+	void GossipEnd(Object* pObject, Player* Plr) { GossipScript::GossipEnd(pObject, Plr); }
 	void Destroy() { delete this; }
 };
 
@@ -161,10 +200,10 @@ public:
 // Rage WinterchillAI
 #define CN_RAGE_WINTERCHILL 17767
 
-#define FROSTBOLT			31249			//http://www.wowhead.com/?npc=17767#.
-#define DEATH_AND_DECAY		39658
-#define FROST_NOVA			31250
-#define FROST_ARMOR			31256
+#define FROSTBOLT 31249			// it's not correct spell for sure (not sure to others too :P)
+#define DEATCH_AND_DECAY 31258
+#define FROST_NOVA 31250
+#define FROST_ARMOR 31256
 
 class RageWinterchillAI : public CreatureAIScript
 {
@@ -191,7 +230,7 @@ public:
 		spells[0].mindist2cast = 0.0f;
 		spells[0].maxdist2cast = 80.0f;
 
-		spells[1].info = dbcSpell.LookupEntry(DEATH_AND_DECAY);
+		spells[1].info = dbcSpell.LookupEntry(DEATCH_AND_DECAY);
 		spells[1].targettype = TARGET_RANDOM_DESTINATION;
 		spells[1].instant = false;
 		spells[1].perctrigger = 3.0f;
@@ -225,7 +264,7 @@ public:
 		for (int i = 0; i < nrspells; i++)
 			spells[i].casttime = 0;
 
-		RegisterAIUpdateEvent(_unit->GetUInt32Value(UNIT_FIELD_BASEATTACKTIME));
+		RegisterAIUpdateEvent(_unit->GetBaseAttackTime(MELEE));
     }
 
 	void OnTargetDied(Unit* mTarget)
@@ -261,7 +300,7 @@ public:
 		}
     }
 
-    void OnCombatStop(Unit *mTarget)
+    void OnCombatStop(Unit* mTarget)
     {
         _unit->GetAIInterface()->setCurrentAgent(AGENT_NULL);
         _unit->GetAIInterface()->SetAIState(STATE_IDLE);
@@ -269,7 +308,7 @@ public:
         RemoveAIUpdateEvent();
     }
 
-    void OnDied(Unit * mKiller)
+    void OnDied(Unit* mKiller)
     {
 		_unit->SendChatMessage(CHAT_MSG_MONSTER_YELL, LANG_UNIVERSAL, "You have won this battle, but not... the...war");
 		_unit->PlaySoundToSet(11026);
@@ -288,7 +327,7 @@ public:
         if(_unit->GetCurrentSpell() == NULL && _unit->GetAIInterface()->GetNextTarget())
         {
 			float comulativeperc = 0;
-		    Unit *target = NULL;
+		    Unit* target = NULL;
 			for(int i=0;i<nrspells;i++)
 			{
 				if(!spells[i].perctrigger) continue;
@@ -340,7 +379,7 @@ public:
 				if (((spells[i].targettype == TARGET_RANDOM_FRIEND && isFriendly(_unit, (*itr))) || (spells[i].targettype != TARGET_RANDOM_FRIEND && isHostile(_unit, (*itr)) && (*itr) != _unit)) && ((*itr)->GetTypeId()== TYPEID_UNIT || (*itr)->GetTypeId() == TYPEID_PLAYER) && (*itr)->GetInstanceID() == _unit->GetInstanceID()) // isAttackable(_unit, (*itr)) && 
 				{
 					Unit* RandomTarget = NULL;
-					RandomTarget = (Unit*)(*itr);
+					RandomTarget = TO_UNIT(*itr);
 
 					if (RandomTarget->isAlive() && _unit->GetDistance2dSq(RandomTarget) >= mindist2cast*mindist2cast && _unit->GetDistance2dSq(RandomTarget) <= maxdist2cast*maxdist2cast && ((RandomTarget->GetHealthPct() >= minhp2cast && RandomTarget->GetHealthPct() <= maxhp2cast && spells[i].targettype == TARGET_RANDOM_FRIEND) || (_unit->GetAIInterface()->getThreatByPtr(RandomTarget) > 0 && isHostile(_unit, RandomTarget))))
 					{
@@ -357,7 +396,7 @@ public:
 
 			size_t RandTarget = rand()%TargetTable.size();
 
-			Unit * RTarget = TargetTable[RandTarget];
+			Unit*  RTarget = TargetTable[RandTarget];
 
 			if (!RTarget)
 				return;
@@ -375,6 +414,11 @@ public:
 		}
 	}
 
+	void Destroy()
+	{
+		delete this;
+	};
+
 protected:
 
 	int nrspells;
@@ -387,7 +431,7 @@ protected:
 #define CARRION_SWARM	31306
 #define VAMPIRIC_AURA	38196	// 31317
 #define INFERNO			31299	// doesn't summon infernal - core bug
-#define SLEEP			31298	//http://www.wowhead.com/?npc=17808
+#define SLEEP			31298	// 12098
 #define BERSERK			26662
 
 class AnetheronAI : public CreatureAIScript
@@ -430,7 +474,7 @@ public:
 		spells[2].cooldown = 30;
 		spells[2].mindist2cast = 0.0f;
 		spells[2].maxdist2cast = 60.0f;
-		spells[2].speech = "Hit me, no time for a slow death";
+		spells[2].speech = "Hit he, no time for a slow death";
 		spells[2].soundid = 11039;
 		
 		spells[3].info = dbcSpell.LookupEntry(SLEEP);
@@ -459,7 +503,7 @@ public:
 		uint32 t = (uint32)time(NULL);
 		spells[4].casttime = t + spells[4].cooldown;
 
-		RegisterAIUpdateEvent(_unit->GetUInt32Value(UNIT_FIELD_BASEATTACKTIME));
+		RegisterAIUpdateEvent(_unit->GetBaseAttackTime(MELEE));
     }
 
 	void OnTargetDied(Unit* mTarget)
@@ -484,7 +528,7 @@ public:
 		}
     }
 
-    void OnCombatStop(Unit *mTarget)
+    void OnCombatStop(Unit* mTarget)
     {
         _unit->GetAIInterface()->setCurrentAgent(AGENT_NULL);
         _unit->GetAIInterface()->SetAIState(STATE_IDLE);
@@ -492,7 +536,7 @@ public:
         RemoveAIUpdateEvent();
     }
 
-    void OnDied(Unit * mKiller)
+    void OnDied(Unit* mKiller)
     {
 		_unit->SendChatMessage(CHAT_MSG_MONSTER_YELL, LANG_UNIVERSAL, "The clock... is still...ticking.");
 		_unit->PlaySoundToSet(10982);
@@ -520,7 +564,7 @@ public:
         if(_unit->GetCurrentSpell() == NULL && _unit->GetAIInterface()->GetNextTarget())
         {
 			float comulativeperc = 0;
-		    Unit *target = NULL;
+		    Unit* target = NULL;
 			for(int i=0;i<nrspells;i++)
 			{
 				if(!spells[i].perctrigger) continue;
@@ -529,9 +573,7 @@ public:
 				{
 					if (i == 1)
 					{
-						Aura *aura = new Aura(spells[1].info, 5000, _unit, _unit);
-						if (!aura)
-							return;
+						Aura* aura = new Aura( spells[1].info, (uint32)5000, _unit, _unit );
 						_unit->AddAura(aura);
 					}
 
@@ -584,7 +626,7 @@ public:
 				if (((spells[i].targettype == TARGET_RANDOM_FRIEND && isFriendly(_unit, (*itr))) || (spells[i].targettype != TARGET_RANDOM_FRIEND && isHostile(_unit, (*itr)) && (*itr) != _unit)) && ((*itr)->GetTypeId()== TYPEID_UNIT || (*itr)->GetTypeId() == TYPEID_PLAYER) && (*itr)->GetInstanceID() == _unit->GetInstanceID()) // isAttackable(_unit, (*itr)) && 
 				{
 					Unit* RandomTarget = NULL;
-					RandomTarget = (Unit*)(*itr);
+					RandomTarget = TO_UNIT(*itr);
 
 					if (RandomTarget->isAlive() && _unit->GetDistance2dSq(RandomTarget) >= mindist2cast*mindist2cast && _unit->GetDistance2dSq(RandomTarget) <= maxdist2cast*maxdist2cast && ((RandomTarget->GetHealthPct() >= minhp2cast && RandomTarget->GetHealthPct() <= maxhp2cast && spells[i].targettype == TARGET_RANDOM_FRIEND) || (_unit->GetAIInterface()->getThreatByPtr(RandomTarget) > 0 && isHostile(_unit, RandomTarget))))
 					{
@@ -601,7 +643,7 @@ public:
 
 			size_t RandTarget = rand()%TargetTable.size();
 
-			Unit * RTarget = TargetTable[RandTarget];
+			Unit*  RTarget = TargetTable[RandTarget];
 
 			if (!RTarget)
 				return;
@@ -619,6 +661,11 @@ public:
 		}
 	}
 
+	void Destroy()
+	{
+		delete this;
+	};
+
 protected:
 
 	int nrspells;
@@ -626,10 +673,10 @@ protected:
 
 // KazrogalAI
 
-#define CN_KAZROGAL			17888
+#define CN_KAZROGAL 17888
 
 #define K_CLEAVE			31345
-#define WAR_STOMP			31408
+#define WAR_STOMP			31480
 #define MARK_OF_KAZROGAL	31447
 #define MARK_OF_KAZROGAL2	31463	// should it be scripted to attack friends?
 
@@ -685,7 +732,7 @@ public:
 		for (int i = 0; i < nrspells; i++)
 			spells[i].casttime = 0;
 
-		RegisterAIUpdateEvent(_unit->GetUInt32Value(UNIT_FIELD_BASEATTACKTIME));
+		RegisterAIUpdateEvent(_unit->GetBaseAttackTime(MELEE));
     }
 
 	void OnTargetDied(Unit* mTarget)
@@ -715,7 +762,7 @@ public:
 		}
     }
 
-    void OnCombatStop(Unit *mTarget)
+    void OnCombatStop(Unit* mTarget)
     {
         _unit->GetAIInterface()->setCurrentAgent(AGENT_NULL);
         _unit->GetAIInterface()->SetAIState(STATE_IDLE);
@@ -723,7 +770,7 @@ public:
         RemoveAIUpdateEvent();
     }
 
-    void OnDied(Unit * mKiller)
+    void OnDied(Unit* mKiller)
     {
 		_unit->SendChatMessage(CHAT_MSG_MONSTER_YELL, LANG_UNIVERSAL, "hahahahaa aahaah");
 		_unit->PlaySoundToSet(11018);
@@ -745,7 +792,7 @@ public:
         if(_unit->GetCurrentSpell() == NULL && _unit->GetAIInterface()->GetNextTarget())
         {
 			float comulativeperc = 0;
-		    Unit *target = NULL;
+		    Unit* target = NULL;
 			for(int i=0;i<nrspells;i++)
 			{
 				if(!spells[i].perctrigger) continue;
@@ -794,9 +841,9 @@ public:
 			if (isHostile(_unit, (*itr)) && ((*itr)->GetTypeId()== TYPEID_UNIT || (*itr)->GetTypeId() == TYPEID_PLAYER) && (*itr)->GetInstanceID() == _unit->GetInstanceID())
 			{
 				Unit* Target = NULL;
-				Target = (Unit*)(*itr);
+				Target = TO_UNIT(*itr);
 
-				if (Target->isAlive() && Target->FindAura(MARK_OF_KAZROGAL) && (Target->GetPowerType() != POWER_TYPE_MANA || !Target->GetUInt32Value(UNIT_FIELD_BASE_MANA)))
+				if (Target->isAlive() && Target->FindAura(MARK_OF_KAZROGAL) && (Target->GetPowerType() != POWER_TYPE_MANA || !Target->GetBaseMana()))
 				{
 					Target->CastSpell(Target, spells[3].info, spells[3].instant);
 				} 
@@ -822,7 +869,7 @@ public:
 				if (((spells[i].targettype == TARGET_RANDOM_FRIEND && isFriendly(_unit, (*itr))) || (spells[i].targettype != TARGET_RANDOM_FRIEND && isHostile(_unit, (*itr)) && (*itr) != _unit)) && ((*itr)->GetTypeId()== TYPEID_UNIT || (*itr)->GetTypeId() == TYPEID_PLAYER) && (*itr)->GetInstanceID() == _unit->GetInstanceID()) // isAttackable(_unit, (*itr)) && 
 				{
 					Unit* RandomTarget = NULL;
-					RandomTarget = (Unit*)(*itr);
+					RandomTarget = TO_UNIT(*itr);
 
 					if (RandomTarget->isAlive() && _unit->GetDistance2dSq(RandomTarget) >= mindist2cast*mindist2cast && _unit->GetDistance2dSq(RandomTarget) <= maxdist2cast*maxdist2cast && ((RandomTarget->GetHealthPct() >= minhp2cast && RandomTarget->GetHealthPct() <= maxhp2cast && spells[i].targettype == TARGET_RANDOM_FRIEND) || (_unit->GetAIInterface()->getThreatByPtr(RandomTarget) > 0 && isHostile(_unit, RandomTarget))))
 					{
@@ -839,7 +886,7 @@ public:
 
 			size_t RandTarget = rand()%TargetTable.size();
 
-			Unit * RTarget = TargetTable[RandTarget];
+			Unit*  RTarget = TargetTable[RandTarget];
 
 			if (!RTarget)
 				return;
@@ -856,6 +903,11 @@ public:
 			TargetTable.clear();
 		}
 	}
+
+	void Destroy()
+	{
+		delete this;
+	};
 
 protected:
 
@@ -930,7 +982,7 @@ public:
 		uint32 t = (uint32)time(NULL);
 		spells[3].casttime = t + spells[3].cooldown;
 
-		RegisterAIUpdateEvent(_unit->GetUInt32Value(UNIT_FIELD_BASEATTACKTIME));
+		RegisterAIUpdateEvent(_unit->GetBaseAttackTime(MELEE));
     }
 
 	void OnTargetDied(Unit* mTarget)
@@ -958,7 +1010,7 @@ public:
 		}
     }
 
-    void OnCombatStop(Unit *mTarget)
+    void OnCombatStop(Unit* mTarget)
     {
         _unit->GetAIInterface()->setCurrentAgent(AGENT_NULL);
         _unit->GetAIInterface()->SetAIState(STATE_IDLE);
@@ -966,7 +1018,7 @@ public:
         RemoveAIUpdateEvent();
     }
 
-    void OnDied(Unit * mKiller)
+    void OnDied(Unit* mKiller)
     {
 		_unit->SendChatMessage(CHAT_MSG_MONSTER_YELL, LANG_UNIVERSAL, "Your time is almost... up!");
 		_unit->PlaySoundToSet(11002);
@@ -994,7 +1046,7 @@ public:
         if(_unit->GetCurrentSpell() == NULL && _unit->GetAIInterface()->GetNextTarget())
         {
 			float comulativeperc = 0;
-		    Unit *target = NULL;
+		    Unit* target = NULL;
 			for(int i=0;i<nrspells;i++)
 			{
 				if(!spells[i].perctrigger) continue;
@@ -1046,7 +1098,7 @@ public:
 				if (((spells[i].targettype == TARGET_RANDOM_FRIEND && isFriendly(_unit, (*itr))) || (spells[i].targettype != TARGET_RANDOM_FRIEND && isHostile(_unit, (*itr)) && (*itr) != _unit)) && ((*itr)->GetTypeId()== TYPEID_UNIT || (*itr)->GetTypeId() == TYPEID_PLAYER) && (*itr)->GetInstanceID() == _unit->GetInstanceID()) // isAttackable(_unit, (*itr)) && 
 				{
 					Unit* RandomTarget = NULL;
-					RandomTarget = (Unit*)(*itr);
+					RandomTarget = TO_UNIT(*itr);
 
 					if (RandomTarget->isAlive() && _unit->GetDistance2dSq(RandomTarget) >= mindist2cast*mindist2cast && _unit->GetDistance2dSq(RandomTarget) <= maxdist2cast*maxdist2cast && ((RandomTarget->GetHealthPct() >= minhp2cast && RandomTarget->GetHealthPct() <= maxhp2cast && spells[i].targettype == TARGET_RANDOM_FRIEND) || (_unit->GetAIInterface()->getThreatByPtr(RandomTarget) > 0 && isHostile(_unit, RandomTarget))))
 					{
@@ -1063,16 +1115,14 @@ public:
 
 			size_t RandTarget = rand()%TargetTable.size();
 
-			Unit * RTarget = TargetTable[RandTarget];
+			Unit*  RTarget = TargetTable[RandTarget];
 
 			if (!RTarget)
 				return;
 
 			if (i == 3)
 			{
-				Aura *aura = new Aura(spells[3].info, 20000, _unit, RTarget);
-				if (!aura)
-					return;
+				Aura* aura = new Aura( spells[3].info, (uint32)20000, _unit, RTarget );
 				RTarget->AddAura(aura);
 
 				TargetTable.clear();
@@ -1091,6 +1141,11 @@ public:
 			TargetTable.clear();
 		}
 	}
+
+	void Destroy()
+	{
+		delete this;
+	};
 
 protected:
 
@@ -1119,8 +1174,8 @@ public:
 		Unit* Archimonde = _unit->GetMapMgr()->GetInterface()->GetCreatureNearestCoords(5598.629883f, -3447.719971f, 1576.650024f, 17968);
 		if (Archimonde)
 		{
-			_unit->SetUInt64Value(UNIT_FIELD_CHANNEL_OBJECT, Archimonde->GetGUID());
-			_unit->SetUInt32Value(UNIT_CHANNEL_SPELL, DRAIN_WORLD_TREE_VISUAL2);
+			_unit->SetChannelSpellTargetGUID(Archimonde->GetGUID());
+			_unit->SetChannelSpellId(DRAIN_WORLD_TREE_VISUAL2);
 		}
 	}
 };
@@ -1152,7 +1207,7 @@ public:
 		if (DespawnTimer >= 27)
 		{
 			_unit->Despawn(0,0);
-			DespawnTimer = 0;
+			return;
 		}
 		// After 4 sec of last direction change, doomfire has 33% chance to change direction
 		DirChange++;
@@ -1162,7 +1217,7 @@ public:
 			{
 				if (RandomUInt(3) == 1 || _unit->GetDistance2dSq(_unit->GetAIInterface()->getUnitToFollow()) <= 2.0f)
 				{
-					_unit->GetAIInterface()->SetUnitToFollow(NULL);
+					_unit->GetAIInterface()->ResetUnitToFollow();
 					_unit->GetAIInterface()->SetUnitToFollowAngle(0.0f);
 				}
 			}
@@ -1171,7 +1226,7 @@ public:
 			{
 				if (RandomUInt(3) == 1)
 				{
-					Unit *NewTarget = NULL;
+					Unit* NewTarget = NULL;
 					NewTarget = FindTarget();
 					if (NewTarget)
 					{
@@ -1211,15 +1266,15 @@ public:
 		float distance = 15.0f;
 		float z_diff;
 
-		Unit *pUnit;
+		Unit* pUnit;
 		float dist;
 
-		for (std::set<Object*>::iterator itr = _unit->GetInRangeOppFactsSetBegin(); itr != _unit->GetInRangeOppFactsSetEnd(); itr++)
+		for (set<Object*>::iterator itr = _unit->GetInRangeOppFactsSetBegin(); itr != _unit->GetInRangeOppFactsSetEnd(); itr++)
 		{
 			if((*itr)->GetTypeId() != TYPEID_UNIT && (*itr)->GetTypeId() != TYPEID_PLAYER)
 				continue;
 
-			pUnit = static_cast<Unit*>((*itr));
+			pUnit = TO_UNIT((*itr));
 
 			if(pUnit->HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_FEIGN_DEATH))
 				continue;
@@ -1228,8 +1283,8 @@ public:
 			if(z_diff > 2.5f)
 				continue;
 
-			if(pUnit->m_invisible)
-				continue;
+//			if(pUnit->m_auracount[SPELL_AURA_MOD_INVISIBILITY])
+//				continue;
 			
 			if(!pUnit->isAlive() || _unit == pUnit)
 				continue;
@@ -1248,6 +1303,11 @@ public:
 
 		return target;
 	}
+
+	void Destroy()
+	{
+		delete this;
+	};
 
 protected:
 
@@ -1342,11 +1402,11 @@ public:
 			Trigger->GetAIInterface()->SetAllowedToEnterCombat(false);
 			Trigger->m_noRespawn = true;
 
-			Trigger->SetUInt64Value(UNIT_FIELD_CHANNEL_OBJECT, _unit->GetGUID());
-			Trigger->SetUInt32Value(UNIT_CHANNEL_SPELL, DRAIN_WORLD_TREE_VISUAL2);
+			Trigger->SetChannelSpellTargetGUID(_unit->GetGUID());
+			Trigger->SetChannelSpellId(DRAIN_WORLD_TREE_VISUAL2);
 
-			_unit->SetUInt64Value(UNIT_FIELD_CHANNEL_OBJECT, Trigger->GetGUID());
-			_unit->SetUInt32Value(UNIT_CHANNEL_SPELL, DRAIN_WORLD_TREE_VISUAL);
+			_unit->SetChannelSpellTargetGUID(Trigger->GetGUID());
+			_unit->SetChannelSpellId(DRAIN_WORLD_TREE_VISUAL);
 		}
     }
     
@@ -1355,13 +1415,13 @@ public:
 		_unit->SendChatMessage(CHAT_MSG_MONSTER_YELL, LANG_UNIVERSAL, "Your resistance is insignificant.");
 		_unit->PlaySoundToSet(10987);
 
-		_unit->SetUInt64Value(UNIT_FIELD_CHANNEL_OBJECT, 0);
-		_unit->SetUInt32Value(UNIT_CHANNEL_SPELL, 0);
+		_unit->SetChannelSpellTargetGUID(0);
+		_unit->SetChannelSpellId(0);
 
 		if (Trigger && Trigger->IsInWorld())
 		{
-			Trigger->SetUInt64Value(UNIT_FIELD_CHANNEL_OBJECT, 0);
-			Trigger->SetUInt32Value(UNIT_CHANNEL_SPELL, 0);
+			Trigger->SetChannelSpellTargetGUID(0);
+			Trigger->SetChannelSpellId(0);
 		}
 
 		for (int i = 0; i < nrspells; i++)
@@ -1372,7 +1432,7 @@ public:
 		spells[5].casttime = t + spells[5].cooldown;
 		spells[6].casttime = 0;
 
-		RegisterAIUpdateEvent(_unit->GetUInt32Value(UNIT_FIELD_BASEATTACKTIME));
+		RegisterAIUpdateEvent(_unit->GetBaseAttackTime(MELEE));
     }
 
 	void OnTargetDied(Unit* mTarget)
@@ -1414,24 +1474,24 @@ public:
 		}
     }
 
-    void OnCombatStop(Unit *mTarget)
+    void OnCombatStop(Unit* mTarget)
     {
         _unit->GetAIInterface()->setCurrentAgent(AGENT_NULL);
         _unit->GetAIInterface()->SetAIState(STATE_IDLE);
 
 		if (Trigger && Trigger->IsInWorld() && _unit->isAlive())
 		{
-			Trigger->SetUInt64Value(UNIT_FIELD_CHANNEL_OBJECT, _unit->GetGUID());
-			Trigger->SetUInt32Value(UNIT_CHANNEL_SPELL, DRAIN_WORLD_TREE_VISUAL2);
+			Trigger->SetChannelSpellTargetGUID(_unit->GetGUID());
+			Trigger->SetChannelSpellId(DRAIN_WORLD_TREE_VISUAL2);
 
-			_unit->SetUInt64Value(UNIT_FIELD_CHANNEL_OBJECT, Trigger->GetGUID());
-			_unit->SetUInt32Value(UNIT_CHANNEL_SPELL, DRAIN_WORLD_TREE_VISUAL);
+			_unit->SetChannelSpellTargetGUID(Trigger->GetGUID());
+			_unit->SetChannelSpellId(DRAIN_WORLD_TREE_VISUAL);
 		}
 
         RemoveAIUpdateEvent();
     }
 
-    void OnDied(Unit * mKiller)
+    void OnDied(Unit* mKiller)
     {
 		_unit->SendChatMessage(CHAT_MSG_MONSTER_YELL, LANG_UNIVERSAL, "No, it cannot be! Nooo!");
 		_unit->PlaySoundToSet(10992);
@@ -1482,7 +1542,7 @@ public:
         if(_unit->GetCurrentSpell() == NULL && _unit->GetAIInterface()->GetNextTarget())
         {
 			float comulativeperc = 0;
-		    Unit *target = NULL;
+		    Unit* target = NULL;
 			for(int i=0;i<nrspells;i++)
 			{
 				if(!spells[i].perctrigger) continue;
@@ -1535,7 +1595,7 @@ public:
 				if (((spells[i].targettype == TARGET_RANDOM_FRIEND && isFriendly(_unit, (*itr))) || (spells[i].targettype != TARGET_RANDOM_FRIEND && isHostile(_unit, (*itr)) && (*itr) != _unit)) && ((*itr)->GetTypeId()== TYPEID_UNIT || (*itr)->GetTypeId() == TYPEID_PLAYER) && (*itr)->GetInstanceID() == _unit->GetInstanceID()) // isAttackable(_unit, (*itr)) && 
 				{
 					Unit* RandomTarget = NULL;
-					RandomTarget = (Unit*)(*itr);
+					RandomTarget = TO_UNIT(*itr);
 
 					if (RandomTarget->isAlive() && _unit->GetDistance2dSq(RandomTarget) >= mindist2cast*mindist2cast && _unit->GetDistance2dSq(RandomTarget) <= maxdist2cast*maxdist2cast && ((RandomTarget->GetHealthPct() >= minhp2cast && RandomTarget->GetHealthPct() <= maxhp2cast && spells[i].targettype == TARGET_RANDOM_FRIEND) || (_unit->GetAIInterface()->getThreatByPtr(RandomTarget) > 0 && isHostile(_unit, RandomTarget))))
 					{
@@ -1552,7 +1612,7 @@ public:
 
 			size_t RandTarget = rand()%TargetTable.size();
 
-			Unit * RTarget = TargetTable[RandTarget];
+			Unit*  RTarget = TargetTable[RandTarget];
 
 			if (!RTarget)
 				return;
@@ -1578,7 +1638,7 @@ public:
 		{
 			if (isHostile(_unit, (*itr)) && ((*itr)->GetTypeId()== TYPEID_UNIT || (*itr)->GetTypeId() == TYPEID_PLAYER) && (*itr)->GetInstanceID() == _unit->GetInstanceID() && _unit->GetDistance2dSq((*itr)) <= spells[4].mindist2cast*spells[4].mindist2cast)
 			{
-				NextTarget = (Unit*)(*itr);
+				NextTarget = TO_UNIT(*itr);
 				if (NextTarget && NextTarget->isAlive() && _unit->GetAIInterface()->getThreatByPtr(NextTarget) > 0)
 				{
 					_unit->GetAIInterface()->WipeTargetList();
@@ -1592,13 +1652,20 @@ public:
 		return true;
 	}
 
+	void Destroy()
+	{
+		delete this;
+	};
+
 protected:
-	Creature *Trigger;
+	Creature* Trigger;
 	int nrspells;
 };
 
 void SetupBattleOfMountHyjal(ScriptMgr * mgr)
 {
+	mgr->register_instance_script( MAP_HYJALPAST, &MountHyjalScript::Create );
+
 	GossipScript * jainaGS = (GossipScript*) new JainaProudmooreGS;
 	mgr->register_gossip_script(CN_JAINA_PROUDMOORE, jainaGS);
 	mgr->register_creature_script(CN_JAINA_PROUDMOORE, &JainaProudmooreAI::Create);
