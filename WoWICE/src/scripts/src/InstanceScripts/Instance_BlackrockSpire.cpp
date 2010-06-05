@@ -13,7 +13,6 @@
  * this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "StdAfx.h"
 #include "Setup.h"
 
 /************************************************************************/
@@ -77,17 +76,17 @@ public:
     
     void OnCombatStart(Unit* mTarget)
     {
-        RegisterAIUpdateEvent(_unit->GetUInt32Value(UNIT_FIELD_BASEATTACKTIME));
+        RegisterAIUpdateEvent(_unit->GetBaseAttackTime(MELEE));
     }
 
-    void OnCombatStop(Unit *mTarget)
+    void OnCombatStop(Unit* mTarget)
     {
         _unit->GetAIInterface()->setCurrentAgent(AGENT_NULL);
         _unit->GetAIInterface()->SetAIState(STATE_IDLE);
         RemoveAIUpdateEvent();
     }
 
-    void OnDied(Unit * mKiller)
+    void OnDied(Unit* mKiller)
     {
 		RemoveAIUpdateEvent();
     }
@@ -103,7 +102,7 @@ public:
         if(_unit->GetCurrentSpell() == NULL && _unit->GetAIInterface()->GetNextTarget())
         {
 			float comulativeperc = 0;
-		    Unit *target = NULL;
+		    Unit* target = NULL;
 			for(int i=0;i<nrspells;i++)
 			{
 				if(!spells[i].perctrigger) continue;
@@ -137,6 +136,11 @@ public:
 			}
         }
     }
+
+	void Destroy()
+	{
+		delete this;
+	};
 
 protected:
 
@@ -193,17 +197,17 @@ public:
     
     void OnCombatStart(Unit* mTarget)
     {
-        RegisterAIUpdateEvent(_unit->GetUInt32Value(UNIT_FIELD_BASEATTACKTIME));
+        RegisterAIUpdateEvent(_unit->GetBaseAttackTime(MELEE));
     }
 
-    void OnCombatStop(Unit *mTarget)
+    void OnCombatStop(Unit* mTarget)
     {
         _unit->GetAIInterface()->setCurrentAgent(AGENT_NULL);
         _unit->GetAIInterface()->SetAIState(STATE_IDLE);
         RemoveAIUpdateEvent();
     }
 
-    void OnDied(Unit * mKiller)
+    void OnDied(Unit* mKiller)
     {
 		RemoveAIUpdateEvent();
     }
@@ -219,7 +223,7 @@ public:
         if(_unit->GetCurrentSpell() == NULL && _unit->GetAIInterface()->GetNextTarget())
         {
 			float comulativeperc = 0;
-		    Unit *target = NULL;
+		    Unit* target = NULL;
 			for(int i=0;i<nrspells;i++)
 			{
 				if(!spells[i].perctrigger) continue;
@@ -253,6 +257,11 @@ public:
 			}
         }
     }
+
+	void Destroy()
+	{
+		delete this;
+	};
 
 protected:
 
@@ -309,17 +318,17 @@ public:
     
     void OnCombatStart(Unit* mTarget)
     {
-        RegisterAIUpdateEvent(_unit->GetUInt32Value(UNIT_FIELD_BASEATTACKTIME));
+        RegisterAIUpdateEvent(_unit->GetBaseAttackTime(MELEE));
     }
 
-    void OnCombatStop(Unit *mTarget)
+    void OnCombatStop(Unit* mTarget)
     {
         _unit->GetAIInterface()->setCurrentAgent(AGENT_NULL);
         _unit->GetAIInterface()->SetAIState(STATE_IDLE);
         RemoveAIUpdateEvent();
     }
 
-    void OnDied(Unit * mKiller)
+    void OnDied(Unit* mKiller)
     {
 		RemoveAIUpdateEvent();
     }
@@ -335,7 +344,7 @@ public:
         if(_unit->GetCurrentSpell() == NULL && _unit->GetAIInterface()->GetNextTarget())
         {
 			float comulativeperc = 0;
-		    Unit *target = NULL;
+		    Unit* target = NULL;
 			for(int i=0;i<nrspells;i++)
 			{
 				if(!spells[i].perctrigger) continue;
@@ -369,6 +378,11 @@ public:
 			}
         }
     }
+
+	void Destroy()
+	{
+		delete this;
+	};
 
 protected:
 
@@ -426,19 +440,19 @@ public:
     
     void OnCombatStart(Unit* mTarget)
     {
-        RegisterAIUpdateEvent(_unit->GetUInt32Value(UNIT_FIELD_BASEATTACKTIME));
+        RegisterAIUpdateEvent(_unit->GetBaseAttackTime(MELEE));
 
 		HasSummoned = false;
     }
 
-    void OnCombatStop(Unit *mTarget)
+    void OnCombatStop(Unit* mTarget)
     {
         _unit->GetAIInterface()->setCurrentAgent(AGENT_NULL);
         _unit->GetAIInterface()->SetAIState(STATE_IDLE);
         RemoveAIUpdateEvent();
     }
 
-    void OnDied(Unit * mKiller)
+    void OnDied(Unit* mKiller)
     {
 		RemoveAIUpdateEvent();
     }
@@ -447,7 +461,7 @@ public:
     {
 		if (!HasSummoned && _unit->GetHealthPct() <= 8)
 		{
-			Unit *Warchief = NULL;
+			Unit* Warchief = NULL;
 			Warchief =_unit->GetMapMgr()->GetInterface()->SpawnCreature(CN_REND_BLACKHAND, 157.366516f, -419.779358f, 110.472336f, 3.056772f, true, false, 0, 0);
 			if (Warchief != NULL)
 			{
@@ -469,7 +483,7 @@ public:
         if(_unit->GetCurrentSpell() == NULL && _unit->GetAIInterface()->GetNextTarget())
         {
 			float comulativeperc = 0;
-		    Unit *target = NULL;
+		    Unit* target = NULL;
 			for(int i=0;i<nrspells;i++)
 			{
 				if(!spells[i].perctrigger) continue;
@@ -503,6 +517,11 @@ public:
 			}
         }
     }
+
+	void Destroy()
+	{
+		delete this;
+	};
 
 protected:
 
@@ -559,17 +578,17 @@ public:
     
     void OnCombatStart(Unit* mTarget)
     {
-        RegisterAIUpdateEvent(_unit->GetUInt32Value(UNIT_FIELD_BASEATTACKTIME));
+        RegisterAIUpdateEvent(_unit->GetBaseAttackTime(MELEE));
     }
 
-    void OnCombatStop(Unit *mTarget)
+    void OnCombatStop(Unit* mTarget)
     {
         _unit->GetAIInterface()->setCurrentAgent(AGENT_NULL);
         _unit->GetAIInterface()->SetAIState(STATE_IDLE);
         RemoveAIUpdateEvent();
     }
 
-    void OnDied(Unit * mKiller)
+    void OnDied(Unit* mKiller)
     {
 		RemoveAIUpdateEvent();
     }
@@ -585,7 +604,7 @@ public:
         if(_unit->GetCurrentSpell() == NULL && _unit->GetAIInterface()->GetNextTarget())
         {
 			float comulativeperc = 0;
-		    Unit *target = NULL;
+		    Unit* target = NULL;
 			for(int i=0;i<nrspells;i++)
 			{
 				if(!spells[i].perctrigger) continue;
@@ -619,6 +638,11 @@ public:
 			}
         }
     }
+
+	void Destroy()
+	{
+		delete this;
+	};
 
 protected:
 
@@ -702,17 +726,17 @@ public:
     
     void OnCombatStart(Unit* mTarget)
     {
-        RegisterAIUpdateEvent(_unit->GetUInt32Value(UNIT_FIELD_BASEATTACKTIME));
+        RegisterAIUpdateEvent(_unit->GetBaseAttackTime(MELEE));
     }
 
-    void OnCombatStop(Unit *mTarget)
+    void OnCombatStop(Unit* mTarget)
     {
         _unit->GetAIInterface()->setCurrentAgent(AGENT_NULL);
         _unit->GetAIInterface()->SetAIState(STATE_IDLE);
         RemoveAIUpdateEvent();
     }
 
-    void OnDied(Unit * mKiller)
+    void OnDied(Unit* mKiller)
     {
 		RemoveAIUpdateEvent();
     }
@@ -728,7 +752,7 @@ public:
         if(_unit->GetCurrentSpell() == NULL && _unit->GetAIInterface()->GetNextTarget())
         {
 			float comulativeperc = 0;
-		    Unit *target = NULL;
+		    Unit* target = NULL;
 			for(int i=0;i<nrspells;i++)
 			{
 				if(!spells[i].perctrigger) continue;
@@ -762,6 +786,11 @@ public:
 			}
         }
     }
+
+	void Destroy()
+	{
+		delete this;
+	};
 
 protected:
 
@@ -817,17 +846,17 @@ public:
     
     void OnCombatStart(Unit* mTarget)
     {
-        RegisterAIUpdateEvent(_unit->GetUInt32Value(UNIT_FIELD_BASEATTACKTIME));
+        RegisterAIUpdateEvent(_unit->GetBaseAttackTime(MELEE));
     }
 
-    void OnCombatStop(Unit *mTarget)
+    void OnCombatStop(Unit* mTarget)
     {
         _unit->GetAIInterface()->setCurrentAgent(AGENT_NULL);
         _unit->GetAIInterface()->SetAIState(STATE_IDLE);
         RemoveAIUpdateEvent();
     }
 
-    void OnDied(Unit * mKiller)
+    void OnDied(Unit* mKiller)
     {
 		RemoveAIUpdateEvent();
     }
@@ -843,7 +872,7 @@ public:
         if(_unit->GetCurrentSpell() == NULL && _unit->GetAIInterface()->GetNextTarget())
         {
 			float comulativeperc = 0;
-		    Unit *target = NULL;
+		    Unit* target = NULL;
 			for(int i=0;i<nrspells;i++)
 			{
 				if(!spells[i].perctrigger) continue;
@@ -877,6 +906,11 @@ public:
 			}
         }
     }
+
+	void Destroy()
+	{
+		delete this;
+	};
 
 protected:
 
@@ -953,17 +987,17 @@ public:
     
     void OnCombatStart(Unit* mTarget)
     {
-        RegisterAIUpdateEvent(_unit->GetUInt32Value(UNIT_FIELD_BASEATTACKTIME));
+        RegisterAIUpdateEvent(_unit->GetBaseAttackTime(MELEE));
     }
 
-    void OnCombatStop(Unit *mTarget)
+    void OnCombatStop(Unit* mTarget)
     {
         _unit->GetAIInterface()->setCurrentAgent(AGENT_NULL);
         _unit->GetAIInterface()->SetAIState(STATE_IDLE);
         RemoveAIUpdateEvent();
     }
 
-    void OnDied(Unit * mKiller)
+    void OnDied(Unit* mKiller)
     {
 		RemoveAIUpdateEvent();
     }
@@ -979,7 +1013,7 @@ public:
         if(_unit->GetCurrentSpell() == NULL && _unit->GetAIInterface()->GetNextTarget())
         {
 			float comulativeperc = 0;
-		    Unit *target = NULL;
+		    Unit* target = NULL;
 			for(int i=0;i<nrspells;i++)
 			{
 				if(!spells[i].perctrigger) continue;
@@ -1013,6 +1047,11 @@ public:
 			}
         }
     }
+
+	void Destroy()
+	{
+		delete this;
+	};
 
 protected:
 
@@ -1075,17 +1114,17 @@ public:
     
     void OnCombatStart(Unit* mTarget)
     {
-        RegisterAIUpdateEvent(_unit->GetUInt32Value(UNIT_FIELD_BASEATTACKTIME));
+        RegisterAIUpdateEvent(_unit->GetBaseAttackTime(MELEE));
     }
 
-    void OnCombatStop(Unit *mTarget)
+    void OnCombatStop(Unit* mTarget)
     {
         _unit->GetAIInterface()->setCurrentAgent(AGENT_NULL);
         _unit->GetAIInterface()->SetAIState(STATE_IDLE);
         RemoveAIUpdateEvent();
     }
 
-    void OnDied(Unit * mKiller)
+    void OnDied(Unit* mKiller)
     {
 		RemoveAIUpdateEvent();
     }
@@ -1101,7 +1140,7 @@ public:
         if(_unit->GetCurrentSpell() == NULL && _unit->GetAIInterface()->GetNextTarget())
         {
 			float comulativeperc = 0;
-		    Unit *target = NULL;
+		    Unit* target = NULL;
 			for(int i=0;i<nrspells;i++)
 			{
 				if(!spells[i].perctrigger) continue;
@@ -1135,6 +1174,11 @@ public:
 			}
         }
     }
+
+	void Destroy()
+	{
+		delete this;
+	};
 
 protected:
 
@@ -1218,17 +1262,17 @@ public:
     
     void OnCombatStart(Unit* mTarget)
     {
-        RegisterAIUpdateEvent(_unit->GetUInt32Value(UNIT_FIELD_BASEATTACKTIME));
+        RegisterAIUpdateEvent(_unit->GetBaseAttackTime(MELEE));
     }
 
-    void OnCombatStop(Unit *mTarget)
+    void OnCombatStop(Unit* mTarget)
     {
         _unit->GetAIInterface()->setCurrentAgent(AGENT_NULL);
         _unit->GetAIInterface()->SetAIState(STATE_IDLE);
         RemoveAIUpdateEvent();
     }
 
-    void OnDied(Unit * mKiller)
+    void OnDied(Unit* mKiller)
     {
 		RemoveAIUpdateEvent();
     }
@@ -1244,7 +1288,7 @@ public:
         if(_unit->GetCurrentSpell() == NULL && _unit->GetAIInterface()->GetNextTarget())
         {
 			float comulativeperc = 0;
-		    Unit *target = NULL;
+		    Unit* target = NULL;
 			for(int i=0;i<nrspells;i++)
 			{
 				if(!spells[i].perctrigger) continue;
@@ -1278,6 +1322,11 @@ public:
 			}
         }
     }
+
+	void Destroy()
+	{
+		delete this;
+	};
 
 protected:
 
@@ -1333,17 +1382,17 @@ public:
     
     void OnCombatStart(Unit* mTarget)
     {
-        RegisterAIUpdateEvent(_unit->GetUInt32Value(UNIT_FIELD_BASEATTACKTIME));
+        RegisterAIUpdateEvent(_unit->GetBaseAttackTime(MELEE));
     }
 
-    void OnCombatStop(Unit *mTarget)
+    void OnCombatStop(Unit* mTarget)
     {
         _unit->GetAIInterface()->setCurrentAgent(AGENT_NULL);
         _unit->GetAIInterface()->SetAIState(STATE_IDLE);
         RemoveAIUpdateEvent();
     }
 
-    void OnDied(Unit * mKiller)
+    void OnDied(Unit* mKiller)
     {
 		RemoveAIUpdateEvent();
     }
@@ -1359,7 +1408,7 @@ public:
         if(_unit->GetCurrentSpell() == NULL && _unit->GetAIInterface()->GetNextTarget())
         {
 			float comulativeperc = 0;
-		    Unit *target = NULL;
+		    Unit* target = NULL;
 			for(int i=0;i<nrspells;i++)
 			{
 				if(!spells[i].perctrigger) continue;
@@ -1393,6 +1442,11 @@ public:
 			}
         }
     }
+
+	void Destroy()
+	{
+		delete this;
+	};
 
 protected:
 
@@ -1443,19 +1497,19 @@ public:
     
     void OnCombatStart(Unit* mTarget)
     {
-        RegisterAIUpdateEvent(_unit->GetUInt32Value(UNIT_FIELD_BASEATTACKTIME));
+        RegisterAIUpdateEvent(_unit->GetBaseAttackTime(MELEE));
 
 		HasSummoned = false;
     }
 
-    void OnCombatStop(Unit *mTarget)
+    void OnCombatStop(Unit* mTarget)
     {
         _unit->GetAIInterface()->setCurrentAgent(AGENT_NULL);
         _unit->GetAIInterface()->SetAIState(STATE_IDLE);
         RemoveAIUpdateEvent();
     }
 
-    void OnDied(Unit * mKiller)
+    void OnDied(Unit* mKiller)
     {
 		RemoveAIUpdateEvent();
     }
@@ -1464,7 +1518,7 @@ public:
     {
 		if (!HasSummoned && _unit->GetHealthPct() <= 25)
 		{
-			Unit *cGizrul = NULL;
+			Unit* cGizrul = NULL;
 			cGizrul =_unit->GetMapMgr()->GetInterface()->SpawnCreature(CN_GIZRUL, -195.100006f, -321.970001f, 65.424400f, 0.016500f, true, false, 0, 0);
 			if (cGizrul != NULL)
 			{
@@ -1486,7 +1540,7 @@ public:
         if(_unit->GetCurrentSpell() == NULL && _unit->GetAIInterface()->GetNextTarget())
         {
 			float comulativeperc = 0;
-		    Unit *target = NULL;
+		    Unit* target = NULL;
 			for(int i=0;i<nrspells;i++)
 			{
 				if(!spells[i].perctrigger) continue;
@@ -1520,6 +1574,11 @@ public:
 			}
         }
     }
+
+	void Destroy()
+	{
+		delete this;
+	};
 
 protected:
 
@@ -1586,19 +1645,19 @@ public:
     
     void OnCombatStart(Unit* mTarget)
     {
-        RegisterAIUpdateEvent(_unit->GetUInt32Value(UNIT_FIELD_BASEATTACKTIME));
+        RegisterAIUpdateEvent(_unit->GetBaseAttackTime(MELEE));
 
 		HasSummoned = false;
     }
 
-    void OnCombatStop(Unit *mTarget)
+    void OnCombatStop(Unit* mTarget)
     {
         _unit->GetAIInterface()->setCurrentAgent(AGENT_NULL);
         _unit->GetAIInterface()->SetAIState(STATE_IDLE);
         RemoveAIUpdateEvent();
     }
 
-    void OnDied(Unit * mKiller)
+    void OnDied(Unit* mKiller)
     {
 		RemoveAIUpdateEvent();
     }
@@ -1607,8 +1666,8 @@ public:
     {
 		if (!HasSummoned && _unit->GetHealthPct() <= 50)
 		{
-			Unit *Warlord1 = NULL;
-			Unit *Warlord2 = NULL;
+			Unit* Warlord1 = NULL;
+			Unit* Warlord2 = NULL;
 			Warlord1 =_unit->GetMapMgr()->GetInterface()->SpawnCreature(CN_SPIRESTONE_WARLORD, -30.675352f, -493.231750f, 90.610725f, 3.123542f, true, false, 0, 0);//This line makes the unit spawn a creature
 			Warlord2 =_unit->GetMapMgr()->GetInterface()->SpawnCreature(CN_SPIRESTONE_WARLORD, -30.433489f, -479.833923f, 90.535606f, 3.123542f, true, false, 0, 0);//This line makes the unit spawn a creature
 			if (_unit->GetAIInterface()->GetNextTarget() != NULL)
@@ -1635,7 +1694,7 @@ public:
         if(_unit->GetCurrentSpell() == NULL && _unit->GetAIInterface()->GetNextTarget())
         {
 			float comulativeperc = 0;
-		    Unit *target = NULL;
+		    Unit* target = NULL;
 			for(int i=0;i<nrspells;i++)
 			{
 				if(!spells[i].perctrigger) continue;
@@ -1669,6 +1728,11 @@ public:
 			}
         }
     }
+
+	void Destroy()
+	{
+		delete this;
+	};
 
 protected:
 

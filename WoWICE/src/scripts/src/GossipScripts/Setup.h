@@ -13,8 +13,17 @@
  * this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "StdAfx.h"
+
 #ifndef GOSSIP_SCRIPTS_SETUP_H
 #define GOSSIP_SCRIPTS_SETUP_H
+
+#define TO_CREATURE(ptr) static_cast<Creature*>(ptr) 
+#define TO_PLAYER(ptr) static_cast<Player*>(ptr)
+#define TO_OBJECT(ptr) static_cast<Object*>(ptr)
+#define TO_UNIT(ptr) static_cast<Unit*>(ptr)
+#define TO_PET(ptr) static_cast<Pet*>(ptr)
+#define TO_ITEM(ptr) static_cast<Item*>(ptr)
 
 void SetupInnkeepers(ScriptMgr * mgr);
 void SetupGuardGossip(ScriptMgr * mgr);
@@ -22,8 +31,14 @@ void SetupTrainerScript(ScriptMgr * mgr);
 void SetupMulgoreGossip(ScriptMgr * mgr);
 void SetupShattrathGossip(ScriptMgr * mgr);
 void SetupTanarisGossip(ScriptMgr * mgr);
-void SetupMoongladeScript(ScriptMgr * mgr);
+void SetupMoongladeGossip(ScriptMgr * mgr);
 void SetupStormwindGossip(ScriptMgr * mgr);
-//void SetupWotlkgossips(ScriptMgr * mgr) //Wotlk gossips incomplete
+void SetupTheramoreGossip(ScriptMgr * mgr);
+void SetupDarkmoonFaireGossip(ScriptMgr * mgr);
+void SetupDarkmoonFaireBarker(ScriptMgr * mgr);
+void SetupTeldrassilGossip(ScriptMgr * mgr);
+void SetupBoreanTundraGossip(ScriptMgr * mgr);
+void SetupWyrmrestTempleGossip(ScriptMgr * mgr);
+void SetupXpEliminatorGossip(ScriptMgr *mgr);
 
 #endif

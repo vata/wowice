@@ -13,7 +13,6 @@
  * this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "StdAfx.h"
 #include "Setup.h"
 
 /************************************************************************/
@@ -82,13 +81,18 @@ bool RockbiterWeapon(uint32 i, Spell* pSpell)
 
 void SetupShamanSpells(ScriptMgr * mgr)
 {
-    mgr->register_dummy_spell(8017, &RockbiterWeapon); // rank 1
-    mgr->register_dummy_spell(8018, &RockbiterWeapon); // rank 2
-    mgr->register_dummy_spell(8019, &RockbiterWeapon); // rank 3
-    mgr->register_dummy_spell(10399, &RockbiterWeapon);// rank 4
-    mgr->register_dummy_spell(16314, &RockbiterWeapon);// rank 5
-    mgr->register_dummy_spell(16315, &RockbiterWeapon);// rank 6
-    mgr->register_dummy_spell(16316, &RockbiterWeapon);// rank 7
-	mgr->register_dummy_spell(25479, &RockbiterWeapon);// rank 8
-    mgr->register_dummy_spell(25485, &RockbiterWeapon);// rank 9
+	uint32 RockbiterWeaponIds[] = 
+	{
+		8017,  // Rank 1
+		8018,  // Rank 2
+		8019,  // Rank 3
+		10399, // Rank 4
+		16314, // Rank 5
+		16315, // Rank 6
+		16316, // Rank 7
+		25479, // Rank 8
+		25485, // Rank 9
+		0,
+	};
+    mgr->register_dummy_spell(RockbiterWeaponIds, &RockbiterWeapon); // rank 1
 }

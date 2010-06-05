@@ -13,11 +13,9 @@
  * this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "StdAfx.h"
 #include "Setup.h"
 
 void SetupWarlockSpells(ScriptMgr * mgr)
 {
     // moo?
 }
-

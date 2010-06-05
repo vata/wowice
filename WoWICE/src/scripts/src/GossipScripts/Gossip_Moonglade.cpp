@@ -8,26 +8,19 @@
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
- * You should have received a copy of the GNU General Public License along with
- * this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "StdAfx.h"
 #include "Setup.h"
-
-// Trenton Lighthammer
-#define GOSSIP_SILVA_FILNAVETH    "I'd like to fly to Rut'theran Village."
 
 class SilvaFilnaveth_Gossip : public GossipScript
 {
 public:
-    void GossipHello(Object* pObject, Player * plr, bool AutoSend)
+    void GossipHello(Object* pObject, Player* plr, bool AutoSend)
     {
         GossipMenu *Menu;
         if(plr->getClass() == DRUID && plr->getRace() == RACE_NIGHTELF){
 			objmgr.CreateGossipMenuForPlayer(&Menu, pObject->GetGUID(), 4914, plr);
-			Menu->AddItem( 0, GOSSIP_SILVA_FILNAVETH, 1);
+			Menu->AddItem( 0, "I'd like to fly to Rut'theran Village.", 1);
 		}else if(plr->getClass() == DRUID && plr->getRace() == RACE_TAUREN){
 			objmgr.CreateGossipMenuForPlayer(&Menu, pObject->GetGUID(), 4915, plr);
 		}else{
@@ -37,9 +30,9 @@ public:
             Menu->SendTo(plr);
     }
 
-    void GossipSelectOption(Object* pObject, Player * plr, uint32 Id, uint32 IntId, const char * Code)
+    void GossipSelectOption(Object* pObject, Player* plr, uint32 Id, uint32 IntId, const char * Code)
     {
-		Creature * pCreature = (pObject->GetTypeId()==TYPEID_UNIT)?((Creature*)pObject):NULL;
+		Creature* pCreature = (pObject->GetTypeId()==TYPEID_UNIT)?(TO_CREATURE(pObject)):NULL;
 		if(pCreature==NULL)
 			return;
 
@@ -59,18 +52,15 @@ public:
     }
 };
 
-// Bunthen Plainswind
-#define GOSSIP_BUNTHEN_PLAINSWIND    "I'd like to fly to Thunder Bluff."
-
 class BunthenPlainswind_Gossip : public GossipScript
 {
 public:
-    void GossipHello(Object* pObject, Player * plr, bool AutoSend)
+    void GossipHello(Object* pObject, Player* plr, bool AutoSend)
     {
         GossipMenu *Menu;
 		if(plr->getClass() == DRUID && plr->getRace() == RACE_TAUREN){
 			objmgr.CreateGossipMenuForPlayer(&Menu, pObject->GetGUID(), 4918, plr);
-			Menu->AddItem( 0, GOSSIP_BUNTHEN_PLAINSWIND, 1);
+			Menu->AddItem( 0, "I'd like to fly to Thunder Bluff.", 1);
 		}else if(plr->getClass() == DRUID && plr->getRace() == RACE_NIGHTELF){
 			objmgr.CreateGossipMenuForPlayer(&Menu, pObject->GetGUID(), 4917, plr);
 		}else{
@@ -80,9 +70,9 @@ public:
             Menu->SendTo(plr);
     }
 
-    void GossipSelectOption(Object* pObject, Player * plr, uint32 Id, uint32 IntId, const char * Code)
+    void GossipSelectOption(Object* pObject, Player* plr, uint32 Id, uint32 IntId, const char * Code)
     {
-		Creature * pCreature = (pObject->GetTypeId()==TYPEID_UNIT)?((Creature*)pObject):NULL;
+		Creature* pCreature = (pObject->GetTypeId()==TYPEID_UNIT)?(TO_CREATURE(pObject)):NULL;
 		if(pCreature==NULL)
 			return;
 
@@ -102,7 +92,7 @@ public:
     }
 };
 
-void SetupMoongladeScript(ScriptMgr * mgr)
+void SetupMoongladeGossip(ScriptMgr * mgr)
 {
 	GossipScript * SilvaFilnavethGossip = (GossipScript*) new SilvaFilnaveth_Gossip;
 	GossipScript * BunthenPlainswindGossip = (GossipScript*) new BunthenPlainswind_Gossip;

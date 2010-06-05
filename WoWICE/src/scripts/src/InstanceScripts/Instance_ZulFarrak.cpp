@@ -13,7 +13,6 @@
  * this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "StdAfx.h"
 #include "Setup.h"
 
 /************************************************************************/
@@ -61,7 +60,7 @@ public:
         RemoveAIUpdateEvent();
 	}
 
-	void OnDied(Unit *mKiller) 
+	void OnDied(Unit* mKiller) 
 	{
 		morphcheck = false;
 		plaguecount = 0;
@@ -75,7 +74,7 @@ public:
 		if(plaguecount >= randomplague && _unit->GetAIInterface()->GetNextTarget())
 		{
 			plaguecount = 0;
-			Unit *target = NULL;
+			Unit* target = NULL;
 			target = _unit->GetAIInterface()->GetNextTarget();
 			_unit->CastSpell(target, plague, true);
 		}
@@ -139,7 +138,7 @@ public:
 		_unit->GetAIInterface()->disable_melee = true;
 		_unit->SetUInt64Value(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
 
-		Unit *antusul = NULL;
+		Unit* antusul = NULL;
 		antusul = _unit->GetMapMgr()->GetInterface()->GetCreatureNearestCoords(1815.030029f, 686.817017f, 14.519000f, 8127);
 		if(antusul)
 		{
@@ -150,6 +149,11 @@ public:
 			}
 		}
 	}
+
+	void Destroy()
+	{
+		delete this;
+	};
 };
 /*--------------------------------------------------------------------------------------*/
 /*antusul  healing ward and earthgrab ward commented out since they need time and work wich i dont have right now */
@@ -164,7 +168,7 @@ public:
 
     antusulAI(Creature* pCreature) : CreatureAIScript(pCreature) 
 	{
-
+		add1 = add2 = add3 = add4 = add5 = add6 = trigger = NULL;
         servant = dbcSpell.LookupEntry(servants);
 		//healing_ward = dbcSpell.LookupEntry(healingward);
 		//earthgrab_ward = dbcSpell.LookupEntry(earthgrabward);
@@ -190,7 +194,7 @@ public:
 		deletespawns();
 	}
 
-	void OnDied(Unit *mKiller) 
+	void OnDied(Unit* mKiller) 
 	{
 		spawns = spawns2 = attack = firstspawn = secondspawn = false;
 		/*healingwardcount = earthgrabcount = hmax = emax =*/ secondspawncount = 0;
@@ -230,7 +234,7 @@ public:
 		}
 		if(attack)
 		{
-			Unit * Target = NULL;
+			Unit* Target = NULL;
 			Target = _unit->GetAIInterface()->GetNextTarget();
 			if (_unit->GetAIInterface()->GetNextTarget())
 			{
@@ -354,13 +358,13 @@ protected:
 	bool spawns, spawns2, attack, firstspawn, secondspawn;
 	int /*healingwardcount, earthgrabcount, hmax, emax,*/ secondspawncount;
 
-	Creature * add1;
-	Creature * add2;
-	Creature * add3;
-	Creature * add4;
-	Creature * add5;
-	Creature * add6;
-	Creature * trigger;
+	Creature* add1;
+	Creature* add2;
+	Creature* add3;
+	Creature* add4;
+	Creature* add5;
+	Creature* add6;
+	Creature* trigger;
 
 	SpellEntry * servant;
 	SpellEntry * healing_ward;
@@ -370,7 +374,7 @@ protected:
 
 void SetupZulFarrak(ScriptMgr * mgr)
 {
-	/*mgr->register_creature_script(8127, &antusulAI::Create);
+	mgr->register_creature_script(8127, &antusulAI::Create);
 	mgr->register_creature_script(7272, &thekaAI::Create);
-	mgr->register_creature_script(133337, &antusulTriggerAI::Create);*/
+	mgr->register_creature_script(133337, &antusulTriggerAI::Create);
 }

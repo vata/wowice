@@ -13,7 +13,6 @@
  * this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "StdAfx.h"
 #include "Setup.h"
 
 /************************************************************************/
@@ -67,7 +66,7 @@ public:
       CastTime();
       _unit->SendChatMessage(CHAT_MSG_MONSTER_YELL, LANG_UNIVERSAL, "If you will not cease this foolish quest, then you will die!");
       _unit->PlaySoundToSet(10271);
-      RegisterAIUpdateEvent(_unit->GetUInt32Value(UNIT_FIELD_BASEATTACKTIME));
+      RegisterAIUpdateEvent(_unit->GetBaseAttackTime(MELEE));
     }
 
    void CastTime()
@@ -81,7 +80,7 @@ public:
       if(_unit->GetHealthPct() > 0)
       {
          uint32 sound = 0;
-         char *text;
+         const char* text = NULL;
          switch(RandomUInt(1))
          {
          case 0:
@@ -98,7 +97,7 @@ public:
       }
     }
 
-    void OnCombatStop(Unit *mTarget)
+    void OnCombatStop(Unit* mTarget)
     {
       CastTime();
         _unit->GetAIInterface()->setCurrentAgent(AGENT_NULL);
@@ -106,7 +105,7 @@ public:
         RemoveAIUpdateEvent();
     }
 
-    void OnDied(Unit * mKiller)
+    void OnDied(Unit* mKiller)
     {
       CastTime();
       _unit->SendChatMessage(CHAT_MSG_MONSTER_YELL, LANG_UNIVERSAL, "Time ... is on our side.");
@@ -125,7 +124,7 @@ public:
         if(_unit->GetCurrentSpell() == NULL && _unit->GetAIInterface()->GetNextTarget())
         {
          float comulativeperc = 0;
-          Unit *target = NULL;
+          Unit* target = NULL;
          for(int i=0;i<nrspells;i++)
          {
             spells[i].casttime--;
@@ -164,6 +163,11 @@ public:
          }
       }
    }
+
+	void Destroy()
+	{
+		delete this;
+	};
 
 protected:
 
@@ -217,7 +221,7 @@ public:
       CastTime();
       _unit->SendChatMessage(CHAT_MSG_MONSTER_YELL, LANG_UNIVERSAL, "So be it ... you have been warned.");
       _unit->PlaySoundToSet(10271);
-      RegisterAIUpdateEvent(_unit->GetUInt32Value(UNIT_FIELD_BASEATTACKTIME));
+      RegisterAIUpdateEvent(_unit->GetBaseAttackTime(MELEE));
     }
 
    void CastTime()
@@ -231,7 +235,7 @@ public:
       if(_unit->GetHealthPct() > 0)
       {
          uint32 sound = 0;
-         char *text;
+         const char* text = NULL;
          switch(RandomUInt(1))
          {
          case 0:
@@ -248,7 +252,7 @@ public:
       }
     }
 
-    void OnCombatStop(Unit *mTarget)
+    void OnCombatStop(Unit* mTarget)
     {
       CastTime();
         _unit->GetAIInterface()->setCurrentAgent(AGENT_NULL);
@@ -256,7 +260,7 @@ public:
         RemoveAIUpdateEvent();
     }
 
-    void OnDied(Unit * mKiller)
+    void OnDied(Unit* mKiller)
     {
       CastTime();
       _unit->SendChatMessage(CHAT_MSG_MONSTER_YELL, LANG_UNIVERSAL, "My death means ... little.");
@@ -275,7 +279,7 @@ public:
         if(_unit->GetCurrentSpell() == NULL && _unit->GetAIInterface()->GetNextTarget())
         {
          float comulativeperc = 0;
-          Unit *target = NULL;
+          Unit* target = NULL;
          for(int i=0;i<nrspells;i++)
          {
             spells[i].casttime--;
@@ -314,6 +318,11 @@ public:
          }
       }
    }
+
+	void Destroy()
+	{
+		delete this;
+	};
 
 protected:
 
@@ -367,7 +376,7 @@ public:
       CastTime();
       _unit->SendChatMessage(CHAT_MSG_MONSTER_YELL, LANG_UNIVERSAL, "Let us see what fate lays in store...");
       _unit->PlaySoundToSet(10271);
-      RegisterAIUpdateEvent(_unit->GetUInt32Value(UNIT_FIELD_BASEATTACKTIME));
+      RegisterAIUpdateEvent(_unit->GetBaseAttackTime(MELEE));
     }
 
    void CastTime()
@@ -381,7 +390,7 @@ public:
       if(_unit->GetHealthPct() > 0)
       {
          uint32 sound = 0;
-         char *text;
+         const char* text = NULL;
          switch(RandomUInt(1))
          {
          case 0:
@@ -398,7 +407,7 @@ public:
       }
     }
 
-    void OnCombatStop(Unit *mTarget)
+    void OnCombatStop(Unit* mTarget)
     {
       CastTime();
         _unit->GetAIInterface()->setCurrentAgent(AGENT_NULL);
@@ -406,7 +415,7 @@ public:
         RemoveAIUpdateEvent();
     }
 
-    void OnDied(Unit * mKiller)
+    void OnDied(Unit* mKiller)
     {
       CastTime();
       _unit->SendChatMessage(CHAT_MSG_MONSTER_YELL, LANG_UNIVERSAL, "It is only a matter...of time.");
@@ -425,7 +434,7 @@ public:
         if(_unit->GetCurrentSpell() == NULL && _unit->GetAIInterface()->GetNextTarget())
         {
          float comulativeperc = 0;
-          Unit *target = NULL;
+          Unit* target = NULL;
          for(int i=0;i<nrspells;i++)
          {
             spells[i].casttime--;
@@ -464,6 +473,11 @@ public:
          }
       }
    }
+
+	void Destroy()
+	{
+		delete this;
+	};
 
 protected:
 

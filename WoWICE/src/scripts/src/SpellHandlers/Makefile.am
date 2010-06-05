@@ -1,8 +1,10 @@
-INCLUDES += -I$(srcdir) -I$(srcdir)/../../../../dep/include -I$(srcdir)/../../../wowice-shared
-INCLUDES += -I$(srcdir)/../../../wowice-world -I$(srcdir)/../../../../dep/src
-
+INCLUDES = -I$(top_srcdir)/src/wowice-logonserver \
+   -I$(top_srcdir)/src/wowice-realmserver -I$(top_srcdir)/src/wowice-shared -I$(top_srcdir)/src/wowice-voicechat \
+   -I$(top_srcdir)/src/wowice-world -I$(srcdir) -I$(srcdir)/../../../../dep/include \
+   -I$(srcdir)/../../../../dep/src -I$(srcdir)/../../../../src
+INCLUDES += -I$(srcdir)/../../../collision/g3dlite -I$(srcdir)/../../../collision/vmap
 AM_CXXFLAGS = -DSCRIPTLIB
 
-lib_LTLIBRARIES = libMoonSpellHandlers.la
+lib_LTLIBRARIES = libSpellHandlers.la
 
-libMoonSpellHandlers_la_SOURCES = HunterSpells.cpp ItemSpells_1.cpp MageSpells.cpp PaladinSpells.cpp PetAISpells.cpp PriestSpells.cpp RogueSpells.cpp Setup.cpp ShamanSpells.cpp WarlockSpells.cpp WarriorSpells.cpp
+libSpellHandlers_la_SOURCES = DeathKnightSpells.cpp DruidSpells.cpp HunterSpells.cpp ItemSpells_1.cpp MageSpells.cpp PaladinSpells.cpp PetAISpells.cpp PriestSpells.cpp QIspells.cpp RogueSpells.cpp Setup.cpp ShamanSpells.cpp WarlockSpells.cpp WarriorSpells.cpp

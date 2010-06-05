@@ -13,26 +13,22 @@
  * this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "StdAfx.h"
 #include "Setup.h"
 
-// Skorn Whitecloud
-#define GOSSIP_SKORN_WHITECLOUD    "Tell me a story, Skorn."
-
-class SCRIPT_DECL SkornWhitecloud_Gossip : public GossipScript
+class SkornWhitecloud_Gossip : public GossipScript
 {
 public:
-    void GossipHello(Object* pObject, Player * plr, bool AutoSend)
+    void GossipHello(Object* pObject, Player* plr, bool AutoSend)
     {
         GossipMenu *Menu;
         objmgr.CreateGossipMenuForPlayer(&Menu, pObject->GetGUID(), 522, plr);
-        Menu->AddItem( 0, GOSSIP_SKORN_WHITECLOUD, 1);
+        Menu->AddItem( 0, "Tell me a story, Skorn.", 1);
         
         if(AutoSend)
             Menu->SendTo(plr);
     }
 
-    void GossipSelectOption(Object* pObject, Player * plr, uint32 Id, uint32 IntId, const char * Code)
+    void GossipSelectOption(Object* pObject, Player* plr, uint32 Id, uint32 IntId, const char * Code)
     {
 		if(pObject->GetTypeId()!=TYPEID_UNIT)
 			return;

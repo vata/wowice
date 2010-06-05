@@ -13,7 +13,6 @@
  * this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "StdAfx.h"
 #include "Setup.h"
 
 /************************************************************************/
@@ -26,7 +25,6 @@ This script covers Onyxia's mind
 
 //Creature Name
 #define CN_ONYXIA 10184
-#define CN_ONYXIAN_WHELP 11262
 
 #define WALK 0
 #define RUN 256
@@ -34,14 +32,14 @@ This script covers Onyxia's mind
 //0 = walk, 256 = run, 768 = fly 
 
 //Phase 1,3 Spells
-#define FLAME_BREATH 23461 //self
-#define KNOCK_AWAY 10101 //Reduce thread script effect main target
+#define FLAME_BREATH 18435 //Corrected http://www.wowhead.com/?spell=18435
+#define KNOCK_AWAY 19633 //Reduce thread script effect main target
 #define WING_BUFFET 18500 // self
-#define CLEAVE 30495//15579,16044,19642,29832 //target
-#define TAIL_SWEEP 15847
+#define CLEAVE 68868//15579,16044,19642,29832 //target Corrected 
+#define TAIL_SWEEP 68867
 
 //Phase 2 Spells
-#define SCRIPTABLE_FIREBALL 30691//Not sure find true one
+#define SCRIPTABLE_FIREBALL 18392 //Corrected http://www.wowhead.com/?spell=18392
 //Script it
 #define ENTANGLING_FLAMES 20019
 //Onyxia's Breath (Deep Breath)
@@ -50,15 +48,7 @@ This script covers Onyxia's mind
 //Phase 3 Spells
 #define AOE_FEAR 18431//With Activate Object
 
-struct Coords
-{
-    float x;
-    float y;
-    float z;
-    float o;
-};
-
-static Coords coords[] =
+static Location coords[] =
 {
     { 0, 0, 0, 0 },
     { -75.945f, -219.245f, -83.375f, 0.004947f },
@@ -71,7 +61,7 @@ static Coords coords[] =
     { -4.868f, -217.171f, -86.710f, 3.141590f }
 };
 
-static Coords whelpCoords[] =
+static Location whelpCoords[] =
 {
     { -30.812f, -166.395f, -89.000f, 5.160f },
     { -30.233f, -264.158f, -89.896f, 1.129f },
@@ -133,7 +123,7 @@ public:
         _unit->SetStandState(0);
         _unit->SendChatMessage(CHAT_MSG_MONSTER_YELL, LANG_UNIVERSAL, "How fortuitous, usually I must leave my lair to feed!");
         if(m_useSpell)
-            RegisterAIUpdateEvent(_unit->GetUInt32Value(UNIT_FIELD_BASEATTACKTIME));
+            RegisterAIUpdateEvent(_unit->GetBaseAttackTime(MELEE));
 
         m_fBreath = false;
         m_kAway = false;
@@ -141,7 +131,7 @@ public:
         m_Cleave = false;
     }
 
-    void OnCombatStop(Unit *mTarget)
+    void OnCombatStop(Unit* mTarget)
     {
         _unit->GetAIInterface()->setMoveType(0);
         _unit->GetAIInterface()->setWaypointToMove(0);
@@ -157,7 +147,7 @@ public:
             RemoveAIUpdateEvent();
     }
 
-    void OnDied(Unit * mKiller)
+    void OnDied(Unit* mKiller)
     {
         if(m_useSpell)
             RemoveAIUpdateEvent();
@@ -261,7 +251,7 @@ public:
         if(_unit->GetHealthPct() <= 65)
         {
             m_phase = 2;
-            _unit->SetFloatValue(UNIT_MOD_CAST_SPEED, 0.01f);
+            _unit->SetCastSpeedMod(0.01f);
             if(_unit->GetCurrentSpell() != NULL)
                 _unit->GetCurrentSpell()->cancel();
 
@@ -283,7 +273,7 @@ public:
         if(_unit->GetHealthPct() <= 40)
         {
             m_phase = 3;
-            _unit->SetFloatValue(UNIT_MOD_CAST_SPEED, 1.0f);
+            _unit->SetCastSpeedMod(1.0f);
             if(_unit->GetCurrentSpell() != NULL)
                 _unit->GetCurrentSpell()->cancel();
             _unit->GetAIInterface()->m_canMove = true;
@@ -348,22 +338,22 @@ public:
         m_whelpCooldown--;
         if(!m_whelpCooldown)
         {
-            Creature *cre = NULL;
+            Creature* cre = NULL;
             for(int i = 0; i < 6; i++)
             {
-                cre = _unit->GetMapMgr()->GetInterface()->SpawnCreature(CN_ONYXIAN_WHELP, 
+                cre = _unit->GetMapMgr()->GetInterface()->SpawnCreature(11262, 
                     whelpCoords[i].x, whelpCoords[i].y,
                     whelpCoords[i].z, whelpCoords[i].o,
-                    true, false, _unit->GetUInt32Value(UNIT_FIELD_FACTIONTEMPLATE), 50);
+                    true, false, 0, 0);
                 if(cre)
                 {
                     cre->GetAIInterface()->MoveTo(14.161f, -177.874f, -85.649f, 0.23f);
                     cre->GetAIInterface()->setOutOfCombatRange(100000);
                 }
-                cre = _unit->GetMapMgr()->GetInterface()->SpawnCreature(CN_ONYXIAN_WHELP, 
+                cre = _unit->GetMapMgr()->GetInterface()->SpawnCreature(11262, 
                     whelpCoords[5-i].x, whelpCoords[5-i].y,
                     whelpCoords[5-i].z, whelpCoords[5-i].o,
-                    true, false, _unit->GetUInt32Value(UNIT_FIELD_FACTIONTEMPLATE), 50);
+                    true, false, 0, 0);
                 if(cre)
                 {
                     cre->GetAIInterface()->MoveTo(27.133f, -232.030f, -84.188f, 0.44f);
@@ -388,22 +378,22 @@ public:
         m_aoeFearCooldown--;
         if(!m_whelpCooldown)
         {
-            Creature *cre = NULL;
+            Creature* cre = NULL;
             for(int i = 0; i < 6; i++)
             {
-                cre = _unit->GetMapMgr()->GetInterface()->SpawnCreature(CN_ONYXIAN_WHELP, 
+                cre = _unit->GetMapMgr()->GetInterface()->SpawnCreature(11262, 
                     whelpCoords[i].x, whelpCoords[i].y,
                     whelpCoords[i].z, whelpCoords[i].o,
-                    true, false, _unit->GetUInt32Value(UNIT_FIELD_FACTIONTEMPLATE), 50);
+                    true, false, 0, 0);
                 if(cre)
                 {
                     cre->GetAIInterface()->MoveTo(14.161f, -177.874f, -85.649f, 0.23f);
                     cre->GetAIInterface()->setOutOfCombatRange(100000);
                 }
-                cre = _unit->GetMapMgr()->GetInterface()->SpawnCreature(CN_ONYXIAN_WHELP, 
+                cre = _unit->GetMapMgr()->GetInterface()->SpawnCreature(11262, 
                     whelpCoords[5-i].x, whelpCoords[5-i].y,
                     whelpCoords[5-i].z, whelpCoords[5-i].o,
-                    true, false, _unit->GetUInt32Value(UNIT_FIELD_FACTIONTEMPLATE), 50);
+                    true, false, 0, 0);
                 if(cre)
                 {
                     cre->GetAIInterface()->MoveTo(27.133f, -232.030f, -84.188f, 0.44f);
@@ -513,6 +503,11 @@ public:
             }
         }
     }
+
+	void Destroy()
+	{
+		delete this;
+	};
 
     inline bool HasEntry() { return (m_entry != 0) ? true : false; }
 

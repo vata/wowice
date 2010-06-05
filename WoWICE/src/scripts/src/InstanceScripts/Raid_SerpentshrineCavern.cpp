@@ -13,12 +13,10 @@
  * this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "StdAfx.h"
 #include "Setup.h"
-#include "Base.h"
 
 /************************************************************************/
-/* Raid_SerpentshrineCavern.cpp Script					                        */
+/* Raid_SerpentshrineCavern.cpp Script									*/
 /************************************************************************/
 
 #ifdef WIN32
@@ -30,28 +28,28 @@
 //------------------------------------
 //	-= Hydross the Unstable =-
 //------------------------------------
-#define CN_HYDROSS_THE_UNSTABLE		21216
+#define CN_HYDROSS_THE_UNSTABLE 21216
 #define CN_TAINTED_SPAWN_OF_HYDROSS 22036
-#define CN_PURE_SPAWN_OF_HYDROSS	22035
+#define CN_PURE_SPAWN_OF_HYDROSS 22035
 
-#define WATER_TOMB					38235
-#define VILE_SLUDGE					38246
-#define MARK_OF_HYDROSS1			38215
-#define MARK_OF_HYDROSS2			38216
-#define MARK_OF_HYDROSS3			38217
-#define MARK_OF_HYDROSS4			38218
-#define MARK_OF_HYDROSS5			38231
-#define MARK_OF_HYDROSS6			40584
+#define WATER_TOMB 38235
+#define VILE_SLUDGE 38246
+#define MARK_OF_HYDROSS1    38215
+#define MARK_OF_HYDROSS2    38216
+#define MARK_OF_HYDROSS3    38217
+#define MARK_OF_HYDROSS4    38218
+#define MARK_OF_HYDROSS5    38231
+#define MARK_OF_HYDROSS6    40584
 
-#define MARK_OF_CORRUPTION1			38219
-#define MARK_OF_CORRUPTION2			38220
-#define MARK_OF_CORRUPTION3			38221
-#define MARK_OF_CORRUPTION4			38222
-#define MARK_OF_CORRUPTION5			38230
-#define MARK_OF_CORRUPTION6			40583
+#define MARK_OF_CORRUPTION1 38219
+#define MARK_OF_CORRUPTION2 38220
+#define MARK_OF_CORRUPTION3 38221
+#define MARK_OF_CORRUPTION4 38222
+#define MARK_OF_CORRUPTION5 38230
+#define MARK_OF_CORRUPTION6 40583
 
-#define HYDROSS_ENRAGE				13048
-#define PURIFY_ELEMENTAL			36461
+#define HYDROSS_ENRAGE 13048
+#define PURIFY_ELEMENTAL 36461
 
 class HydrossTheUnstableAI : public CreatureAIScript
 {
@@ -107,9 +105,9 @@ public:
 		RegisterAIUpdateEvent(1000);
 	}
 
-	void OnCombatStop(Unit *mTarget)
+	void OnCombatStop(Unit* mTarget)
 	{
-		_unit->SetUInt32Value(UNIT_FIELD_DISPLAYID, 20162);
+		_unit->SetDisplayId(20162);
 		_unit->SchoolImmunityList[SCHOOL_FROST] = 1;
 		_unit->SchoolImmunityList[SCHOOL_NATURE] = 0;
 
@@ -155,7 +153,7 @@ public:
 		}
 	}
 
-	void OnDied(Unit * mKiller)
+	void OnDied(Unit* mKiller)
 	{
 		_unit->SendChatMessage(CHAT_MSG_MONSTER_YELL, LANG_UNIVERSAL, "You are the disease, not I.");
 		_unit->PlaySoundToSet(11300);
@@ -173,7 +171,7 @@ public:
 				MarkTimer--;
 				if(!MarkTimer)
 				{
-					uint32 spellid = 0;
+//					uint32 spellid = 0; UNUSED???
 					switch(MarkCount)
 					{
 					case 0:
@@ -218,7 +216,7 @@ public:
 				minspell = 1;
 				maxspell = 1;
 				form = true;
-				_unit->SetUInt32Value(UNIT_FIELD_DISPLAYID, 5498);
+				_unit->SetDisplayId(5498);
 				_unit->SendChatMessage(CHAT_MSG_MONSTER_YELL, LANG_UNIVERSAL, "Aaghh, the poison...");
 				_unit->PlaySoundToSet(11297);
 				_unit->GetProto()->AttackType = 3;
@@ -226,18 +224,26 @@ public:
 				_unit->SchoolImmunityList[SCHOOL_NATURE] = 1;
 
 				//Summon 4 elementals
-				Creature * summon;
+				Creature*  summon;
 				float posx = _unit->GetPositionX();
 				float posy = _unit->GetPositionY();
 				float posz = _unit->GetPositionZ();
 				float orientation = _unit->GetOrientation();
-				summon = _unit->GetMapMgr()->GetInterface()->SpawnCreature(CN_TAINTED_SPAWN_OF_HYDROSS, posx+6.93f, posy-11.25f, posz, orientation, true, false, 0, 0);
+				summon = _unit->GetMapMgr()->GetInterface()->SpawnCreature(CN_TAINTED_SPAWN_OF_HYDROSS, 
+					posx+6.93f, posy-11.25f, posz, orientation,
+					true, false, 0, 0);
 				if(summon) summon->SchoolImmunityList[SCHOOL_NATURE] = 1;
-				summon = _unit->GetMapMgr()->GetInterface()->SpawnCreature(CN_TAINTED_SPAWN_OF_HYDROSS, posx-6.93f, posy+11.25f, posz, orientation, true, false, 0, 0);
+				summon = _unit->GetMapMgr()->GetInterface()->SpawnCreature(CN_TAINTED_SPAWN_OF_HYDROSS, 
+					posx-6.93f, posy+11.25f, posz, orientation,
+					true, false, 0, 0);
 				if(summon) summon->SchoolImmunityList[SCHOOL_NATURE] = 1;
-				summon = _unit->GetMapMgr()->GetInterface()->SpawnCreature(CN_TAINTED_SPAWN_OF_HYDROSS, posx-12.57f, posy-4.72f, posz, orientation, true, false, 0, 0);
+				summon = _unit->GetMapMgr()->GetInterface()->SpawnCreature(CN_TAINTED_SPAWN_OF_HYDROSS, 
+					posx-12.57f, posy-4.72f, posz, orientation,
+					true, false, 0, 0);
 				if(summon) summon->SchoolImmunityList[SCHOOL_NATURE] = 1;
-				summon = _unit->GetMapMgr()->GetInterface()->SpawnCreature(CN_TAINTED_SPAWN_OF_HYDROSS, posx+12.57f, posy+4.72f, posz, orientation, true, false, 0, 0);
+				summon = _unit->GetMapMgr()->GetInterface()->SpawnCreature(CN_TAINTED_SPAWN_OF_HYDROSS, 
+					posx+12.57f, posy+4.72f, posz, orientation,
+					true, false, 0, 0);
 				if(summon) summon->SchoolImmunityList[SCHOOL_NATURE] = 1;
 			}
 		}
@@ -249,7 +255,7 @@ public:
 				MarkTimer--;
 				if(!MarkTimer)
 				{
-					uint32 spellid = 0;
+//					uint32 spellid = 0; UNUSED???
 					switch(MarkCount)
 					{
 					case 0:
@@ -294,7 +300,7 @@ public:
 				minspell = 0;
 				maxspell = 0;
 				form = false;
-				_unit->SetUInt32Value(UNIT_FIELD_DISPLAYID, 20162);
+				_unit->SetDisplayId(20162);
 				_unit->SendChatMessage(CHAT_MSG_MONSTER_YELL, LANG_UNIVERSAL, "Better, much better.");
 				_unit->PlaySoundToSet(11290);
 				_unit->GetProto()->AttackType = 4;
@@ -302,18 +308,26 @@ public:
 				_unit->SchoolImmunityList[SCHOOL_NATURE] = 0;
 
 				//Summon 4 elementals
-				Creature * summon;
+				Creature*  summon;
 				float posx = _unit->GetPositionX();
 				float posy = _unit->GetPositionY();
 				float posz = _unit->GetPositionZ();
 				float orientation = _unit->GetOrientation();
-				summon = _unit->GetMapMgr()->GetInterface()->SpawnCreature(CN_PURE_SPAWN_OF_HYDROSS, posx+6.93f, posy-11.25f, posz, orientation, true, false, 0, 0);
+				summon = _unit->GetMapMgr()->GetInterface()->SpawnCreature(CN_PURE_SPAWN_OF_HYDROSS, 
+					posx+6.93f, posy-11.25f, posz, orientation,
+					true, false, 0, 0);
 				if(summon) summon->SchoolImmunityList[SCHOOL_FROST] = 1;
-				summon = _unit->GetMapMgr()->GetInterface()->SpawnCreature(CN_PURE_SPAWN_OF_HYDROSS, posx-6.93f, posy+11.25f, posz, orientation, true, false, 0, 0);
+				summon = _unit->GetMapMgr()->GetInterface()->SpawnCreature(CN_PURE_SPAWN_OF_HYDROSS, 
+					posx-6.93f, posy+11.25f, posz, orientation,
+					true, false, 0, 0);
 				if(summon) summon->SchoolImmunityList[SCHOOL_FROST] = 1;
-				summon = _unit->GetMapMgr()->GetInterface()->SpawnCreature(CN_PURE_SPAWN_OF_HYDROSS, posx-12.57f, posy-4.72f, posz, orientation, true, false, 0, 0);
+				summon = _unit->GetMapMgr()->GetInterface()->SpawnCreature(CN_PURE_SPAWN_OF_HYDROSS, 
+					posx-12.57f, posy-4.72f, posz, orientation,
+					true, false, 0, 0);
 				if(summon) summon->SchoolImmunityList[SCHOOL_FROST] = 1;
-				summon = _unit->GetMapMgr()->GetInterface()->SpawnCreature(CN_PURE_SPAWN_OF_HYDROSS, posx+12.57f, posy+4.72f, posz, orientation, true, false, 0, 0);
+				summon = _unit->GetMapMgr()->GetInterface()->SpawnCreature(CN_PURE_SPAWN_OF_HYDROSS, 
+					posx+12.57f, posy+4.72f, posz, orientation,
+					true, false, 0, 0);
 				if(summon) summon->SchoolImmunityList[SCHOOL_FROST] = 1;
 			}
 		}
@@ -338,7 +352,7 @@ public:
 		if(_unit->GetCurrentSpell() == NULL && _unit->GetAIInterface()->GetNextTarget())
 		{
 			float comulativeperc = 0;
-			Unit *target = NULL;
+			Unit* target = NULL;
 			for(int i = minspell; i <= maxspell; i++)
 			{		
 				if(m_spellcheck[i])
@@ -387,7 +401,7 @@ public:
 		{ 
 			if (isHostile(_unit, (*itr)) && ((*itr)->GetTypeId()== TYPEID_UNIT || (*itr)->GetTypeId() == TYPEID_PLAYER))
 			{
-				RandomTarget = (Unit*)(*itr);
+				RandomTarget = TO_UNIT(*itr);
 
 				if (RandomTarget->isAlive() && _unit->GetDistance2dSq(RandomTarget) >= mindist2cast*mindist2cast && _unit->GetDistance2dSq(RandomTarget) <= maxdist2cast*maxdist2cast)
 					TargetTable.push_back(RandomTarget);
@@ -397,7 +411,7 @@ public:
 		if (!TargetTable.size())
 			return;
 
-		Unit * RTarget = *(TargetTable.begin()+rand()%TargetTable.size());
+		Unit*  RTarget = *(TargetTable.begin()+rand()%TargetTable.size());
 
 		if (!RTarget)
 			return;
@@ -412,6 +426,11 @@ public:
 
 		TargetTable.clear();
 	}
+
+	void Destroy()
+	{
+		delete this;
+	};
 
 private:
 	int nrspells;
@@ -428,15 +447,15 @@ private:
 //------------------------------------
 //	-= The Lurker Below=-
 //------------------------------------
-#define CN_THE_LURKER_BELOW				21217
-#define CN_CN_COILFANG_AMBUSHER			21865
-#define CN_CN_COILFANG_GUARDIAN			21873
+#define CN_THE_LURKER_BELOW 21217
+#define CN_CN_COILFANG_AMBUSHER 21865
+#define CN_CN_COILFANG_GUARDIAN 21873
 
-#define WHIRL							37363
-#define GEYSER							37478
-#define SPOUT							37433
-#define SUBMERGE						37433 // Didn't find the spell id
-//#define WATER_BOLT					37138  
+#define WHIRL 37363
+#define GEYSER 37478
+#define SPOUT 37433
+#define SUBMERGE 37433 // Didn't find the spell id
+//#define WATER_BOLT 37138  
 
 class LurkerAI : public CreatureAIScript
 {
@@ -491,17 +510,17 @@ public:
 
 	void OnCombatStart(Unit* mTarget)
 	{
-		RegisterAIUpdateEvent(_unit->GetUInt32Value(UNIT_FIELD_BASEATTACKTIME));
+		RegisterAIUpdateEvent(_unit->GetBaseAttackTime(MELEE));
 	}
 
-	void OnCombatStop(Unit *mTarget)
+	void OnCombatStop(Unit* mTarget)
 	{
 		_unit->GetAIInterface()->setCurrentAgent(AGENT_NULL);
 		_unit->GetAIInterface()->SetAIState(STATE_IDLE);
 	   RemoveAIUpdateEvent();
 	}
 
-	void OnDied(Unit * mKiller)
+	void OnDied(Unit* mKiller)
 	{
 		RemoveAIUpdateEvent();
 	}
@@ -522,7 +541,7 @@ public:
 		if(_unit->GetCurrentSpell() == NULL && _unit->GetAIInterface()->GetNextTarget())
 		{
 			float comulativeperc = 0;
-			Unit *target = NULL;
+			Unit* target = NULL;
 			for(int i=0;i<nrspells;i++)
 			{
 				if(!spells[i].perctrigger) continue;
@@ -555,6 +574,11 @@ public:
 		}
 	}
 
+	void Destroy()
+	{
+		delete this;
+	};
+
 protected:
 	int nrspells;
 };
@@ -568,18 +592,18 @@ protected:
  - Insidious whispers
 */
 
-#define CN_LEOTHERAS_THE_BLIND			21215
-#define CN_INNER_DEMON					21857 
-#define CN_GREYHEART_SPELLBINDER		21806
-#define CN_SHADOW_OF_LEOTHERAS			21875
+#define CN_LEOTHERAS_THE_BLIND 21215
+#define CN_INNER_DEMON 21857 
+#define CN_GREYHEART_SPELLBINDER 21806
+#define CN_SHADOW_OF_LEOTHERAS 21875
 
-#define MIND_BLAST						37531
-#define WHIRLWINDLEO					40653
-#define INSIDIOUS_WHISPER				37676
-#define CHAOS_BLAST_ANIMATION			37674
-#define CHAOS_BLAST_EFFECT				37675
-#define LEO_ENRAGE						41447 //13048
-#define LEO_BANISH						37546
+#define MIND_BLAST 37531
+#define WHIRLWINDLEO 40653
+#define INSIDIOUS_WHISPER 37676
+#define CHAOS_BLAST_ANIMATION 37674
+#define CHAOS_BLAST_EFFECT 37675
+#define LEO_ENRAGE 41447 //13048
+#define LEO_BANISH 37546
 
 uint32 LeotherasEventGreyheartToKill[1000000];
 
@@ -609,21 +633,18 @@ public:
 		_unit->GetAIInterface()->SetAllowedToEnterCombat(false);
 
 		LeotherasEventGreyheartToKill[_unit->GetInstanceID()] = 0;
-
-		//check if greyheart spellbinders are alive after map initialization
-		TimedEvent * te = TimedEvent::Allocate(this, new CallbackP0<LeotherasAI>(this, &LeotherasAI::FirstCheck), 1, 500, 1);
-		sWorld.event_AddEvent(te);
+		FirstCheck();
 	}
 
 	void FirstCheck()
 	{
 		//count greyheart spellbinders
-		Creature *creature = NULL;
+		Creature* creature = NULL;
 		for(set<Object*>::iterator itr = _unit->GetInRangeSetBegin(); itr != _unit->GetInRangeSetEnd(); ++itr) 
 		{
 			if((*itr)->GetTypeId() == TYPEID_UNIT)
 			{
-				creature = static_cast<Creature*>((*itr));
+				creature = TO_CREATURE((*itr));
 
 				if(creature->GetCreatureInfo() && creature->GetCreatureInfo()->Id == CN_GREYHEART_SPELLBINDER && creature->isAlive())
 					LeotherasEventGreyheartToKill[_unit->GetInstanceID()]++;
@@ -663,10 +684,10 @@ public:
 		RegisterAIUpdateEvent(1000);
 	}
 
-	void OnCombatStop(Unit *mTarget)
+	void OnCombatStop(Unit* mTarget)
 	{
 		//despawn shadow of leotheras
-		Creature *shadow = NULL;
+		Creature* shadow = NULL;
 		shadow = _unit->GetMapMgr()->GetInterface()->GetCreatureNearestCoords(_unit->GetPositionX(), _unit->GetPositionY(), _unit->GetPositionZ(), CN_SHADOW_OF_LEOTHERAS);
 		if(shadow)
 		{
@@ -724,7 +745,7 @@ public:
 		}
 	}
 
-	void OnDied(Unit * mKiller)
+	void OnDied(Unit* mKiller)
 	{
 		_unit->SendChatMessage(CHAT_MSG_MONSTER_YELL, LANG_UNIVERSAL, "You cannot kill me! Fools, I'll be back! I'll... aarghh...");
 		_unit->PlaySoundToSet(11317);
@@ -733,16 +754,16 @@ public:
 
 	void SwitchToHumanForm()
 	{
-		_unit->SetUInt32Value(UNIT_FIELD_DISPLAYID, 20514);
-		_unit->SetUInt32Value(UNIT_VIRTUAL_ITEM_SLOT_ID, (_unit->m_spawn != NULL)? _unit->m_spawn->Item1SlotDisplay : 0);
-		_unit->SetUInt32Value(UNIT_VIRTUAL_ITEM_SLOT_ID+1, (_unit->m_spawn != NULL)?  _unit->m_spawn->Item2SlotDisplay : 0);
-		}
+		_unit->SetDisplayId(20514);
+		_unit->SetEquippedItem(MELEE,(_unit->m_spawn != NULL)? _unit->m_spawn->Item1SlotDisplay : 0);
+		_unit->SetEquippedItem(OFFHAND,(_unit->m_spawn != NULL)?  _unit->m_spawn->Item2SlotDisplay : 0);
+	}
 
 	void SwitchToDemonForm()
 	{
-		_unit->SetUInt32Value(UNIT_FIELD_DISPLAYID, 20125);
-		_unit->SetUInt32Value(UNIT_VIRTUAL_ITEM_SLOT_ID, 0);
-		_unit->SetUInt32Value(UNIT_VIRTUAL_ITEM_SLOT_ID+1, 0);
+		_unit->SetDisplayId(20125);
+		_unit->SetEquippedItem(MELEE,0);
+		_unit->SetEquippedItem(OFFHAND,0);
 	}
 
 	void AIUpdate()
@@ -797,7 +818,7 @@ public:
 			}
 			else
 			{
-				Creature *shadow = NULL;
+				Creature* shadow = NULL;
 				switch(FinalPhaseSubphase)
 				{
 				case 0:
@@ -818,7 +839,11 @@ public:
 					if(!FinalPhaseTimer)
 					{
 						_unit->SetStandState(STANDSTATE_STAND);
-						shadow = _unit->GetMapMgr()->GetInterface()->SpawnCreature(CN_SHADOW_OF_LEOTHERAS, _unit->GetPositionX(), _unit->GetPositionY(), _unit->GetPositionZ(), _unit->GetOrientation(), true, false, 0, 0); 
+						shadow = _unit->GetMapMgr()->GetInterface()->GetCreatureNearestCoords(_unit->GetPositionX(), _unit->GetPositionY(), _unit->GetPositionZ(),CN_SHADOW_OF_LEOTHERAS);
+						
+						if (shadow == NULL)
+							shadow = _unit->GetMapMgr()->GetInterface()->SpawnCreature(CN_SHADOW_OF_LEOTHERAS, _unit->GetPositionX(), _unit->GetPositionY(), _unit->GetPositionZ(), _unit->GetOrientation(), true, false, 0, 0);
+						
 						FinalPhaseTimer = 5;
 						FinalPhaseSubphase++;
 					}
@@ -892,7 +917,7 @@ public:
 		if(_unit->GetCurrentSpell() == NULL && _unit->GetAIInterface()->GetNextTarget())
 		{
 			float comulativeperc = 0;
-			Unit *target = NULL;
+			Unit* target = NULL;
 			for(int i = 0; i < 1; i++)
 			{
 				if(!spells[i].perctrigger) continue;
@@ -931,6 +956,11 @@ public:
 		}
 	}
 
+	void Destroy()
+	{
+		delete this;
+	};
+
 protected:
 	int nrspells;
 	uint32 SwitchTimer;
@@ -968,20 +998,20 @@ public:
 		Leotheras = _unit->GetMapMgr()->GetInterface()->GetCreatureNearestCoords(376.543f, -438.631f, 29.7083f, CN_LEOTHERAS_THE_BLIND);
 		if(Leotheras)
 		{
-			_unit->SetUInt64Value(UNIT_FIELD_CHANNEL_OBJECT, Leotheras->GetGUID());
-			_unit->SetUInt32Value(UNIT_CHANNEL_SPELL, 30166);//wrong
+			_unit->SetChannelSpellTargetGUID(Leotheras->GetGUID());
+			_unit->SetChannelSpellId(30166);//wrong
 		}
 	}
 
 	void OnCombatStart(Unit* mTarget)
 	{			
-		_unit->SetUInt64Value(UNIT_FIELD_CHANNEL_OBJECT, 0);
-		_unit->SetUInt32Value(UNIT_CHANNEL_SPELL, 0);
+		_unit->SetChannelSpellTargetGUID(0);
+		_unit->SetChannelSpellId(0);
 
-		RegisterAIUpdateEvent(_unit->GetUInt32Value(UNIT_FIELD_BASEATTACKTIME));
+		RegisterAIUpdateEvent(_unit->GetBaseAttackTime(MELEE));
 	}
 
-    void OnCombatStop(Unit *mTarget)
+    void OnCombatStop(Unit* mTarget)
     {
         _unit->GetAIInterface()->setCurrentAgent(AGENT_NULL);
         _unit->GetAIInterface()->SetAIState(STATE_IDLE);
@@ -995,7 +1025,7 @@ public:
         SpellCast(val);
     }
 
-	void OnDied(Unit * mKiller)
+	void OnDied(Unit* mKiller)
 	{
 		LeotherasEventGreyheartToKill[_unit->GetInstanceID()]--;
 
@@ -1014,14 +1044,14 @@ public:
 				Leotheras->SetStandState(STANDSTATE_STAND);
 
 				//attack nearest player
-				Player *NearestPlayer;
+				Player *NearestPlayer = NULL;
 				float NearestDist = 0;
-				for(set<Player*>::iterator itr = _unit->GetInRangePlayerSetBegin(); itr != _unit->GetInRangePlayerSetEnd(); ++itr) 
+				for(set< Object* >::iterator itr = _unit->GetInRangePlayerSetBegin(); itr != _unit->GetInRangePlayerSetEnd(); ++itr) 
 				{
 					if(isHostile(_unit, (*itr)) && ((*itr)->GetDistance2dSq(_unit) < NearestDist || !NearestDist))
 					{
 						NearestDist = (*itr)->GetDistance2dSq(_unit);
-						NearestPlayer = (*itr);
+						NearestPlayer = static_cast< Player* >(*itr);
 					}
 				}
 
@@ -1036,7 +1066,7 @@ public:
         if(_unit->GetCurrentSpell() == NULL && _unit->GetAIInterface()->GetNextTarget())
         {
 			float comulativeperc = 0;
-		    Unit *target = NULL;
+		    Unit* target = NULL;
 			for(int i=0;i<nrspells;i++)
 			{
 				if(!spells[i].perctrigger) continue;
@@ -1082,7 +1112,7 @@ public:
 		{ 
 			if (isHostile(_unit, (*itr)) && ((*itr)->GetTypeId()== TYPEID_UNIT || (*itr)->GetTypeId() == TYPEID_PLAYER) && isAttackable(_unit, (*itr)))
 			{
-				RandomTarget = (Unit*)(*itr);
+				RandomTarget = TO_UNIT(*itr);
 
 				if (RandomTarget->isAlive() && _unit->GetDistance2dSq(RandomTarget) >= mindist2cast*mindist2cast && _unit->GetDistance2dSq(RandomTarget) <= maxdist2cast*maxdist2cast)
 					TargetTable.push_back(RandomTarget);
@@ -1092,7 +1122,7 @@ public:
 		if (!TargetTable.size())
 			return;
 
-		Unit * RTarget = *(TargetTable.begin()+rand()%TargetTable.size());
+		Unit*  RTarget = *(TargetTable.begin()+rand()%TargetTable.size());
 
 		if (!RTarget)
 			return;
@@ -1107,6 +1137,11 @@ public:
 
 		TargetTable.clear();
 	}
+
+	void Destroy()
+	{
+		delete this;
+	};
 
 private:
 	int nrspells;
@@ -1124,18 +1159,10 @@ public:
 		_unit->SetUInt32Value(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_ATTACKABLE_9);
 		_unit->GetAIInterface()->SetAllowedToEnterCombat(false);
 
-		TimedEvent * te = TimedEvent::Allocate(this, new CallbackP0<ShadowofLeotherasAI>(this, &ShadowofLeotherasAI::Free), 1, 7500, 1);
-		sWorld.event_AddEvent(te);
-	}
-
-	void Free()
-	{
 		_unit->SendChatMessage(CHAT_MSG_MONSTER_YELL, LANG_UNIVERSAL, "At last I am liberated. It has been too long since I have tasted true freedom!");
 		_unit->PlaySoundToSet(11309);
 
-		_unit->SetUInt32Value(UNIT_FIELD_FLAGS, 0);
-		_unit->GetAIInterface()->SetAllowedToEnterCombat(true);
-		_unit->GetAIInterface()->m_canMove = true;
+		sEventMgr.AddEvent(TO_OBJECT(_unit), &Object::EventSetUInt32Value, (uint32)UNIT_FIELD_FLAGS, (uint32)0, EVENT_CREATURE_UPDATE, 7500, 0, 1);
 	}
 
 	void OnCombatStart(Unit* mTarget)
@@ -1171,38 +1198,46 @@ public:
 		}
 	}
 
+	void Destroy()
+	{
+		delete this;
+	};
+
 protected:
 	SpellEntry* info_chaos_blast;
 };
 
 //Chaos blast dummy effect
-bool ChaosBlast(uint32 i, Spell * pSpell)
+bool ChaosBlast(uint32 i, Spell*  pSpell)
 {
-	/*Unit *target = NULL;
+	/*Unit* target = NULL;
 	if(GUID_HIPART(pSpell->m_targets.m_unitTarget) == HIGHGUID_UNIT)
 		target = pSpell->u_caster->GetMapMgr()->GetCreature(pSpell->m_targets.m_unitTarget);
 	else if (GUID_HIPART(pSpell->m_targets.m_unitTarget) == HIGHGUID_PLAYER)
 		target = objmgr.GetPlayer(pSpell->m_targets.m_unitTarget);*/
 
-	pSpell->u_caster->CastSpell(pSpell->m_targets.m_unitTarget, dbcSpell.LookupEntry(CHAOS_BLAST_EFFECT), true);
+	// M4ksiu - not sure if it's correct way to resolve Ascent -> AspireCore changes
+	if ( pSpell == NULL || pSpell->u_caster == NULL )
+		return true;
 
+	pSpell->u_caster->CastSpell( pSpell->GetUnitTarget(), dbcSpell.LookupEntry( CHAOS_BLAST_EFFECT ), true );
 	return true;
 }
 
 //------------------------------------
 //	-= Fathom-Lord Karathress =-
 //------------------------------------
-#define CN_FATHOM_LORD_KARATHRESS		21214
-#define CN_FATHOM_GUARD_SHARKKIS		21966
-#define CN_FATHOM_GUARD_TIDALVESS		21965
-#define CN_FATHOM_LURKER				22119
-#define CN_FATHOM_SPOREBAT				22120
-#define CN_FATHOM_GUARD_CARIBDIS		21964
-#define CN_SEER_OLUM					22820
+#define CN_FATHOM_LORD_KARATHRESS 21214
+#define CN_FATHOM_GUARD_SHARKKIS 21966
+#define CN_FATHOM_GUARD_TIDALVESS 21965
+#define CN_FATHOM_LURKER 22119
+#define CN_FATHOM_SPOREBAT 22120
+#define CN_FATHOM_GUARD_CARIBDIS 21964
+#define CN_SEER_OLUM 22820
 
-#define CATACLYSMIC_BOLT				38441
-#define BLESSING_OF_THE_TIDES			38449
-#define KARATHRESS_ENRAGE				39249
+#define CATACLYSMIC_BOLT 38441
+#define BLESSING_OF_THE_TIDES 38449
+#define KARATHRESS_ENRAGE 39249
 
 class KarathressAI : public CreatureAIScript
 {
@@ -1212,33 +1247,31 @@ public:
 	KarathressAI(Creature* pCreature) : CreatureAIScript(pCreature)
 	{
 		info_cataclysmic_bolt = dbcSpell.LookupEntry(CATACLYSMIC_BOLT);
-		AdvisorsLeft = 0;
+		AdvisorsLeft = 3;
+		BlessingOfTidesCounter = 0;
 
-		//check if advisors are alive after map initialization
-		TimedEvent * te = TimedEvent::Allocate(this, new CallbackP0<KarathressAI>(this, &KarathressAI::CheckAdvisors), 1, 500, 1);
-		sWorld.event_AddEvent(te);
 	}
-
+/* we don't need to use that, as long we handle advisors counter with events
 	void CheckAdvisors()
 	{
-		Unit *advisor = NULL;
+		Unit* advisor = NULL;
 
 		//Sharkkis
 		advisor = _unit->GetMapMgr()->GetInterface()->GetCreatureNearestCoords(_unit->GetPositionX(), _unit->GetPositionY(), _unit->GetPositionZ(), CN_FATHOM_GUARD_SHARKKIS);
-		if(advisor && advisor->isAlive()) AdvisorsLeft++;
+		if(advisor && advisor->isAlive()) AdvisorsLeft--;
 
 		//Tidalvess
 		advisor = _unit->GetMapMgr()->GetInterface()->GetCreatureNearestCoords(_unit->GetPositionX(), _unit->GetPositionY(), _unit->GetPositionZ(), CN_FATHOM_GUARD_TIDALVESS);
-		if(advisor && advisor->isAlive()) AdvisorsLeft++;
+		if(advisor && advisor->isAlive()) AdvisorsLeft--;
 
 		//Caribdis
 		advisor = _unit->GetMapMgr()->GetInterface()->GetCreatureNearestCoords(_unit->GetPositionX(), _unit->GetPositionY(), _unit->GetPositionZ(), CN_FATHOM_GUARD_CARIBDIS);
-		if(advisor && advisor->isAlive()) AdvisorsLeft++;
-	}
+		if(advisor && advisor->isAlive()) AdvisorsLeft--;
+	}*/
 
 	void OnCombatStart(Unit* mTarget)
 	{
-		CataclysmicBoltTimer = 60;
+		CataclysmicBoltTimer = 10;
 		EnrageTimer = 600;
 		Enraged = false;
 		_unit->SendChatMessage(CHAT_MSG_MONSTER_YELL, LANG_UNIVERSAL, "Guards, attention! We have visitors ...");
@@ -1246,21 +1279,21 @@ public:
 		RegisterAIUpdateEvent(1000);
 	}
 
-	void OnCombatStop(Unit *mTarget)
+	void OnCombatStop(Unit* mTarget)
 	{
 		_unit->GetAIInterface()->setCurrentAgent(AGENT_NULL);
 		_unit->GetAIInterface()->SetAIState(STATE_IDLE);
 	   RemoveAIUpdateEvent();
 	}
 
-	void OnDied(Unit * mKiller)
+	void OnDied(Unit* mKiller)
 	{
 		_unit->SendChatMessage(CHAT_MSG_MONSTER_YELL, LANG_UNIVERSAL, "Her ... excellency ... awaits!");
 		_unit->PlaySoundToSet(11285);
 		RemoveAIUpdateEvent();
 
 		//spawn seer olum and despawn him in 3 minutes
-		Creature *olum = NULL;
+		Creature* olum = NULL;
 		olum = _unit->GetMapMgr()->GetInterface()->SpawnCreature(CN_SEER_OLUM, 451.099f, -544.984f, -7.36327f, 0.174533f, true, false, 0, 0);
 		if(olum)
 			olum->Despawn(180000, 0);
@@ -1276,26 +1309,46 @@ public:
 	{
 		//Cataclysmic Bolt
 		CataclysmicBoltTimer--;
-		if(!CataclysmicBoltTimer)
+		if(CataclysmicBoltTimer==0)
 		{
-			//deal half of target life
-			Unit *target = _unit->GetAIInterface()->GetNextTarget();
-			if(target && target->GetUInt32Value(UNIT_FIELD_MAXHEALTH) > 0)
+		// trying to be blizzlike: cast this bolt random on casters only
+		CataclysmicBoltTimer = 10;
+		Unit* RandomTarget = NULL;
+		std::vector<Unit*> TargetTable;
+		for(set<Object*>::iterator itr = _unit->GetInRangeSetBegin(); itr != _unit->GetInRangeSetEnd(); ++itr) 
+		{ 
+			if (isHostile(_unit, (*itr)) && ((*itr)->GetTypeId()== TYPEID_UNIT || (*itr)->GetTypeId() == TYPEID_PLAYER))
 			{
-				info_cataclysmic_bolt->EffectBasePoints[0] = target->GetUInt32Value(UNIT_FIELD_MAXHEALTH)/2;
-				_unit->CastSpell(target, info_cataclysmic_bolt, true);
-			}
+				RandomTarget = TO_UNIT(*itr);
 
-			CataclysmicBoltTimer = 60;
+				if (RandomTarget->isAlive() && _unit->GetDistance2dSq(RandomTarget) <= 80.0f && _unit->GetPowerType() == POWER_TYPE_MANA)
+					TargetTable.push_back(RandomTarget);
+			} 
+		}
+
+		if (!TargetTable.size())
+			return;
+
+		RandomTarget = *(TargetTable.begin()+rand()%TargetTable.size());
+
+		if (!RandomTarget)
+			return;
+		//let's force this effect
+		info_cataclysmic_bolt->EffectBasePoints[0] = RandomTarget->GetUInt32Value(UNIT_FIELD_MAXHEALTH)/2;
+		_unit->CastSpell(RandomTarget, info_cataclysmic_bolt, true);
+		TargetTable.clear();
 		}
 
 		//Blessing of the Tides
 		if(_unit->GetHealthPct() <= 70 && AdvisorsLeft > 0)
 		{
+			if (BlessingOfTidesCounter < AdvisorsLeft)
+			{
 			_unit->SendChatMessage(CHAT_MSG_MONSTER_YELL, LANG_UNIVERSAL, "Your overconfidence will be your undoing! Guards, lend me your strength!");
 			_unit->PlaySoundToSet(11278);
 			_unit->CastSpell(_unit, dbcSpell.LookupEntry(BLESSING_OF_THE_TIDES), true);
-			AdvisorsLeft = 0;
+			BlessingOfTidesCounter++;
+			}
 		}
 
 		//Enrage
@@ -1310,25 +1363,31 @@ public:
 		}
 	}
 
+	void Destroy()
+	{
+		delete this;
+	};
+
 	uint32 AdvisorsLeft;
 
 private:
 	SpellEntry *info_cataclysmic_bolt;
 	uint32 CataclysmicBoltTimer;
 	uint32 EnrageTimer;
+	uint32 BlessingOfTidesCounter;
 	bool Enraged;
 };
 
 //Fathom-Guard Sharkkis (Hunter)
-#define MULTI_SHOT				29576
-#define LEECHING_THROW			29436
-#define THE_BEAST_WITHIN		38373
+#define MULTI_SHOT 29576
+#define LEECHING_THROW 29436
+#define THE_BEAST_WITHIN 38373
 
-class FathomGuardSharkissAI : public ArcScriptCreatureAI
+class FathomGuardSharkissAI : public MoonScriptCreatureAI
 {
 public:
     ADD_CREATURE_FACTORY_FUNCTION(FathomGuardSharkissAI);
-	FathomGuardSharkissAI(Creature* pCreature) : ArcScriptCreatureAI(pCreature)
+	FathomGuardSharkissAI(Creature* pCreature) : MoonScriptCreatureAI(pCreature)
 	{
 		AddSpell(MULTI_SHOT, Target_Current, 10.0f, 0, 0);
 		AddSpell(LEECHING_THROW, Target_Current, 10.0f, 0, 0);
@@ -1340,7 +1399,7 @@ public:
 	   CurrentPet = NULL;
 	   SummonPetTimer = 5;
 
-	   ArcScriptCreatureAI::OnCombatStart(pTarget);
+	   MoonScriptCreatureAI::OnCombatStart(pTarget);
    }
 
 	void OnDied(Unit* pKiller)
@@ -1353,9 +1412,10 @@ public:
 			FLK->PlaySoundToSet(11280);
 			if(static_cast<KarathressAI*>(FLK->GetScript())->AdvisorsLeft > 0)
 				static_cast<KarathressAI*>(FLK->GetScript())->AdvisorsLeft--;
+			FLK->RemoveAura (BLESSING_OF_THE_TIDES);
 		}
 
-		ArcScriptCreatureAI::OnDied(pKiller);
+		MoonScriptCreatureAI::OnDied(pKiller);
 	}
 
 	void AIUpdate()
@@ -1381,26 +1441,26 @@ public:
 			}
 		}
 
-		ArcScriptCreatureAI::AIUpdate();
+		MoonScriptCreatureAI::AIUpdate();
 	}
 
 private:
 	uint32 SummonPetTimer;
-	Creature *CurrentPet;
+	Creature* CurrentPet;
 };
 
 //Fathom-Guard Tidalvess (Shaman)
-#define SPITFIRE_TOTEM			38236
-#define POISON_CLEANSING_TOTEM	38306
-#define EARTHBIND_TOTEM			38304
-#define FROST_SHOCK				38234
-#define WINDFURY				38229
+#define SPITFIRE_TOTEM 38236
+#define POISON_CLEANSING_TOTEM 38306
+#define EARTHBIND_TOTEM 38304
+#define FROST_SHOCK 38234
+#define WINDFURY 38229
 
-class FathomGuardTidalvessAI : public ArcScriptCreatureAI
+class FathomGuardTidalvessAI : public MoonScriptCreatureAI
 {
 public:
     ADD_CREATURE_FACTORY_FUNCTION(FathomGuardTidalvessAI);
-	FathomGuardTidalvessAI(Creature* pCreature) : ArcScriptCreatureAI(pCreature)
+	FathomGuardTidalvessAI(Creature* pCreature) : MoonScriptCreatureAI(pCreature)
 	{
 		//totems
 		AddSpell(SPITFIRE_TOTEM, Target_Self, 10.0f, 0, 0);
@@ -1411,7 +1471,7 @@ public:
 		AddSpell(WINDFURY, Target_Current, 10.0f, 0, 0);
 	}
 
-	void OnDied(Unit * pKiller)
+	void OnDied(Unit*  pKiller)
 	{
 		Creature* FLK = _unit->GetMapMgr()->GetInterface()->GetCreatureNearestCoords(_unit->GetPositionX(), _unit->GetPositionY(), _unit->GetPositionZ(), CN_FATHOM_LORD_KARATHRESS);
 		if(FLK)
@@ -1421,32 +1481,33 @@ public:
 			FLK->PlaySoundToSet(11279);
 			if(static_cast<KarathressAI*>(FLK->GetScript())->AdvisorsLeft > 0)
 				static_cast<KarathressAI*>(FLK->GetScript())->AdvisorsLeft--;
+			FLK->RemoveAura (BLESSING_OF_THE_TIDES);
 		}
 		
-		ArcScriptCreatureAI::OnDied(pKiller);
+		MoonScriptCreatureAI::OnDied(pKiller);
 	}
 };
 
 //Fathom-Guard Caribdis (Priest)
-#define HEAL					33144
-#define TIDAL_SURGE				38358
-#define SUMMON_CYCLONE			38337
+#define HEAL 33144
+#define TIDAL_SURGE 38358
+#define SUMMON_CYCLONE 38337
 
-class FathomGuardCaribdisAI : public ArcScriptCreatureAI
+class FathomGuardCaribdisAI : public MoonScriptCreatureAI
 {
 public:
     ADD_CREATURE_FACTORY_FUNCTION(FathomGuardCaribdisAI);
-	FathomGuardCaribdisAI(Creature* pCreature) : ArcScriptCreatureAI(pCreature)
+	FathomGuardCaribdisAI(Creature* pCreature) : MoonScriptCreatureAI(pCreature)
 	{
 		AddSpell(TIDAL_SURGE, Target_Self, 20.0f, 0, 10);
 		AddSpell(SUMMON_CYCLONE, Target_Self, 2.0f, 0, 0);
 	}
 
-	void OnCombatStart(Unit*pTarget)
+	void OnCombatStart(Unit* pTarget)
 	{
 		HealingWaveTimer = 15;
 
-		ArcScriptCreatureAI::OnCombatStart(pTarget);
+		MoonScriptCreatureAI::OnCombatStart(pTarget);
 	}
 
 	void AIUpdate()
@@ -1458,16 +1519,16 @@ public:
 			for(set<Object*>::iterator itr = _unit->GetInRangeSetBegin(); itr != _unit->GetInRangeSetEnd(); ++itr) 
 			{
 				if((*itr)->GetTypeId() == TYPEID_UNIT && isFriendly(_unit, (*itr)))
-					TargetTable.push_back((Unit*)(*itr));
+					TargetTable.push_back(TO_UNIT(*itr));
 			}
 
 			HealingWaveTimer = 15;
 		}*/
 
-		ArcScriptCreatureAI::AIUpdate();
+		MoonScriptCreatureAI::AIUpdate();
 	}
 
-	void OnDied(Unit * pKiller)
+	void OnDied(Unit*  pKiller)
 	{
 		Creature* FLK = _unit->GetMapMgr()->GetInterface()->GetCreatureNearestCoords(_unit->GetPositionX(), _unit->GetPositionY(), _unit->GetPositionZ(), CN_FATHOM_LORD_KARATHRESS);
 		if(FLK)
@@ -1477,9 +1538,9 @@ public:
 			FLK->PlaySoundToSet(11281);
 			if(static_cast<KarathressAI*>(FLK->GetScript())->AdvisorsLeft > 0)
 				static_cast<KarathressAI*>(FLK->GetScript())->AdvisorsLeft--;
+			FLK->RemoveAura (BLESSING_OF_THE_TIDES);
 		}
-
-		ArcScriptCreatureAI::OnDied(pKiller);
+		MoonScriptCreatureAI::OnDied(pKiller);
 	}
 
 private:
@@ -1489,13 +1550,13 @@ private:
 //------------------------------------
 //	-= Morogrim Tidewalker =-
 //------------------------------------
-#define CN_MOROGRIM_TIDEWALKER			21213
-#define CN_TIDEWALKER_LURKER			21920 //Murlocks that he spawns after earthquake
+#define CN_MOROGRIM_TIDEWALKER 21213
+#define CN_TIDEWALKER_LURKER 21920 //Murlocks that he spawns after earthquake
 
-#define TIDAL_WAVE						37730
-#define WATERY_GRAVE					38049
-#define EARTHQUAKE						37764
-#define SUMMON_WATER_GLOBULE			37854
+#define TIDAL_WAVE 37730
+#define WATERY_GRAVE 38049
+#define EARTHQUAKE 37764
+#define SUMMON_WATER_GLOBULE 37854
 
 class MorogrimAI : public CreatureAIScript
 {
@@ -1526,14 +1587,14 @@ public:
 		_unit->SendChatMessage(CHAT_MSG_MONSTER_YELL, LANG_UNIVERSAL, "Flood of the deep, take you!");
 		_unit->PlaySoundToSet(11321);
 
-		RegisterAIUpdateEvent(_unit->GetUInt32Value(UNIT_FIELD_BASEATTACKTIME));
+		RegisterAIUpdateEvent(_unit->GetBaseAttackTime(MELEE));
 
 		uint32 t = (uint32)time(NULL);
 		for (int i = 1; i < 4; i++)
 			spells[i].casttime = t + spells[i].cooldown;
 	}
 
-	void OnCombatStop(Unit *mTarget)
+	void OnCombatStop(Unit* mTarget)
 	{
 		_unit->GetAIInterface()->setCurrentAgent(AGENT_NULL);
 		_unit->GetAIInterface()->SetAIState(STATE_IDLE);
@@ -1541,7 +1602,7 @@ public:
 		RemoveAIUpdateEvent();
 	}
 
-	void OnDied(Unit * mKiller)
+	void OnDied(Unit* mKiller)
 	{
 		_unit->SendChatMessage(CHAT_MSG_MONSTER_YELL, LANG_UNIVERSAL, "Great... currents of... Ageon.");
 		_unit->PlaySoundToSet(11329);
@@ -1576,7 +1637,7 @@ public:
 	{
 		if (_unit->GetAIInterface()->GetNextTarget() != NULL && _unit->GetCurrentSpell() == NULL)
 		{
-			Unit *target = NULL;
+			Unit* target = NULL;
 			uint32 t = (uint32)time(NULL);
 			target = _unit->GetAIInterface()->GetNextTarget();
 			if (t > spells[2].casttime)
@@ -1650,6 +1711,11 @@ public:
 			}
 		}
 	}
+
+	void Destroy()
+	{
+		delete this;
+	};
 };
 
 //CN_TIDEWALKER_LURKER
@@ -1660,21 +1726,21 @@ public:
 
 	TidewalkerLurkerAI(Creature* pCreature) : CreatureAIScript(pCreature)
 	{
-		Unit *target = FindTargetForSpell();
+		Unit* target = FindTargetForSpell();
 		if (target)
 		{
 			_unit->GetAIInterface()->AttackReaction(target, 1, 0);
 		}
 	}
 
-	void OnCombatStop(Unit *mTarget)
+	void OnCombatStop(Unit* mTarget)
 	{
-		_unit->SafeDelete();
+		_unit->Despawn(1,0);
 	}
 
-	void OnDied(Unit * mKiller)
+	void OnDied(Unit* mKiller)
 	{
-		_unit->SafeDelete();
+		_unit->Despawn(1,0);
 	}
 	
 	Unit* FindTargetForSpell()
@@ -1682,21 +1748,21 @@ public:
 		Unit* target = NULL;
 		float distance = 150.0f;
 
-		Unit *pUnit;
+		Unit* pUnit;
 		float dist;
 
-		for (std::set<Object*>::iterator itr = _unit->GetInRangeOppFactsSetBegin(); itr != _unit->GetInRangeOppFactsSetEnd(); itr++)
+		for (set<Object*>::iterator itr = _unit->GetInRangeOppFactsSetBegin(); itr != _unit->GetInRangeOppFactsSetEnd(); itr++)
 		{
 			if((*itr)->GetTypeId() != TYPEID_UNIT && (*itr)->GetTypeId() != TYPEID_PLAYER)
 				continue;
 
-			pUnit = static_cast<Unit*>((*itr));
+			pUnit = TO_UNIT((*itr));
 
 			if(pUnit->HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_FEIGN_DEATH))
 				continue;
 
-			if(pUnit->m_invisible)
-				continue;
+//			if(pUnit->m_auracount[SPELL_AURA_MOD_INVISIBILITY])
+//				continue;
 			
 			if(!pUnit->isAlive() || _unit == pUnit)
 				continue;
@@ -1713,6 +1779,10 @@ public:
 		return target;
 	}
 
+	void Destroy()
+	{
+		delete this;
+	};
 };
 
 //------------------------------------
@@ -1726,38 +1796,30 @@ public:
  - Right Shield generators coords
 */
 
-#define CN_LADY_VASHJ				21212
-#define CN_ENCHANTED_ELEMENTAL		21958
-#define CN_COILFANG_STRIDER			22056
-#define CN_TAINTED_ELEMENTAL		22009
-#define CN_COILFANG_ELITE			22055
-#define CN_TOXIC_SPORE_BAT			22140
+#define CN_LADY_VASHJ 21212
+#define CN_ENCHANTED_ELEMENTAL 21958
+#define CN_COILFANG_STRIDER 22056
+#define CN_TAINTED_ELEMENTAL 22009
+#define CN_COILFANG_ELITE 22055
+#define CN_TOXIC_SPORE_BAT 22140
 #define CN_SHIELD_GENERATOR_CHANNEL 19870
 
-#define SHOOT						37770
-#define ENTANGLE					38316
-#define SPAWN_ELEMENTAL				37053 
-#define MULTI_SHOT					29576
-#define STATIC_CHARGE				38280
-#define FORKED_LIGHTNING			40088
-#define VASHJ_SHIELD				38112
-#define POISON_SPIT					40078
-#define TOXIC_SPORES				38575
-#define SHOCK_BLAST					38509
+#define SHOOT 37770
+#define ENTANGLE 38316
+#define SPAWN_ELEMENTAL 37053 
+#define MULTI_SHOT 29576
+#define STATIC_CHARGE 38280
+#define FORKED_LIGHTNING 40088
+#define VASHJ_SHIELD 38112
+#define POISON_SPIT 40078
+#define TOXIC_SPORES 38575
+#define SHOCK_BLAST 38509
 
 #define WALK 0
 #define RUN 256
 #define FLY 768
 
-struct Coords
-{
-	float x;
-	float y;
-	float z;
-	float o;
-};
-
-static Coords ElementalSpawnPoints[] = 
+static LocationExtra ElementalSpawnPoints[] = 
 {
     {8.3f, -835.3f, 21.9f, 5},
     {53.4f, -835.3f, 21.9f, 4.5f},
@@ -1769,7 +1831,7 @@ static Coords ElementalSpawnPoints[] =
     {-58.9f, -901.6f, 21.5f, 6.0f}
 };
 
-static Coords ElementalSpawnPoints2[] =
+static LocationExtra ElementalSpawnPoints2[] =
 {
 	{16.305f, -867.82f, 41.09f, 0},
 	{43.853f, -868.338f, 41.097f, 0},
@@ -1781,7 +1843,7 @@ static Coords ElementalSpawnPoints2[] =
 	{-25.37f, -910.266f, 41.09f, 0}
 };
 
-static Coords CoilfangEliteSpawnPoints[] =
+static LocationExtra CoilfangEliteSpawnPoints[] =
 {
 	{14.837f, -949.106f, 41.53f, 0},
 	{14.857f, -897.68f, 41.536f, 0},
@@ -1797,20 +1859,20 @@ static float ShieldGeneratorCoords[4][3] =
 	{49.687f, -944.406f, 42.7324f}
 };
 
-static Coords fly[] = 
+static Location fly[] = 
 {
-	{ 29.769f, -866.190f, 43, 0 },
-	{ 1.135f, -874.345f, 43, 0 },
-	{ -19.719f, -894.950f, 43, 0 },
-	{ -27.4222f, -923.572f, 43, 0 },
-	{ -19.739f, -951.907f, 43, 0 },
-	{ 1.059f, -973.314f, 43, 0 },
-	{ 30.071f, -980.424f, 43, 0 },
-	{ 58.665f, -973.410f, 43, 0 },
-	{ 79.353f, -952.011f, 43, 0 },
-	{ 87.552f, -923.175f, 43, 0 },
-	{ 79.068f, -894.570f, 43, 0 },
-	{ 58.503f, -873.295f, 43, 0 }
+	{ 29.769f, -866.190f, 43 },
+	{ 1.135f, -874.345f, 43 },
+	{ -19.719f, -894.950f, 43 },
+	{ -27.4222f, -923.572f, 43 },
+	{ -19.739f, -951.907f, 43 },
+	{ 1.059f, -973.314f, 43 },
+	{ 30.071f, -980.424f, 43 },
+	{ 58.665f, -973.410f, 43 },
+	{ 79.353f, -952.011f, 43 },
+	{ 87.552f, -923.175f, 43 },
+	{ 79.068f, -894.570f, 43 },
+	{ 58.503f, -873.295f, 43 }
 };
 
 class EnchantedElementalAI : public CreatureAIScript
@@ -1822,7 +1884,7 @@ public:
 	{
 		_unit->GetAIInterface()->SetAllowedToEnterCombat(false);
 
-		Unit *Vashj = NULL;
+		Unit* Vashj = NULL;
 		Vashj = _unit->GetMapMgr()->GetInterface()->GetCreatureNearestCoords(29.798161f, -923.358276f, 42.900517f, CN_LADY_VASHJ);
 		if(Vashj)
 		{
@@ -1842,20 +1904,25 @@ public:
 			break;
 
 		case 2:
-			Unit *Vashj = NULL;
+			Unit* Vashj = NULL;
 			Vashj = _unit->GetMapMgr()->GetInterface()->GetCreatureNearestCoords(29.798161f, -923.358276f, 42.900517f, CN_LADY_VASHJ);
 			if(Vashj)
 			{
 				//Increase Lady Vashj attack by 5%
-				Vashj->ModFloatValue(UNIT_FIELD_MINDAMAGE, (Vashj->GetFloatValue(UNIT_FIELD_MINDAMAGE)/100)*5);
-				Vashj->ModFloatValue(UNIT_FIELD_MAXDAMAGE, (Vashj->GetFloatValue(UNIT_FIELD_MAXDAMAGE)/100)*5);
+				Vashj->ModFloatValue(UNIT_FIELD_MINDAMAGE, (Vashj->GetMinDamage()/100)*5);
+				Vashj->ModFloatValue(UNIT_FIELD_MAXDAMAGE, (Vashj->GetMaxDamage()/100)*5);
 			}
 
 			//despawn
-			_unit->Despawn(0, 0);
+			_unit->Despawn(1, 0);
 			break;
 		}
 	}
+
+	void Destroy()
+	{
+		delete this;
+	};
 };
 
 class VashjAI : public CreatureAIScript
@@ -1965,21 +2032,22 @@ public:
 		RegisterAIUpdateEvent(1000);
 	}
 		
-	void OnCombatStop(Unit *mTarget)
+	void OnCombatStop(Unit* mTarget)
 	{
 		//despawn enchanted elemental, tainted elemental, coilfang elite, coilfang strider
-		Creature *creature = NULL;
+		Creature* creature = NULL;
 		for(set<Object*>::iterator itr = _unit->GetInRangeSetBegin(); itr != _unit->GetInRangeSetEnd(); ++itr) 
 		{
 			if((*itr)->GetTypeId() == TYPEID_UNIT)
 			{
-				creature = static_cast<Creature*>((*itr));
-
+				creature = TO_CREATURE((*itr));
+	
 				if(creature && creature->GetCreatureInfo() && 
 					(creature->GetCreatureInfo()->Id == CN_ENCHANTED_ELEMENTAL || 
 					creature->GetCreatureInfo()->Id == CN_TAINTED_ELEMENTAL ||
 					creature->GetCreatureInfo()->Id == CN_COILFANG_STRIDER ||
-					creature->GetCreatureInfo()->Id == CN_COILFANG_ELITE)
+					creature->GetCreatureInfo()->Id == CN_COILFANG_ELITE ||
+                    creature->GetCreatureInfo()->Id == CN_SHIELD_GENERATOR_CHANNEL)
 					&& creature->isAlive())
 					creature->Despawn(500, 0);
 			}
@@ -1994,7 +2062,7 @@ public:
 		RemoveAIUpdateEvent();
 	}
 		
-	void OnDied(Unit * mKiller)
+	void OnDied(Unit* mKiller)
 	{
 		_unit->SendChatMessage(CHAT_MSG_MONSTER_YELL, LANG_UNIVERSAL, "Lord Illidan, I... I am... sorry.");
 		_unit->PlaySoundToSet(11544);
@@ -2040,7 +2108,7 @@ public:
 			/*SporebatTimer++;
 			if(SporebatTimer > 10)
 			{
-				Creature *cre = _unit->GetMapMgr()->GetInterface()->SpawnCreature(CN_TOXIC_SPORE_BAT,  29.769f, -866.190f, 43, 0, true, false, 0, 0);
+				Creature* cre = _unit->GetMapMgr()->GetInterface()->SpawnCreature(CN_TOXIC_SPORE_BAT,  29.769f, -866.190f, 43, 0, true, false, 0, 0);
 				cre->GetAIInterface()->setOutOfCombatRange(1);		
 				SporebatTimer = 0;
 			}*/
@@ -2101,7 +2169,7 @@ public:
 		if(!EnchantedElementalTimer)
 		{
 			uint32 pos = rand()%8;
-			Creature *elemental = NULL;
+			Creature* elemental = NULL;
 			elemental = _unit->GetMapMgr()->GetInterface()->SpawnCreature(CN_ENCHANTED_ELEMENTAL, ElementalSpawnPoints[pos].x, ElementalSpawnPoints[pos].y, ElementalSpawnPoints[pos].z, ElementalSpawnPoints[pos].o, true, false, 0, 0);
 			if(elemental)
 			{
@@ -2143,19 +2211,19 @@ public:
 		CoilfangStriderTimer--;
 		if(!CoilfangStriderTimer)
 		{
-			Creature *summoned = NULL;
+			Creature* summoned = NULL;
 			summoned = _unit->GetMapMgr()->GetInterface()->SpawnCreature(CN_COILFANG_STRIDER, -29.761278f, -980.252930f, 41.097122f, 0.0f, true, false, 0, 0);
 			if(summoned)
 			{
 				//attack nearest target
-				Unit *nearest = NULL;
+				Unit* nearest = NULL;
 				float nearestdist = 0;
 				for(set<Object*>::iterator itr = summoned->GetInRangeSetBegin(); itr != summoned->GetInRangeSetEnd(); ++itr) 
 				{
 					if(((*itr)->GetTypeId() == TYPEID_PLAYER || (*itr)->GetTypeId() == TYPEID_UNIT) && isHostile(summoned, (*itr)) && (summoned->GetDistance2dSq((*itr)) < nearestdist || !nearestdist) )
 					{
 						nearestdist = summoned->GetDistance2dSq((*itr));
-						nearest = static_cast<Unit*>((*itr));
+						nearest = TO_UNIT((*itr));
 					}
 				}
 				if(nearest)
@@ -2167,19 +2235,19 @@ public:
 		if(!CoilfangEliteTimer)
 		{
 			uint32 pos = rand()%4;
-			Creature *summoned = NULL;
+			Creature* summoned = NULL;
 			summoned = _unit->GetMapMgr()->GetInterface()->SpawnCreature(CN_COILFANG_ELITE, CoilfangEliteSpawnPoints[pos].x, CoilfangEliteSpawnPoints[pos].y, CoilfangEliteSpawnPoints[pos].z, CoilfangEliteSpawnPoints[pos].o, true, false, 0, 0);
 			if(summoned)
 			{
 				//attack nearest target
-				Unit *nearest = NULL;
+				Unit* nearest = NULL;
 				float nearestdist = 0;
 				for(set<Object*>::iterator itr = summoned->GetInRangeSetBegin(); itr != summoned->GetInRangeSetEnd(); ++itr) 
 				{
 					if(((*itr)->GetTypeId() == TYPEID_PLAYER || (*itr)->GetTypeId() == TYPEID_UNIT) && isHostile(summoned, (*itr)) && (summoned->GetDistance2dSq((*itr)) < nearestdist || !nearestdist) )
 					{
 						nearestdist = summoned->GetDistance2dSq((*itr));
-						nearest = static_cast<Unit*>((*itr));
+						nearest = TO_UNIT((*itr));
 					}
 				}
 				if(nearest)
@@ -2198,12 +2266,12 @@ public:
 		if(_unit->GetHealthPct() <= 50)
 		{
 			//despawn enchanted elementals
-			Creature *creature = NULL;
+			Creature* creature = NULL;
 			for(set<Object*>::iterator itr = _unit->GetInRangeSetBegin(); itr != _unit->GetInRangeSetEnd(); ++itr) 
 			{
 				if((*itr)->GetTypeId() == TYPEID_UNIT)
 				{
-					creature = static_cast<Creature*>((*itr));
+					creature = TO_CREATURE((*itr));
 
 					if(creature->GetCreatureInfo() && creature->GetCreatureInfo()->Id == CN_ENCHANTED_ELEMENTAL && creature->isAlive())
 						creature->Despawn(0, 0);
@@ -2219,7 +2287,7 @@ public:
 		}
 	}
 
-	void Shoot(Unit *target)
+	void Shoot(Unit* target)
 	{
         switch(rand()%2)
         {
@@ -2257,7 +2325,7 @@ public:
 			_unit->GetAIInterface()->m_canMove = false;
 
 			//setup shield
-			Creature *channel = NULL;
+			Creature* channel = NULL;
 			for(uint8 i = 0; i < 4; i++)
 			{
 				channel = _unit->GetMapMgr()->GetInterface()->SpawnCreature(CN_SHIELD_GENERATOR_CHANNEL, ShieldGeneratorCoords[i][0],  ShieldGeneratorCoords[i][1],  ShieldGeneratorCoords[i][2], 0, true, false, 0, 0);
@@ -2265,8 +2333,8 @@ public:
 				{
 					channel->SetUInt64Value(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
 					channel->GetAIInterface()->m_canMove = false;
-					channel->SetUInt64Value(UNIT_FIELD_CHANNEL_OBJECT, _unit->GetGUID());
-					channel->SetUInt32Value(UNIT_CHANNEL_SPELL, VASHJ_SHIELD);
+					channel->SetChannelSpellTargetGUID(_unit->GetGUID());
+					channel->SetChannelSpellId(VASHJ_SHIELD);
 				}
 			}
 			break;
@@ -2278,7 +2346,7 @@ public:
 		if(_unit->GetCurrentSpell() == NULL && _unit->GetAIInterface()->GetNextTarget())
 		{
 			float comulativeperc = 0;
-			Unit *target = NULL;
+			Unit* target = NULL;
 			for(int i=0;i<nrspells;i++)
 			{
 				if(!spells[i].perctrigger) continue;
@@ -2329,7 +2397,7 @@ public:
 		{ 
 			if (isHostile(_unit, (*itr)) && ((*itr)->GetTypeId()== TYPEID_UNIT || (*itr)->GetTypeId() == TYPEID_PLAYER))
 			{
-				RandomTarget = (Unit*)(*itr);
+				RandomTarget = TO_UNIT(*itr);
 
 				if (RandomTarget->isAlive() && _unit->GetDistance2dSq(RandomTarget) >= mindist2cast*mindist2cast && _unit->GetDistance2dSq(RandomTarget) <= maxdist2cast*maxdist2cast)
 					TargetTable.push_back(RandomTarget);
@@ -2339,7 +2407,7 @@ public:
 		if (!TargetTable.size())
 			return;
 
-		Unit * RTarget = *(TargetTable.begin()+rand()%TargetTable.size());
+		Unit*  RTarget = *(TargetTable.begin()+rand()%TargetTable.size());
 
 		if (!RTarget)
 			return;
@@ -2354,6 +2422,11 @@ public:
 
 		TargetTable.clear();
 	}
+
+	void Destroy()
+	{
+		delete this;
+	};
 
 	uint32 TaintedElementalTimer;
 	uint32 Phase;
@@ -2381,7 +2454,7 @@ public:
 		spell_poison_spit->procChance = 0;
 		spell_poison_spit->spell = dbcSpell.LookupEntry(POISON_SPIT);
 		spell_poison_spit->spellType = STYPE_DAMAGE;
-		spell_poison_spit->spell->ai_target_type = TTYPE_SINGLETARGET;
+		spell_poison_spit->spelltargetType = TTYPE_SINGLETARGET;
 		spell_poison_spit->cooldown = 2000;
 		spell_poison_spit->cooldowntime = 0;
 		spell_poison_spit->procCount = 0;
@@ -2392,20 +2465,20 @@ public:
 		_unit->GetAIInterface()->m_canMove = false;
 	}
 
-	void OnCombatStart(Unit *mTarget)
+	void OnCombatStart(Unit* mTarget)
 	{
 		_unit->GetAIInterface()->setCurrentAgent(AGENT_SPELL);
-		RegisterAIUpdateEvent(_unit->GetUInt32Value(UNIT_FIELD_BASEATTACKTIME));
+		RegisterAIUpdateEvent(_unit->GetBaseAttackTime(MELEE));
 	}
 
-	void OnCombatStop(Unit *mTarget)
+	void OnCombatStop(Unit* mTarget)
 	{
 		RemoveAIUpdateEvent();
 	}
 
-	void OnDied(Unit * mKiller)
+	void OnDied(Unit* mKiller)
 	{
-		Creature *Vashj = NULL;
+		Creature* Vashj = NULL;
 		Vashj = _unit->GetMapMgr()->GetInterface()->GetCreatureNearestCoords(_unit->GetPositionX(), _unit->GetPositionY(), _unit->GetPositionZ(), CN_LADY_VASHJ);
 		if(Vashj)
 		{
@@ -2421,43 +2494,50 @@ public:
 			_unit->GetAIInterface()->SetNextSpell(spell_poison_spit);
 	}
 
+	void Destroy()
+	{
+		// Could someone confirm it's nowhere saved, so we won't have any crashes related
+		// to using deleted pointers ?
+		if ( spell_poison_spit != NULL )
+		{
+			delete spell_poison_spit;
+			spell_poison_spit = NULL;
+		};
+
+		delete this;
+	};
+
 private:
 	AI_Spell *spell_poison_spit;
 };
 
-class SCRIPT_DECL TaintedCore : public GossipScript
+class TaintedCoreGO : public GameObjectAIScript
 {
 public:
-	void GossipHello(Object * pObject, Player* Plr, bool AutoSend)
+	TaintedCoreGO(GameObject* pGameObject) : GameObjectAIScript(pGameObject)
 	{
-		//WORKAROUND
-		GameObject *shield = Plr->GetMapMgr()->GetInterface()->GetGameObjectNearestCoords(Plr->GetPositionX(), Plr->GetPositionY(), Plr->GetPositionZ(), 185051);
-		if(shield && shield->GetDistance2dSq(Plr) < 25)
+	}
+
+	void OnActivate(Player* pPlayer)
+	{
+		Creature* Vashj = NULL;
+		Vashj = pPlayer->GetMapMgr()->GetInterface()->GetCreatureNearestCoords(29.798161f, -923.358276f, 42.900517f, CN_LADY_VASHJ);
+		if( Vashj != NULL && static_cast<VashjAI*>(Vashj->GetScript())->Phase == 2 )
 		{
-			//deal 5% life 
-			Creature *Vashj = NULL;
-			Vashj = Plr->GetMapMgr()->GetInterface()->GetCreatureNearestCoords(29.798161f, -923.358276f, 42.900517f, CN_LADY_VASHJ);
-			if(Vashj)
-			{
-				if(static_cast<VashjAI*>(Vashj->GetScript())->Phase == 2)
-				{
-					Vashj->ModUnsigned32Value(UNIT_FIELD_HEALTH, -((Vashj->GetUInt32Value(UNIT_FIELD_MAXHEALTH)/100)*5) );
-
-					//despawn channel
-					Creature *channel = NULL;
-					channel = Plr->GetMapMgr()->GetInterface()->GetCreatureNearestCoords(shield->GetPositionX(), shield->GetPositionY(), shield->GetPositionZ(), CN_SHIELD_GENERATOR_CHANNEL);
-					if(channel)
-						channel->Despawn(0, 0);
-
-					Plr->GetItemInterface()->RemoveItemAmt(31088, 1);
-				}
-			}
+			Vashj->ModHealth(-((Vashj->GetUInt32Value(UNIT_FIELD_MAXHEALTH)/100)*5) );
+			Creature* channel = NULL;
+			channel = pPlayer->GetMapMgr()->GetInterface()->GetCreatureNearestCoords(pPlayer->GetPositionX(), pPlayer->GetPositionY(), pPlayer->GetPositionZ(), CN_SHIELD_GENERATOR_CHANNEL);
+			if(channel != NULL && channel->IsInWorld() )
+				channel->Despawn(0, 0);
 		}
 	}
 
-	void GossipSelectOption(Object * pObject, Player* Plr, uint32 Id, uint32 IntId, const char * Code) { }
-	void GossipEnd(Object * pObject, Player* Plr) { GossipScript::GossipEnd(pObject, Plr); }
-	void Destroy() { delete this; }
+	void Destroy()
+	{
+		delete this;
+	}
+
+	static GameObjectAIScript *Create(GameObject* pGameObject) { return new TaintedCoreGO(pGameObject); }
 };
 
 class ToxicSporeBatAI : public CreatureAIScript
@@ -2513,7 +2593,7 @@ public:
 		_unit->GetAIInterface()->SetAIState(STATE_SCRIPTMOVE);
 		_unit->GetAIInterface()->setMoveType(MOVEMENTTYPE_WANTEDWP);
 		_unit->GetAIInterface()->setWaypointToMove(1);
-		RegisterAIUpdateEvent(_unit->GetUInt32Value(UNIT_FIELD_BASEATTACKTIME));
+		RegisterAIUpdateEvent(_unit->GetBaseAttackTime(MELEE));
 	}
 		
 	void OnCombatStart(Unit* mTarget)
@@ -2541,7 +2621,7 @@ public:
 			_unit->GetAIInterface()->setWaypointToMove(9);
 			break;
 		}
-		//RegisterAIUpdateEvent(_unit->GetUInt32Value(UNIT_FIELD_BASEATTACKTIME));	// Taken from here to add more abilities to code
+		//RegisterAIUpdateEvent(_unit->GetBaseAttackTime(MELEE));	// Taken from here to add more abilities to code
 	}
 		
 	void CastTime()
@@ -2550,7 +2630,7 @@ public:
 			spells[i].casttime = spells[i].cooldown;
 	}
 		
-	void OnCombatStop(Unit *mTarget)
+	void OnCombatStop(Unit* mTarget)
 	{
 		Phase = 0;
 		FlameQuills = false;
@@ -2567,7 +2647,7 @@ public:
 		//RemoveAIUpdateEvent();
 	}
 		
-	void OnDied(Unit * mKiller)
+	void OnDied(Unit* mKiller)
 	{
 		Phase = 0;
 		FlameQuills = false;
@@ -2599,7 +2679,7 @@ public:
 					break;
 				}
 			}
-			_unit->CastSpell(_unit, spells[1].info, spells[1].instant);
+			_unit->CastSpell(_unit, spells[0].info, spells[0].instant);
 		}
 		
 		if (Meteor == true)
@@ -2636,12 +2716,12 @@ public:
 		if (_unit->GetHealthPct() == 0)
 		{
 			Phase = 2;
-			_unit->CastSpell(_unit, spells[6].info, spells[6].instant);
+			_unit->CastSpell(_unit, spells[0].info, spells[0].instant);
 		}
 		
 		if (!PhoenixSummon--)
 		{
-			_unit->CastSpell(_unit, spells[2].info, spells[2].instant);
+			_unit->CastSpell(_unit, spells[0].info, spells[0].instant);
 			PhoenixSummon=rand()%6+17;
 		}
 		
@@ -2674,7 +2754,7 @@ public:
 		if(_unit->GetCurrentSpell() == NULL && _unit->GetAIInterface()->GetNextTarget())
 		{
 			float comulativeperc = 0;
-			Unit *target = NULL;
+			Unit* target = NULL;
 			for(int i=0;i<nrspells;i++)
 			{
 				spells[i].casttime--;
@@ -2861,6 +2941,11 @@ public:
 		wp->backwardskinid = 0;
 		return wp;
 	}
+
+	void Destroy()
+	{
+		delete this;
+	};
 		
 protected:
 	bool FlameQuills;
@@ -2881,29 +2966,29 @@ protected:
 //------------------------------------
 	
 //Coilfang Ambusher
-#define CN_COILFANG_AMBUSHER		21865
-#define CA_MULTI_SHOT				27021
+#define CN_COILFANG_AMBUSHER 21865
+#define CA_MULTI_SHOT 27021
 
-class CoilfangAmbusherAI : public ArcScriptCreatureAI
+class CoilfangAmbusherAI : public MoonScriptCreatureAI
 {
 public:
     ADD_CREATURE_FACTORY_FUNCTION(CoilfangAmbusherAI);
-	CoilfangAmbusherAI(Creature* pCreature) : ArcScriptCreatureAI(pCreature)
+	CoilfangAmbusherAI(Creature* pCreature) : MoonScriptCreatureAI(pCreature)
 	{
 		AddSpell(CA_MULTI_SHOT, Target_Self, 10.0f, 0, 0);
 	}
 };
 
 //Coilfang Fathom-Witch
-#define CN_COILFANG_FATHOM_WITCH	21299
-#define SHADOW_BOLT					27209 
-#define WHIRLWIND_KNOCKBACK			34109 
+#define CN_COILFANG_FATHOM_WITCH 21299
+#define SHADOW_BOLT 27209 
+#define WHIRLWIND_KNOCKBACK 34109 
 
-class CoilfangFathomWitchAI : public ArcScriptCreatureAI
+class CoilfangFathomWitchAI : public MoonScriptCreatureAI
 {
 public:
     ADD_CREATURE_FACTORY_FUNCTION(CoilfangFathomWitchAI);
-	CoilfangFathomWitchAI(Creature* pCreature) : ArcScriptCreatureAI(pCreature)
+	CoilfangFathomWitchAI(Creature* pCreature) : MoonScriptCreatureAI(pCreature)
 	{
 		AddSpell(SHADOW_BOLT, Target_Current, 2.0f, 0, 0);
 		AddSpell(WHIRLWIND_KNOCKBACK, Target_Self, 2.0f, 0, 0);
@@ -2911,30 +2996,30 @@ public:
 };
 
 //Coilfang Guardian
-#define CN_COILFANG_GUARDIAN		21873
-#define CLEAVE						38260
+#define CN_COILFANG_GUARDIAN 21873
+#define CLEAVE 38260
 
-class CoilfangGuardianAI : public ArcScriptCreatureAI
+class CoilfangGuardianAI : public MoonScriptCreatureAI
 {
 public:
     ADD_CREATURE_FACTORY_FUNCTION(CoilfangGuardianAI);
-	CoilfangGuardianAI(Creature* pCreature) : ArcScriptCreatureAI(pCreature)
+	CoilfangGuardianAI(Creature* pCreature) : MoonScriptCreatureAI(pCreature)
 	{
 		AddSpell(CLEAVE, Target_Destination, 3.0f, 0, 0);
 	}
 };
 
 //Coilfang Priestess
-#define CN_COILFANG_PRIESTESS		21220
-#define HOLY_NOVA					38589 
-#define SMITE						25364 
-#define SPIRIT_OF_REDEMPTION		35618
+#define CN_COILFANG_PRIESTESS 21220
+#define HOLY_NOVA 38589 
+#define SMITE 25364 
+#define SPIRIT_OF_REDEMPTION 35618
 
-class CoilfangPriestessAI : public ArcScriptCreatureAI
+class CoilfangPriestessAI : public MoonScriptCreatureAI
 {
 public:
     ADD_CREATURE_FACTORY_FUNCTION(CoilfangPriestessAI);
-	CoilfangPriestessAI(Creature* pCreature) : ArcScriptCreatureAI(pCreature)
+	CoilfangPriestessAI(Creature* pCreature) : MoonScriptCreatureAI(pCreature)
 	{
 		AddSpell(HOLY_NOVA, Target_Self, 2.0f, 0, 0);
 		AddSpell(SMITE, Target_Current, 1.0f, 2, 0);
@@ -2943,20 +3028,20 @@ public:
 };
 
 //Underbog Colossus 
-#define CN_UNDERBOG_COLOSSUS		21251
-#define ACID_GEYSER					37959 
-#define ATROPIC_BLOW				39015 
-#define SPORE_QUAKE					38976
-#define TOXIC_POOL					38718
-#define FRENZY						37605
-#define RAMPANT_INFECTION			39042
-#define PARASITE					39044
+#define CN_UNDERBOG_COLOSSUS 21251
+#define ACID_GEYSER 37959 
+#define ATROPIC_BLOW 39015 
+#define SPORE_QUAKE 38976
+#define TOXIC_POOL 38718
+#define FRENZY 37605
+#define RAMPANT_INFECTION 39042
+#define PARASITE 39044
 
-class UnderbogColossusAI : public ArcScriptCreatureAI
+class UnderbogColossusAI : public MoonScriptCreatureAI
 {
 public:
     ADD_CREATURE_FACTORY_FUNCTION(UnderbogColossusAI);
-	UnderbogColossusAI(Creature* pCreature) : ArcScriptCreatureAI(pCreature)
+	UnderbogColossusAI(Creature* pCreature) : MoonScriptCreatureAI(pCreature)
 	{
 		//these mobs pick from a random set of abilities
 		switch(rand()%3)
@@ -3001,21 +3086,21 @@ public:
 			//Refreshing mist, TODO
 		}
 
-		ArcScriptCreatureAI::OnDied(pKiller);
+		MoonScriptCreatureAI::OnDied(pKiller);
 	}
 };
 
 //Tidewalker Warrior
-#define CN_TIDEWALKER_WARRIOR		21225
-#define TW_CLEAVE					38260 
-#define TW_BLOODTHIRST				30335 //INSTANT
-#define TW_FRENZY					37605
+#define CN_TIDEWALKER_WARRIOR 21225
+#define TW_CLEAVE 38260 
+#define TW_BLOODTHIRST 30335 //INSTANT
+#define TW_FRENZY 37605
 
-class TidewalkerWarriorAI : public ArcScriptCreatureAI
+class TidewalkerWarriorAI : public MoonScriptCreatureAI
 {
 public:
     ADD_CREATURE_FACTORY_FUNCTION(TidewalkerWarriorAI);
-	TidewalkerWarriorAI(Creature* pCreature) : ArcScriptCreatureAI(pCreature)
+	TidewalkerWarriorAI(Creature* pCreature) : MoonScriptCreatureAI(pCreature)
 	{
 		AddSpell(TW_CLEAVE, Target_Destination, 1.0f, 0, 0);
 		AddSpell(TW_BLOODTHIRST, Target_Current, 1.0f, -1, 0); //-1 means instant
@@ -3024,16 +3109,16 @@ public:
 };
 
 //Coilfang Serpentguard
-#define CN_COILFANG_SERPENTGUARD	21298
-#define CSERP_CLEAVE				38260 
-#define CSERP_REFLECTION			36096 
-#define CSERP_DEVOTION				38603 
+#define CN_COILFANG_SERPENTGUARD 21298
+#define CSERP_CLEAVE 38260 
+#define CSERP_REFLECTION 36096 
+#define CSERP_DEVOTION 38603 
 
-class CoilfangSerpentguardAI : public ArcScriptCreatureAI
+class CoilfangSerpentguardAI : public MoonScriptCreatureAI
 {
 public:
     ADD_CREATURE_FACTORY_FUNCTION(CoilfangSerpentguardAI);
-	CoilfangSerpentguardAI(Creature* pCreature) : ArcScriptCreatureAI(pCreature)
+	CoilfangSerpentguardAI(Creature* pCreature) : MoonScriptCreatureAI(pCreature)
 	{
 		AddSpell(CSERP_CLEAVE, Target_Destination, 1.0f, 0, 0);
 		AddSpell(CSERP_REFLECTION, Target_Self, 0.5f, 0, 0);
@@ -3042,32 +3127,80 @@ public:
 };
 
 //Coilfang Shatterer
-#define CN_COILFANG_SHATTERER		21301
-#define CSHATT_ARMOR				38591 
+#define CN_COILFANG_SHATTERER 21301
+#define CSHATT_ARMOR 38591 
 
-class CoilfangShattererAI : public ArcScriptCreatureAI
+class CoilfangShattererAI : public MoonScriptCreatureAI
 {
 public:
     ADD_CREATURE_FACTORY_FUNCTION(CoilfangShattererAI);
-	CoilfangShattererAI(Creature* pCreature) : ArcScriptCreatureAI(pCreature)
+	CoilfangShattererAI(Creature* pCreature) : MoonScriptCreatureAI(pCreature)
 	{
 		AddSpell(CSHATT_ARMOR, Target_Current, 2.0f, 0, 0);
 	}
 };
 
 //Coilfang Strider
-#define CN_COILFANG_STRIDER			22056
-#define CSTRID_SCREAM				10890 
+#define CN_COILFANG_STRIDER 22056
+#define CSTRID_SCREAM 10890 
 
-class CoilfangStriderAI : public ArcScriptCreatureAI
+class CoilfangStriderAI : public MoonScriptCreatureAI
 {
 public:
     ADD_CREATURE_FACTORY_FUNCTION(CoilfangStriderAI);
-	CoilfangStriderAI(Creature* pCreature) : ArcScriptCreatureAI(pCreature)
+	CoilfangStriderAI(Creature* pCreature) : MoonScriptCreatureAI(pCreature)
 	{
 		AddSpell(CSTRID_SCREAM, Target_Current, 2.0f, 0, 0);
 	}
 };
+
+// Serpentshrine Cavern Instance Script
+class SerpentshrineCavern : public MoonInstanceScript
+{
+public:
+	// Console & Bridge parts
+	uint32 mBridgePart[3];
+
+	MOONSCRIPT_INSTANCE_FACTORY_FUNCTION( SerpentshrineCavern, MoonInstanceScript );
+	SerpentshrineCavern(MapMgr* pMapMgr) : MoonInstanceScript(pMapMgr)
+	{
+		for( int i = 0; i < 3; ++i )
+			mBridgePart[i] = 0;
+	}
+
+	void OnGameObjectPushToWorld( GameObject* pGameObject )
+	{
+		switch( pGameObject->GetEntry() )
+		{
+		case 184203: mBridgePart[0] = pGameObject->GetLowGUID(); break;
+		case 184204: mBridgePart[1] = pGameObject->GetLowGUID(); break;
+		case 184205: mBridgePart[2] = pGameObject->GetLowGUID(); break;
+		}
+	};
+
+    void OnGameObjectActivate(GameObject* pGameObject, Player* pPlayer )
+    {
+		if(pGameObject->GetInfo()->ID != 184568)
+			return;
+
+		GameObject* pBridgePart = NULL;
+
+		for( int i = 0; i < 3; ++i )
+		{
+			pBridgePart = GetGameObjectByGuid( mBridgePart[i] );
+			if( pBridgePart != NULL )
+				pBridgePart->SetState(0);
+		};
+
+
+		pGameObject->SetState(0);
+    }
+
+	void Destroy()
+	{
+		delete this;
+	}
+ };
 
 void SetupSerpentshrineCavern(ScriptMgr * mgr)
 {
@@ -3096,8 +3229,12 @@ void SetupSerpentshrineCavern(ScriptMgr * mgr)
 	mgr->register_creature_script(CN_COILFANG_STRIDER, &CoilfangStriderAI::Create);
 	mgr->register_creature_script(CN_ENCHANTED_ELEMENTAL, &EnchantedElementalAI::Create);
 	mgr->register_creature_script(CN_TAINTED_ELEMENTAL, &TaintedElementalAI::Create);
-	GossipScript * tc = (GossipScript*) new TaintedCore;
-	mgr->register_item_gossip_script(31088, tc);
+
+	// Shield Generator
+	mgr->register_gameobject_script(185051, &TaintedCoreGO::Create);
+
+	// Serpentsrine Cavern instance script
+	mgr->register_instance_script(548, &SerpentshrineCavern::Create);
 
 	//Trash mobs
 	mgr->register_creature_script(CN_COILFANG_AMBUSHER, &CoilfangAmbusherAI::Create);

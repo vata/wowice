@@ -13,7 +13,6 @@
  * this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "StdAfx.h"
 #include "Setup.h"
 
 /************************************************************************/
@@ -87,17 +86,17 @@ public:
 		for (int i = 0; i < nrspells; i++)
 			spells[i].casttime = 0;
 
-		RegisterAIUpdateEvent(_unit->GetUInt32Value(UNIT_FIELD_BASEATTACKTIME));
+		RegisterAIUpdateEvent(_unit->GetBaseAttackTime(MELEE));
     }
 
-    void OnCombatStop(Unit *mTarget)
+    void OnCombatStop(Unit* mTarget)
     {
         _unit->GetAIInterface()->setCurrentAgent(AGENT_NULL);
         _unit->GetAIInterface()->SetAIState(STATE_IDLE);
         RemoveAIUpdateEvent();
     }
 
-    void OnDied(Unit * mKiller)
+    void OnDied(Unit* mKiller)
     {
 		RemoveAIUpdateEvent();
     }
@@ -113,7 +112,7 @@ public:
         if(_unit->GetCurrentSpell() == NULL && _unit->GetAIInterface()->GetNextTarget())
         {
 			float comulativeperc = 0;
-		    Unit *target = NULL;
+		    Unit* target = NULL;
 			for(int i=0;i<nrspells;i++)
 			{
 				if(!spells[i].perctrigger) continue;
@@ -169,7 +168,7 @@ public:
 				if (((spells[i].targettype == TARGET_RANDOM_FRIEND && isFriendly(_unit, (*itr))) || (spells[i].targettype != TARGET_RANDOM_FRIEND && isHostile(_unit, (*itr)) && (*itr) != _unit)) && ((*itr)->GetTypeId()== TYPEID_UNIT || (*itr)->GetTypeId() == TYPEID_PLAYER) && (*itr)->GetInstanceID() == _unit->GetInstanceID()) // isAttackable(_unit, (*itr)) && 
 				{
 					Unit* RandomTarget = NULL;
-					RandomTarget = (Unit*)(*itr);
+					RandomTarget = TO_UNIT(*itr);
 
 					if (RandomTarget->isAlive() && _unit->GetDistance2dSq(RandomTarget) >= mindist2cast*mindist2cast && _unit->GetDistance2dSq(RandomTarget) <= maxdist2cast*maxdist2cast && ((RandomTarget->GetHealthPct() >= minhp2cast && RandomTarget->GetHealthPct() <= maxhp2cast && spells[i].targettype == TARGET_RANDOM_FRIEND) || (_unit->GetAIInterface()->getThreatByPtr(RandomTarget) > 0 && isHostile(_unit, RandomTarget))))
 					{
@@ -186,7 +185,7 @@ public:
 
 			size_t RandTarget = rand()%TargetTable.size();
 
-			Unit * RTarget = TargetTable[RandTarget];
+			Unit*  RTarget = TargetTable[RandTarget];
 
 			if (!RTarget)
 				return;
@@ -203,6 +202,11 @@ public:
 			TargetTable.clear();
 		}
 	}
+
+	void Destroy()
+	{
+		delete this;
+	};
 
 protected:
 
@@ -254,7 +258,7 @@ public:
 		spells[2].attackstoptimer = 1000;
 		spells[2].cooldown = -1;
 
-		RegisterAIUpdateEvent(_unit->GetUInt32Value(UNIT_FIELD_BASEATTACKTIME));
+		RegisterAIUpdateEvent(_unit->GetBaseAttackTime(MELEE));
 
 		_unit->GetAIInterface()->SetAllowedToEnterCombat(false);
 		_unit->m_noRespawn = true;
@@ -264,17 +268,17 @@ public:
 
     void OnCombatStart(Unit* mTarget)
     {
-        RegisterAIUpdateEvent(_unit->GetUInt32Value(UNIT_FIELD_BASEATTACKTIME));
+        RegisterAIUpdateEvent(_unit->GetBaseAttackTime(MELEE));
     }
 
-    void OnCombatStop(Unit *mTarget)
+    void OnCombatStop(Unit* mTarget)
     {
         _unit->GetAIInterface()->setCurrentAgent(AGENT_NULL);
         _unit->GetAIInterface()->SetAIState(STATE_IDLE);
         //RemoveAIUpdateEvent();
     }
 
-	void OnDied(Unit * mKiller)
+	void OnDied(Unit* mKiller)
     {
        RemoveAIUpdateEvent();
     }
@@ -298,7 +302,7 @@ public:
         if(_unit->GetCurrentSpell() == NULL && _unit->GetAIInterface()->GetNextTarget())
         {
 			float comulativeperc = 0;
-		    Unit *target = NULL;
+		    Unit* target = NULL;
 			for(int i=0;i<nrspells;i++)
 			{
 				if(!spells[i].perctrigger) continue;
@@ -332,6 +336,11 @@ public:
 			}
         }
     }
+
+	void Destroy()
+	{
+		delete this;
+	};
 
 protected:
 
@@ -428,7 +437,7 @@ public:
 			break;
 		}
 
-        RegisterAIUpdateEvent(_unit->GetUInt32Value(UNIT_FIELD_BASEATTACKTIME));
+        RegisterAIUpdateEvent(_unit->GetBaseAttackTime(MELEE));
     }
 
 	void OnTargetDied(Unit* mTarget)
@@ -451,7 +460,7 @@ public:
 
     }
 
-    void OnCombatStop(Unit *mTarget)
+    void OnCombatStop(Unit* mTarget)
     {
         _unit->GetAIInterface()->setCurrentAgent(AGENT_NULL);
         _unit->GetAIInterface()->SetAIState(STATE_IDLE);
@@ -461,7 +470,7 @@ public:
 		Avatar = false;
     }
 
-	void OnDied(Unit * mKiller)
+	void OnDied(Unit* mKiller)
     {
 		_unit->SendChatMessage(CHAT_MSG_MONSTER_YELL, LANG_UNIVERSAL, "This is... Where... I belong...");
 		_unit->PlaySoundToSet(10518);
@@ -495,7 +504,7 @@ public:
         if(_unit->GetCurrentSpell() == NULL && _unit->GetAIInterface()->GetNextTarget())
         {
 			float comulativeperc = 0;
-		    Unit *target = NULL;
+		    Unit* target = NULL;
 			for(int i=0;i<nrspells;i++)
 			{
 				if(!spells[i].perctrigger) continue;
@@ -551,7 +560,7 @@ public:
 				if (((spells[i].targettype == TARGET_RANDOM_FRIEND && isFriendly(_unit, (*itr))) || (spells[i].targettype != TARGET_RANDOM_FRIEND && isHostile(_unit, (*itr)) && (*itr) != _unit)) && ((*itr)->GetTypeId()== TYPEID_UNIT || (*itr)->GetTypeId() == TYPEID_PLAYER) && (*itr)->GetInstanceID() == _unit->GetInstanceID()) // isAttackable(_unit, (*itr)) && 
 				{
 					Unit* RandomTarget = NULL;
-					RandomTarget = (Unit*)(*itr);
+					RandomTarget = TO_UNIT(*itr);
 
 					if (RandomTarget->isAlive() && _unit->GetDistance2dSq(RandomTarget) >= mindist2cast*mindist2cast && _unit->GetDistance2dSq(RandomTarget) <= maxdist2cast*maxdist2cast && ((RandomTarget->GetHealthPct() >= minhp2cast && RandomTarget->GetHealthPct() <= maxhp2cast && spells[i].targettype == TARGET_RANDOM_FRIEND) || (_unit->GetAIInterface()->getThreatByPtr(RandomTarget) > 0 && isHostile(_unit, RandomTarget))))
 					{
@@ -568,7 +577,7 @@ public:
 
 			size_t RandTarget = rand()%TargetTable.size();
 
-			Unit * RTarget = TargetTable[RandTarget];
+			Unit*  RTarget = TargetTable[RandTarget];
 
 			if (!RTarget)
 				return;
@@ -585,6 +594,11 @@ public:
 			TargetTable.clear();
 		}
 	}
+
+	void Destroy()
+	{
+		delete this;
+	};
 
 protected:
 
