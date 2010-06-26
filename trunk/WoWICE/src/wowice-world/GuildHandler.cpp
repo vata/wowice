@@ -17,6 +17,8 @@
 
 void WorldSession::HandleGuildQuery(WorldPacket & recv_data)
 {
+	CHECK_INWORLD_RETURN
+
 	CHECK_PACKET_SIZE(recv_data, 4);
 
 	uint32 guildId;
@@ -39,18 +41,10 @@ void WorldSession::HandleCreateGuild(WorldPacket & recv_data)
 {
 }
 
-/*void WorldSession::SendGuildCommandResult(uint32 typecmd,const char *  str,uint32 cmdresult)
-{
-	WorldPacket data;
-	data.SetOpcode(SMSG_GUILD_COMMAND_RESULT);
-	data << typecmd;
-	data << str;
-	data << cmdresult;
-	SendPacket(&data);
-}*/
-
 void WorldSession::HandleInviteToGuild(WorldPacket & recv_data)
 {
+	CHECK_INWORLD_RETURN
+
 	CHECK_PACKET_SIZE(recv_data, 1);
 
 	std::string inviteeName;
@@ -103,6 +97,8 @@ void WorldSession::HandleInviteToGuild(WorldPacket & recv_data)
 
 void WorldSession::HandleGuildAccept(WorldPacket & recv_data)
 {
+	CHECK_INWORLD_RETURN
+
 	Player *plyr = GetPlayer();
 
 	if(!plyr)
@@ -126,6 +122,8 @@ void WorldSession::HandleGuildAccept(WorldPacket & recv_data)
 
 void WorldSession::HandleGuildDecline(WorldPacket & recv_data)
 {
+	CHECK_INWORLD_RETURN
+
 	WorldPacket data;
 
 	Player *plyr = GetPlayer();
@@ -146,6 +144,8 @@ void WorldSession::HandleGuildDecline(WorldPacket & recv_data)
 
 void WorldSession::HandleSetGuildInformation(WorldPacket & recv_data)
 {
+	CHECK_INWORLD_RETURN
+
 	CHECK_PACKET_SIZE(recv_data, 1);
 	std::string NewGuildInfo;
 	recv_data >> NewGuildInfo;
@@ -162,12 +162,16 @@ void WorldSession::HandleSetGuildInformation(WorldPacket & recv_data)
 
 void WorldSession::HandleGuildInfo(WorldPacket & recv_data)
 {
+	CHECK_INWORLD_RETURN
+
 	if(_player->GetGuild() != NULL)
 		_player->GetGuild()->SendGuildInfo(this);
 }
 
 void WorldSession::HandleGuildRoster(WorldPacket & recv_data)
 {
+	CHECK_INWORLD_RETURN
+
 	if(!_player->m_playerInfo->guild)
 		return;
 
@@ -176,6 +180,8 @@ void WorldSession::HandleGuildRoster(WorldPacket & recv_data)
 
 void WorldSession::HandleGuildPromote(WorldPacket & recv_data)
 {
+	CHECK_INWORLD_RETURN
+
 	CHECK_PACKET_SIZE(recv_data, 1);
 
 	std::string name;
@@ -196,6 +202,8 @@ void WorldSession::HandleGuildPromote(WorldPacket & recv_data)
 
 void WorldSession::HandleGuildDemote(WorldPacket & recv_data)
 {
+	CHECK_INWORLD_RETURN
+
 	CHECK_PACKET_SIZE(recv_data, 1);
 
 	std::string name;
@@ -216,6 +224,8 @@ void WorldSession::HandleGuildDemote(WorldPacket & recv_data)
 
 void WorldSession::HandleGuildLeave(WorldPacket & recv_data)
 {
+	CHECK_INWORLD_RETURN
+
 	if(!_player->m_playerInfo->guild)
 	{
 		Guild::SendGuildCommandResult(this, GUILD_CREATE_S,"",GUILD_PLAYER_NOT_IN_GUILD);
@@ -227,6 +237,8 @@ void WorldSession::HandleGuildLeave(WorldPacket & recv_data)
 
 void WorldSession::HandleGuildRemove(WorldPacket & recv_data)
 {
+	CHECK_INWORLD_RETURN
+
 	CHECK_PACKET_SIZE(recv_data, 1);
 
 	std::string name;
@@ -247,6 +259,8 @@ void WorldSession::HandleGuildRemove(WorldPacket & recv_data)
 
 void WorldSession::HandleGuildDisband(WorldPacket & recv_data)
 {
+	CHECK_INWORLD_RETURN
+
 	if(!_player->m_playerInfo->guild)
 	{
 		Guild::SendGuildCommandResult(this, GUILD_CREATE_S,"",GUILD_PLAYER_NOT_IN_GUILD);
@@ -264,6 +278,8 @@ void WorldSession::HandleGuildDisband(WorldPacket & recv_data)
 
 void WorldSession::HandleGuildLeader(WorldPacket & recv_data)
 {
+	CHECK_INWORLD_RETURN
+
 	CHECK_PACKET_SIZE(recv_data, 1);
 
 	std::string name;
@@ -287,6 +303,8 @@ void WorldSession::HandleGuildLeader(WorldPacket & recv_data)
 
 void WorldSession::HandleGuildMotd(WorldPacket & recv_data)
 {
+	CHECK_INWORLD_RETURN
+
 	std::string motd;
 	if(recv_data.size())
 		recv_data >> motd;
@@ -302,6 +320,8 @@ void WorldSession::HandleGuildMotd(WorldPacket & recv_data)
 
 void WorldSession::HandleGuildRank(WorldPacket & recv_data)
 {
+	CHECK_INWORLD_RETURN
+
 	CHECK_PACKET_SIZE(recv_data, 9);
 
 	if(!_player->m_playerInfo->guild)
@@ -374,6 +394,8 @@ void WorldSession::HandleGuildRank(WorldPacket & recv_data)
 
 void WorldSession::HandleGuildAddRank(WorldPacket & recv_data)
 {
+	CHECK_INWORLD_RETURN
+
 	string rankName;
 	Guild * pGuild = _player->GetGuild();
 
@@ -402,6 +424,8 @@ void WorldSession::HandleGuildAddRank(WorldPacket & recv_data)
 
 void WorldSession::HandleGuildDelRank(WorldPacket & recv_data)
 {
+	CHECK_INWORLD_RETURN
+
 	Guild * pGuild = _player->GetGuild();
 
 	if(pGuild == NULL)
@@ -425,6 +449,8 @@ void WorldSession::HandleGuildDelRank(WorldPacket & recv_data)
 
 void WorldSession::HandleGuildSetPublicNote(WorldPacket & recv_data)
 {
+	CHECK_INWORLD_RETURN
+
 	string target, newnote;
 	recv_data >> target >> newnote;
 
@@ -440,6 +466,8 @@ void WorldSession::HandleGuildSetPublicNote(WorldPacket & recv_data)
 
 void WorldSession::HandleGuildSetOfficerNote(WorldPacket & recv_data)
 {
+	CHECK_INWORLD_RETURN
+
 	string target, newnote;
 	recv_data >> target >> newnote;
 
@@ -455,6 +483,8 @@ void WorldSession::HandleGuildSetOfficerNote(WorldPacket & recv_data)
 
 void WorldSession::HandleSaveGuildEmblem(WorldPacket & recv_data)
 {
+	CHECK_INWORLD_RETURN
+
 	uint64 guid;
 	Guild * pGuild = _player->GetGuild();
 	int32 cost = MONEY_ONE_GOLD * 10;
@@ -463,7 +493,6 @@ void WorldSession::HandleSaveGuildEmblem(WorldPacket & recv_data)
 	recv_data >> guid;
 
 	CHECK_PACKET_SIZE(recv_data, 28);
-	CHECK_INWORLD_RETURN;
 	CHECK_GUID_EXISTS(guid);
 
 	recv_data >> emblemStyle >> emblemColor >> borderStyle >> borderColor >> backgroundColor;
@@ -501,6 +530,8 @@ void WorldSession::HandleSaveGuildEmblem(WorldPacket & recv_data)
 // Charter part
 void WorldSession::HandleCharterBuy(WorldPacket & recv_data)
 {
+	CHECK_INWORLD_RETURN
+
 	/*
 	{CLIENT} Packet: (0x01BD) CMSG_PETITION_BUY PacketSize = 85
 	|------------------------------------------------|----------------|
@@ -514,9 +545,6 @@ void WorldSession::HandleCharterBuy(WorldPacket & recv_data)
 	|00 00 00 00 00								  |.....		   |
 	-------------------------------------------------------------------
 	*/
-
-	if(!_player->IsInWorld())
-		return;
 
 	uint8 error;
 
@@ -763,6 +791,8 @@ void WorldSession::HandleCharterShowSignatures(WorldPacket & recv_data)
 
 void WorldSession::HandleCharterQuery(WorldPacket & recv_data)
 {
+	CHECK_INWORLD_RETURN
+
 	/*
 	{SERVER} Packet: (0x01C7) SMSG_PETITION_QUERY_RESPONSE PacketSize = 77
 	|------------------------------------------------|----------------|
@@ -862,12 +892,13 @@ void WorldSession::HandleCharterQuery(WorldPacket & recv_data)
 
 void WorldSession::HandleCharterOffer( WorldPacket & recv_data )
 {
+	CHECK_INWORLD_RETURN
+
 	uint32 shit;
 	uint64 item_guid, target_guid;
 	Charter * pCharter;
 	recv_data >> shit >> item_guid >> target_guid;
 
-	if(!_player->IsInWorld()) return;
 	Player * pTarget = _player->GetMapMgr()->GetPlayer((uint32)target_guid);
 	pCharter = objmgr.GetCharterByItemGuid(item_guid);
 
@@ -894,6 +925,8 @@ void WorldSession::HandleCharterOffer( WorldPacket & recv_data )
 
 void WorldSession::HandleCharterSign( WorldPacket & recv_data )
 {
+	CHECK_INWORLD_RETURN
+
 	uint64 item_guid;
 	recv_data >> item_guid;
 
@@ -932,6 +965,8 @@ void WorldSession::HandleCharterSign( WorldPacket & recv_data )
 
 void WorldSession::HandleCharterDecline( WorldPacket & recv_data )
 {
+	CHECK_INWORLD_RETURN
+
 	uint64 item_guid;
 	recv_data >> item_guid;
 
@@ -950,6 +985,8 @@ void WorldSession::HandleCharterDecline( WorldPacket & recv_data )
 
 void WorldSession::HandleCharterTurnInCharter(WorldPacket & recv_data)
 {
+	CHECK_INWORLD_RETURN
+
 	uint64 mooguid;
 	recv_data >> mooguid;
 	Charter * pCharter = objmgr.GetCharterByItemGuid(mooguid);
@@ -1054,6 +1091,8 @@ void WorldSession::HandleCharterTurnInCharter(WorldPacket & recv_data)
 
 void WorldSession::HandleCharterRename(WorldPacket & recv_data)
 {
+	CHECK_INWORLD_RETURN
+
 	uint64 guid;
 	string name;
 	recv_data >> guid >> name;
@@ -1080,6 +1119,8 @@ void WorldSession::HandleCharterRename(WorldPacket & recv_data)
 
 void WorldSession::HandleGuildLog(WorldPacket & recv_data)
 {
+	CHECK_INWORLD_RETURN
+
 	if(!_player->m_playerInfo->guild)
 		return;
 
@@ -1088,6 +1129,8 @@ void WorldSession::HandleGuildLog(WorldPacket & recv_data)
 
 void WorldSession::HandleGuildBankBuyTab(WorldPacket & recv_data)
 {
+	CHECK_INWORLD_RETURN
+
 	uint64 guid;
 	recv_data >> guid;
 
@@ -1120,6 +1163,8 @@ void WorldSession::HandleGuildBankBuyTab(WorldPacket & recv_data)
 
 void WorldSession::HandleGuildBankGetAvailableAmount(WorldPacket & recv_data)
 {
+	CHECK_INWORLD_RETURN
+
 	// calculate using the last withdrawl blablabla
 	if(_player->m_playerInfo->guildMember == NULL)
 		return;
@@ -1135,6 +1180,8 @@ void WorldSession::HandleGuildBankGetAvailableAmount(WorldPacket & recv_data)
 
 void WorldSession::HandleGuildBankModifyTab(WorldPacket & recv_data)
 {
+	CHECK_INWORLD_RETURN
+
 	GuildBankTab * pTab;
 	uint64 guid;
 	uint8 slot;
@@ -1220,6 +1267,8 @@ void WorldSession::HandleGuildBankModifyTab(WorldPacket & recv_data)
 
 void WorldSession::HandleGuildBankWithdrawMoney(WorldPacket & recv_data)
 {
+	CHECK_INWORLD_RETURN
+
 	uint64 guid;
 	uint32 money;
 
@@ -1234,6 +1283,8 @@ void WorldSession::HandleGuildBankWithdrawMoney(WorldPacket & recv_data)
 
 void WorldSession::HandleGuildBankDepositMoney(WorldPacket & recv_data)
 {
+	CHECK_INWORLD_RETURN
+
 	uint64 guid;
 	uint32 money;
 
@@ -1248,6 +1299,8 @@ void WorldSession::HandleGuildBankDepositMoney(WorldPacket & recv_data)
 
 void WorldSession::HandleGuildBankDepositItem(WorldPacket & recv_data)
 {
+	CHECK_INWORLD_RETURN
+
 	uint64 guid;
 	uint8 source_isfrombank;
 	uint32 wtf;
@@ -1593,6 +1646,8 @@ void WorldSession::HandleGuildBankDepositItem(WorldPacket & recv_data)
 
 void WorldSession::HandleGuildBankOpenVault(WorldPacket & recv_data)
 {
+	CHECK_INWORLD_RETURN
+
 	GameObject * pObj;
 	uint64 guid;
 
@@ -1612,6 +1667,8 @@ void WorldSession::HandleGuildBankOpenVault(WorldPacket & recv_data)
 
 void WorldSession::HandleGuildBankViewTab(WorldPacket & recv_data)
 {
+	CHECK_INWORLD_RETURN
+
 	uint64 guid;
 	uint8 tabid;
 	GuildBankTab * pTab;
@@ -1760,6 +1817,8 @@ void Guild::SendGuildBank(WorldSession * pClient, GuildBankTab * pTab, int8 upda
 
 void WorldSession::HandleGuildGetFullPermissions(WorldPacket & recv_data)
 {
+	CHECK_INWORLD_RETURN
+
 	WorldPacket data(MSG_GUILD_PERMISSIONS, 61);
 	GuildRank * pRank = _player->GetGuildRankS();
 
@@ -1781,6 +1840,8 @@ void WorldSession::HandleGuildGetFullPermissions(WorldPacket & recv_data)
 
 void WorldSession::HandleGuildBankViewLog(WorldPacket & recv_data)
 {
+	CHECK_INWORLD_RETURN
+
 	/* slot 6 = I'm requesting money log */
 	uint8 slotid;
 	recv_data >> slotid;
@@ -1792,6 +1853,8 @@ void WorldSession::HandleGuildBankViewLog(WorldPacket & recv_data)
 }
 void WorldSession::HandleGuildBankQueryText( WorldPacket & recv_data )
 {
+	CHECK_INWORLD_RETURN
+
 	if( _player->GetGuild() == NULL )
 		return;
 
@@ -1817,6 +1880,8 @@ void WorldSession::HandleGuildBankQueryText( WorldPacket & recv_data )
 
 void WorldSession::HandleSetGuildBankText( WorldPacket & recv_data )
 {
+	CHECK_INWORLD_RETURN
+
 	GuildMember * pMember = _player->m_playerInfo->guildMember;
 
 	if( _player->GetGuild() == NULL || pMember == NULL )

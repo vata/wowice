@@ -148,6 +148,23 @@ bool ImprovedSprint(uint32 i, Spell* pSpell)
 	return true;
 }
 
+bool CutToTheChase(uint32 i, Aura *pAura, bool apply)
+{
+	Unit *target = pAura->GetTarget();
+	if( target == NULL )
+		return true;
+
+	if (apply)
+	{
+		static uint32 classMask[3] = { 0x20000, 0x8, 0 };
+		target->AddProcTriggerSpell(pAura->GetSpellProto(), pAura->GetSpellProto(), pAura->m_casterGuid, pAura->GetSpellProto()->procChance, PROC_ON_CAST_SPELL | PROC_TARGET_SELF, 0, NULL, classMask);
+	}
+	else
+		target->RemoveProcTriggerSpell(pAura->GetSpellId(), pAura->m_casterGuid);
+
+	return true;
+}
+
 void SetupRogueSpells(ScriptMgr * mgr)
 {
 	mgr->register_dummy_spell(5938, &Shiv);
@@ -167,4 +184,7 @@ void SetupRogueSpells(ScriptMgr * mgr)
 	mgr->register_dummy_spell(ShadowstepIds, &Shadowstep); // Alleycat - This should REALLY be handled in the core. It's just a hack fix here.
 
 	mgr->register_dummy_spell(30918, &ImprovedSprint);
+
+	uint32 CutToTheChaseIds[] = { 51664, 51665, 51667, 51668, 51669, 0 };
+	mgr->register_dummy_aura(CutToTheChaseIds, &CutToTheChase);
 }

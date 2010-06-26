@@ -31,6 +31,7 @@ uint32 Wowice::Util::GUID_LOPART( uint64 GUID ){
 void Wowice::Util::WoWICE_ASSERT(  bool condition){
 	if( !condition ){
 		sLog.outError("Assertion failed. Please submit the callstack on forums(unless you are using a repack).");
+		sLog.Close();
 
 		// bogus null function call to make sure we stop and make a core dump / crash dump
 		((void(*)())0)();
@@ -45,4 +46,15 @@ uint64 Wowice::Util::MAKE_PET_GUID( uint32 entry, uint32 lowGUID ){
 	val = val | lowGUID;
 
 	return val;
+}
+
+uint64 Wowice::Util::MAKE_ITEM_GUID( uint32 lowguid ){
+	uint64 GUID = 0;
+
+	uint32 *u = reinterpret_cast< uint32* >( &GUID );
+
+	u[ 0 ] = lowguid;
+	u[ 1 ] = HIGHGUID_TYPE_ITEM;
+
+	return GUID;
 }

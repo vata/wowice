@@ -383,6 +383,39 @@ CREATE TABLE `corpses` (
   KEY `b` (`instanceId`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
+/*Table structure for table `equipmentsets` */
+
+DROP TABLE IF EXISTS `equipmentsets`;
+
+CREATE TABLE `equipmentsets` (
+  `ownerguid` int(10) unsigned NOT NULL DEFAULT '1',
+  `setGUID` int(10) unsigned NOT NULL DEFAULT '1',
+  `setid` int(10) unsigned NOT NULL DEFAULT '1',
+  `setname` varchar(16) NOT NULL DEFAULT '',
+  `iconname` varchar(100) NOT NULL DEFAULT '',
+  `head` int(10) unsigned NOT NULL DEFAULT '0',
+  `neck` int(10) unsigned NOT NULL DEFAULT '0',
+  `shoulders` int(10) unsigned NOT NULL DEFAULT '0',
+  `body` int(10) unsigned NOT NULL DEFAULT '0',
+  `chest` int(10) unsigned NOT NULL DEFAULT '0',
+  `waist` int(10) unsigned NOT NULL DEFAULT '0',
+  `legs` int(10) unsigned NOT NULL DEFAULT '0',
+  `feet` int(10) unsigned NOT NULL DEFAULT '0',
+  `wrists` int(10) unsigned NOT NULL DEFAULT '0',
+  `hands` int(10) unsigned NOT NULL DEFAULT '0',
+  `finger1` int(10) unsigned NOT NULL DEFAULT '0',
+  `finger2` int(10) unsigned NOT NULL DEFAULT '0',
+  `trinket1` int(10) unsigned NOT NULL DEFAULT '0',
+  `trinket2` int(10) unsigned NOT NULL DEFAULT '0',
+  `back` int(10) unsigned NOT NULL DEFAULT '0',
+  `mainhand` int(10) unsigned NOT NULL DEFAULT '0',
+  `offhand` int(10) unsigned NOT NULL DEFAULT '0',
+  `ranged` int(10) unsigned NOT NULL DEFAULT '0',
+  `tabard` int(10) unsigned NOT NULL DEFAULT '0',
+  PRIMARY KEY (`ownerguid`,`setGUID`,`setid`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+
 /*Table structure for table `gm_tickets` */
 
 DROP TABLE IF EXISTS `gm_tickets`;
@@ -751,7 +784,6 @@ CREATE TABLE `playerpets` (
   `level` int(11) NOT NULL DEFAULT '0',
   `actionbar` varchar(200) NOT NULL DEFAULT '',
   `happinessupdate` int(11) NOT NULL DEFAULT '0',
-  `summon` int(11) NOT NULL DEFAULT '0',
   `reset_time` int(10) unsigned NOT NULL DEFAULT '0',
   `reset_cost` int(10) NOT NULL DEFAULT '0',
   `spellid` int(10) unsigned NOT NULL DEFAULT '0',
@@ -762,6 +794,7 @@ CREATE TABLE `playerpets` (
   `current_hp` int(10) unsigned NOT NULL DEFAULT '1',
   `current_happiness` int(10) unsigned NOT NULL DEFAULT '1000000',
   `renamable` int(10) unsigned NOT NULL DEFAULT '1',
+  `type` int(10) unsigned DEFAULT '1' NOT NULL,
   PRIMARY KEY (`ownerguid`,`petnumber`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci; 
 

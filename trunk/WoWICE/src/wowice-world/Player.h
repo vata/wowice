@@ -689,7 +689,6 @@ struct PlayerPet
 	uint32 level;
 	uint32 happinessupdate;
 	string actionbar;
-	bool summon;
 	time_t reset_time;
 	uint32 reset_cost;
 	uint32 spellid;
@@ -699,6 +698,7 @@ struct PlayerPet
 	uint32 current_hp;
 	uint32 current_happiness;
 	uint32 renamable;
+	uint32 type;
 };
 enum MeetingStoneQueueStatus
 {
@@ -1006,6 +1006,9 @@ public:
 	void SendRaidDifficulty();
 	void SendExploreXP( uint32 areaid, uint32 xp );
 	void SendDestroyObject( uint64 GUID );
+	void SendEquipmentSetList();
+	void SendEquipmentSetSaved( uint32 setID, uint32 setGUID );
+	void SendEquipmentSetUseResult( uint8 result );
 
     void OutPacket( uint16 opcode, uint16 len, const void *data );
     void SendPacket( WorldPacket *packet );
@@ -1132,7 +1135,6 @@ public:
 	}
 	void CalcDamage();
 	uint32 GetMainMeleeDamage(uint32 AP_owerride); // I need this for windfury
-	uint32 GetFlametongueDMG(uint32 spellid); // For flametongue
     uint32 GetMaxLevel(){ return GetUInt32Value(PLAYER_FIELD_MAX_LEVEL); }
 
     const uint64& GetSelection( ) const { return m_curSelection; }
@@ -1188,11 +1190,7 @@ public:
 	void AddShapeShiftSpell(uint32 id);
 	void RemoveShapeShiftSpell(uint32 id);
 
-	void SendAuraUpdate(uint32 AuraSlot, bool RemoveAura);
-	void SendFullAuraUpdate();
-
-
-    /************************************************************************/
+	/************************************************************************/
     /* Actionbar                                                            */
     /************************************************************************/
 	void                setAction(uint8 button, uint16 action, uint8 type, uint8 misc);
@@ -1742,7 +1740,19 @@ public:
 	uint32 m_ShapeShifted;
 	uint32 m_MountSpellId;
 
-	 bool IsMounted() {return (m_MountSpellId!= 0 ? true : false); }
+	bool IsMounted(){
+		if( m_MountSpellId != 0 )
+			return true;
+		else
+			return false;
+	}
+
+	void Dismount(){
+		if( m_MountSpellId != 0 ){
+			RemoveAura( m_MountSpellId );
+			m_MountSpellId = 0;
+		}
+	}
 
 	void SendMountResult(uint32 result)
 	{
@@ -1887,7 +1897,7 @@ public:
 	// DBC stuff
 	CharRaceEntry * myRace;
 	CharClassEntry * myClass;
-	Unit * linkTarget;
+	Creature * linkTarget;
 	bool ItemStackCheat;
 	bool AuraStackCheat;
 	bool TriggerpassCheat;

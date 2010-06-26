@@ -17,6 +17,8 @@
 
 void WorldSession::HandleSetLookingForGroupComment(WorldPacket& recvPacket)
 {
+	CHECK_INWORLD_RETURN
+
 	std::string comment;
 		
 	recvPacket >> comment;
@@ -26,6 +28,8 @@ void WorldSession::HandleSetLookingForGroupComment(WorldPacket& recvPacket)
 
 void WorldSession::HandleEnableAutoJoin(WorldPacket& recvPacket)
 {
+	CHECK_INWORLD_RETURN
+
 	uint32 i;
 
 	// make sure they're not queued in any invalid cases
@@ -55,6 +59,8 @@ void WorldSession::HandleEnableAutoJoin(WorldPacket& recvPacket)
 
 void WorldSession::HandleDisableAutoJoin(WorldPacket& recvPacket)
 {
+	CHECK_INWORLD_RETURN
+
 	uint32 i;
 	_player->m_Autojoin = false;
 
@@ -70,6 +76,8 @@ void WorldSession::HandleDisableAutoJoin(WorldPacket& recvPacket)
 
 void WorldSession::HandleEnableAutoAddMembers(WorldPacket& recvPacket)
 {
+	CHECK_INWORLD_RETURN
+
 	uint32 i;
 	_player->m_AutoAddMem = true;
 
@@ -84,6 +92,8 @@ void WorldSession::HandleEnableAutoAddMembers(WorldPacket& recvPacket)
 
 void WorldSession::HandleDisableAutoAddMembers(WorldPacket& recvPacket)
 {
+	CHECK_INWORLD_RETURN
+
 	_player->m_AutoAddMem = false;	
 }
 
@@ -102,6 +112,8 @@ void WorldSession::HandleMsgLookingForGroup(WorldPacket& recvPacket)
 
 void WorldSession::HandleSetLookingForGroup(WorldPacket& recvPacket)
 {
+	CHECK_INWORLD_RETURN
+
 	uint32 LfgQueueId;
 	uint16 LfgDungeonId;
 	uint8 LfgType,unk1;
@@ -144,6 +156,8 @@ void WorldSession::HandleSetLookingForGroup(WorldPacket& recvPacket)
 
 void WorldSession::HandleSetLookingForMore(WorldPacket& recvPacket)
 {
+	CHECK_INWORLD_RETURN
+
 	uint16 LfgDungeonId;
 	uint8 LfgType,unk1;
 
@@ -164,11 +178,15 @@ void WorldSession::HandleSetLookingForMore(WorldPacket& recvPacket)
 
 void WorldSession::HandleLfgClear(WorldPacket & recvPacket)
 {
+	CHECK_INWORLD_RETURN
+
 	sLfgMgr.RemovePlayerFromLfgQueues(_player);
 }
 
 void WorldSession::HandleMeetingStoneInfo(WorldPacket & recvPacket)
 {
+	CHECK_INWORLD_RETURN
+
 	_player->SendMeetingStoneQueue(0,6); //values drawn from packet logs, don't appear to change
 }
 

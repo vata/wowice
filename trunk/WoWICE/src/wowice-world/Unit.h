@@ -911,7 +911,7 @@ public:
 	uint32 GetSpellDidHitResult( Unit* pVictim, uint32 weapon_damage_type, SpellEntry* ability );
 	void Strike( Unit* pVictim, uint32 weapon_damage_type, SpellEntry* ability, int32 add_damage, int32 pct_dmg_mod, uint32 exclusive_damage, bool disable_proc, bool skip_hit_check, bool force_crit = false );
 	uint32 m_procCounter;
-	uint32 HandleProc(uint32 flag, Unit* Victim, SpellEntry* CastingSpell,uint32 dmg=-1,uint32 abs= 0);
+	uint32 HandleProc(uint32 flag, Unit* Victim, SpellEntry* CastingSpell, bool is_triggered = false, uint32 dmg = -1, uint32 abs = 0, uint32 weapon_damage_type = 0);
 	void HandleProcDmgShield(uint32 flag, Unit* attacker);//almost the same as handleproc :P
 
 	void RemoveExtraStrikeTarget(SpellEntry *spell_info);
@@ -988,8 +988,7 @@ public:
 	bool RemoveAura(Aura *aur);
 	bool RemoveAura(uint32 spellId);
 	bool RemoveAura(uint32 spellId,uint64 guid);
-	bool RemoveAuraFirst(uint32 spellId);
-	bool RemoveAuraFirst(uint32 spellId,uint64 guid);
+	bool RemoveAuraByItemGUID(uint32 spellId,uint64 guid);
 	bool RemoveAuraByNameHash(uint32 namehash);//required to remove weaker instances of a spell
 	bool RemoveAuras(uint32 * SpellIds);
 	bool RemoveAurasByHeal();
@@ -1048,8 +1047,7 @@ public:
 	void AddProcTriggerSpell(uint32 spell_id, uint32 orig_spell_id, uint64 caster, uint32 procChance, uint32 procFlags, uint32 procCharges, uint32 *groupRelation, uint32 *procClassMask = NULL, Object *obj = NULL);
 	void AddProcTriggerSpell(SpellEntry *spell, SpellEntry *orig_spell, uint64 caster, uint32 procChance, uint32 procFlags, uint32 procCharges, uint32 *groupRelation, uint32 *procClassMask = NULL, Object *obj = NULL);
 	void AddProcTriggerSpell(SpellEntry *sp, uint64 caster, uint32 *groupRelation, uint32 *procClassMask = NULL, Object *obj = NULL);
-	void RemoveProcTriggerSpell(uint32 spellId, uint64 guid);
-	void RemoveProcTriggerSpell(uint32 spellId);
+	void RemoveProcTriggerSpell(uint32 spellId, uint64 casterGuid = 0, uint64 misc = 0);
 	std::map<uint32,struct SpellCharge> m_chargeSpells;
 	deque<uint32> m_chargeSpellRemoveQueue;
 	bool m_chargeSpellsInUse;
@@ -1412,7 +1410,7 @@ public:
 
 	//guardians are temporary spawn that will inherit master faction and will follow them. Apart from that they have their own mind	
 	std::set<Creature*> m_Guardians;
-	Creature* create_guardian( uint32 guardian_entry, uint32 duration, float angle, uint32 lvl = 0, GameObject * obj = NULL, LocationVector * Vec = NULL); 
+	Creature* create_guardian( uint32 guardian_entry, uint32 duration, float angle, uint32 lvl = 0, GameObject * obj = NULL, LocationVector * Vec = NULL, uint32 spellid = 0 ); 
 	void AddGuardianRef( Creature* guard ){ Arcemu::Util::ARCEMU_ASSERT(    guard != NULL );  m_Guardians.insert( guard );	}
 	void RemoveGuardianRef( Creature* g );
 	void RemoveAllGuardians( bool remove_from_world = true );
@@ -1494,6 +1492,8 @@ public:
 	//! returns: aura stack count
 	uint8 m_auraStackCount[MAX_NEGATIVE_VISUAL_AURAS_END];
 
+	void SendFullAuraUpdate();
+	void SendAuraUpdate( uint32 AuraSlot, bool remove );
 	uint32 ModVisualAuraStackCount(Aura *aur, int32 count);
 	uint8 FindVisualSlot(uint32 SpellId,bool IsPos);
 	uint32 m_auravisuals[MAX_NEGATIVE_VISUAL_AURAS_END];
@@ -1722,6 +1722,8 @@ public:
 	virtual void Die( Unit *pAttacker, uint32 damage, uint32 spellid );
 	virtual bool isCritter(){ return false; }
 
+	void AddGarbagePet( Pet *pet );
+
 protected:
 	Unit ();
     void RemoveGarbage();
@@ -1742,6 +1744,7 @@ protected:
 
     std::list< Aura* > m_GarbageAuras;
     std::list< Spell* > m_GarbageSpells;
+	std::list< Pet* > m_GarbagePets;
 
 	/// Combat
 	DeathState m_deathState;

@@ -17,7 +17,8 @@
 
 void WorldSession::HandleUseItemOpcode(WorldPacket& recvPacket)
 {
-	if(!_player->IsInWorld()) return;
+	CHECK_INWORLD_RETURN
+
 	typedef std::list<Aura*> AuraList;
 
 	Player* p_User = GetPlayer();
@@ -205,10 +206,10 @@ void WorldSession::HandleUseItemOpcode(WorldPacket& recvPacket)
 
 void WorldSession::HandleSpellClick(WorldPacket& recvPacket)
 {
+	CHECK_INWORLD_RETURN
+
 	sLog.outDetail("WORLD: got CMSG_SPELLCLICK packet, data length = %i",recvPacket.size());
 
-	if(!_player->IsInWorld())
-		return;
 	if(_player->getDeathState()==CORPSE)
 		return;
 
@@ -276,7 +277,7 @@ void WorldSession::HandleSpellClick(WorldPacket& recvPacket)
 
 void WorldSession::HandleCastSpellOpcode(WorldPacket& recvPacket)
 {
-	if(!_player->IsInWorld()) return;
+	CHECK_INWORLD_RETURN
 
 	uint32 spellId;
 	uint8 cn, unk; //Alice : Added to 3.0.2
@@ -296,13 +297,6 @@ void WorldSession::HandleCastSpellOpcode(WorldPacket& recvPacket)
 	
 	sLog.outDetail("WORLD: got cast spell packet, spellId - %i (%s), data length = %i",
 		spellId, spellInfo->Name, recvPacket.size());
-
-/*  this is breaks capturing flags at arathi basin (marcelo)
-	if (spellInfo->Attributes & ATTRIBUTES_NO_CAST)
-	{
-		sLog.outError("WORLD: attempt to cast spell %i, %s which has ATTRIBUTES_NO_CAST\n", spellId, spellInfo->Name);
-		return;
-	}*/
 
 	// Cheat Detection only if player and not from an item
 	// this could fuck up things but meh it's needed ALOT of the newbs are using WPE now
@@ -374,10 +368,6 @@ void WorldSession::HandleCastSpellOpcode(WorldPacket& recvPacket)
 
 			return;
 		}
-		/*const char * name = sSpellStore.LookupString(spellInfo->Name);
-		if(name)
-			sChatHandler.SystemMessageToPlr(_player, "%sSpell Cast:%s %s %s[Group %u, family %u]", MSG_COLOR_LIGHTBLUE,
-			MSG_COLOR_SUBWHITE, name, MSG_COLOR_YELLOW, spellInfo->SpellGroupType, spellInfo->SpellFamilyName);*/
 
         if(_player->m_currentSpell)
         {
@@ -415,6 +405,8 @@ void WorldSession::HandleCastSpellOpcode(WorldPacket& recvPacket)
 
 void WorldSession::HandleCancelCastOpcode(WorldPacket& recvPacket)
 {
+	CHECK_INWORLD_RETURN
+
 	uint32 spellId;
 	recvPacket >> spellId;
 
@@ -424,6 +416,9 @@ void WorldSession::HandleCancelCastOpcode(WorldPacket& recvPacket)
 
 void WorldSession::HandleCancelAuraOpcode( WorldPacket& recvPacket )
 {
+
+	CHECK_INWORLD_RETURN
+
 	uint32 spellId;
 	recvPacket >> spellId;
 
@@ -443,6 +438,9 @@ void WorldSession::HandleCancelAuraOpcode( WorldPacket& recvPacket )
 
 void WorldSession::HandleCancelChannellingOpcode( WorldPacket& recvPacket)
 {
+
+	CHECK_INWORLD_RETURN
+
 	uint32 spellId;
 	recvPacket >> spellId;
 
@@ -457,7 +455,9 @@ void WorldSession::HandleCancelChannellingOpcode( WorldPacket& recvPacket)
 
 void WorldSession::HandleCancelAutoRepeatSpellOpcode(WorldPacket& recv_data)
 {
-	//sLog.outString("Received CMSG_CANCEL_AUTO_REPEAT_SPELL message.");
+	CHECK_INWORLD_RETURN
+
+	sLog.outString("Received CMSG_CANCEL_AUTO_REPEAT_SPELL message.");
 	//on original we automatically enter combat when creature got close to us
 //	GetPlayer()->GetSession()->OutPacket(SMSG_CANCEL_COMBAT);
 	GetPlayer()->m_onAutoShot = false;
@@ -465,6 +465,9 @@ void WorldSession::HandleCancelAutoRepeatSpellOpcode(WorldPacket& recv_data)
 
 void WorldSession::HandlePetCastSpell(WorldPacket & recvPacket)
 {
+
+	CHECK_INWORLD_RETURN
+
 	uint64 guid;
 	uint32 spellid;
 	uint32 flags;
@@ -540,6 +543,9 @@ void WorldSession::HandlePetCastSpell(WorldPacket & recvPacket)
 
 void WorldSession::HandleCancelTotem(WorldPacket & recv_data)
 {
+
+	CHECK_INWORLD_RETURN
+
 	uint8 slot;
 	recv_data >> slot;
 

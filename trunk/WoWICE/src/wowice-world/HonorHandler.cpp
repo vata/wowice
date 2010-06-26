@@ -17,6 +17,8 @@
 
 void WorldSession::HandleSetVisibleRankOpcode( WorldPacket& recv_data )
 {
+	CHECK_INWORLD_RETURN
+
 	CHECK_PACKET_SIZE( recv_data, 4 );
 	uint32 ChosenRank;
 	recv_data >> ChosenRank; 

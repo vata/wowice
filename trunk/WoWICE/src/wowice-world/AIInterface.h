@@ -266,6 +266,7 @@ public:
 	Unit* getUnitToFollow();
 	Unit* getUnitToFollowBackup();
 	Unit* getUnitToFear();
+	Creature* getFormationLinkTarget();
 	void setCreatureState(CreatureState state){ m_creatureState = state; }
 	WoWICE_INLINE uint8 getAIState() { return static_cast<uint8>( m_AIState ); }
 	WoWICE_INLINE uint8 getAIType() { return static_cast<uint8>( m_AIType ); }
@@ -370,6 +371,7 @@ public:
 	bool m_moveRun;
 	bool m_moveFly;
 	bool m_moveSprint;
+	bool onGameobject;
 	CreatureState m_creatureState;
 	size_t GetWayPointsCount()
 	{
@@ -406,7 +408,7 @@ public:
 				}
 	}*/
 
-	Creature * m_formationLinkTarget;
+	uint64 m_formationLinkTarget;
 	float m_formationFollowDistance;
 	float m_formationFollowAngle;
 	uint32 m_formationLinkSqlId;

@@ -25,6 +25,7 @@ namespace WoWICE{
         SERVER_DECL static uint32 GUID_HIPART( uint64 GUID );
 		static void WOWICE_ASSERT(   bool condition );
 		static uint64 MAKE_PET_GUID( uint32 entry, uint32 lowGUID );
+		static uint64 MAKE_ITEM_GUID( uint32 lowGUID );
     };
 }
 

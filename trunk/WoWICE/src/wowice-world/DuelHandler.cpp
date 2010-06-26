@@ -17,8 +17,7 @@
 
 void WorldSession::HandleDuelAccepted(WorldPacket & recv_data)
 {
-	if( !_player->IsInWorld() )
-		return;
+	CHECK_INWORLD_RETURN
 
 	if( _player->DuelingWith == NULL )
 		return;
@@ -48,6 +47,8 @@ void WorldSession::HandleDuelAccepted(WorldPacket & recv_data)
 
 void WorldSession::HandleDuelCancelled(WorldPacket & recv_data)
 {
+	CHECK_INWORLD_RETURN
+
 	if( _player->DuelingWith ==  NULL )
 		return;
 

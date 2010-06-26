@@ -216,7 +216,7 @@ void LogonCommClientSocket::OnDisconnect()
 
 LogonCommClientSocket::~LogonCommClientSocket()
 {
-
+	SocketOps::CloseSocket( m_fd );
 }
 
 void LogonCommClientSocket::SendChallenge()

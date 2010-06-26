@@ -258,8 +258,7 @@ void Player::ModStanding( uint32 Faction, int32 Value )
 	{
 		if( pctReputationMod > 0 )
 		{
-			float d = float( float( pctReputationMod ) / 100.0f );
-			newValue = Value + FL2UINT( float( float( Value ) * d ) );
+			newValue = Value + ( Value * pctReputationMod / 100 );
 		}
 		// Increment it.
 		if ( RankChanged( itr->second->standing, newValue ) )
@@ -394,7 +393,7 @@ void Player::Reputation_OnKilledUnit( Unit * pUnit, bool InnerLoop )
 						continue;
 				}
 			}
-			ModStanding( itr->faction[team], int32( float( itr->value ) * sWorld.getRate( RATE_KILLREPUTATION ) ) );
+			ModStanding( itr->faction[team], float2int32( itr->value * sWorld.getRate( RATE_KILLREPUTATION ) ) );
 		}
 	}
 	else
@@ -446,6 +445,7 @@ void Player::SetFactionInactive( uint32 faction, bool set )
 
 void WorldSession::HandleSetFactionInactiveOpcode( WorldPacket & recv_data )
 {
+	CHECK_INWORLD_RETURN
 	uint32 id;
 	uint8 inactive;
 	recv_data >> id >> inactive;
@@ -495,39 +495,6 @@ void Player::OnModStanding( FactionDBC * dbc, FactionReputation * rep )
 		data << uint32( rep->flag ) << dbc->RepListId << rep->CalcStanding();
 		m_session->SendPacket( &data );
 	}
-
-	/*// PVP title as a reward for exalted reputations
-	switch( dbc->RepListId )
-	{
-		case FACTION_STORMPIKE_GUARDS:
-		case FACTION_SILVERWING_SENTINELS:
-		case FACTION_THE_LEAGUE_OF_ARATHOR:
-		{
-			if( GetTeam() == 0 && 
-				GetStandingRank( 730 ) == STANDING_EXALTED &&
-				GetStandingRank( 890 ) == STANDING_EXALTED &&
-				GetStandingRank( 509 ) == STANDING_EXALTED )
-			{
-				SetKnownTitle( PVP_TITLE_JUSTICAR , true );
-			}
-			else
-				SetKnownTitle( PVP_TITLE_JUSTICAR , false );
-		} break;
-		case FACTION_THE_DEFILERS:
-		case FACTION_FROSTWOLF_CLAN:
-		case FACTION_WARSONG_OUTRIDERS:
-		{
-			if( GetTeam() == 1 && 
-				GetStandingRank( 510 ) == STANDING_EXALTED &&
-				GetStandingRank( 729 ) == STANDING_EXALTED &&
-				GetStandingRank( 889 ) == STANDING_EXALTED )
-			{
-				SetKnownTitle( PVP_TITLE_CONQUEROR , true );
-			}
-			else
-				SetKnownTitle( PVP_TITLE_CONQUEROR , false );
-		} break;
-	}*/
 }
 
 uint32 Player::GetExaltedCount(void)
