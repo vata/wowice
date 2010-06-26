@@ -287,7 +287,7 @@ void Player::SendNewDrunkState(uint32 state, uint32 itemid){
 2-skinning/herbalism/minning
 3-Fishing
 */
-void Player::SendLoot(uint64 guid,uint8 loot_type)
+void Player::SendLoot(uint64 guid,uint8 loot_type, uint32 mapid)
 {
 	Group * m_Group = m_playerInfo->m_Group;
 
@@ -517,6 +517,7 @@ void Player::SendLoot(uint64 guid,uint8 loot_type)
 
 					data2.Initialize(SMSG_LOOT_START_ROLL);
 					data2 << guid;
+					data2 << uint32( mapid );
 					data2 << uint32( x );
 					data2 << uint32( itemProto->ItemId );
 					data2 << uint32( factor );
@@ -684,7 +685,7 @@ void Player::SendInitialLogonPackets()
 
 void Player::SendLootUpdate( Object *o ){
 
-	if( !IsVisible( o ) )
+	if( !IsVisible( o->GetGUID() ) )
 		return;
 
 	// Build the actual update.
@@ -772,4 +773,47 @@ void Player::SendPartyKillLog( uint64 GUID ){
 	data << GUID;
 	
 	SendMessageToSet( &data, true );
+}
+
+void Player::SendDestroyObject( uint64 GUID ){
+	
+	WorldPacket data( SMSG_DESTROY_OBJECT, 9 );
+
+	data << GUID;
+	data << uint8( 0 ); //TODO: unk bool
+	
+	m_session->SendPacket( &data );
+}
+
+
+void Player::SendEquipmentSetList(){
+
+	WorldPacket data( SMSG_EQUIPMENT_SET_LIST, 1000 );
+	
+	m_ItemInterface->m_EquipmentSets.FillEquipmentSetListPacket( data );
+
+	m_session->SendPacket( &data );
+
+	sLog.outDebug("Sent SMSG_EQUIPMENT_SET_LIST.");
+}
+
+void Player::SendEquipmentSetSaved( uint32 setID, uint32 setGUID ){
+	WorldPacket data( SMSG_EQUIPMENT_SET_SAVED, 12 );
+	
+	data << uint32( setID );
+	data << WoWGuid( uint64( setGUID ) );
+
+	m_session->SendPacket( &data );
+
+	sLog.outDebug("Sent SMSG_EQUIPMENT_SET_SAVED.");
+}
+
+void Player::SendEquipmentSetUseResult( uint8 result ){
+	WorldPacket data( SMSG_EQUIPMENT_SET_USE_RESULT, 1 );
+
+	data << uint8( result );
+
+	m_session->SendPacket( &data );
+
+	sLog.outDebug("SMSG_EQUIPMENT_SET_USE_RESULT sent.");
 }

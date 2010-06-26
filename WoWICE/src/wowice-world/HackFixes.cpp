@@ -1217,7 +1217,27 @@ void ApplyNormalFixes()
 		// PRIEST								//
 		//////////////////////////////////////////
 
-		// Insert priest spell fixes here
+		//Borrowed Time
+		if( sp->NameHash == SPELL_HASH_BORROWED_TIME )
+		{
+			sp->procFlags = PROC_ON_CAST_SPELL;
+		}
+
+		//Grace http://www.wowhead.com/?spell=47516
+		if( sp->NameHash == SPELL_HASH_GRACE )
+		{
+			switch( sp->Id )
+			{
+				case 47516:	// Rank 1
+				case 47517:	// Rank 2
+					sp->procFlags = PROC_ON_CAST_SPELL;
+				break;
+
+				case 47930:
+					sp->rangeIndex = 4;
+				break;
+			}
+		}
 
 		//////////////////////////////////////////
 		// SHAMAN								//
@@ -1232,13 +1252,6 @@ void ApplyNormalFixes()
 			sp->EffectImplicitTargetB[0] = 0;
 			sp->EffectImplicitTargetA[1] = EFF_TARGET_SELF;
 			sp->EffectImplicitTargetB[1] = 0;
-		}
-
-		// Flametongue Weapon coef fix
-		if( sp->NameHash == SPELL_HASH_FLAMETONGUE_WEAPON || sp->NameHash == SPELL_HASH_FLAMETONGUE_WEAPON__PASSIVE_ )
-		{
-		   sp->fixed_dddhcoef = 0.1f;
-		   sp->School = 2;
 		}
 
 		// Frostbrand Weapon - 10% spd coefficient
@@ -1365,165 +1378,6 @@ void ApplyNormalFixes()
 	/////////////////////////////////////////////////////////////////
 
 	EnchantEntry * Enchantment;
-
-	/********************************************************
-		* Flametongue Enchantment
-		********************************************************/
-	   
-	   // Shaman - Flametongue Weapon Rank 1
-		Enchantment = dbcEnchant.LookupEntryForced( 5 );
-		if( Enchantment != NULL )
-		{
-			// Flametongue Weapon (Passive)
-			sp = dbcSpell.LookupEntryForced( 10400 );
-			if( sp != NULL )
-			{
-				sp->EffectApplyAuraName[0] = SPELL_AURA_PROC_TRIGGER_SPELL;
-				sp->procFlags = PROC_ON_MELEE_ATTACK;   //we do not need proc on spell ;)
-				sp->EffectTriggerSpell[0] = 8024;               //for the logs and rest
-				sp->procChance = 100;
-				sp->maxstack = 1;
-			}
-		}
-		// Shaman - Flametongue Weapon Rank 2
-		Enchantment = dbcEnchant.LookupEntryForced( 4 );
-		if( Enchantment != NULL )
-		{
-			// Flametongue Weapon (Passive)
-			sp = dbcSpell.LookupEntryForced( 15567 );
-			if( sp != NULL )
-			{
-				sp->EffectApplyAuraName[0] = SPELL_AURA_PROC_TRIGGER_SPELL;
-				sp->procFlags = PROC_ON_MELEE_ATTACK;   //we do not need proc on spell ;)
-				sp->EffectTriggerSpell[0] = 8027;               //for the logs and rest
-				sp->procChance = 100;
-				sp->maxstack = 1;
-			}
-		}
-
-       // Shaman - Flametongue Weapon Rank 3
-        Enchantment = dbcEnchant.LookupEntryForced( 3 );
-		if( Enchantment != NULL )
-		{
-			// Flametongue Weapon (Passive)
-			sp = dbcSpell.LookupEntryForced( 15568 );
-			if( sp != NULL )
-			{
-				sp->EffectApplyAuraName[0] = SPELL_AURA_PROC_TRIGGER_SPELL;
-				sp->procFlags = PROC_ON_MELEE_ATTACK;   //we do not need proc on spell ;)
-				sp->EffectTriggerSpell[0] = 8030;               //for the logs and rest
-				sp->procChance = 100;
-				sp->maxstack = 1;
-			}
-		}
-	// Shaman - Flametongue Weapon Rank 4
-        Enchantment = dbcEnchant.LookupEntryForced( 523 );
-        if( Enchantment != NULL )
-        {
-			// Flametongue Weapon (Passive)
-			sp = dbcSpell.LookupEntryForced( 15569 );
-			if( sp != NULL )
-			{
-				   sp->EffectApplyAuraName[0] = SPELL_AURA_PROC_TRIGGER_SPELL;
-				   sp->procFlags = PROC_ON_MELEE_ATTACK;   //we do not need proc on spell ;)
-				   sp->EffectTriggerSpell[0] = 16339;              //for the logs and rest
-				   sp->procChance = 100;
-				   sp->maxstack = 1;
-			}
-		}
-
-     // Shaman - Flametongue Weapon Rank 5
-        Enchantment = dbcEnchant.LookupEntryForced( 1665 );
-		if( Enchantment != NULL )
-		{
-			// Flametongue Weapon (Passive)
-			sp = dbcSpell.LookupEntryForced( 16311 );
-			if( sp != NULL )
-			{
-				sp->EffectApplyAuraName[0] = SPELL_AURA_PROC_TRIGGER_SPELL;
-				sp->procFlags = PROC_ON_MELEE_ATTACK;   //we do not need proc on spell ;)
-				sp->EffectTriggerSpell[0] = 16341;              //for the logs and rest
-				sp->procChance = 100;
-				sp->maxstack = 1;
-			}
-		}
-	// Shaman - Flametongue Weapon Rank 6
-       Enchantment = dbcEnchant.LookupEntryForced( 1666 );
-	   if( Enchantment != NULL )
-		{
-			// Flametongue Weapon (Passive)
-		   sp = dbcSpell.LookupEntryForced( 16312 );
-		   if( sp != NULL )
-		   {
-				   sp->EffectApplyAuraName[0] = SPELL_AURA_PROC_TRIGGER_SPELL;
-				   sp->procFlags = PROC_ON_MELEE_ATTACK;   //we do not need proc on spell ;)
-				   sp->EffectTriggerSpell[0] = 16342;              //for the logs and rest
-				   sp->procChance = 100;
-				   sp->maxstack = 1;
-		   }
-		}
-	// Shaman - Flametongue Weapon Rank 7
-       Enchantment = dbcEnchant.LookupEntryForced( 2634 );
-	   if( Enchantment != NULL )
-		{
-			// Flametongue Weapon (Passive)
-		   sp = dbcSpell.LookupEntryForced( 16313 );
-		   if( sp != NULL )
-		   {
-				   sp->EffectApplyAuraName[0] = SPELL_AURA_PROC_TRIGGER_SPELL;
-				   sp->procFlags = PROC_ON_MELEE_ATTACK;   //we do not need proc on spell ;)
-				   sp->EffectTriggerSpell[0] = 25489;              //for the logs and rest
-				   sp->procChance = 100;
-				   sp->maxstack = 1;
-		   }
-		}
-	// Shaman - Flametongue Weapon Rank 8
-       Enchantment = dbcEnchant.LookupEntryForced( 3779 );
-       if( Enchantment != NULL )
-       {
-           // Flametongue Weapon (Passive)
-           sp = dbcSpell.LookupEntryForced( 58784 );
-           if( sp != NULL )
-           {
-               sp->EffectApplyAuraName[0] = SPELL_AURA_PROC_TRIGGER_SPELL;
-               sp->procFlags = PROC_ON_MELEE_ATTACK;   //we do not need proc on spell ;)
-               sp->EffectTriggerSpell[0] = 58785;              //for the logs and rest
-               sp->procChance = 100;
-               sp->maxstack = 1;
-           }
-       }
- 
-       // Shaman - Flametongue Weapon Rank 9
-       Enchantment = dbcEnchant.LookupEntryForced( 3780 );
-       if( Enchantment != NULL )
-       {
-             // Flametongue Weapon (Passive)
-           sp = dbcSpell.LookupEntryForced( 58791 );
-           if( sp != NULL )
-           {
-               sp->EffectApplyAuraName[0] = SPELL_AURA_PROC_TRIGGER_SPELL;
-               sp->procFlags = PROC_ON_MELEE_ATTACK;   //we do not need proc on spell ;)
-               sp->EffectTriggerSpell[0] = 58789;              //for the logs and rest
-               sp->procChance = 100;
-               sp->maxstack = 1;
-           }
-       }
-
-       // Shaman - Flametongue Weapon Rank 10
-       Enchantment = dbcEnchant.LookupEntryForced( 3781 );
-       if( Enchantment != NULL )
-       {
-           // Flametongue Weapon (Passive)
-           sp = dbcSpell.LookupEntryForced( 58792 );
-           if( sp != NULL )
-           {
-               sp->EffectApplyAuraName[0] = SPELL_AURA_PROC_TRIGGER_SPELL;
-               sp->procFlags = PROC_ON_MELEE_ATTACK;   //we do not need proc on spell ;)
-               sp->EffectTriggerSpell[0] = 58790;              //for the logs and rest
-               sp->procChance = 100;
-               sp->maxstack = 1;
-           }
-       }
 
 	/********************************************************
 	 * Windfury Enchantment
@@ -3641,18 +3495,6 @@ void ApplyNormalFixes()
 //			sp->procFlags = PROC_ON_TARGET_DIE;
 			sp->procFlags = PROC_ON_GAIN_EXPIERIENCE;
 		}
-		sp = dbcSpell.LookupEntryForced( 15337 ); //rank 4
-		if( sp != NULL )
-		{
-//			sp->procFlags = PROC_ON_TARGET_DIE;
-			sp->procFlags = PROC_ON_GAIN_EXPIERIENCE;
-		}
-		sp = dbcSpell.LookupEntryForced( 15338 ); //rank 5
-		if( sp != NULL )
-		{
-//			sp->procFlags = PROC_ON_TARGET_DIE;
-			sp->procFlags = PROC_ON_GAIN_EXPIERIENCE;
-		}
 
 		/**********************************************************
 		 *	Holy Nova
@@ -4042,7 +3884,6 @@ void ApplyNormalFixes()
 		sp = dbcSpell.LookupEntryForced(47516);
 		if(sp != NULL)
 		{
-			sp->procFlags = PROC_ON_CAST_SPELL;
 			sp->proc_interval = 100;
 		}
 
@@ -4050,32 +3891,8 @@ void ApplyNormalFixes()
 		sp = dbcSpell.LookupEntryForced(47517);
 		if(sp != NULL)
 		{
-			sp->procFlags = PROC_ON_CAST_SPELL;
 			sp->proc_interval = 100;
 		}
-
-		//Borrowed Time
-		if( sp->NameHash == SPELL_HASH_BORROWED_TIME )
-		{
-			sp->procFlags = PROC_ON_CAST_SPELL;
-		}
-
-		//megai2: Grace http://www.wowhead.com/?spell=47516
-		if( sp->NameHash == SPELL_HASH_GRACE )
-		{
-			switch( sp->Id )
-			{
-				case 47516:	// Rank 1
-				case 47517:	// Rank 2
-					sp->procFlags = PROC_ON_CAST_SPELL;
-				break;
-
-				case 47930:
-					sp->rangeIndex = 4;
-				break;
-			}
-		}
-
 
 	//////////////////////////////////////////
 	// SHAMAN								//
@@ -4862,43 +4679,6 @@ void ApplyNormalFixes()
 			sp->procChance = 20;
         }
 
-		//mage - Hot Streak
-		sp = dbcSpell.LookupEntryForced( 44445 );
-		if( sp != NULL )
-		{
-			sp->Effect[0] = SPELL_EFFECT_APPLY_AURA;
-			sp->Effect[1]= SPELL_EFFECT_NULL;
-			sp->EffectApplyAuraName[0] = SPELL_AURA_PROC_TRIGGER_SPELL;
-			sp->EffectTriggerSpell[0] = 48108;
-			sp->procChance= 33;
-			sp->procFlags = PROC_ON_SPELL_CRIT_HIT;
-			sp->procCharges = 0;
-		}
-
-		sp = dbcSpell.LookupEntryForced( 44446 );
-		if( sp != NULL )
-		{
-			sp->Effect[0] = SPELL_EFFECT_APPLY_AURA;
-			sp->Effect[1]= SPELL_EFFECT_NULL;
-			sp->EffectApplyAuraName[0] = SPELL_AURA_PROC_TRIGGER_SPELL;
-			sp->EffectTriggerSpell[0] = 48108;
-			sp->procChance= 66;
-			sp->procFlags = PROC_ON_SPELL_CRIT_HIT;
-			sp->procCharges = 0;
-		}
-
-		sp = dbcSpell.LookupEntryForced( 44448 );
-		if( sp != NULL )
-		{
-			sp->Effect[0] = SPELL_EFFECT_APPLY_AURA;
-			sp->Effect[1]= SPELL_EFFECT_NULL;
-			sp->EffectApplyAuraName[0] = SPELL_AURA_PROC_TRIGGER_SPELL;
-			sp->EffectTriggerSpell[0] = 48108;
-			sp->procChance= 100;
-			sp->procFlags = PROC_ON_SPELL_CRIT_HIT;
-			sp->procCharges = 0;
-		}
-
 		// Brain Freeze rank 1
 		sp = dbcSpell.LookupEntryForced( 44546 );
 		if(sp != NULL)
@@ -5182,8 +4962,7 @@ void ApplyNormalFixes()
 		sp = dbcSpell.LookupEntryForced( 48108 );
 		if( sp != NULL )
 		{
-			sp->procFlags = PROC_ON_CAST_SPELL;
-			sp->procCharges = 1;
+			sp->AuraInterruptFlags |= AURA_INTERRUPT_ON_CAST_SPELL;
 		}
 
 		//Ice Lances
@@ -6599,8 +6378,8 @@ void ApplyNormalFixes()
 		if( sp != NULL )
 		{
 			sp->self_cast_only = true;
-			sp->ProcOnNameHash[0] = SPELL_HASH_MANGLE___CAT;
-			sp->ProcOnNameHash[1] = SPELL_HASH_MANGLE___BEAR;
+			sp->ProcOnNameHash[0] = SPELL_HASH_MANGLE__CAT_;
+			sp->ProcOnNameHash[1] = SPELL_HASH_MANGLE__BEAR_;
 		}
 
 		//Tome of Fiery Redemption
@@ -7925,7 +7704,8 @@ void ApplyNormalFixes()
 		if( sp != NULL )
 		{
 		sp->Effect[0] = SPELL_EFFECT_DUMMY;
-		sp->Effect[1] = SPELL_EFFECT_DUMMY;
+		sp->Effect[1] = 0;
+		sp->Effect[2] = 0;
 		}
 
 		//PvP Librams of Justice 

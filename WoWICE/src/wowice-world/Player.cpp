@@ -337,7 +337,7 @@ myCorpseLocation()
 	bCorpseCreateable	   = true;
 	blinked				 = false;
 	m_explorationTimer	  = getMSTime();
-	linkTarget			  = 0;
+	linkTarget			  = NULL;
 	AuraStackCheat			 = false;
 	ItemStackCheat = false;
 	TriggerpassCheat = false;
@@ -1029,11 +1029,8 @@ void Player::Update( uint32 p_time )
 			if( CollideInterface.IsIndoor( m_mapId, m_position ) )
 			{
 				 // this is duplicated check, but some mount auras comes w/o this flag set, maybe due to spellfixes.cpp line:663
-				if ( m_MountSpellId )
-				{
-					RemoveAura( m_MountSpellId );
-					m_MountSpellId = 0;
-				}
+				Dismount();
+
 				for(uint32 x=MAX_POSITIVE_AURAS_EXTEDED_START;x<MAX_POSITIVE_AURAS_EXTEDED_END;x++)
 				{
 					if(m_auras[x] && m_auras[x]->GetSpellProto()->Attributes & ATTRIBUTES_ONLY_OUTDOORS )
@@ -1297,8 +1294,7 @@ void Player::_EventCharmAttack()
 void Player::EventAttackStart()
 {
 	m_attacking = true;
-	if(m_MountSpellId)
-        RemoveAura(m_MountSpellId);
+	Dismount();
 }
 
 void Player::EventAttackStop()
@@ -1924,7 +1920,6 @@ void Player::_SavePet(QueryBuffer * buf)
 			<< itr->second->level << "','"
 			<< itr->second->actionbar << "','"
 			<< itr->second->happinessupdate << "','"
-			<< itr->second->summon << "','"
 			<< (long)itr->second->reset_time << "','"
 			<< itr->second->reset_cost << "','"
 			<< itr->second->spellid << "','"
@@ -1934,7 +1929,8 @@ void Player::_SavePet(QueryBuffer * buf)
 			<< itr->second->current_power << "','"
 			<< itr->second->current_hp << "','"
 			<< itr->second->current_happiness << "','"
-			<< itr->second->renamable << "')";
+			<< itr->second->renamable << "','"
+			<< itr->second->type << "')";
 
         if(buf == NULL)
 			CharacterDatabase.ExecuteNA(ss.str().c_str());
@@ -2028,17 +2024,17 @@ void Player::_LoadPet(QueryResult * result)
 		pet->level   = fields[6].GetUInt32();
 		pet->actionbar = fields[7].GetString();
 		pet->happinessupdate = fields[8].GetUInt32();
-		pet->summon = (fields[9].GetUInt32()>0 ? true : false);
-		pet->reset_time = fields[10].GetUInt32();
-		pet->reset_cost = fields[11].GetUInt32();
-		pet->spellid = fields[12].GetUInt32();
-        pet->petstate = fields[13].GetUInt32();
-		pet->alive = fields[14].GetBool();
-		pet->talentpoints = fields[15].GetUInt32();
-		pet->current_power = fields[16].GetUInt32();
-		pet->current_hp = fields[17].GetUInt32();
-		pet->current_happiness = fields[18].GetUInt32();
-		pet->renamable = fields[19].GetUInt32();
+		pet->reset_time = fields[9].GetUInt32();
+		pet->reset_cost = fields[10].GetUInt32();
+		pet->spellid = fields[11].GetUInt32();
+        pet->petstate = fields[12].GetUInt32();
+		pet->alive = fields[13].GetBool();
+		pet->talentpoints = fields[14].GetUInt32();
+		pet->current_power = fields[15].GetUInt32();
+		pet->current_hp = fields[16].GetUInt32();
+		pet->current_happiness = fields[17].GetUInt32();
+		pet->renamable = fields[18].GetUInt32();
+		pet->type = fields[19].GetUInt32();
 
 		m_Pets[pet->number] = pet;
 
@@ -2087,7 +2083,7 @@ void Player::SpawnPet( uint32 pet_number )
 }
 void Player::SpawnActivePet()
 {
-	if( GetSummon() != NULL || getClass() != HUNTER || !isAlive() ) //TODO: only hunters for now
+	if( GetSummon() != NULL || !isAlive() ) //TODO: only hunters for now
 		return;
 
 	std::map< uint32, PlayerPet* >::iterator itr = m_Pets.begin();
@@ -2659,6 +2655,8 @@ void Player::SaveToDB(bool bNewCharacter /* =false */)
 	// Inventory
 	 GetItemInterface()->mSaveItemsToDatabase(bNewCharacter, buf);
 
+	 GetItemInterface()->m_EquipmentSets.SavetoDB( buf );
+
 	// save quest progress
 	_SaveQuestLogEntry(buf);
 
@@ -2778,6 +2776,7 @@ bool Player::LoadFromDB(uint32 guid)
 	q->AddQuery("SELECT friend_guid, note FROM social_friends WHERE character_guid = %u", guid);
 	q->AddQuery("SELECT character_guid FROM social_friends WHERE friend_guid = %u", guid);
 	q->AddQuery("SELECT ignore_guid FROM social_ignores WHERE character_guid = %u", guid);
+	q->AddQuery("SELECT * FROM equipmentsets WHERE ownerguid = %u", guid ); // 11
 
     // queue it!
 	SetLowGUID( guid );
@@ -3538,6 +3537,8 @@ void Player::LoadFromDBProc(QueryResultVector & results)
 	_LoadPlayerCooldowns(results[2].result);
 	_LoadQuestLogEntry(results[3].result);
 	m_ItemInterface->mLoadItemsFromDatabase(results[4].result);
+	m_ItemInterface->m_EquipmentSets.LoadfromDB( results[ 11 ].result );
+	
 	m_mailBox.Load(results[7].result);
 
 	// SOCIAL
@@ -4035,6 +4036,8 @@ void Player::RemoveFromWorld()
 		RemoveItemsFromWorld();
 		Unit::RemoveFromWorld(false);
 	}
+
+	RemoveAllGuardians();
 
 #ifdef ENABLE_COMPRESSED_MOVEMENT
 	MovementCompressor->RemovePlayer(this);
@@ -5996,7 +5999,7 @@ void Player::OnRemoveInRangeObject(Object* pObj)
 		++itr;
 		if( pObj == summon )
 		{
-			summon->DelayedRemove(false,1);//otherwise Pet::Update() will access free'd memory
+			summon->DelayedRemove(true);
 			return;
 		}
 	}
@@ -6791,8 +6794,8 @@ void Player::TaxiStart(TaxiPath *path, uint32 modelid, uint32 start_node)
 
 	m_taxiMapChangeNode = 0;
 
-	if( m_MountSpellId )
-		RemoveAura( m_MountSpellId );
+	Dismount();
+
 	//also remove morph spells
 	if( GetDisplayId()!= GetNativeDisplayId() )
 	{
@@ -7217,8 +7220,7 @@ void Player::_Relocate(uint32 mapid, const LocationVector & v, bool sendpending,
 
 	z_axisposition = 0.0f;
 	//Dismount before teleport
-	if( m_MountSpellId )
-		RemoveAura( m_MountSpellId );
+	Dismount();
 }
 
 
@@ -8536,8 +8538,7 @@ bool Player::SafeTeleport(uint32 MapID, uint32 InstanceID, const LocationVector 
 
 	if (sWorld.Collision == 0) {
 		// if we are mounted remove it
-		if( m_MountSpellId )
-			RemoveAura( m_MountSpellId );
+		Dismount();
 	}
 
 	// make sure player does not drown when teleporting from under water
@@ -11184,93 +11185,6 @@ void Player::RemoveShapeShiftSpell(uint32 id)
 	RemoveAura( id );
 }
 
-void Player::SendAuraUpdate(uint32 AuraSlot, bool RemoveAura)
-{
-	Wowice::Util::WOWICE_ASSERT(   AuraSlot <= MAX_TOTAL_AURAS_END);
-	Aura * VisualAura = m_auras[AuraSlot];
-	if(VisualAura == NULL)
-	{
-		sLog.outDebug("Aura Update not sent due to invalid or no aura id in slot %u", AuraSlot);
-		return;
-	}
-
-	if(RemoveAura)
-	{
-		WorldPacket data(SMSG_AURA_UPDATE, 20);
-		FastGUIDPack(data, GetGUID());
-		data << (uint8)VisualAura->m_visualSlot;
-		data << (uint32)0;
-		SendMessageToSet(&data, true);
-		sLog.outDebug("Aura Update: GUID: "I64FMT" - AuraSlot: %u - AuraID: 0", GetGUID(), AuraSlot);
-		return;
-	}
-	WorldPacket data(SMSG_AURA_UPDATE, 20);
-	FastGUIDPack(data, GetGUID());
-	data << (uint8)VisualAura->m_visualSlot;
-	data << (uint32)VisualAura->GetSpellId(); // Client will ignore rest of packet if visual aura is 0
-	uint8 Flags = (uint8)VisualAura->GetAuraFlags();
-	if(VisualAura->IsPositive())
-		Flags |= AFLAG_POSTIVE | AFLAG_SET;
-	else
-		Flags |= AFLAG_NEGATIVE | AFLAG_SET;
-
-	if(VisualAura->GetDuration() > 0)
-		Flags |= AFLAG_DURATION; // Display duration
-	if(VisualAura->GetCasterGUID())
-		Flags |= AFLAG_NOT_CASTER;
-	data << (uint8)Flags;
-	data << (uint8)getLevel();
-	data << (uint8)m_auraStackCount[VisualAura->m_visualSlot];
-	if( !(Flags & AFLAG_NOT_CASTER) )
-		data << WoWGuid(VisualAura->GetCasterGUID());
-	if(Flags & AFLAG_DURATION)
-	{
-		data << (uint32)VisualAura->GetDuration();
-		data << (uint32)VisualAura->GetTimeLeft();
-	}
-	sLog.outDebug("Aura Update: GUID: "I64FMT" - AuraSlot: %u - AuraID: %u - Flags: %u", GetGUID(), AuraSlot, VisualAura->GetSpellId(), Flags);
-	SendMessageToSet(&data, true);
-}
-
-void Player::SendFullAuraUpdate()
-{
-	WorldPacket data;
-	data.Initialize(SMSG_AURA_UPDATE_ALL);
-	FastGUIDPack(data, GetGUID());
-	uint32 Updates = 0;
-	for (uint32 i = MAX_TOTAL_AURAS_START; i < MAX_TOTAL_AURAS_END; ++i)
-	{
-		if(Aura * aur = m_auras[i])
-		{
-			data << (uint8)aur->m_visualSlot;
-			data << (uint32)aur->GetSpellId(); // Client will ignore rest of packet if visual aura is 0
-			uint8 Flags = (uint8)aur->GetAuraFlags();
-			if(aur->IsPositive())
-				Flags |= AFLAG_POSTIVE | AFLAG_SET;
-			else
-				Flags |= AFLAG_NEGATIVE | AFLAG_SET;
-
-			if(aur->GetDuration() > 0)
-				Flags |= AFLAG_DURATION; // Display duration
-			if(aur->GetCasterGUID())
-				Flags |= AFLAG_NOT_CASTER;
-			data << (uint8)Flags;
-			data << (uint8)getLevel();
-			data << (uint8)m_auraStackCount[aur->m_visualSlot];
-			if( !(Flags & AFLAG_NOT_CASTER) )
-				data << WoWGuid(aur->GetCasterGUID());
-			if(Flags & AFLAG_DURATION)
-			{
-				data << (uint32)aur->GetDuration();
-				data << (uint32)aur->GetTimeLeft();
-			}
-			++Updates;
-		}
-	}
-	sLog.outDebug("Full Aura Update: GUID: "I64FMT" - Updates: %u", GetGUID(), Updates);
-	SendMessageToSet(&data, true);
-}
-
 // COOLDOWNS
 void Player::UpdatePotionCooldown()
 {
@@ -13010,10 +12924,12 @@ void Player::SendTeleportAckMsg( const LocationVector &v ){
 }
 
 void Player::OutPacket( uint16 opcode, uint16 len, const void *data ){
+	Wowice::Util::WOWICE_ASSERT( m_session != NULL );
     m_session->OutPacket( opcode, len, data );
 }
 
 void Player::SendPacket( WorldPacket *packet ){
+	Wowice::Util::WOWICE_ASSERT( m_session != NULL );
     m_session->SendPacket( packet );
 }
 
@@ -13104,31 +13020,6 @@ void Player::SendMessageToSet(WorldPacket *data, bool bToSelf,bool myteam_only)
 		}
 	}
 }
-
-uint32 Player::GetFlametongueDMG(uint32 spellid)
-{
-	Item * i = GetItemInterface()->GetInventoryItem( EQUIPMENT_SLOT_MAINHAND );
-	float delay = i->GetProto()->Delay * 0.001f;
-	SpellEntry * sp = dbcSpell.LookupEntry(spellid);
-
-	if( delay == 0 )
-		return 1;
-
-	// Based on calculation from Shauren, thx for it
-	float min = sp->EffectBasePoints[0]/77.0f;
-	float max = sp->EffectBasePoints[0]/25.0f;
-
-	float dmg = min * delay * 0.88f;
-
-	if( dmg < min )
-		dmg = min;
-	else 
-		if( dmg > max )
-			dmg = max;
-
-	return float2int32(dmg);
-}
-
 
 uint32 Player::CheckDamageLimits( uint32 dmg, uint32 spellid )
 {
@@ -13297,8 +13188,6 @@ void Player::DealDamage(Unit *pVictim, uint32 damage, uint32 targetEvent, uint32
 			}
 		}
 
-		pVictim->Die( this, damage, spellId );
-
 		EventAttackStop();
 		
 		SendPartyKillLog( pVictim->GetGUID() );
@@ -13320,6 +13209,8 @@ void Player::DealDamage(Unit *pVictim, uint32 damage, uint32 targetEvent, uint32
 				sWorld.SendZoneUnderAttackMsg( AreaID, static_cast< uint8 >( team ) );
 			}
 		}
+
+		pVictim->Die( this, damage, spellId );
 
 ///////////////////////////////////////////////////////////// Loot  //////////////////////////////////////////////////////////////////////////////////////////////
 		

@@ -52,6 +52,15 @@ public:
 			return false;
 	}
 
+	// Check if this object is identified by method arguments, so it can be deleted
+	virtual bool CanDelete(uint32 spellId, uint64 casterGuid = 0, uint64 misc = 0)
+	{
+		if ( mSpell->Id == spellId && (casterGuid == 0 || mCaster == casterGuid) && !mDeleted)
+			return true;
+
+		return false;
+	}
+
 	// Called when is proccing from casting spell. It checks proc class mask with spell group type
 	// Return true allow proc, false otherwise
 	virtual bool CheckClassMask(Unit *victim, SpellEntry *CastingSpell)
@@ -65,12 +74,24 @@ public:
 			return false;
 	}
 
+	// Called after proc chance is rolled
+	// Return false so Unit::HandleProc execute subsequent statements
+	// Return true if this handle everything, so Unit::HandleProc skips to next iteration
+	virtual bool DoEffect(Unit *victim, SpellEntry *CastingSpell, uint32 flag, uint32 dmg, uint32 abs, int *dmg_overwrite, uint32 weapon_damage_type)
+	{
+		return false;
+	}
+
 	// Called just after this object is created. Usefull for initialize object members
 	virtual void Init(Object *obj)
 	{
 	}
 
 	virtual uint32 CalcProcChance(Unit *victim, SpellEntry *CastingSpell);
+
+	// Called when trying to proc on a triggered spell
+	// Return true allow proc, false otherwise
+	virtual bool CanProcOnTriggered(Unit *victim, SpellEntry *CastingSpell);
 
 	// Spell to proc
 	SpellEntry* mSpell;

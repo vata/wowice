@@ -29,6 +29,7 @@
 #define TO_OBJECT(ptr) static_cast<Object*>(ptr)
 #define TO_UNIT(ptr) static_cast<Unit*>(ptr)
 #define TO_PET(ptr) static_cast<Pet*>(ptr)
+#define TO_ITEM(ptr) static_cast<Item*>(ptr)
 
 
 #include "Definitions.h"
@@ -40,6 +41,12 @@
 #include <map>
 #include <sstream>
 #include <string>
+
+#ifdef WIN32
+#include <array>
+#else
+#include <tr1/array>
+#endif
 
 #include "../wowice-shared/Common.h"
 #include "../wowice-shared/MersenneTwister.h"
@@ -143,6 +150,7 @@
 #include "WarsongGulch.h"
 #include "WeatherMgr.h"
 #include "World.h"
+#include "EquipmentSetMgr.h"
 #include "ItemInterface.h"
 #include "Stats.h"
 #include "WorldCreator.h"

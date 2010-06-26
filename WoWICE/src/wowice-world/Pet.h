@@ -107,6 +107,12 @@ enum AutoCastEvents
 #define DEFAULT_SPELL_STATE 0x8100
 #define AUTOCAST_SPELL_STATE 0xC100
 
+
+enum PetType{
+	HUNTERPET = 1,
+	WARLOCKPET = 2,
+};
+
 typedef map<SpellEntry*, uint16> PetSpellMap;
 struct PlayerPet;
 
@@ -124,7 +130,8 @@ public:
     bool IsPet() { return true; }
 
 	void LoadFromDB(Player* owner, PlayerPet * pi);
-	void CreateAsSummon(uint32 entry, CreatureInfo *ci, Creature *created_from_creature, Player* owner, SpellEntry *created_by_spell, uint32 type, uint32 expiretime, LocationVector* Vec = NULL, bool dismiss_old_pet = true);
+	//CreateAsSummon() returns false if an error occurred. The caller MUST delete us.
+	bool CreateAsSummon(uint32 entry, CreatureInfo *ci, Creature *created_from_creature, Player* owner, SpellEntry *created_by_spell, uint32 type, uint32 expiretime, LocationVector* Vec = NULL, bool dismiss_old_pet = true);
 
 	virtual void Update(uint32 time);
 	void OnPushToWorld();
@@ -162,7 +169,9 @@ public:
 	void Dismiss();
 	void setDeathState(DeathState s);
 
-	void DelayedRemove(bool bTime, uint32 delay = PET_DELAYED_REMOVAL_TIME);
+	void DelayedRemove(bool bTime, bool dismiss = false, uint32 delay = PET_DELAYED_REMOVAL_TIME);
+	void Despawn(uint32 delay, uint32 respawntime);
+	void SafeDelete();
 
 	WoWICE_INLINE Player* GetPetOwner() { return m_Owner; }
 	WoWICE_INLINE void ClearPetOwner() { m_Owner = NULL; }

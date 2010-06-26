@@ -539,11 +539,6 @@ bool ChatHandler::HandleBanCharacterCommand(const char* args, WorldSession *m_se
 		pInfo = pPlayer->getPlayerInfo();
 	}
 	SystemMessage(m_session, "This ban is due to expire %s%s.", BanTime ? "on " : "", BanTime ? ConvertTimeStampToDataTime(BanTime+(uint32)UNIXTIME).c_str() : "Never");
-	if(pPlayer)
-	{
-		SystemMessage(m_session, "Kicking %s.", pPlayer->GetName());
-		pPlayer->Kick();
-	}
 
 	sGMLog.writefromsession(m_session, "banned %s, reason %s, for %s", pCharacter, (pReason== NULL)?"No reason":pReason, BanTime ? ConvertTimeStampToString(BanTime).c_str() : "ever");
 	char msg[200];
@@ -552,6 +547,12 @@ bool ChatHandler::HandleBanCharacterCommand(const char* args, WorldSession *m_se
 	if( sWorld.m_banTable && pInfo )
 	{
 		CharacterDatabase.Execute("INSERT INTO %s VALUES('%s', '%s', %u, %u, '%s')", sWorld.m_banTable, m_session->GetPlayer()->GetName(), pInfo->name, (uint32)UNIXTIME, (uint32)UNIXTIME + BanTime, (pReason== NULL)?"No reason.":CharacterDatabase.EscapeString(string(pReason)).c_str() );
+	}
+	
+	if(pPlayer)
+	{
+		SystemMessage(m_session, "Kicking %s.", pPlayer->GetName());
+		pPlayer->Kick();
 	}
 	return true;
 }
@@ -2193,7 +2194,7 @@ bool ChatHandler::HandleFormationLink2Command(const char* args, WorldSession * m
 		return true;
 	}
 
-	if(m_session->GetPlayer()->linkTarget == 0 || m_session->GetPlayer()->linkTarget->GetTypeId() != TYPEID_UNIT)
+	if(m_session->GetPlayer()->linkTarget == NULL || m_session->GetPlayer()->linkTarget->IsPet())
 	{
 		RedSystemMessage(m_session, "Master not selected. select the master, and use formationlink1.");
 		return true;
@@ -2204,8 +2205,8 @@ bool ChatHandler::HandleFormationLink2Command(const char* args, WorldSession * m
 
 	slave->GetAIInterface()->m_formationFollowDistance = dist;
 	slave->GetAIInterface()->m_formationFollowAngle = ang;
-	slave->GetAIInterface()->m_formationLinkTarget = static_cast< Creature* >( m_session->GetPlayer()->linkTarget );
-	slave->GetAIInterface()->m_formationLinkSqlId = slave->GetAIInterface()->m_formationLinkTarget->GetSQL_id();
+	slave->GetAIInterface()->m_formationLinkTarget = m_session->GetPlayer()->linkTarget->GetGUID();
+	slave->GetAIInterface()->m_formationLinkSqlId = m_session->GetPlayer()->linkTarget->GetSQL_id();
 	slave->GetAIInterface()->SetUnitToFollowAngle(ang);
 
 	// add to db
@@ -2213,7 +2214,7 @@ bool ChatHandler::HandleFormationLink2Command(const char* args, WorldSession * m
 		slave->GetSQL_id(), slave->GetAIInterface()->m_formationLinkSqlId, ang, dist);
 
 	BlueSystemMessage(m_session, "%s linked up to %s with a distance of %f at %f radians.", slave->GetCreatureInfo()->Name,
-		static_cast< Creature* >( m_session->GetPlayer()->linkTarget )->GetCreatureInfo()->Name, dist, ang );
+		m_session->GetPlayer()->linkTarget->GetCreatureInfo()->Name, dist, ang );
 
 	return true;
 }

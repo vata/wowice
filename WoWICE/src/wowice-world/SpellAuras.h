@@ -22,7 +22,7 @@ enum AURA_FLAGS
 	AFLAG_EFFECT_3		= 0x4,
 	AFLAG_NOT_CASTER	= 0x8,
 	AFLAG_SET			= 0x9,
-	AFLAG_POSTIVE		= 0x10,
+	AFLAG_CANCELLABLE	= 0x10,
 	AFLAG_DURATION		= 0x20,
 	AFLAG_HIDE			= 0x40, // Seems to hide the aura and tell client the aura was removed
 	AFLAG_NEGATIVE		= 0x80
@@ -52,7 +52,7 @@ enum AURA_STATE_FLAGS
 	AURASTATE_FLAG_REJUVENATE			= 0x004000,	//15
 	AURASTATE_FLAG_POISON				= 0x008000,	//16
 	AURASTATE_FLAG_ENRAGED				= 0x010000,	//17
-	AURASTATE_FLAG_MAELSTROM_READY		= 0x020000,	//18
+	AURASTATE_FLAG_BLEED				= 0x020000,	//18
 	AURASTATE_FLAG_EVASIVE_CHARGE		= 0x200000,	//22
 	AURASTATE_FLAG_HEALTH75				= 0x400000,	//23 (Health ABOVE 75%)
 };
@@ -168,7 +168,7 @@ enum MOD_TYPES
     SPELL_AURA_HOVER = 106,                             // Hover
     SPELL_AURA_ADD_FLAT_MODIFIER = 107,                 // Add Flat Modifier
     SPELL_AURA_ADD_PCT_MODIFIER = 108,                  // Add % Modifier
-    SPELL_AURA_ADD_TARGET_TRIGGER = 109,                // Add Class Target Trigger
+    SPELL_AURA_ADD_CLASS_TARGET_TRIGGER = 109,          // Add Class Target Trigger
     SPELL_AURA_MOD_POWER_REGEN_PERCENT = 110,           // Mod Power Regen %
     SPELL_AURA_ADD_CASTER_HIT_TRIGGER = 111,            // Add Class Caster Hit Trigger
     SPELL_AURA_OVERRIDE_CLASS_SCRIPTS = 112,            // Override Class Scripts
@@ -591,7 +591,7 @@ public:
 	void SpellAuraHover(bool apply);
 	void SpellAuraAddFlatModifier(bool apply);
 	void SpellAuraAddPctMod(bool apply);
-	void SpellAuraAddTargetTrigger(bool apply);
+	void SpellAuraAddClassTargetTrigger(bool apply);
 	void SpellAuraModPowerRegPerc(bool apply);
 	void SpellAuraOverrideClassScripts(bool apply);
 	void SpellAuraModRangedDamageTaken(bool apply);
@@ -729,7 +729,6 @@ public:
 	void EventPeriodicRegenManaStatPct(uint32 perc,uint32 stat);
 	void EventPeriodicTriggerDummy();
 
-
 	void RelocateEvents();
 	int32 event_GetInstanceID();
 	bool WasCastInDuel() { return m_castInDuel; }
@@ -742,6 +741,7 @@ public:
 	uint16 m_auraSlot;
 
 	uint32 m_castedItemId;
+	uint64 itemCasterGUID;
 	// Area aura stuff -> never passive.
 	bool m_areaAura;		
 	uint8 m_visualSlot;

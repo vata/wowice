@@ -254,9 +254,11 @@ void _HandleBreathing(MovementInfo &movement_info, Player * _player, WorldSessio
 
 void WorldSession::HandleMovementOpcodes( WorldPacket & recv_data )
 {
+	CHECK_INWORLD_RETURN
+
 	bool moved = true;
 
-    if(!_player->IsInWorld() || _player->GetCharmedByGUID() || _player->GetPlayerStatus() == TRANSFER_PENDING || _player->GetTaxiState() || _player->getDeathState() == JUST_DIED)
+    if( _player->GetCharmedByGUID() || _player->GetPlayerStatus() == TRANSFER_PENDING || _player->GetTaxiState() || _player->getDeathState() == JUST_DIED)
 		return;
 
 	// spell cancel on movement, for now only fishing is added
@@ -564,10 +566,6 @@ void WorldSession::HandleMovementOpcodes( WorldPacket & recv_data )
 		{
 			if(!_player->m_TransporterGUID)
 			{
-				/* just walked into a transport */
-				if(_player->IsMounted())
-					_player->RemoveAura(_player->m_MountSpellId);
-
 				_player->m_CurrentTransporter = objmgr.GetTransporter( uint32( Arcemu::Util::GUID_LOPART(movement_info.transGuid ) ));
 				if(_player->m_CurrentTransporter)
 					_player->m_CurrentTransporter->AddPlayer(_player);
@@ -674,6 +672,8 @@ void WorldSession::HandleMoveTimeSkippedOpcode( WorldPacket & recv_data )
 
 void WorldSession::HandleMoveNotActiveMoverOpcode( WorldPacket & recv_data )
 {
+	CHECK_INWORLD_RETURN
+
 	WoWGuid guid;
 	recv_data >> guid;
 
@@ -695,6 +695,8 @@ void WorldSession::HandleMoveNotActiveMoverOpcode( WorldPacket & recv_data )
 
 void WorldSession::HandleSetActiveMoverOpcode( WorldPacket & recv_data )
 {
+	CHECK_INWORLD_RETURN
+
 	// set current movement object
 	uint64 guid;
 	recv_data >> guid;
@@ -728,6 +730,8 @@ void WorldSession::HandleMoveSplineCompleteOpcode(WorldPacket &recvPacket)
 
 void WorldSession::HandleMountSpecialAnimOpcode(WorldPacket &recvdata)
 {
+	CHECK_INWORLD_RETURN
+
 	WorldPacket data(SMSG_MOUNTSPECIAL_ANIM,8);
 	data << _player->GetGUID();
 	_player->SendMessageToSet(&data, true);
@@ -735,15 +739,14 @@ void WorldSession::HandleMountSpecialAnimOpcode(WorldPacket &recvdata)
 
 void WorldSession::HandleWorldportOpcode(WorldPacket & recv_data)
 {
+	CHECK_INWORLD_RETURN
+
 	uint32 unk;
 	uint32 mapid;
 	float x,y,z,o;
 	recv_data >> unk >> mapid >> x >> y >> z >> o;
 
 	//printf("\nTEST: %u %f %f %f %f", mapid, x, y, z, o);
-
-	if(!_player->IsInWorld())
-		return;
 
 	if(!HasGMPermissions())
 	{
@@ -757,12 +760,11 @@ void WorldSession::HandleWorldportOpcode(WorldPacket & recv_data)
 
 void WorldSession::HandleTeleportToUnitOpcode(WorldPacket & recv_data)
 {
+	CHECK_INWORLD_RETURN
+
 	uint8 unk;
 	Unit * target;
 	recv_data >> unk;
-
-	if(!_player->IsInWorld())
-		return;
 
 	if(!HasGMPermissions())
 	{
@@ -778,6 +780,9 @@ void WorldSession::HandleTeleportToUnitOpcode(WorldPacket & recv_data)
 
 void WorldSession::HandleTeleportCheatOpcode(WorldPacket & recv_data)
 {
+
+	CHECK_INWORLD_RETURN
+
 	float x,y,z,o;
 	LocationVector vec;
 

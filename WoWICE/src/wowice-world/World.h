@@ -200,6 +200,7 @@ class TaskList
 	set<Task*> tasks;
 	Mutex queueLock;
 public:
+	TaskList() : thread_count(0){};
 	Task * GetTask();
 	void AddTask(Task* task);
 	void RemoveTask(Task * task)
@@ -285,6 +286,7 @@ public:
 	void AddGlobalSession(WorldSession *session);
 	void RemoveGlobalSession(WorldSession *session);
 	void DeleteSession(WorldSession *session);
+	void DeleteSessions( std::list< WorldSession* > &slist );
 
 	size_t GetSessionCount(){
 		m_sessionlock.AcquireReadLock();

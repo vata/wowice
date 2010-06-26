@@ -33,6 +33,7 @@ class Container;
 class Player;
 class UpdateData;
 class ByteBuffer;
+class EquipmentSetMgr;
 
 // sanity checking
 enum AddItemResult
@@ -70,6 +71,7 @@ private:
 	AddItemResult m_AddItem(Item *item, int8 ContainerSlot, int16 slot);
 
 public:
+	Wowice::EquipmentSetMgr m_EquipmentSets;
 	friend class ItemIterator;
 	ItemInterface( Player *pPlayer );
 	~ItemInterface();
@@ -181,6 +183,23 @@ public:
 	}
 
     bool AddItemById(uint32 itemid, uint32 count, int32 randomprop);
+
+	///////////////////////////////////////////////////////////////////////////////
+	//void SwapItems( int8 DstInvSlot, int8 DstSlot, int8 SrcInvSlot, int8 SrcSlot )
+	// Exchanges items A and B
+	//
+	//Parameter(s)
+	// int8 DstInvSlot  -  Item A's bag inventory slot (-1 if it's an equipment slot)
+	// int8 DstSlot     -  Item A's slotid within that bag
+	// int8 SrcInvSlot  -  Item B's bag inventory slot (-1 if it's an equipment slot)
+	// int8 SrcSlot     -  Item B's slotid within that bag
+	//
+	//Return Value(s)
+	// Returns true on success.
+	// Returns false on failure.
+	//
+	///////////////////////////////////////////////////////////////////////////////
+	bool SwapItems( int8 DstInvSlot, int8 DstSlot, int8 SrcInvSlot, int8 SrcSlot );
 };
 class ItemIterator
 {

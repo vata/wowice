@@ -577,6 +577,8 @@ void Creature::SaveToDB()
 
 	if(GetAIInterface()->m_moveFly)
 		ss << 1 << ",";
+	else if(GetAIInterface()->onGameobject)
+		ss << 2 << ",";
 	else
 		ss << 0 << ",";
 
@@ -845,15 +847,11 @@ void Creature::CalcResistance(uint32 type)
 
 	if( IsPet() && isAlive() && IsInWorld() )
 	{
-		Pet * pet = static_cast< Pet* >( this );
-		if (pet->IsPet()) // HACK
-		{
-			Player * owner = pet->GetPetOwner();
-			if( type == 0 && owner )
-				pos += int32(0.35f * owner->GetResistance(type ));
-			else if( owner )
-				pos += int32(0.40f * owner->GetResistance(type ));
-		}
+		Player * owner = TO_PET( this )->GetPetOwner();
+		if( type == 0 && owner )
+			pos += int32(0.35f * owner->GetResistance(type ));
+		else if( owner )
+			pos += int32(0.40f * owner->GetResistance(type ));
 	}
 
 	if( ResistanceModPct[ type ] < 0 )
@@ -1120,7 +1118,7 @@ void Creature::FormationLinkUp(uint32 SqlId)
 	Creature * creature = m_mapMgr->GetSqlIdCreature(SqlId);
 	if(creature != 0)
 	{
-		m_aiInterface->m_formationLinkTarget = creature;
+		m_aiInterface->m_formationLinkTarget = creature->GetGUID();
 		haslinkupevent = false;
 		event_RemoveEvents(EVENT_CREATURE_FORMATION_LINKUP);
 	}
@@ -1394,7 +1392,8 @@ bool Creature::Load(CreatureSpawn *spawn, uint32 mode, MapInfo *info)
 
 	if(spawn->CanFly == 1)
 		GetAIInterface()->m_moveFly = true;
-
+	else if(spawn->CanFly == 2)
+		GetAIInterface()->onGameobject = true;
 	/* more hacks! */
 	if(proto->Mana != 0)
 		SetPowerType(POWER_TYPE_MANA);
@@ -1849,22 +1848,6 @@ void Creature::Despawn(uint32 delay, uint32 respawntime)
 	if(!IsInWorld())
 		return;
 
-	if( IsPet() )
-	{
-		Pet* pet = TO_PET(this);
-		if( pet->GetPetOwner() != NULL )
-		{
-			pet->DelayedRemove(true);
-		}
-		else
-		{
-			pet->ScheduledForDeletion = true;
-			Unit::RemoveFromWorld( true );
-			SafeDelete();
-		}
-		return;
-	}
-	
 	if(respawntime && !m_noRespawn)
 	{
 		/* get the cell with our SPAWN location. if we've moved cell this might break :P */

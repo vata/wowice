@@ -564,6 +564,7 @@ public:
 	uint32 GenerateLowGuid(uint32 guidhigh);
 	uint32 GenerateMailID();
 	uint32 GenerateTicketID();
+	uint32 GenerateEquipmentSetID();
 	
 	void LoadTransporters();
 	void ProcessGameobjectQuests();
@@ -734,6 +735,7 @@ protected:
 	Wowice::Threading::AtomicCounter m_hiGameObjectSpawnId;
 	Wowice::Threading::AtomicCounter m_mailid;
 	Wowice::Threading::AtomicCounter m_ticketid;
+	Wowice::Threading::AtomicCounter m_setGUID;
 	Wowice::Threading::AtomicCounter m_hiCorpseGuid;
 	Wowice::Threading::AtomicCounter m_hiGuildId;
 	Wowice::Threading::AtomicCounter m_hiPetGuid;

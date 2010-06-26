@@ -553,7 +553,7 @@ enum Flags4
 	FLAGS4_UNK25						= 0x800000,
 	FLAGS4_TYPE_OFFHAND					= 0x1000000,
 	FLAGS4_UNK27						= 0x2000000,
-	FLAGS4_UNK28						= 0x4000000,
+	FLAGS4_CAN_PROC_ON_TRIGGERED		= 0x4000000,
 	FLAGS4_UNK29						= 0x8000000,
 	FLAGS4_UNK30						= 0x10000000,
 	FLAGS4_UNK31						= 0x20000000,
@@ -580,7 +580,7 @@ enum Flags5
 	FLAGS5_UNK15						= 0x2000,
 	FLAGS5_UNK16						= 0x4000,
 	FLAGS5_UNK17						= 0x8000,
-	FLAGS5_UNK18						= 0x10000,
+	FLAGS5_NOT_IN_ARENA					= 0x10000,
 	FLAGS5_UNK19						= 0x20000,
 	FLAGS5_UNK20						= 0x40000,
 	FLAGS5_UNK21						= 0x80000,
@@ -656,6 +656,11 @@ enum Flags7
 	FLAGS7_UNUSED6						= 0x8000, // unused 2.4.3
 	FLAGS7_UNUSED7						= 0x10000, // unused 2.4.3 - 20-33 also unused 2.4.3
 	FLAGS7_UNK19						= 0x20000,
+};
+
+
+enum SpellCustomFlags{
+	CUSTOM_FLAG_SPELL_REQUIRES_COMBAT		= 0x1
 };
 
 enum SpellCastFlags
@@ -943,7 +948,7 @@ enum SpellEffects
 	SPELL_EFFECT_SUMMON_TARGET,             //    153
 	SPELL_EFFECT_SUMMON_REFER_A_FRIEND,     //    154
 	SPELL_EFFECT_TAME_CREATURE,             //    155
-	SPELL_EFFECT_UNKNOWN34,                 //    156
+	SPELL_EFFECT_ADD_SOCKET,                //    156
 	SPELL_EFFECT_CREATE_ITEM2,				//    157
 	SPELL_EFFECT_MILLING,					//    158
 	SPELL_EFFECT_UNKNOWN37,                 //    159
@@ -1688,6 +1693,14 @@ public:
     
 	// Checks the caster is ready for cast
     uint8 CanCast(bool);
+
+	bool HasCustomFlag( uint32 flag ){
+		if( ( GetProto()->CustomFlags & flag ) != 0 )
+			return true;
+		else
+			return false;
+	}
+
 	WoWICE_INLINE bool hasAttribute(uint32 attribute)
 	{
 		return ((GetProto()->Attributes & attribute) > 0);
@@ -1707,6 +1720,10 @@ public:
 	WoWICE_INLINE bool hasAttributeExD(uint32 attribute)
 	{
 		return ((GetProto()->AttributesExD & attribute) > 0);
+	}
+	WoWICE_INLINE bool hasAttributeExE(uint32 attribute)
+	{
+		return ((GetProto()->AttributesExE & attribute) > 0);
 	}
     // Removes reagents, ammo, and items/charges
     void RemoveItems();
@@ -1833,6 +1850,7 @@ public:
 	void SpellEffectCharge(uint32 i);
 	void SpellEffectSummonCritter(uint32 i);
 	void SpellEffectKnockBack(uint32 i);
+	void SpellEffectKnockBack2(uint32 i);
 	void SpellEffectDisenchant( uint32 i );
 	void SpellEffectInebriate(uint32 i);
 	void SpellEffectFeedPet(uint32 i);
