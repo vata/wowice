@@ -27,6 +27,12 @@ class PoisonSpellProc : public SpellProc
 
 	void Init(Object* obj)
 	{
+		if(obj == NULL)
+		{
+			mDeleted = true;
+			return;
+		}
+
 		mItemGUID = TO_ITEM(obj)->GetGUID();
 		if ( mProcPerMinute )
 			mProcChance = TO_ITEM(obj)->GetProto()->Delay * mProcPerMinute / 600;
@@ -119,6 +125,29 @@ class CutToTheChaseSpellProc : public SpellProc
 	}
 };
 
+class DeadlyBrewSpellProc : public SpellProc
+{
+	SPELL_PROC_FACTORY_FUNCTION(DeadlyBrewSpellProc);
+
+	bool DoEffect(Unit *victim, SpellEntry *CastingSpell, uint32 flag, uint32 dmg, uint32 abs, int *dmg_overwrite, uint32 weapon_damage_type)
+	{
+		mTarget->CastSpell( TO_UNIT( NULL ), 3409, true );//Spell Id 3409: Crippling Poison
+
+		return true;
+	}
+};
+
+class WaylaySpellProc : public SpellProc
+{
+	SPELL_PROC_FACTORY_FUNCTION(WaylaySpellProc);
+
+	void Init(Object* obj)
+	{
+		mProcFlags = PROC_ON_CAST_SPELL;
+		mProcClassMask[0] = 0x204;
+	}
+};
+
 void SpellProcMgr::SetupRogue()
 {
 	AddByNameHash( SPELL_HASH_WOUND_POISON_VII, &WoundPoisonSpellProc::Create );
@@ -154,4 +183,8 @@ void SpellProcMgr::SetupRogue()
 	AddByNameHash( SPELL_HASH_MIND_NUMBING_POISON, &PoisonSpellProc::Create );		
 
 	AddByNameHash( SPELL_HASH_CUT_TO_THE_CHASE, &CutToTheChaseSpellProc::Create );
+
+	AddByNameHash( SPELL_HASH_DEADLY_BREW, &DeadlyBrewSpellProc::Create );
+	
+	AddByNameHash( SPELL_HASH_WAYLAY, &WaylaySpellProc::Create );
 }

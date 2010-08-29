@@ -79,7 +79,7 @@ class Transporter;
 
 #define CALL_INSTANCE_SCRIPT_EVENT( Mgr, Func ) if ( Mgr != NULL && Mgr->GetScript() != NULL ) Mgr->GetScript()->Func 
 
-class SERVER_DECL MapMgr : public CellHandler <MapCell>, public EventableObject,public CThread
+class SERVER_DECL MapMgr : public CellHandler <MapCell>, public EventableObject, public CThread
 {
 	friend class MapCell;
 	friend class MapScriptInterface;
@@ -117,7 +117,7 @@ public:
 	uint32 m_CreatureHighGuid;
     std::vector< Creature* > CreatureStorage;
 	CreatureSet::iterator creature_iterator;//required by owners despawning creatures and deleting *(++itr)
-	Creature * CreateCreature(uint32 entry, bool isVehicle = false);
+	Creature * CreateCreature(uint32 entry);
 
 	Creature * GetCreature(uint32 guid)
 	{

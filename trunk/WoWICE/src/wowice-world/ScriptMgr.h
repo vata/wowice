@@ -61,6 +61,7 @@ enum ServerHookEvents
 	SERVER_HOOK_EVENT_ON_ADVANCE_SKILLLINE  = 29,
     SERVER_HOOK_EVENT_ON_DUEL_FINISHED      = 30,
 	SERVER_HOOK_EVENT_ON_AURA_REMOVE		= 31,
+	SERVER_HOOK_EVENT_ON_RESURRECT		= 32,
 
 	NUM_SERVER_HOOKS,
 };
@@ -106,6 +107,7 @@ typedef bool(*tOnPreUnitDie)(Unit *killer, Unit *target);
 typedef void(*tOnAdvanceSkillLine)(Player * pPlayer, uint32 SkillLine, uint32 Current);
 typedef void(*tOnDuelFinished)(Player * Winner, Player * Looser);
 typedef void(*tOnAuraRemove)(Aura * aura);
+typedef bool(*tOnResurrect)(Player * pPlayer);
 
 class Spell;
 class Aura;
@@ -213,7 +215,7 @@ public:
 		}
 	}
 
-	ARCEMU_INLINE GossipScript * GetDefaultGossipScript() { return DefaultGossipScript; }
+	WoWICE_INLINE GossipScript * GetDefaultGossipScript() { return DefaultGossipScript; }
 
 protected:
 	InstanceCreateMap mInstances; 
@@ -232,7 +234,7 @@ class SERVER_DECL CreatureAIScript
 {
 public:
 	CreatureAIScript(Creature* creature);
-	virtual ~CreatureAIScript() {};
+	virtual ~CreatureAIScript();
 
 	virtual void OnCombatStart(Unit* mTarget) {}
 	virtual void OnCombatStop(Unit* mTarget) {}
@@ -254,6 +256,7 @@ public:
 	virtual void OnFlee(Unit* mFlee) {}
 	virtual void OnCallForHelp() {}
 	virtual void OnLoad() {}
+	virtual void OnDespawn() {}
 	virtual void OnReachWP(uint32 iWaypointId, bool bForwards) {}
 	virtual void OnLootTaken(Player* pPlayer, ItemPrototype *pItemPrototype) {}
 	virtual void AIUpdate() {}
@@ -264,11 +267,20 @@ public:
 	void ModifyAIUpdateEvent(uint32 newfrequency);
 	void RemoveAIUpdateEvent();
 
+	bool IsAlive();
+
 	virtual void Destroy() { delete this; }
 	Creature* GetUnit() { return _unit; }
 
+	CreatureAIScript* GetLinkedCreature() { return linkedCreatureAI; }
+	void SetLinkedCreature(CreatureAIScript* creatureAI);
+	void LinkedCreatureDeleted();
+
 protected:
 	Creature* _unit;
+
+private:
+	CreatureAIScript* linkedCreatureAI;
 };
 
 class SERVER_DECL GameObjectAIScript
@@ -406,6 +418,7 @@ public:
 	void OnAdvanceSkillLine(Player * pPlayer, uint32 SkillLine, uint32 Current);
 	void OnDuelFinished(Player * Winner, Player * Looser);
 	void OnAuraRemove(Aura * aura);
+	bool OnResurrect(Player * pPlayer);
 };
 
 #define sScriptMgr ScriptMgr::getSingleton()

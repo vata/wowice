@@ -15,11 +15,6 @@
 
 #include "StdAfx.h"
 
-#ifdef WIN32
-#define HACKY_CRASH_FIXES 1		// SEH stuff
-#endif
-
-
 Player* GetPlayerOwner( Object *A ){
 
     Player *pAttacker = NULL;

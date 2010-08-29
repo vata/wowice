@@ -359,7 +359,6 @@ Unit::Unit()
 	m_chargeSpellsInUse=false;
 //	m_spellsbusy=false;
 	m_interruptedRegenTime = 0;
-	m_hasVampiricEmbrace = m_hasVampiricTouch = 0;
 	m_hitfrommeleespell	 = 0;
 	m_damageSplitTarget = NULL;
 	m_extrastriketarget = 0;
@@ -374,7 +373,7 @@ Unit::Unit()
 	trigger_on_chill_chance_victim = 100;
 	m_soulSiphon.amt = 0;
 	m_soulSiphon.max = 0;
-	ModelHalfSize = 1.0f; //worst case unit size. (Should be overwritten)
+	m_modelhalfsize = 1.0f; //worst case unit size. (Should be overwritten)
 
 	m_blockfromspell		= 0;
 	m_dodgefromspell		= 0;
@@ -399,6 +398,8 @@ Unit::Unit()
 
 	Tagged = false;
 	TaggerGuid = 0;
+
+	m_singleTargetAura.clear();
 }
 
 Unit::~Unit()
@@ -661,6 +662,8 @@ Unit::~Unit()
 		delete *itr;
 	m_procSpells.clear();
 
+	m_singleTargetAura.clear();
+
     RemoveGarbage();
 }
 
@@ -890,7 +893,7 @@ void Unit::GiveGroupXP(Unit *pVictim, Player *PlayerInGroup)
 			active_player_list[i]->SetFlag(UNIT_FIELD_AURASTATE,AURASTATE_FLAG_LASTKILLWITHHONOR);
 			if(!sEventMgr.HasEvent(active_player_list[i],EVENT_LASTKILLWITHHONOR_FLAG_EXPIRE))
 			{
-				sEventMgr.AddEvent((Unit*)active_player_list[i],&Unit::EventAurastateExpire,(uint32)AURASTATE_FLAG_LASTKILLWITHHONOR,EVENT_LASTKILLWITHHONOR_FLAG_EXPIRE,20000,1, EVENT_FLAG_DO_NOT_EXECUTE_IN_WORLD_CONTEXT);
+				sEventMgr.AddEvent(TO_UNIT(active_player_list[i]),&Unit::EventAurastateExpire,(uint32)AURASTATE_FLAG_LASTKILLWITHHONOR,EVENT_LASTKILLWITHHONOR_FLAG_EXPIRE,20000,1, EVENT_FLAG_DO_NOT_EXECUTE_IN_WORLD_CONTEXT);
 			}
 			else
 			{
@@ -1079,10 +1082,10 @@ uint32 Unit::HandleProc( uint32 flag, Unit* victim, SpellEntry* CastingSpell, bo
 		if( spell_proc->mProcFlags & PROC_REMOVEONUSE )
 			RemoveAura( origId );
 
-		int dmg_overwrite = 0;
+		int dmg_overwrite[3] = { 0, 0, 0 };
 
 		// give spell_proc a chance to handle the effect
-		if( spell_proc->DoEffect(victim, CastingSpell, flag, dmg, abs, &dmg_overwrite, weapon_damage_type) )
+		if( spell_proc->DoEffect(victim, CastingSpell, flag, dmg, abs, dmg_overwrite, weapon_damage_type) )
 			continue;
 
 		//these are player talents. Fuckem they pull the emu speed down
@@ -1185,52 +1188,33 @@ uint32 Unit::HandleProc( uint32 flag, Unit* victim, SpellEntry* CastingSpell, bo
 					if( !this->IsPlayer() || static_cast< Player* >( this )->GetShapeShift() != FORM_CAT )
 						continue;
 				}break;
-                case 34754: //holy concentration
-                {
-
-					if( CastingSpell == NULL )
-						continue;
-					if( CastingSpell->NameHash != SPELL_HASH_FLASH_HEAL &&
-						CastingSpell->NameHash != SPELL_HASH_BINDING_HEAL &&
-						CastingSpell->NameHash != SPELL_HASH_GREATER_HEAL )
-						continue;
-				}break;
 				case 16459:
 				{
 					//sword specialization
-					if( static_cast< Player* >( this )->GetItemInterface())
-					{
-						Item* itMH = static_cast< Player* >( this )->GetItemInterface()->GetInventoryItem( EQUIPMENT_SLOT_MAINHAND );
-						Item* itOH = static_cast< Player* >( this )->GetItemInterface()->GetInventoryItem( EQUIPMENT_SLOT_OFFHAND );
-						uint32 reqskillMH = 0;
-						uint32 reqskillOH = 0;
+					Item* itMH = static_cast< Player* >( this )->GetItemInterface()->GetInventoryItem( EQUIPMENT_SLOT_MAINHAND );
+					Item* itOH = static_cast< Player* >( this )->GetItemInterface()->GetInventoryItem( EQUIPMENT_SLOT_OFFHAND );
+					uint32 reqskillMH = 0;
+					uint32 reqskillOH = 0;
 
-						if( itMH != NULL ) 
-							reqskillMH = GetSkillByProto( itMH->GetProto()->Class, itMH->GetProto()->SubClass );
+					if( itMH != NULL ) 
+						reqskillMH = GetSkillByProto( itMH->GetProto()->Class, itMH->GetProto()->SubClass );
 
-						if( itOH != NULL )
-							reqskillOH = GetSkillByProto( itOH->GetProto()->Class, itOH->GetProto()->SubClass );
+					if( itOH != NULL )
+						reqskillOH = GetSkillByProto( itOH->GetProto()->Class, itOH->GetProto()->SubClass );
 
-						if( reqskillMH != SKILL_SWORDS && reqskillMH != SKILL_2H_SWORDS && reqskillOH != SKILL_SWORDS && reqskillOH != SKILL_2H_SWORDS )
-							continue;
-					}
-					else
-						continue; //no weapon no joy
+					if( reqskillMH != SKILL_SWORDS && reqskillMH != SKILL_2H_SWORDS && reqskillOH != SKILL_SWORDS && reqskillOH != SKILL_2H_SWORDS )
+						continue;
 				}break;
 				case 12721:
 				{
 					//deep wound requires a melee weapon
 					Item* it;
-					if( static_cast< Player* >( this )->GetItemInterface())
+					it = static_cast< Player* >( this )->GetItemInterface()->GetInventoryItem( EQUIPMENT_SLOT_MAINHAND );
+					if( it != NULL )
 					{
-						it = static_cast< Player* >( this )->GetItemInterface()->GetInventoryItem( EQUIPMENT_SLOT_MAINHAND );
-						if( it != NULL )
-						{
-							//class 2 means weapons ;)
-							if( it->GetProto()->Class != 2 )
-								continue;
-						}
-						else continue; //no weapon no joy
+						//class 2 means weapons ;)
+						if( it->GetProto()->Class != 2 )
+							continue;
 					}
 					else continue; //no weapon no joy
 				}break;
@@ -1267,13 +1251,8 @@ uint32 Unit::HandleProc( uint32 flag, Unit* victim, SpellEntry* CastingSpell, bo
 				{
 					//let's recalc chance to cast since we have a full 100 all time on this one
 					Item* it;
-					if( static_cast< Player* >( this )->GetItemInterface() )
-					{
-						it = static_cast< Player* >( this )->GetItemInterface()->GetInventoryItem( EQUIPMENT_SLOT_MAINHAND );
-						if( it == NULL )
-							continue; //no weapon no joy
-					}
-					else
+					it = static_cast< Player* >( this )->GetItemInterface()->GetInventoryItem( EQUIPMENT_SLOT_MAINHAND );
+					if( it == NULL )
 						continue; //no weapon no joy
 					//float chance=float(it->GetProto()->Delay)*float(talentlevel)/600.0f;
 					uint32 chance = it->GetProto()->Delay * talentlevel / 300; //zack this had a very low proc rate. Kinda like a wasted talent
@@ -1313,7 +1292,7 @@ uint32 Unit::HandleProc( uint32 flag, Unit* victim, SpellEntry* CastingSpell, bo
 					SpellEntry* spellInfo = dbcSpell.LookupEntry( spellId ); //we already modified this spell on server loading so it must exist
 					SpellDuration* sd = dbcSpellDuration.LookupEntryForced( spellInfo->DurationIndex );
 					uint32 tickcount = GetDuration( sd ) / spellInfo->EffectAmplitude[0] ;
-					dmg_overwrite = ospinfo->EffectBasePoints[0] * dmg / (100  * tickcount );
+					dmg_overwrite[0] = ospinfo->EffectBasePoints[0] * dmg / (100  * tickcount );
 				}break;
 				//druid - Primal Fury
 				case 37116:
@@ -1321,7 +1300,7 @@ uint32 Unit::HandleProc( uint32 flag, Unit* victim, SpellEntry* CastingSpell, bo
 				{
 					if (!this->IsPlayer())
 						continue;
-					Player* mPlayer = (Player*)this;
+					Player* mPlayer = TO_PLAYER(this);
 					if (!mPlayer->IsInFeralForm() ||
 						(mPlayer->GetShapeShift() != FORM_CAT &&
 						mPlayer->GetShapeShift() != FORM_BEAR &&
@@ -1407,13 +1386,13 @@ uint32 Unit::HandleProc( uint32 flag, Unit* victim, SpellEntry* CastingSpell, bo
 						if( CastingSpell->NameHash != SPELL_HASH_DRAIN_SOUL )
 							continue;
 						//null check was made before like 2 times already :P
-						dmg_overwrite = ( ospinfo->EffectBasePoints[2] + 1 ) * GetMaxPower(POWER_TYPE_MANA) / 100;
+						dmg_overwrite[0] = ( ospinfo->EffectBasePoints[2] + 1 ) * GetMaxPower(POWER_TYPE_MANA) / 100;
 					}break;
 				// warlock - Unstable Affliction
 				case 31117:
 					{
 						//null check was made before like 2 times already :P
-						dmg_overwrite = ( ospinfo->EffectBasePoints[0] + 1 ) * 9;
+						dmg_overwrite[0] = ( ospinfo->EffectBasePoints[0] + 1 ) * 9;
 					}break;
 				//warlock soul link
 				case 25228:
@@ -1637,7 +1616,7 @@ uint32 Unit::HandleProc( uint32 flag, Unit* victim, SpellEntry* CastingSpell, bo
 							break;
 
 						//the nasty part : get a new target ^^
-						Player *p_caster = (Player*)oricaster;
+						Player *p_caster = TO_PLAYER(oricaster);
 						Player *First_new_target,*Next_new_target,*First_whatever;
 						First_new_target = Next_new_target = First_whatever = NULL;
 						bool passed_prev_target = false;
@@ -1953,7 +1932,7 @@ uint32 Unit::HandleProc( uint32 flag, Unit* victim, SpellEntry* CastingSpell, bo
 							continue;
 						if( CastingSpell->School!=SCHOOL_FIRE && CastingSpell->School!=SCHOOL_FROST) //fire and frost critical's
 							continue;
-						dmg_overwrite = CastingSpell->manaCost * ( ospinfo->EffectBasePoints[0] + 1 ) / 100;
+						dmg_overwrite[0] = CastingSpell->manaCost * ( ospinfo->EffectBasePoints[0] + 1 ) / 100;
 					}break;
 				//Hunter - The Beast Within
 				case 34471:
@@ -1969,7 +1948,7 @@ uint32 Unit::HandleProc( uint32 flag, Unit* victim, SpellEntry* CastingSpell, bo
 					{
 						if( CastingSpell == NULL )
 							continue;
-						dmg_overwrite = CastingSpell->manaCost * 40 / 100;
+						dmg_overwrite[0] = CastingSpell->manaCost * 40 / 100;
 					}break;
 				//priest - Reflective Shield
 				case 33619:
@@ -2062,7 +2041,7 @@ uint32 Unit::HandleProc( uint32 flag, Unit* victim, SpellEntry* CastingSpell, bo
 						SpellEntry* spellInfo = dbcSpell.LookupEntry( 54203 ); 
 						SpellDuration* sd = dbcSpellDuration.LookupEntryForced( spellInfo->DurationIndex );
 						uint32 tickcount = GetDuration( sd ) / spellInfo->EffectAmplitude[0] ;
-						dmg_overwrite = ospinfo->EffectBasePoints[0] * dmg / (100  * tickcount );
+						dmg_overwrite[0] = ospinfo->EffectBasePoints[0] * dmg / (100  * tickcount );
 					}break;
 				case 59578: //Paladin - Art of War
 				case 53489:
@@ -2097,7 +2076,7 @@ uint32 Unit::HandleProc( uint32 flag, Unit* victim, SpellEntry* CastingSpell, bo
 						if( !( CastingSpell->c_is_flags & SPELL_FLAG_IS_HEALING ) || this == victim )
 							continue;
 						//this is not counting the bonus effects on heal
-						dmg_overwrite = (CastingSpell->EffectBasePoints[IsHealingSpell(CastingSpell)-1] + 1) * (ospinfo->EffectBasePoints[0] + 1 ) / 100;
+						dmg_overwrite[0] = (CastingSpell->EffectBasePoints[IsHealingSpell(CastingSpell)-1] + 1) * (ospinfo->EffectBasePoints[0] + 1 ) / 100;
 					}break;
 				//paladin - Light's Grace
 				case 31834:
@@ -2106,24 +2085,6 @@ uint32 Unit::HandleProc( uint32 flag, Unit* victim, SpellEntry* CastingSpell, bo
 							continue;//this should not occur unless we made a fuckup somewhere
 						if( CastingSpell->NameHash != SPELL_HASH_HOLY_LIGHT )
 							continue;
-					}break;
-				//paladin - Eye for an Eye
-				case 25997:
-					{
-						if( victim == this )
-							continue; //not self-cast crits
-						//requires damaging spell
-						if( CastingSpell == NULL )
-							continue;//this should not occur unless we made a fuckup somewhere
-						if(!(CastingSpell->c_is_flags & SPELL_FLAG_IS_DAMAGING))
-							continue;
-
-						//this should contain the same values as the fixed ones
-						dmg_overwrite = ( dmg *  (ospinfo->EffectBasePoints[0] + 1 )) / 100 ; //only half dmg
-
-						int32 half_health = this->GetHealth() >> 1;
-						if( dmg_overwrite > half_health )
-							dmg_overwrite = half_health ;
 					}break;
 				//paladin - Blessed Life
 				case 31828:
@@ -2441,27 +2402,7 @@ uint32 Unit::HandleProc( uint32 flag, Unit* victim, SpellEntry* CastingSpell, bo
 		if( spellId==22858 && isInBack(victim) ) //retatliation needs target to be not in front. Can be cast by creatures too
 			continue;
 
-		SpellCastTargets targets;
-		if( spell_proc->mProcFlags & PROC_TARGET_SELF )
-			targets.m_unitTarget = GetGUID();
-		else
-			targets.m_unitTarget = victim->GetGUID();
-
-		SpellEntry *spellInfo = dbcSpell.LookupEntry(spellId );
-		Spell *spell = new Spell(this, spellInfo ,true, NULL);
-		spell->forced_basepoints[0] = dmg_overwrite;
-		spell->ProcedOnSpell = CastingSpell;
-		//Spell *spell = new Spell(this,spellInfo,false,0,true,false);
-		if( spellId == 974 || spellId == 32593 || spellId == 32594 || spellId == 49283 || spellId == 49284 ) // Earth Shield handler
-		{
-			spell->pSpellId=spellId;
-			spell->SpellEffectDummy(0);
-			delete spell;
-			spell = NULL;
-			continue;
-		}
-		spell->pSpellId=origId;
-		spell->prepare(&targets);
+		spell_proc->CastSpell(victim, CastingSpell, dmg_overwrite);
 
 		if (origId == 39805)
 		{
@@ -2879,8 +2820,8 @@ uint32 Unit::GetSpellDidHitResult( Unit* pVictim, uint32 weapon_damage_type, Spe
 		victim_skill = pVictim->getLevel() * 5;
 		if(pVictim->m_objectTypeId == TYPEID_UNIT)
 		{
-			Creature * c = (Creature*)(pVictim);
-			if( c->GetCreatureInfo() && c->GetCreatureInfo()->Rank == ELITE_WORLDBOSS )
+			Creature * c = TO_CREATURE(pVictim);
+			if( c->GetCreatureInfo()->Rank == ELITE_WORLDBOSS )
 			{
 				victim_skill = std::max(victim_skill,((int32)this->getLevel()+3)*5); //used max to avoid situation when lowlvl hits boss.
 			}
@@ -2950,8 +2891,8 @@ uint32 Unit::GetSpellDidHitResult( Unit* pVictim, uint32 weapon_damage_type, Spe
 		self_skill = this->getLevel() * 5;
 		if(m_objectTypeId == TYPEID_UNIT)
 		{
-			Creature * c = (Creature*)(this);
-			if( c->GetCreatureInfo()&&c->GetCreatureInfo()->Rank == ELITE_WORLDBOSS )
+			Creature * c = TO_CREATURE(this);
+			if( c->GetCreatureInfo()->Rank == ELITE_WORLDBOSS )
 				self_skill = std::max(self_skill,((int32)pVictim->getLevel()+3)*5);//used max to avoid situation when lowlvl hits boss.
 		}
 	}
@@ -3041,7 +2982,7 @@ uint32 Unit::GetSpellDidHitResult( Unit* pVictim, uint32 weapon_damage_type, Spe
 		r++;
 	}
 
-	uint32 roll_results[5] = { SPELL_DID_HIT_MISS,SPELL_DID_HIT_DODGE,SPELL_DID_HIT_DEFLECT,SPELL_DID_HIT_BLOCK,SPELL_DID_HIT_SUCCESS };
+	uint32 roll_results[5] = { SPELL_DID_HIT_MISS,SPELL_DID_HIT_DODGE,SPELL_DID_HIT_PARRY,SPELL_DID_HIT_BLOCK,SPELL_DID_HIT_SUCCESS };
 	return roll_results[r];
 }
 
@@ -3179,7 +3120,7 @@ void Unit::Strike( Unit* pVictim, uint32 weapon_damage_type, SpellEntry* ability
 		victim_skill = pVictim->getLevel() * 5;
 		if ( pVictim->m_objectTypeId == TYPEID_UNIT )
 		{
-			if ( c != NULL && c->GetCreatureInfo() && c->GetCreatureInfo()->Rank == ELITE_WORLDBOSS )
+			if ( c->GetCreatureInfo()->Rank == ELITE_WORLDBOSS )
 			{
 				victim_skill = std::max( victim_skill, ( (int32)getLevel() + 3 ) * 5 ); //used max to avoid situation when lowlvl hits boss.
 			}
@@ -3254,8 +3195,8 @@ void Unit::Strike( Unit* pVictim, uint32 weapon_damage_type, SpellEntry* ability
 		self_skill = this->getLevel() * 5;
 		if(m_objectTypeId == TYPEID_UNIT)
 		{
-			Creature * c = (Creature*)(this);
-			if(c&&c->GetCreatureInfo()&&c->GetCreatureInfo()->Rank == ELITE_WORLDBOSS)
+			Creature * c = TO_CREATURE(this);
+			if(c->GetCreatureInfo()->Rank == ELITE_WORLDBOSS)
 				self_skill = std::max(self_skill,((int32)pVictim->getLevel()+3)*5);//used max to avoid situation when lowlvl hits boss.
 		}
 		crit = 5.0f; //will be modified later
@@ -3583,8 +3524,8 @@ void Unit::Strike( Unit* pVictim, uint32 weapon_damage_type, SpellEntry* ability
 
 			if(ability && ability->SpellGroupType)
 			{
-				SM_FIValue( ((Unit*)this)->SM_FDamageBonus, &dmg.full_damage, ability->SpellGroupType );
-				SM_PIValue( ((Unit*)this)->SM_PDamageBonus, &dmg.full_damage, ability->SpellGroupType );
+				SM_FIValue( TO_UNIT(this)->SM_FDamageBonus, &dmg.full_damage, ability->SpellGroupType );
+				SM_PIValue( TO_UNIT(this)->SM_PDamageBonus, &dmg.full_damage, ability->SpellGroupType );
 			} 
 			else 
 			{
@@ -3716,7 +3657,7 @@ void Unit::Strike( Unit* pVictim, uint32 weapon_damage_type, SpellEntry* ability
 							dmg.full_damage += dmg.full_damage * static_cast< Player* >( this )->m_modphyscritdmgPCT / 100;
 						}
 						if(!pVictim->IsPlayer())
-							dmg.full_damage += float2int32(dmg.full_damage*static_cast< Player* >( this )->IncreaseCricticalByTypePCT[((Creature*)pVictim)->GetCreatureInfo() ? ((Creature*)pVictim)->GetCreatureInfo()->Type : 0]);
+							dmg.full_damage += float2int32(dmg.full_damage*static_cast< Player* >( this )->IncreaseCricticalByTypePCT[TO_CREATURE(pVictim)->GetCreatureInfo()->Type]);
 					//sLog.outString( "DEBUG: After IncreaseCricticalByTypePCT: %u" , dmg.full_damage );
 					}
 
@@ -3737,7 +3678,7 @@ void Unit::Strike( Unit* pVictim, uint32 weapon_damage_type, SpellEntry* ability
 						//sLog.outString( "DEBUG: After Resilience check: %u" , dmg.full_damage );
 					}
 
-					if (pVictim->GetTypeId() == TYPEID_UNIT && static_cast<Creature*>(pVictim)->GetCreatureInfo() && static_cast<Creature*>(pVictim)->GetCreatureInfo()->Rank != ELITE_WORLDBOSS)
+					if (pVictim->GetTypeId() == TYPEID_UNIT && static_cast<Creature*>(pVictim)->GetCreatureInfo()->Rank != ELITE_WORLDBOSS)
 						pVictim->Emote( EMOTE_ONESHOT_WOUNDCRITICAL );
 
 					vproc |= PROC_ON_CRIT_HIT_VICTIM;
@@ -3753,7 +3694,7 @@ void Unit::Strike( Unit* pVictim, uint32 weapon_damage_type, SpellEntry* ability
 					{
 						this->SetFlag( UNIT_FIELD_AURASTATE, AURASTATE_FLAG_CRITICAL );
 						if( !sEventMgr.HasEvent( this, EVENT_CRIT_FLAG_EXPIRE ) )
-							sEventMgr.AddEvent( ( Unit* )this, &Unit::EventAurastateExpire, uint32( AURASTATE_FLAG_CRITICAL ) , EVENT_CRIT_FLAG_EXPIRE, 5000, 1, 0 );
+							sEventMgr.AddEvent( this, &Unit::EventAurastateExpire, uint32( AURASTATE_FLAG_CRITICAL ) , EVENT_CRIT_FLAG_EXPIRE, 5000, 1, 0 );
 						else sEventMgr.ModifyEventTimeLeft( this, EVENT_CRIT_FLAG_EXPIRE, 5000 );
 					}
 
@@ -4122,10 +4063,10 @@ void Unit::Strike( Unit* pVictim, uint32 weapon_damage_type, SpellEntry* ability
 
 			for(set<Object*>::iterator itr = m_objectsInRange.begin(); itr != m_objectsInRange.end(); ++itr)
 			{
-				if (!(*itr) || (*itr) == pVictim || !(*itr)->IsUnit())
+				if ( (*itr) == pVictim || !(*itr)->IsUnit() )
 					continue;
 
-				if(CalcDistance(*itr) < 5.0f && isAttackable(this, (*itr)) && (*itr)->isInFront(this) && !((Unit*)(*itr))->IsPacified())
+				if(CalcDistance(*itr) < 5.0f && isAttackable(this, (*itr)) && (*itr)->isInFront(this) && !TO_UNIT(*itr)->IsPacified())
 				{
 					// Sweeping Strikes hits cannot be dodged, missed or parried (from wowhead)
 					bool skip_hit_check2 = ex->spell_info->Id == 12328 ? true : false;
@@ -4269,7 +4210,7 @@ void Unit::AddAura(Aura * aur)
 		return;
 	}
 
-	if(m_mapId!=530 && (m_mapId!=571 || (IsPlayer() && !((Player*)this)->HasSpellwithNameHash(SPELL_HASH_COLD_WEATHER_FLYING))))
+	if(m_mapId!=530 && (m_mapId!=571 || (IsPlayer() && !TO_PLAYER(this)->HasSpellwithNameHash(SPELL_HASH_COLD_WEATHER_FLYING))))
 	// can't use flying auras in non-outlands or non-northrend (northrend requires cold weather flying)
 	{
 		for( uint32 i = 0; i < 3; ++i )
@@ -4286,6 +4227,32 @@ void Unit::AddAura(Aura * aur)
 	{
 		delete aur;
 		return;
+	}
+
+	// If this aura can only affect one target at a time
+	if( aur->GetSpellProto()->AttributesExE & FLAGS6_SINGLE_TARGET_AURA )
+	{
+		// remove aura from the previous applied target
+		Unit* caster = aur->GetUnitCaster();
+		if( caster != NULL )
+		{
+			uint64 prev_target_guid = caster->GetCurrentUnitForSingleTargetAura( aur->GetSpellProto() );
+
+			if( prev_target_guid )
+			{
+				Unit* prev_target = this->GetMapMgr()->GetUnit(prev_target_guid);
+				if( prev_target != NULL )
+					prev_target->RemoveAuraByNameHash( aur->GetSpellProto()->NameHash );
+			}
+		}
+
+		// remove aura from this unit. other player/unit may have casted on this target
+		// this is necessary for the following case:
+		//  1) attacker A cast on target A
+		//  2) attacker B cast on target B
+		//  3) attacker A cast on target B, and aura is removed from target A 
+		//  4) attacker B cast on target A, and aura is not removed from target B, because caster A is now the one that casted on target B
+		RemoveAuraByNameHash( aur->GetSpellProto()->NameHash );
 	}
 
 	uint16 AuraSlot = 0xFFFF;
@@ -4346,8 +4313,7 @@ void Unit::AddAura(Aura * aur)
 						}
 						AlreadyApplied++;
 						//update duration,the same aura (update the whole stack whenever we cast a new one)
-						m_auras[x]->SetDuration(aur->GetDuration());
-						sEventMgr.ModifyEventTimeLeft(m_auras[x], EVENT_AURA_REMOVE, aur->GetDuration());
+						m_auras[x]->ResetDuration();
 
 						if(maxStack <= AlreadyApplied)
 						{
@@ -4368,7 +4334,7 @@ void Unit::AddAura(Aura * aur)
 						// Check for auras with the same name and a different rank.
 						else
 						{
-							acr = AuraCheck(info->NameHash, info->RankNumber, m_auras[x],aur->GetCaster());
+							acr = AuraCheck( info, m_auras[x], aur->GetCaster() );
 							if(acr.Error == AURA_CHECK_RESULT_HIGHER_BUFF_PRESENT)
 							{
 								deleteAur = true;
@@ -4622,7 +4588,15 @@ void Unit::AddAura(Aura * aur)
 			pCaster->RemoveAllAuraByNameHash(SPELL_HASH_BLESSING_OF_PROTECTION);
 		}
 	}
-    
+
+	// If this aura can only affect one target at a time, store this target GUID for future reference
+	if( aur->GetSpellProto()->AttributesExE & FLAGS6_SINGLE_TARGET_AURA )
+	{
+		Unit* caster = aur->GetUnitCaster();
+		if( caster != NULL )
+			caster->SetCurrentUnitForSingleTargetAura( aur->GetSpellProto(), this->GetGUID() );
+	}
+
 	/* Set aurastates */
 	uint32 flag = 0;
 	if( aur->GetSpellProto()->MechanicsType == MECHANIC_ENRAGED && !asc_enraged++ )
@@ -4910,11 +4884,23 @@ bool Unit::SetAurDuration(uint32 spellId,uint32 duration)
 }
 
 
+Aura* Unit::FindAuraByNameHash(uint32 namehash, uint64 guid)
+{
+	Aura *aura;
+	for(uint32 x=MAX_TOTAL_AURAS_START;x<MAX_TOTAL_AURAS_END;x++)
+	{
+		aura = m_auras[x];
+		if( aura != NULL && aura->GetSpellProto()->NameHash == namehash && aura->m_casterGuid == guid )
+			return aura;
+	}
+	return NULL;
+}
+
 Aura* Unit::FindAuraByNameHash(uint32 namehash)
 {
 	for(uint32 x=MAX_TOTAL_AURAS_START;x<MAX_TOTAL_AURAS_END;x++)
 		if( m_auras[x] && m_auras[x]->GetSpellProto()->NameHash==namehash )
-				return m_auras[x];
+			return m_auras[x];
 	return NULL;
 }
 
@@ -4934,6 +4920,23 @@ Aura* Unit::FindAura(uint32 spellId, uint64 guid)
 			if(m_auras[x]->GetSpellId() == spellId && m_auras[x]->m_casterGuid == guid)
 				return m_auras[x];
 	return NULL;
+}
+
+std::list<Aura*> Unit::GetAllAurasWithAuraEffect(uint32 effect)
+{
+	std::list<Aura*> result;
+	Aura *aura;
+	for(uint32 x=MAX_TOTAL_AURAS_START;x<MAX_TOTAL_AURAS_END;x++)
+	{
+		aura = m_auras[x];
+		if( aura != NULL && 
+			((aura->GetSpellProto()->Effect[0] == SPELL_EFFECT_APPLY_AURA && aura->GetSpellProto()->EffectApplyAuraName[0] == effect) ||
+			 (aura->GetSpellProto()->Effect[1] == SPELL_EFFECT_APPLY_AURA && aura->GetSpellProto()->EffectApplyAuraName[1] == effect) ||
+			 (aura->GetSpellProto()->Effect[2] == SPELL_EFFECT_APPLY_AURA && aura->GetSpellProto()->EffectApplyAuraName[2] == effect)) )
+			result.push_back(aura);
+	}
+
+	return result;
 }
 
 void Unit::_UpdateSpells( uint32 time )
@@ -4985,8 +4988,8 @@ int32 Unit::GetSpellDmgBonus(Unit *pVictim, SpellEntry *spellInfo,int32 base_dmg
 	plus_damage += caster->GetDamageDoneMod(school);
 	plus_damage += pVictim->DamageTakenMod[school];
 //------------------------------by victim type----------------------------------------------
-	if(((Creature*)pVictim)->GetCreatureInfo() && caster->IsPlayer()&& !pVictim->IsPlayer())
-		plus_damage += static_cast< Player* >(caster)->IncreaseDamageByType[((Creature*)pVictim)->GetCreatureInfo()->Type];
+	if(!pVictim->IsPlayer() && caster->IsPlayer())
+		plus_damage += static_cast< Player* >(caster)->IncreaseDamageByType[TO_CREATURE(pVictim)->GetCreatureInfo()->Type];
 //==========================================================================================
 //==============================+Spell Damage Bonus Modifications===========================
 //==========================================================================================
@@ -5118,7 +5121,7 @@ void Unit::Emote(EmoteType emote)
 void Unit::SendChatMessageToPlayer(uint8 type, uint32 lang, const char *msg, Player *plr)
 {
 	size_t UnitNameLength = 0, MessageLength = 0;
-	CreatureInfo *ci = (m_objectTypeId == TYPEID_UNIT) ? ((Creature*)this)->GetCreatureInfo() : NULL;
+	CreatureInfo *ci = (m_objectTypeId == TYPEID_UNIT) ? TO_CREATURE(this)->GetCreatureInfo() : NULL;
 
 	if(ci == NULL || plr == NULL)
 		return;
@@ -5169,8 +5172,7 @@ void Unit::SendChatMessageAlternateEntry(uint32 entry, uint8 type, uint32 lang, 
 void Unit::SendChatMessage(uint8 type, uint32 lang, const char *msg)
 {
 	size_t UnitNameLength = 0, MessageLength = 0;
-	CreatureInfo *ci = (m_objectTypeId == TYPEID_UNIT) ? ((Creature*)this)->GetCreatureInfo() : NULL;
-
+	CreatureInfo *ci = (m_objectTypeId == TYPEID_UNIT) ? TO_CREATURE(this)->GetCreatureInfo() : NULL;
 	if(ci == NULL)
 		return;
 
@@ -5296,7 +5298,7 @@ float Unit::GetDamageDonePctMod(uint32 school)
 	    if(this->IsPlayer())
 		   return m_floatValues[PLAYER_FIELD_MOD_DAMAGE_DONE_PCT+school];
 		else
-		   return ((Creature*)this)->ModDamageDonePct[school];
+		   return TO_CREATURE(this)->ModDamageDonePct[school];
 	}
 	else
 		sLog.outDebug("[NOTICE] You have bad DB, spell school = %u\n",school);
@@ -5319,8 +5321,8 @@ void Unit::CalcDamage()
 
 		float bonus = ap_bonus * ( GetBaseAttackTime(MELEE) + static_cast< Creature* >( this )->m_speedFromHaste );
 
-		delta = float(((Creature*)this)->ModDamageDone[0]);
-		mult = float(((Creature*)this)->ModDamageDonePct[0]);
+		delta = float(TO_CREATURE(this)->ModDamageDone[0]);
+		mult = float(TO_CREATURE(this)->ModDamageDonePct[0]);
 		r = ( BaseDamage[0] + bonus ) * mult + delta;
 		// give some diversity to pet damage instead of having a 77-78 damage range (as an example)
 		SetMinDamage(r > 0 ? ( IsPet() ? r * 0.9f : r ) : 0 );
@@ -5447,7 +5449,7 @@ uint32 Unit::AbsorbDamage( uint32 School, uint32* dmg )
 		}
 	}
 
-	if(IsPlayer() && ((Player*)this)->GodModeCheat)
+	if(IsPlayer() && TO_PLAYER(this)->GodModeCheat)
 	{
 		abs += *dmg;
 		*dmg = 0;
@@ -5556,6 +5558,7 @@ bool Unit::HasAura(uint32 spellid)
 
 		return false;
 }
+
 uint16 Unit::GetAuraStackCount(uint32 spellid)
 {
 	uint16 count = 0;
@@ -5612,7 +5615,7 @@ void Unit::UpdateSpeed()
 
 	if(IsPlayer())
 	{
-		if(((Player*)this)->m_changingMaps)
+		if(TO_PLAYER(this)->m_changingMaps)
 			static_cast< Player* >( this )->resend_speed = true;
 		else
 		{
@@ -5763,16 +5766,6 @@ void Unit::RemoveAurasByBuffType(uint32 buff_type, const uint64 &guid, uint32 sk
 	}
 }
 
-void Unit::RemoveAurasByBuffIndexType(uint32 buff_index_type, const uint64 &guid)
-{
-	for(uint32 x=MAX_TOTAL_AURAS_START;x<MAX_TOTAL_AURAS_END;x++)
-	{
-		if(m_auras[x] && m_auras[x]->GetSpellProto()->BGR_one_buff_from_caster_on_1target == buff_index_type)
-			if(!guid || (guid && m_auras[x]->m_casterGuid == guid))
-				m_auras[x]->Remove();
-	}
-}
-
 bool Unit::HasAurasOfBuffType(uint32 buff_type, const uint64 &guid,uint32 skip)
 {
 	uint64 sguid = (buff_type == SPELL_TYPE_BLESSING || buff_type == SPELL_TYPE_WARRIOR_SHOUT) ? guid : 0;
@@ -5814,33 +5807,43 @@ AuraCheckResponse Unit::AuraCheck(SpellEntry *proto, Object *caster)
 	
 	uint32 name_hash = proto->NameHash;
 	uint32 rank = proto->RankNumber;
+	Aura *aura;
+	SpellEntry *aura_sp;
 
 	// look for spells with same namehash
 	for(uint32 x=MAX_TOTAL_AURAS_START;x<MAX_TOTAL_AURAS_END;x++)
 	{
-		//if(m_auras[x] && m_auras[x]->GetSpellProto()->NameHash == name_hash && m_auras[x]->GetCaster()==caster)
-		if(m_auras[x] && m_auras[x]->GetSpellProto()->NameHash == name_hash)
+		aura = m_auras[x];
+		if( aura != NULL && aura->GetSpellProto()->NameHash == name_hash)
 		{
 			// we've got an aura with the same name as the one we're trying to apply
-			resp.Misc = m_auras[x]->GetSpellProto()->Id;
+			// but first we check if it has the same effects
+			aura_sp = aura->GetSpellProto();
 
-			// compare the rank to our applying spell
-			if( m_auras[x]->GetSpellProto()->RankNumber > rank )
+			if( (aura_sp->Effect[0] == proto->Effect[0] && (aura_sp->Effect[0] != SPELL_EFFECT_APPLY_AURA || aura_sp->EffectApplyAuraName[0] == proto->EffectApplyAuraName[0])) &&
+				(aura_sp->Effect[1] == proto->Effect[1] && (aura_sp->Effect[1] != SPELL_EFFECT_APPLY_AURA || aura_sp->EffectApplyAuraName[1] == proto->EffectApplyAuraName[1])) &&
+				(aura_sp->Effect[2] == proto->Effect[2] && (aura_sp->Effect[2] != SPELL_EFFECT_APPLY_AURA || aura_sp->EffectApplyAuraName[2] == proto->EffectApplyAuraName[2])) )
 			{
-				if(	proto->Effect[0] == SPELL_EFFECT_TRIGGER_SPELL ||
-					proto->Effect[1] == SPELL_EFFECT_TRIGGER_SPELL ||
-					proto->Effect[2] == SPELL_EFFECT_TRIGGER_SPELL )
+				resp.Misc = aura->GetSpellProto()->Id;
+
+				// compare the rank to our applying spell
+				if( aura_sp->RankNumber > rank )
 				{
-					resp.Error = AURA_CHECK_RESULT_LOWER_BUFF_PRESENT;
+					if(	proto->Effect[0] == SPELL_EFFECT_TRIGGER_SPELL ||
+						proto->Effect[1] == SPELL_EFFECT_TRIGGER_SPELL ||
+						proto->Effect[2] == SPELL_EFFECT_TRIGGER_SPELL )
+					{
+						resp.Error = AURA_CHECK_RESULT_LOWER_BUFF_PRESENT;
+					}
+					else
+						resp.Error = AURA_CHECK_RESULT_HIGHER_BUFF_PRESENT;
 				}
 				else
-					resp.Error = AURA_CHECK_RESULT_HIGHER_BUFF_PRESENT;
-			}
-			else
-				resp.Error = AURA_CHECK_RESULT_LOWER_BUFF_PRESENT;
+					resp.Error = AURA_CHECK_RESULT_LOWER_BUFF_PRESENT;
 
-			// we found something, save some loops and exit
-			break;
+				// we found something, save some loops and exit
+				break;
+			}
 		}
 	}
 	//sLog.outDebug( "resp = %i", resp.Error );
@@ -5849,26 +5852,32 @@ AuraCheckResponse Unit::AuraCheck(SpellEntry *proto, Object *caster)
 }
 
 
-AuraCheckResponse Unit::AuraCheck(uint32 name_hash, uint32 rank, Aura* aur, Object *caster)
+AuraCheckResponse Unit::AuraCheck(SpellEntry *proto, Aura* aur, Object *caster)
 {
 	AuraCheckResponse resp;
+	SpellEntry *aura_sp = aur->GetSpellProto();
 
 	// no error for now
 	resp.Error = AURA_CHECK_RESULT_NONE;
 	resp.Misc  = 0;
 
 	// look for spells with same namehash
-//	if(aur->GetSpellProto()->NameHash == name_hash && aur->GetCaster()==caster)
-	if(aur->GetSpellProto()->NameHash == name_hash)
+	if(aur->GetSpellProto()->NameHash == proto->NameHash)
 	{
 		// we've got an aura with the same name as the one we're trying to apply
-		resp.Misc = aur->GetSpellProto()->Id;
+		// but first we check if it has the same effects
+		if( (aura_sp->Effect[0] == proto->Effect[0] && (aura_sp->Effect[0] != SPELL_EFFECT_APPLY_AURA || aura_sp->EffectApplyAuraName[0] == proto->EffectApplyAuraName[0])) &&
+			(aura_sp->Effect[1] == proto->Effect[1] && (aura_sp->Effect[1] != SPELL_EFFECT_APPLY_AURA || aura_sp->EffectApplyAuraName[1] == proto->EffectApplyAuraName[1])) &&
+			(aura_sp->Effect[2] == proto->Effect[2] && (aura_sp->Effect[2] != SPELL_EFFECT_APPLY_AURA || aura_sp->EffectApplyAuraName[2] == proto->EffectApplyAuraName[2])) )
+		{
+			resp.Misc = aur->GetSpellProto()->Id;
 
-		// compare the rank to our applying spell
-		if(aur->GetSpellProto()->RankNumber > rank)
-			resp.Error = AURA_CHECK_RESULT_HIGHER_BUFF_PRESENT;
-		else
-			resp.Error = AURA_CHECK_RESULT_LOWER_BUFF_PRESENT;
+			// compare the rank to our applying spell
+			if(aur->GetSpellProto()->RankNumber > proto->RankNumber)
+				resp.Error = AURA_CHECK_RESULT_HIGHER_BUFF_PRESENT;
+			else
+				resp.Error = AURA_CHECK_RESULT_LOWER_BUFF_PRESENT;
+		}
 	}
 
 	// return it back to our caller
@@ -6130,8 +6139,9 @@ void Unit::SendAuraUpdate( uint32 AuraSlot, bool remove ){
 		data << uint32( aur->GetSpellId() );
 		data << uint8( flags );
 
-		if( aur->GetUnitCaster() != NULL )
-			data << uint8( aur->GetUnitCaster()->getLevel() );
+		Unit* caster = aur->GetUnitCaster();
+		if( caster != NULL )
+			data << uint8( caster->getLevel() );
 		else
 			data << uint8( sWorld.m_levelCap );
 
@@ -6188,7 +6198,7 @@ void Unit::RemoveAurasOfSchool(uint32 School, bool Positive, bool Immune)
 
 void Unit::EnableFlight()
 {
-	if(m_objectTypeId != TYPEID_PLAYER || ((Player*)this)->m_changingMaps)
+	if(m_objectTypeId != TYPEID_PLAYER || TO_PLAYER(this)->m_changingMaps)
 	{
 		WorldPacket data(SMSG_MOVE_SET_CAN_FLY, 13);
 		data << GetNewGUID();
@@ -6214,7 +6224,7 @@ void Unit::EnableFlight()
 
 void Unit::DisableFlight()
 {
-	if(m_objectTypeId != TYPEID_PLAYER || ((Player*)this)->m_changingMaps)
+	if(m_objectTypeId != TYPEID_PLAYER || TO_PLAYER(this)->m_changingMaps)
 	{
 		WorldPacket data(SMSG_MOVE_UNSET_CAN_FLY, 13);
 		data << GetNewGUID();
@@ -6611,6 +6621,9 @@ void CombatStatusHandler::AddAttackTarget(const uint64& guid)
 	if(guid == m_Unit->GetGUID())
 		return;
 
+	//we MUST be in world
+	Wowice::Util::WOWICE_ASSERT( m_Unit->IsInWorld() );
+
 	m_attackTargets.insert(guid);
 	//printf("Adding attack target "I64FMT" to "I64FMT"\n", guid, m_Unit->GetGUID());
 	if(m_Unit->GetTypeId() == TYPEID_PLAYER &&
@@ -6727,12 +6740,17 @@ void CombatStatusHandler::OnDamageDealt( Unit * pTarget )
 
 void CombatStatusHandler::AddAttacker(const uint64& guid)
 {
+	//we MUST be in world
+	Wowice::Util::WOWICE_ASSERT( m_Unit->IsInWorld() );
 	m_attackers.insert(guid);
 	UpdateFlag();
 }
 
 void CombatStatusHandler::ClearAttackers()
 {
+	//If we are not in world, CombatStatusHandler::OnRemoveFromWorld() would have been already called so m_attackTargets
+	//and m_attackers should be empty. If it's not, something wrong happened.
+
 	// this is a FORCED function, only use when the reference will be destroyed.
 	AttackerMap::iterator itr = m_attackTargets.begin();
 	Unit * pt;
@@ -6764,9 +6782,8 @@ void CombatStatusHandler::ClearAttackers()
 
 void CombatStatusHandler::ClearHealers()
 {
-
-	if( m_Unit->GetMapMgr() == NULL )
-		return; //wierd crash bug
+	//If we are not in world, CombatStatusHandler::OnRemoveFromWorld() would have been already called so m_healed should
+	//be empty. If it's not, something wrong happened.
 
 	HealedSet::iterator itr = m_healed.begin();
 	Player * pt;
@@ -6820,7 +6837,7 @@ bool CombatStatusHandler::IsInCombat()
 		} break;
 		case TYPEID_PLAYER:
 		{
-			std::list<Pet*> summons = ((Player*)m_Unit)->GetSummons();
+			std::list<Pet*> summons = TO_PLAYER(m_Unit)->GetSummons();
 			for(std::list<Pet*>::iterator itr = summons.begin(); itr != summons.end(); ++itr)
 			{
 				if((*itr)->GetPetOwner() == m_Unit && (*itr)->CombatStatus.IsInCombat())
@@ -6883,14 +6900,7 @@ void Unit::Heal(Unit *target, uint32 SpellId, uint32 amount)
 		else
 			target->SetHealth( ch);
 
-		WorldPacket data(SMSG_SPELLHEALLOG, 29);
-		data << target->GetNewGUID();
-		data << this->GetNewGUID();
-		data << uint32(SpellId);
-		data << uint32(amount);							// amt healed
-		data << uint32(overheal);						// Amount Overhealed
-		data << uint8(0);								// critical message
-		this->SendMessageToSet(&data, true);
+		Spell::SendHealSpellOnPlayer(this, target, amount, false, overheal, SpellId);
 
 		target->RemoveAurasByHeal();
 	}
@@ -6910,13 +6920,7 @@ void Unit::Energize( Unit* target, uint32 SpellId, uint32 amount, uint32 type )
 
 	target->SetPower( POWER_TYPE_MANA + type, cur + amount );
 
-	WorldPacket datamr( SMSG_SPELLENERGIZELOG, 30 );
-	datamr << target->GetNewGUID();
-	datamr << GetNewGUID();
-	datamr << SpellId;
-	datamr << type;
-	datamr << amount;
-	SendMessageToSet( &datamr, true );
+	Spell::SendHealManaSpellOnPlayer( this, target, amount, type, SpellId);
 }
 
 void Unit::InheritSMMods(Unit *inherit_from)
@@ -7391,22 +7395,13 @@ void Unit::EventUpdateFlag()
 
 void Unit::EventModelChange()
 {
-	UnitModelSizeEntry  *newmodelhalfsize = NULL;
+	DisplayBounding* entry = DisplayBoundingStorage.LookupEntry(GetUInt32Value(UNIT_FIELD_DISPLAYID));
 
-	//mounts are bigger then normal size
-	if( GetMount() )
-		newmodelhalfsize = UnitModelSizeStorage.LookupEntry( GetMount() );
-	if( newmodelhalfsize == NULL )
-		newmodelhalfsize = UnitModelSizeStorage.LookupEntry( GetDisplayId() );
-
-	if( newmodelhalfsize )
-	{
-		ModelHalfSize = newmodelhalfsize->HalfSize;
-//		if( IsCreature() && static_cast<Creature*>(this)->GetProto() )
-//			ModelHalfSize *=  static_cast<Creature*>(this)->GetProto()->BoundingRadius;
-	}
+	//TODO: if has mount, grab mount model and add the z value of attachment 0
+	if( entry )
+		m_modelhalfsize = entry->high[2] / 2;
 	else
-		ModelHalfSize = 1.0f; //baaad, but it happens :(
+		m_modelhalfsize = 1.0f;
 }
 
 void Unit::RemoveFieldSummon()
@@ -7871,34 +7866,40 @@ void Unit::RemoveProcTriggerSpell(uint32 spellId, uint64 casterGuid, uint64 misc
 void Unit::TakeDamage(Unit *pAttacker, uint32 damage, uint32 spellid, bool no_remove_auras ){}
 void Unit::Die( Unit *pAttacker, uint32 damage, uint32 spellid ){}
 
-void Unit::SendPeriodicAuraLog( const WoWGuid& CasterGUID, const WoWGuid& TargetGUID, uint32 SpellID, uint32 School, uint32 Amount, uint32 abs_dmg, uint32 resisted_damage, uint32 Flags ){
-		WorldPacket data( SMSG_PERIODICAURALOG, 46 );
+void Unit::SendPeriodicAuraLog( const WoWGuid& CasterGUID, const WoWGuid& TargetGUID, uint32 SpellID, uint32 School, uint32 Amount, uint32 abs_dmg, uint32 resisted_damage, uint32 Flags, bool is_critical ){
 
-		data << TargetGUID;		   // target guid
-		data << CasterGUID;		   // caster guid
-		data << uint32( SpellID );						// spellid
-		data << uint32( 1 );					  // unknown? need research?
-		data << uint32( Flags | 0x1 );			// aura school
-		data << uint32( Amount );						 // amount of done to target / heal / damage
-		data << uint32( 0 );				 // cebernic: unknown?? needs more research, but it should fix unknown damage type with suffered.
-		data << uint32( g_spellSchoolConversionTable[School] );
-		data << uint32( abs_dmg );
-		data << uint32( resisted_damage );
+	WorldPacket data( SMSG_PERIODICAURALOG, 47 );
 
-		SendMessageToSet( &data, true );
+	data << TargetGUID;		   // target guid
+	data << CasterGUID;		   // caster guid
+	data << uint32( SpellID );						// spellid
+	data << uint32( 1 );					  // unknown? need research?
+	data << uint32( Flags | 0x1 );			// aura school
+	data << uint32( Amount );						 // amount of done to target / heal / damage
+	data << uint32( 0 );				 // cebernic: unknown?? needs more research, but it should fix unknown damage type with suffered.
+	data << uint32( g_spellSchoolConversionTable[School] );
+	data << uint32( abs_dmg );
+	data << uint32( resisted_damage );
+	data << uint8( is_critical );
+
+	SendMessageToSet( &data, true );
 }
 
-void Unit::SendPeriodicHealAuraLog( const WoWGuid& CasterGUID, const WoWGuid& TargetGUID, uint32 SpellID, uint32 amt ){
-	WorldPacket data( SMSG_PERIODICAURALOG, 32 );
-	
+void Unit::SendPeriodicHealAuraLog( const WoWGuid& CasterGUID, const WoWGuid& TargetGUID, uint32 SpellID, uint32 healed, uint32 over_healed, bool is_critical ){
+
+	WorldPacket data( SMSG_PERIODICAURALOG, 41 );
+
 	data << TargetGUID;
 	data << CasterGUID;
 	data << SpellID;
 	data << uint32( 1 );
 	data << uint32( FLAG_PERIODIC_HEAL );
-	data << uint32( amt );
+	data << uint32( healed );
+	data << uint32( over_healed );
+	data << uint32( 0 );		// I don't know what it is. maybe something related to absorbed heal?
+	data << uint8( is_critical );
 	
-	SendMessageToSet(&data,true);
+	SendMessageToSet( &data, true );
 }
 
 
@@ -7912,4 +7913,226 @@ void Unit::Phase(uint8 command, uint32 newphase ){
 	}
 	
 	UpdateVisibility();
+}
+
+uint64 Unit::GetCurrentUnitForSingleTargetAura(SpellEntry* spell)
+{
+	UniqueAuraTargetMap::iterator itr;
+
+	itr = m_singleTargetAura.find(spell->NameHash);
+
+	if ( itr != m_singleTargetAura.end() )
+		return itr->second;
+	else
+		return 0;
+}
+
+void Unit::SetCurrentUnitForSingleTargetAura(SpellEntry* spell, uint64 guid)
+{
+	UniqueAuraTargetMap::iterator itr;
+
+	itr = m_singleTargetAura.find(spell->NameHash);
+
+	if ( itr != m_singleTargetAura.end() )
+		itr->second = guid;
+	else
+		m_singleTargetAura.insert( make_pair(spell->NameHash, guid) );
+}
+
+void Unit::RemoveCurrentUnitForSingleTargetAura(SpellEntry* spell)
+{
+	UniqueAuraTargetMap::iterator itr;
+
+	itr = m_singleTargetAura.find(spell->NameHash);
+
+	if ( itr != m_singleTargetAura.end() )
+		m_singleTargetAura.erase(itr);
+}
+
+bool Unit::InParty( Unit* u )
+{
+	Player* p = GetPlayerOwner();
+	Player* uFrom = u->GetPlayerOwner();
+
+	if (p == NULL || uFrom == NULL)
+		return false;
+
+	if (p == uFrom)
+		return true;
+
+	if (p->GetGroup() != NULL && uFrom->GetGroup() != NULL && p->GetGroup() == uFrom->GetGroup() && p->GetSubGroup() == uFrom->GetSubGroup())
+		return true;
+
+	return false;
+}
+
+bool Unit::InRaid( Unit* u )
+{
+	Player* p = GetPlayerOwner();
+	Player* uFrom = u->GetPlayerOwner();
+
+	if (p == NULL || uFrom == NULL)
+		return false;
+
+	if (p == uFrom)
+		return true;
+
+	if (p->GetGroup() != NULL && uFrom->GetGroup() != NULL && p->GetGroup() == uFrom->GetGroup())
+		return true;
+
+	return false;
+}
+
+bool Unit::IsCriticalDamageForSpell(Object *victim, SpellEntry *spell)
+{
+	bool result = false;
+	float CritChance = 0.0f;
+	uint32 resilience_type = 0;
+
+	if( spell->is_ranged_spell )
+	{
+		if( IsPlayer() )
+		{
+			CritChance = GetFloatValue( PLAYER_RANGED_CRIT_PERCENTAGE );
+			if( victim->IsPlayer() )
+				CritChance += TO_PLAYER(victim)->res_R_crit_get();
+
+			if( victim->IsUnit() )
+				CritChance += (float)(TO_UNIT(victim)->AttackerCritChanceMod[spell->School]);
+		}
+		else
+			CritChance = 5.0f; // static value for mobs.. not blizzlike, but an unfinished formula is not fatal :)
+
+		if( victim->IsPlayer() )
+			resilience_type = PLAYER_RATING_MODIFIER_RANGED_CRIT_RESILIENCE;
+	}
+	else if( spell->is_melee_spell )
+	{
+		// Same shit with the melee spells, such as Judgement/Seal of Command
+		if( IsPlayer() )
+			CritChance = GetFloatValue( PLAYER_CRIT_PERCENTAGE );
+
+		if( victim->IsPlayer() )
+		{
+			CritChance += TO_PLAYER(victim)->res_R_crit_get(); //this could be ability but in that case we overwrite the value
+			resilience_type = PLAYER_RATING_MODIFIER_MELEE_CRIT_RESILIENCE;
+		}
+
+		// Victim's (!) crit chance mod for physical attacks?
+		if( victim->IsUnit() )
+			CritChance += (float)(TO_UNIT(victim)->AttackerCritChanceMod[0]);
+	}
+	else
+	{
+		CritChance = spellcritperc + SpellCritChanceSchool[spell->School];
+
+		if( victim->IsUnit() )
+		{
+			CritChance += TO_UNIT(victim)->AttackerCritChanceMod[spell->School];
+
+			if( IsPlayer() && ( TO_UNIT(victim)->m_rooted - TO_UNIT(victim)->m_stunned ) )
+				CritChance += TO_PLAYER(this)->m_RootedCritChanceBonus;
+		}
+
+		if( spell->SpellGroupType )
+			SM_FFValue(SM_CriticalChance, &CritChance, spell->SpellGroupType);
+
+		if( victim->IsPlayer() )
+			resilience_type = PLAYER_RATING_MODIFIER_SPELL_CRIT_RESILIENCE;
+	}
+
+	if( resilience_type )
+		CritChance -= TO_PLAYER(victim)->CalcRating( resilience_type );
+
+	if( CritChance < 0 )
+		CritChance = 0;
+	else if( CritChance > 95 )
+		CritChance = 95;
+
+	result = Rand(CritChance);
+
+	// HACK!!!
+	Aura *fs = NULL;
+	if( victim->IsUnit() && spell->NameHash == SPELL_HASH_LAVA_BURST && (fs = TO_UNIT(victim)->FindAuraByNameHash(SPELL_HASH_FLAME_SHOCK)) != NULL )
+	{
+		result = true;
+		if( ! HasAura(55447) )	// Glyph of Flame Shock
+			fs->Remove();
+	}
+
+	return result;
+}
+
+float Unit::GetCriticalDamageBonusForSpell(Object *victim, SpellEntry *spell, float amount)
+{
+	int32 critical_bonus = 100;
+
+	if( spell->SpellGroupType )
+		SM_FIValue( SM_PCriticalDamage, &critical_bonus, spell->SpellGroupType );
+
+	if( critical_bonus > 0 )
+	{
+		// the bonuses are halved by 50% (funky blizzard math :S)
+		float b;
+		if( spell->School == 0 || spell->is_melee_spell || spell->is_ranged_spell )		// physical || hackfix SoCommand/JoCommand
+			b = critical_bonus / 100.0f + 1.0f;
+		else
+			b = critical_bonus / 200.0f + 1.0f;
+
+		amount *= b;
+	}
+
+	if( victim->IsPlayer() )
+	{
+		//res = res*(1.0f-2.0f*static_cast< Player* >(pVictim)->CalcRating(PLAYER_RATING_MODIFIER_MELEE_CRIT_RESISTANCE));
+		//Resilience is a special new rating which was created to reduce the effects of critical hits against your character.
+		//It has two components; it reduces the chance you will be critically hit by x%,
+		//and it reduces the damage dealt to you by critical hits by 2x%. x is the percentage resilience granted by a given resilience rating.
+		//It is believed that resilience also functions against spell crits,
+		//though it's worth noting that NPC mobs cannot get critical hits with spells.
+
+		float dmg_reduction_pct = 2 * TO_PLAYER(victim)->CalcRating( PLAYER_RATING_MODIFIER_MELEE_CRIT_RESILIENCE ) / 100.0f;
+
+		if( dmg_reduction_pct > 1.0f )
+			dmg_reduction_pct = 1.0f; //we cannot resist more then he is criticalling us, there is no point of the critical then :P
+
+		amount -= amount * dmg_reduction_pct;
+	}
+
+	if( victim->IsCreature() && TO_CREATURE(victim)->GetCreatureInfo()->Rank != ELITE_WORLDBOSS )
+		TO_CREATURE(victim)->Emote( EMOTE_ONESHOT_WOUNDCRITICAL );
+
+	return amount;
+}
+
+bool Unit::IsCriticalHealForSpell(Object *victim, SpellEntry *spell)
+{
+	int32 crit_chance = 0;
+
+	crit_chance = float2int32( this->spellcritperc + this->SpellCritChanceSchool[spell->School] );
+
+	//Sacred Shield
+	if( victim->IsUnit() && TO_UNIT(victim)->HasAurasWithNameHash( SPELL_HASH_SACRED_SHIELD ) && spell->NameHash == SPELL_HASH_FLASH_OF_LIGHT )
+		crit_chance += 50;
+
+	if( spell->SpellGroupType )
+		SM_FIValue( this->SM_CriticalChance, &crit_chance, spell->SpellGroupType );
+
+	return Rand(crit_chance);
+}
+
+float Unit::GetCriticalHealBonusForSpell(Object *victim, SpellEntry *spell, float amount)
+{
+	int32 critical_bonus = 100;
+	if( spell->SpellGroupType )
+		SM_FIValue( this->SM_PCriticalDamage, &critical_bonus, spell->SpellGroupType );
+
+	if( critical_bonus > 0 )
+	{
+		// the bonuses are halved by 50% (funky blizzard math :S)
+		float b = critical_bonus / 200.0f;
+		amount += float2int32( amount * b );
+	}
+
+	return amount;
 }

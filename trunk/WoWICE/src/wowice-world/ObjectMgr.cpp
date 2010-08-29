@@ -1587,36 +1587,6 @@ Item * ObjectMgr::LoadItem(uint64 guid)
 	return pReturn;
 }
 
-Item * ObjectMgr::LoadExternalItem(uint64 guid)
-{
-	QueryResult * result = CharacterDatabase.Query("SELECT * FROM playeritems_external WHERE guid = %u", Wowice::Util::GUID_LOPART( guid ));
-	Item * pReturn = 0;
-
-	if(result)
-	{
-		ItemPrototype * pProto = ItemPrototypeStorage.LookupEntry(result->Fetch()[2].GetUInt32());
-		if(!pProto)
-			return NULL;
-
-		if(pProto->InventoryType == INVTYPE_BAG)
-		{
-			Container * pContainer = new Container(HIGHGUID_TYPE_CONTAINER,(uint32)guid);
-			pContainer->LoadFromDB(result->Fetch());
-			pReturn = pContainer;
-		}
-		else
-		{
-			Item * pItem = new Item;
-			pItem->Init(HIGHGUID_TYPE_ITEM,(uint32)guid);
-			pItem->LoadFromDB(result->Fetch(), 0, false);
-			pReturn = pItem;
-		}
-		delete result;
-	}
-
-	return pReturn;
-}
-
 void ObjectMgr::LoadCorpses(MapMgr * mgr)
 {
 	Corpse *pCorpse = NULL;
@@ -1868,7 +1838,7 @@ void ObjectMgr::LoadTrainers()
 		}
 		if(result2->GetFieldCount() != 10)
 		{
-			Log.LargeErrorMessage(LARGERRORMESSAGE_WARNING, "Trainers table format is invalid. Please update your database.");
+			Log.LargeErrorMessage(LARGERRORMESSAGE_WARNING, "Trainers table format is invalid. Please update your database.", NULL);
 			delete tr;
 			delete result;
 			delete result2;
@@ -2945,7 +2915,7 @@ void ObjectMgr::HandleMonsterSayEvent(Creature * pCreature, MONSTER_SAY_EVENTS E
 			if(CurrentTarget && CurrentTarget->IsPlayer())
 			{
 				ptrdiff_t testOfs = test-text;
-				newText.replace(testOfs, 2, ((Player*)CurrentTarget)->GetName());
+				newText.replace(testOfs, 2, TO_PLAYER(CurrentTarget)->GetName());
 			}
 		}
 		test = strstr((char*)text,"$C");
@@ -3047,9 +3017,9 @@ bool ObjectMgr::HandleInstanceReputationModifiers(Player * pPlayer, Unit * pVict
 	if(itr == m_reputation_instance.end())
 		return false;
 
-	is_boss = 0;//static_cast< Creature* >( pVictim )->GetCreatureInfo() ? ((Creature*)pVictim)->GetCreatureInfo()->Rank : 0;
-	if( !is_boss && static_cast< Creature* >( pVictim )->GetProto() && static_cast< Creature* >( pVictim )->GetProto()->boss )
-		is_boss = 1;
+	is_boss = false;//static_cast< Creature* >( pVictim )->GetCreatureInfo() ? ((Creature*)pVictim)->GetCreatureInfo()->Rank : 0;
+	if( static_cast< Creature* >( pVictim )->GetProto()->boss )
+		is_boss = true;
 
 	// Apply the bonuses as normal.
 	int32 replimit;
@@ -3110,7 +3080,7 @@ void ObjectMgr::LoadGroups()
 	{
 		if(result->GetFieldCount() != 52)
 		{
-			Log.LargeErrorMessage(LARGERRORMESSAGE_WARNING, "groups table format is invalid. Please update your database.");
+			Log.LargeErrorMessage(LARGERRORMESSAGE_WARNING, "groups table format is invalid. Please update your database.", NULL);
 			return;
 		}
 		do
@@ -3131,7 +3101,7 @@ void ObjectMgr::LoadArenaTeams()
 	{
 		if(result->GetFieldCount() != 22)
 		{
-			Log.LargeErrorMessage(LARGERRORMESSAGE_WARNING, "arenateams table format is invalid. Please update your database.");
+			Log.LargeErrorMessage(LARGERRORMESSAGE_WARNING, "arenateams table format is invalid. Please update your database.", NULL);
 			return;
 		}
 		do
@@ -3404,3 +3374,86 @@ uint32 ObjectMgr::GenerateGameObjectSpawnID(){
 	return r;
 }
 
+void ObjectMgr::AddPlayerCache( uint32 guid, PlayerCache* cache )
+{
+	m_playerCacheLock.Acquire();
+	cache->AddRef();
+	PlayerCacheMap::iterator itr = m_playerCache.find(guid);
+	if (itr != m_playerCache.end())
+	{
+		itr->second->DecRef();
+		itr->second = cache;
+	}
+	else
+		m_playerCache.insert(std::make_pair(guid, cache));
+	m_playerCacheLock.Release();
+}
+
+void ObjectMgr::RemovePlayerCache( uint32 guid )
+{
+	m_playerCacheLock.Acquire();
+	PlayerCacheMap::iterator itr = m_playerCache.find(guid);
+	if (itr != m_playerCache.end())
+	{
+		itr->second->DecRef();
+		m_playerCache.erase(itr);
+	}
+	m_playerCacheLock.Release();
+}
+
+PlayerCache* ObjectMgr::GetPlayerCache( uint32 guid )
+{
+	m_playerCacheLock.Acquire();
+	PlayerCacheMap::iterator itr = m_playerCache.find(guid);
+	if (itr != m_playerCache.end())
+	{
+		PlayerCache* ret = itr->second;
+		ret->AddRef();
+		m_playerCacheLock.Release();
+		return ret;
+	}
+	m_playerCacheLock.Release();
+	return NULL;
+}
+
+PlayerCache* ObjectMgr::GetPlayerCache( const char* name, bool caseSensitive /*= true*/ )
+{
+	PlayerCache* ret = NULL;
+	m_playerCacheLock.Acquire();
+	PlayerCacheMap::iterator itr;
+
+	if(!caseSensitive)
+	{
+		std::string strName = name;
+		wowice_TOLOWER(strName);
+		for (itr = m_playerCache.begin(); itr != m_playerCache.end(); ++itr)
+		{
+			std::string cachename;
+			itr->second->GetStringValue(CACHE_PLAYER_NAME, cachename);
+			if(!stricmp(cachename.c_str(), strName.c_str()))
+			{
+				ret = itr->second;
+				ret->AddRef();
+				break;
+			}
+		}
+	}
+	else
+	{
+		for (itr = m_playerCache.begin(); itr != m_playerCache.end(); ++itr)
+		{
+			std::string cachename;
+			itr->second->GetStringValue(CACHE_PLAYER_NAME, cachename);
+			if(!strcmp(cachename.c_str(), name))
+			{
+				ret = itr->second;
+				itr->second->AddRef();
+				break;
+			}
+		}
+	}
+
+	m_playerCacheLock.Release();
+
+	return ret;
+}

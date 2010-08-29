@@ -71,15 +71,14 @@ uint32 CalculateXpToGive(Unit *pVictim, Unit *pAttacker)
 	if(pVictim->IsPlayer())
 		return 0;
 
-	if(((Creature*)pVictim)->IsTotem())
+	if(TO_CREATURE(pVictim)->IsTotem())
 		return 0;
 
 	CreatureInfo *victimI;
-	victimI = ((Creature*)pVictim)->GetCreatureInfo();
+	victimI = TO_CREATURE(pVictim)->GetCreatureInfo();
 
-	if(victimI)
-		if(victimI->Type == UNIT_TYPE_CRITTER)
-			return 0;
+	if(victimI->Type == UNIT_TYPE_CRITTER)
+		return 0;
 	uint32 VictimLvl = pVictim->getLevel();
 	uint32 AttackerLvl = pAttacker->getLevel();
 
@@ -518,9 +517,9 @@ if(ability && ability->NameHash == SPELL_HASH_FLAMETONGUE_WEAPON)
 		//ap += pAttacker->GetRAP();
 		ap += pVictim->RAPvModifier;
 
-		if(!pVictim->IsPlayer() && ((Creature*)pVictim)->GetCreatureInfo())
+		if(!pVictim->IsPlayer())
 		{
-			uint32 creatType = ((Creature*)pVictim)->GetCreatureInfo()->Type;
+			uint32 creatType = TO_CREATURE(pVictim)->GetCreatureInfo()->Type;
 			ap += (float)pAttacker->CreatureRangedAttackPowerMod[creatType];
 
 			if(pAttacker->IsPlayer())
@@ -582,9 +581,9 @@ if(ability && ability->NameHash == SPELL_HASH_FLAMETONGUE_WEAPON)
 		//ap += pAttacker->GetAP();
 		ap += pVictim->APvModifier;
 
-		if(!pVictim->IsPlayer() && ((Creature*)pVictim)->GetCreatureInfo())
+		if(!pVictim->IsPlayer())
 		{
-			uint32 creatType = ((Creature*)pVictim)->GetCreatureInfo()->Type;
+			uint32 creatType = TO_CREATURE(pVictim)->GetCreatureInfo()->Type;
 			ap += (float)pAttacker->CreatureAttackPowerMod[creatType];
 
 			if(pAttacker->IsPlayer())
@@ -661,12 +660,12 @@ if(ability && ability->NameHash == SPELL_HASH_FLAMETONGUE_WEAPON)
 
 	if(result >= 0)
 	{
-		if( pAttacker->IsPlayer() && ((Player*)pAttacker)->m_outStealthDamageBonusTimer )
+		if( pAttacker->IsPlayer() && TO_PLAYER(pAttacker)->m_outStealthDamageBonusTimer )
 		{
-			if( (uint32)UNIXTIME >= ((Player*)pAttacker)->m_outStealthDamageBonusTimer )
-				((Player*)pAttacker)->m_outStealthDamageBonusTimer = 0;
+			if( (uint32)UNIXTIME >= TO_PLAYER(pAttacker)->m_outStealthDamageBonusTimer )
+				TO_PLAYER(pAttacker)->m_outStealthDamageBonusTimer = 0;
 			else
-				result *= ((((Player*)pAttacker)->m_outStealthDamageBonusPct) / 100.0f) + 1.0f;
+				result *= ((TO_PLAYER(pAttacker)->m_outStealthDamageBonusPct) / 100.0f) + 1.0f;
 		}
 
 		return float2int32(result);

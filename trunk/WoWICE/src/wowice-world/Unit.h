@@ -54,6 +54,17 @@ struct CreatureInfo;
 struct FactionTemplateDBC;
 struct FactionDBC;
 
+typedef HM_NAMESPACE::hash_map<uint32, uint64> UniqueAuraTargetMap;
+
+#pragma pack(push, 1)
+struct DisplayBounding
+{
+	uint32 displayid;
+	float low[3];
+	float high[3];
+	float boundradius;
+};
+#pragma pack(pop)
 
 struct ReflectSpellSchool
 {
@@ -871,9 +882,6 @@ public:
 	virtual void RemoveFromWorld(bool free_guid);
 	virtual void OnPushToWorld();
 
-	// Have subclasses change these to true
-	virtual bool IsCreature() { return false; }
-
     virtual bool IsPvPFlagged() = 0;
 	virtual void SetPvPFlag() = 0;
 	virtual void RemovePvPFlag() = 0;
@@ -913,6 +921,10 @@ public:
 	uint32 m_procCounter;
 	uint32 HandleProc(uint32 flag, Unit* Victim, SpellEntry* CastingSpell, bool is_triggered = false, uint32 dmg = -1, uint32 abs = 0, uint32 weapon_damage_type = 0);
 	void HandleProcDmgShield(uint32 flag, Unit* attacker);//almost the same as handleproc :P
+	bool IsCriticalDamageForSpell(Object *victim, SpellEntry *spell);
+	float GetCriticalDamageBonusForSpell(Object *victim, SpellEntry *spell, float amount);
+	bool IsCriticalHealForSpell(Object *victim, SpellEntry *spell);
+	float GetCriticalHealBonusForSpell(Object *victim, SpellEntry *spell, float amount);
 
 	void RemoveExtraStrikeTarget(SpellEntry *spell_info);
 	void AddExtraStrikeTarget(SpellEntry *spell_info, uint32 charges);
@@ -1013,8 +1025,10 @@ public:
 	// Temporary remove all auras
 	   // Find auras
 	Aura *FindAuraByNameHash(uint32 namehash);
+	Aura *FindAuraByNameHash(uint32 namehash, uint64 guid);
 	Aura* FindAura(uint32 spellId);
 	Aura* FindAura(uint32 spellId, uint64 guid);
+	std::list<Aura*> GetAllAurasWithAuraEffect(uint32 effect);
 	bool SetAurDuration(uint32 spellId,Unit* caster,uint32 duration);
 	bool SetAurDuration(uint32 spellId,uint32 duration);
 	void DropAurasOnDeath();
@@ -1411,7 +1425,7 @@ public:
 	//guardians are temporary spawn that will inherit master faction and will follow them. Apart from that they have their own mind	
 	std::set<Creature*> m_Guardians;
 	Creature* create_guardian( uint32 guardian_entry, uint32 duration, float angle, uint32 lvl = 0, GameObject * obj = NULL, LocationVector * Vec = NULL, uint32 spellid = 0 ); 
-	void AddGuardianRef( Creature* guard ){ Arcemu::Util::ARCEMU_ASSERT(    guard != NULL );  m_Guardians.insert( guard );	}
+	void AddGuardianRef( Creature* guard ){ Wowice::Util::WOWICE_ASSERT(    guard != NULL );  m_Guardians.insert( guard );	}
 	void RemoveGuardianRef( Creature* g );
 	void RemoveAllGuardians( bool remove_from_world = true );
 
@@ -1466,7 +1480,6 @@ public:
 
 	void SetFacing(float newo);//only working if creature is idle
 
-	void RemoveAurasByBuffIndexType(uint32 buff_index_type, const uint64 &guid);
 	void RemoveAurasByBuffType(uint32 buff_type, const uint64 &guid,uint32 skip);
 	bool HasAurasOfBuffType(uint32 buff_type, const uint64 &guid,uint32 skip);
 	int	 HasAurasWithNameHash(uint32 name_hash);
@@ -1475,7 +1488,7 @@ public:
 	bool IsPoisoned();
 
 	AuraCheckResponse AuraCheck(SpellEntry *proto, Object *caster= NULL);
-	AuraCheckResponse AuraCheck(uint32 name_hash, uint32 rank, Aura* aur, Object *caster= NULL);
+	AuraCheckResponse AuraCheck(SpellEntry *proto, Aura* aur, Object *caster= NULL);
 
 	uint16 m_diminishCount[DIMINISHING_GROUP_COUNT];
 	uint8  m_diminishAuraCount[DIMINISHING_GROUP_COUNT];
@@ -1525,14 +1538,11 @@ public:
 	void DispelAll(bool positive);
 
 	void SendPowerUpdate(bool self);
-	void SendPeriodicAuraLog( const WoWGuid& CasterGUID, const WoWGuid& casterGUID, uint32 SpellID, uint32 School, uint32 Amount, uint32 abs_dmg, uint32 resisted_damage, uint32 Flags );
-	void SendPeriodicHealAuraLog( const WoWGuid& CasterGUID, const WoWGuid& TargetGUID, uint32 SpellID, uint32 amt );
+	void SendPeriodicAuraLog( const WoWGuid& CasterGUID, const WoWGuid& casterGUID, uint32 SpellID, uint32 School, uint32 Amount, uint32 abs_dmg, uint32 resisted_damage, uint32 Flags, bool is_critical );
+	void SendPeriodicHealAuraLog( const WoWGuid& CasterGUID, const WoWGuid& TargetGUID, uint32 SpellID, uint32 healed, uint32 over_healed, bool is_critical );
 
-	int8 m_hasVampiricTouch;
-	int8 m_hasVampiricEmbrace;
-
-	void			EventModelChange();			//model size changes when model changes
-	inline float	GetModelHalfSize() { return ModelHalfSize * GetScale();	}	//used to calculate combat reach and stuff
+	void EventModelChange();
+	WoWICE_INLINE float GetModelHalfSize() { return m_modelhalfsize * GetScale(); }
 
 	void RemoveFieldSummon();
 
@@ -1724,6 +1734,13 @@ public:
 
 	void AddGarbagePet( Pet *pet );
 
+	//******************************************************
+	// Auras that can affect only one target at a time
+	//******************************************************
+	uint64 GetCurrentUnitForSingleTargetAura(SpellEntry* spell);
+	void SetCurrentUnitForSingleTargetAura(SpellEntry* spell, uint64 guid);
+	void RemoveCurrentUnitForSingleTargetAura(SpellEntry* spell);
+
 protected:
 	Unit ();
     void RemoveGarbage();
@@ -1772,17 +1789,27 @@ protected:
 	uint8 m_emoteState;
 	uint32 m_oldEmote;
 
+	// Some auras can only be cast on one target at a time
+	// This will map aura spell id to target guid
+	UniqueAuraTargetMap m_singleTargetAura;
+
 	uint32 m_charmtemp;
 
 	bool m_extraAttackCounter;
 
-	float ModelHalfSize; // used to calculate if something is in range of this unit
+	float m_modelhalfsize; // used to calculate if something is in range of this unit
 
 	float m_blockfromspell;
 	float m_dodgefromspell;
 	float m_parryfromspell;
 	uint32 m_BlockModPct; // is % but does not need float and does not need /100!
 
+
+public:
+	//
+
+	bool InParty(Unit* u);
+	bool InRaid(Unit* u);
 };
 
 

@@ -169,6 +169,9 @@ public:
 	void Dismiss();
 	void setDeathState(DeathState s);
 
+	void PrepareForRemove(bool bUpdate, bool bSetOffline);
+	void RemoveFromWorld(bool free_guid);
+	void OnRemoveFromWorld();
 	void DelayedRemove(bool bTime, bool dismiss = false, uint32 delay = PET_DELAYED_REMOVAL_TIME);
 	void Despawn(uint32 delay, uint32 respawntime);
 	void SafeDelete();

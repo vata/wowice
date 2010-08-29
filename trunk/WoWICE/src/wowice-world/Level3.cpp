@@ -70,51 +70,6 @@ int32 GetSpellIDFromLink(const char* spelllink)
 	return atol(ptr+8); // spell id is just past "|Hspell:" (8 bytes)
 }
 
-bool ChatHandler::HandleSpawnByDisplayId(const char * args, WorldSession * m_session)
-{
-	uint32 displayId, entry = 1000000 + RandomUInt(1000000);
-	if(sscanf(args, "%u", &displayId) != 1)
-		return false;
-
-	while (GameObjectNameStorage.LookupEntry(entry))
-		entry = 1000000 + RandomUInt(1000000);
-
-	GameObjectInfo *goinfo = new GameObjectInfo();
-	goinfo->DisplayID = displayId;
-	goinfo->Name = "Magic Spawn";
-	goinfo->sound1 = goinfo->sound2 = goinfo->sound3 = goinfo->sound4 =
-		goinfo->sound5 = goinfo->sound6 = goinfo->sound7 = goinfo->sound8 =
-		goinfo->sound9 = goinfo->SpellFocus = goinfo->Unknown1 = goinfo->Unknown2 =
-		goinfo->Unknown3 = goinfo->Unknown4 = goinfo->Unknown5 = goinfo->Unknown6 =
-		goinfo->Unknown7 = goinfo->Unknown8 = goinfo->Unknown9 = goinfo->Unknown10 =
-		goinfo->Unknown11 = goinfo->Unknown12 = goinfo->Unknown13 =
-		goinfo->Unknown14 = 0;
-	goinfo->Type = 21;
-	GameObjectNameStorage.SetEntry(entry, goinfo);
-
-	Player *plr = getSelectedChar(m_session, true);
-	if(!plr)
-	{
-		plr = m_session->GetPlayer();
-		SystemMessage(m_session, "Auto-targeting self.");
-	}
-	if(!plr)
-		return false;
-
-	GameObject* go = plr->GetMapMgr()->CreateAndSpawnGameObject( entry, plr->GetPositionX(), plr->GetPositionY(),
-		plr->GetPositionZ(), plr->GetOrientation(), 1 );
-	
-	if( go == NULL)
-		return false;
-	
-	go->Phase( PHASE_SET, plr->GetPhase() );
-	GOSpawn* gs = go->m_spawn;
-	if( gs != NULL )
-		gs->phase = go->GetPhase();
-
-	return true;
-}
-
 bool ChatHandler::HandleWorldPortCommand(const char* args, WorldSession *m_session)
 {
 	float x, y, z, o = 0;
@@ -710,8 +665,7 @@ bool ChatHandler::HandleNpcInfoCommand(const char *args, WorldSession *m_session
     uint32 guid = Wowice::Util::GUID_LOPART(m_session->GetPlayer()->GetSelection());
 	Creature *crt = getSelectedCreature(m_session);
 	if(!crt) return false;
-	if(crt->GetCreatureInfo())
-		BlueSystemMessage(m_session, "Showing creature info for %s", crt->GetCreatureInfo()->Name);
+	BlueSystemMessage(m_session, "Showing creature info for %s", crt->GetCreatureInfo()->Name);
 	SystemMessage(m_session, "GUID: %d", guid);
 	SystemMessage(m_session, "Faction: %d", crt->GetFaction());
 	SystemMessage(m_session, "Phase: %u", crt->GetPhase());
@@ -1943,30 +1897,34 @@ bool ChatHandler::HandleCancelShutdownCommand(const char* args, WorldSession* m_
 bool ChatHandler::HandleAllowWhispersCommand(const char* args, WorldSession* m_session)
 {
 	if(args == 0 || strlen(args) < 2) return false;
-	Player * plr = objmgr.GetPlayer(args, false);
-	if(!plr)
+	PlayerCache* playercache = objmgr.GetPlayerCache(args, false);
+	if(playercache == NULL)
 	{
 		RedSystemMessage(m_session, "Player not found.");
 		return true;
 	}
 
-	m_session->GetPlayer()->gmTargets.insert(plr);
-	BlueSystemMessage(m_session, "Now accepting whispers from %s.", plr->GetName());
+	m_session->GetPlayer()->m_cache->InsertValue64(CACHE_GM_TARGETS, playercache->GetUInt32Value(CACHE_PLAYER_LOWGUID));
+	std::string name;
+	playercache->GetStringValue(CACHE_PLAYER_NAME, name);
+	BlueSystemMessage(m_session, "Now accepting whispers from %s.", name.c_str());
 	return true;
 }
 
 bool ChatHandler::HandleBlockWhispersCommand(const char* args, WorldSession* m_session)
 {
 	if(args == 0 || strlen(args) < 2) return false;
-	Player * plr = objmgr.GetPlayer(args, false);
-	if(!plr)
+	PlayerCache* playercache = objmgr.GetPlayerCache(args, false);
+	if(playercache == NULL)
 	{
 		RedSystemMessage(m_session, "Player not found.");
 		return true;
 	}
 
-	m_session->GetPlayer()->gmTargets.erase(plr);
-	BlueSystemMessage(m_session, "Now blocking whispers from %s.", plr->GetName());
+	m_session->GetPlayer()->m_cache->RemoveValue64(CACHE_GM_TARGETS, playercache->GetUInt32Value(CACHE_PLAYER_LOWGUID));
+	std::string name;
+	playercache->GetStringValue(CACHE_PLAYER_NAME, name);
+	BlueSystemMessage(m_session, "Now blocking whispers from %s.", name.c_str());
 	return true;
 }
 
@@ -2624,6 +2582,7 @@ bool ChatHandler::HandleCreatureSpawnCommand(const char *args, WorldSession *m_s
 	sp->bytes2 = 0;
 	//sp->respawnNpcLink = 0;
 	sp->stand_state = 0;
+	sp->death_state = 0;
 	sp->channel_target_creature = sp->channel_target_go = sp->channel_spell = 0;
 	sp->MountedDisplayID = 0;
 	sp->Item1SlotDisplay = 0;
@@ -2683,6 +2642,48 @@ bool ChatHandler::HandleCreatureRespawnCommand(const char *args, WorldSession *m
 
 	RedSystemMessage( m_session, "You must select a creature's corpse with a valid CreatureSpawn point." );
 	return false;
+}
+
+bool ChatHandler::HandleNPCCanFlyCommand(const char * args, WorldSession * m_session)
+{
+	Creature * pCreature = getSelectedCreature(m_session, true);
+	if(pCreature == NULL)
+		return true;
+	pCreature->GetAIInterface()->m_moveFly = !pCreature->GetAIInterface()->m_moveFly;
+	pCreature->GetAIInterface()->onGameobject = false;
+	char* sSave = strtok((char*)args, " ");
+	if (sSave)
+	{
+		bool save = (atoi(sSave)>0?true:false);
+		if (save)
+		{
+			pCreature->SaveToDB();
+			pCreature->m_loadedFromDB = true;
+		}
+	}
+	GreenSystemMessage(m_session, "You may have to leave and re-enter this zone for changes to take effect.");
+	return true;
+}
+
+bool ChatHandler::HandleNPCOnGOCommand(const char * args, WorldSession * m_session)
+{
+	Creature * pCreature = getSelectedCreature(m_session, true);
+	if(pCreature == NULL)
+		return true;
+	pCreature->GetAIInterface()->m_moveFly = false;
+	pCreature->GetAIInterface()->onGameobject = !pCreature->GetAIInterface()->onGameobject;
+	char* sSave = strtok((char*)args, " ");
+	if (sSave)
+	{
+		bool save = (atoi(sSave)>0?true:false);
+		if (save)
+		{
+			pCreature->SaveToDB();
+			pCreature->m_loadedFromDB = true;
+		}
+	}
+	GreenSystemMessage(m_session, "You may have to leave and re-enter this zone for changes to take effect.");
+	return true;
 }
 
 bool ChatHandler::HandleRemoveItemCommand(const char * args, WorldSession * m_session)
@@ -3042,6 +3043,12 @@ bool ChatHandler::HandleLookupSpellCommand(const char * args, WorldSession * m_s
 			recout += "|h[";
 			recout += spell->Name;
 			recout += "]|h|r";
+
+			std::string::size_type pos = recout.find('%');
+			if( pos != std::string::npos ){
+				recout.insert( pos + 1, "%");
+			}
+
 			SendMultilineMessage(m_session, recout.c_str());
 
 			++count;
@@ -3231,7 +3238,7 @@ bool ChatHandler::HandleNpcPossessCommand(const char * args, WorldSession * m_se
 			sGMLog.writefromsession( m_session, "used possess command on PLAYER %s", static_cast< Player* >( pTarget )->GetName() );
 			break;
 		case TYPEID_UNIT:
-			sGMLog.writefromsession( m_session, "used possess command on CREATURE %s, sqlid %u", static_cast< Creature* >( pTarget )->GetCreatureInfo() ? static_cast< Creature* >( pTarget )->GetCreatureInfo()->Name : "unknown", static_cast< Creature* >( pTarget )->GetSQL_id() );
+			sGMLog.writefromsession( m_session, "used possess command on CREATURE %s, sqlid %u", static_cast< Creature* >( pTarget )->GetCreatureInfo()->Name, static_cast< Creature* >( pTarget )->GetSQL_id() );
 			break;
 	}
 	return true;
@@ -3601,10 +3608,10 @@ bool ChatHandler::HandleArenaResetAllRatingsCommand(const char * args, WorldSess
 
 bool ChatHandler::HandleWhisperBlockCommand(const char * args, WorldSession * m_session)
 {
-	if(m_session->GetPlayer()->bGMTagOn)
+	if(m_session->GetPlayer()->HasFlag(PLAYER_FLAGS, PLAYER_FLAG_GM))
 		return false;
 
-	m_session->GetPlayer()->bGMTagOn = true;
+	m_session->GetPlayer()->SetFlag(PLAYER_FLAGS, PLAYER_FLAG_GM);
 	return true;
 }
 

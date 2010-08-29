@@ -35,7 +35,7 @@ EventableObject::EventableObject()
 	/* commented, these will be allocated when the first event is added. */
 	//m_event_Instanceid = event_GetInstanceID();
 	//m_holder = sEventMgr.GetEventHolder(m_event_Instanceid);
-
+	m_refs = 1;
 	m_holder = 0;
 	m_event_Instanceid = -1;
 
@@ -354,9 +354,9 @@ void EventableObjectHolder::Update(time_t time_difference)
 			// execute the callback
 			if(ev->eventFlag & EVENT_FLAG_DELETES_OBJECT)
 			{
+				m_events.erase(it2);
 				ev->deleted = true;
 				ev->cb->execute();
-				m_events.erase(it2);
 				ev->DecRef();
 				continue;
 			}

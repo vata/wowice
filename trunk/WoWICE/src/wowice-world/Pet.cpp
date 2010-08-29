@@ -15,15 +15,16 @@
 
 #include "StdAfx.h"
 
-#define WATER_ELEMENTAL	510
-#define PET_IMP			416
-#define PET_VOIDWALKER	1860
-#define PET_SUCCUBUS	1863
-#define PET_FELHUNTER	417
-#define PET_FELGUARD	17252
-#define SHADOWFIEND		19668
-#define SPIRITWOLF		29264
-#define DANCINGRUNEWEAPON 27893
+#define WATER_ELEMENTAL		510
+#define WATER_ELEMENTAL_NEW 37994
+#define PET_IMP				416
+#define PET_VOIDWALKER		1860
+#define PET_SUCCUBUS		1863
+#define PET_FELHUNTER		417
+#define PET_FELGUARD		17252
+#define SHADOWFIEND			19668
+#define SPIRITWOLF			29264
+#define DANCINGRUNEWEAPON	27893
 
 uint32 Pet::GetAutoCastTypeForSpell( SpellEntry * ent )
 {
@@ -95,6 +96,7 @@ void Pet::SetNameForEntry( uint32 entry )
 	switch( entry )
 	{
 		case WATER_ELEMENTAL:
+		case WATER_ELEMENTAL_NEW:
 			m_name = "Water Elemental";
 			break;
 		case SHADOWFIEND:
@@ -371,7 +373,7 @@ void Pet::SendSpellsToOwner()
 	if( m_Owner == NULL )
 		return;
 
-	uint16 packetsize = ( GetEntry() != WATER_ELEMENTAL && GetEntry() != SPIRITWOLF ) ? ( ( uint16 )mSpells.size() * 4 + 59 ) : 62;
+	uint16 packetsize = ( GetEntry() != WATER_ELEMENTAL && GetEntry() != WATER_ELEMENTAL_NEW && GetEntry() != SPIRITWOLF ) ? ( ( uint16 )mSpells.size() * 4 + 59 ) : 62;
 	WorldPacket * data = new WorldPacket( SMSG_PET_SPELLS, packetsize );
 	*data << GetGUID();
 	*data << uint16( myFamily != NULL ? myFamily->ID : 0 );	// pet family to determine talent tree
@@ -395,7 +397,7 @@ void Pet::SendSpellsToOwner()
 	}
 
 	// we don't send spells for the water elemental so it doesn't show up in the spellbook
-	if( GetEntry() != WATER_ELEMENTAL && GetEntry() != SPIRITWOLF )
+	if( GetEntry() != WATER_ELEMENTAL && GetEntry() != WATER_ELEMENTAL_NEW && GetEntry() != SPIRITWOLF )
 	{
 		// Send the rest of the spells.
 		*data << uint8( mSpells.size() );
@@ -724,9 +726,7 @@ void Pet::InitializeMe( bool first )
 	SetUInt32Value( UNIT_FIELD_PETNUMBER, GetUIdFromGUID() );
 	SetUInt32Value( UNIT_FIELD_PET_NAME_TIMESTAMP, (uint32)UNIXTIME );
 
-	if( GetCreatureInfo() )
-		myFamily = dbcCreatureFamily.LookupEntry( GetCreatureInfo()->Family );
-	else myFamily = NULL;
+	myFamily = dbcCreatureFamily.LookupEntry( GetCreatureInfo()->Family );
 
 	SetInstanceID( m_Owner->GetInstanceID() );
 	SetPetDiet();
@@ -736,7 +736,7 @@ void Pet::InitializeMe( bool first )
 	if( Summon ) // Summons - always
 	{
 		// Adds parent +frost spell damage
-		if( GetEntry() == WATER_ELEMENTAL )
+		if( GetEntry() == WATER_ELEMENTAL || GetEntry() == WATER_ELEMENTAL_NEW )
 		{
 			float parentfrost = (float)m_Owner->GetDamageDoneMod(SCHOOL_FROST);
 			parentfrost *= 0.40f;
@@ -773,6 +773,9 @@ void Pet::InitializeMe( bool first )
 	}
 
     PushToWorld( m_Owner->GetMapMgr() );
+	//we MUST be sure Pet was pushed to world.
+	Wowice::Util::WOWICE_ASSERT( IsInWorld() );
+
 	InitializeSpells();
 	
 	if( first )
@@ -856,36 +859,32 @@ void Pet::Remove( bool bUpdate, bool bSetOffline )
 	if( ScheduledForDeletion )
 		return;
 	ScheduledForDeletion = true;
-	RemoveAllAuras(); // Prevent pet overbuffing
-	m_Owner->EventDismissPet();
+	PrepareForRemove(bUpdate, bSetOffline);
 
-	if( bUpdate )
-	{
-		if( !bExpires )
-			UpdatePetInfo( bSetOffline );
-		if( !IsSummon() )
-			m_Owner->_SavePet( NULL );
-	}
+	if( IsInWorld() )
+		Unit::RemoveFromWorld( true );
 
-	bool main_summon = m_Owner->GetSummon() == this ;
-	m_Owner->RemoveSummon( this );
-
-	if( m_Owner->GetSummon() == NULL )//we have no more summons, required by spells summoning more than 1.
-	{
-		m_Owner->SetSummonedUnitGUID( 0 );
-		SendNullSpellsToOwner();
-	}
-	else if( main_summon )//we just removed the summon displayed in the portrait so we need to update it with another one.
-	{
-		m_Owner->SetSummonedUnitGUID( m_Owner->GetSummon()->GetGUID() );//set the summon still alive
-		m_Owner->GetSummon()->SendSpellsToOwner();
-	}
-
-	if( IsInWorld() && IsActive() )
-		Deactivate( m_mapMgr );
-
-	Unit::RemoveFromWorld( true );
 	SafeDelete();
+}
+
+void Pet::RemoveFromWorld(bool free_guid)
+{
+	if(IsSummon())
+		PrepareForRemove(false, true);
+	else
+		PrepareForRemove(true, false);
+	Unit::RemoveFromWorld(free_guid);
+}
+
+void Pet::OnRemoveFromWorld()
+{
+	std::list<Pet*> ownerSummons = m_Owner->GetSummons();
+	std::list<Pet*>::iterator itr;
+	for(itr = ownerSummons.begin(); itr != ownerSummons.end(); ++itr)
+	{
+		//m_Owner MUST NOT have a reference to us anymore
+		Wowice::Util::WOWICE_ASSERT( (*itr)->GetGUID() != GetGUID() );
+	}
 }
 
 void Pet::Despawn(uint32 delay, uint32 respawntime)
@@ -916,6 +915,37 @@ void Pet::DelayedRemove(bool bTime, bool dismiss, uint32 delay)
 	}
 	else
 		sEventMgr.AddEvent(this, &Pet::DelayedRemove, true, dismiss, uint32(0), EVENT_PET_DELAYED_REMOVE, delay, 1, EVENT_FLAG_DO_NOT_EXECUTE_IN_WORLD_CONTEXT);
+}
+
+void Pet::PrepareForRemove(bool bUpdate, bool bSetOffline)
+{
+	RemoveAllAuras(); // Prevent pet overbuffing
+	m_Owner->EventDismissPet();
+
+	if( bUpdate )
+	{
+		if( !bExpires )
+			UpdatePetInfo( bSetOffline );
+		if( !IsSummon() )
+			m_Owner->_SavePet( NULL );
+	}
+
+	bool main_summon = m_Owner->GetSummon() == this ;
+	m_Owner->RemoveSummon( this );
+
+	if( m_Owner->GetSummon() == NULL )//we have no more summons, required by spells summoning more than 1.
+	{
+		m_Owner->SetSummonedUnitGUID( 0 );
+		SendNullSpellsToOwner();
+	}
+	else if( main_summon )//we just removed the summon displayed in the portrait so we need to update it with another one.
+	{
+		m_Owner->SetSummonedUnitGUID( m_Owner->GetSummon()->GetGUID() );//set the summon still alive
+		m_Owner->GetSummon()->SendSpellsToOwner();
+	}
+
+	if( IsInWorld() && IsActive() )
+		Deactivate( m_mapMgr );
 }
 
 void Pet::setDeathState(DeathState s)
@@ -981,33 +1011,30 @@ void Pet::UpdateSpellList( bool showLearnSpells )
 	// SkillLine 2
 	uint32 s2 = 0;
 
-	if( GetCreatureInfo() )
+	if( GetCreatureInfo()->Family == 0 && Summon )
 	{
-		if( GetCreatureInfo()->Family == 0 && Summon )
+		// Get spells from the owner
+		map<uint32, set<uint32> >::iterator it1;
+		set<uint32>::iterator it2;
+		it1 = m_Owner->SummonSpells.find(GetEntry());
+		if(it1 != m_Owner->SummonSpells.end())
 		{
-			// Get spells from the owner
-			map<uint32, set<uint32> >::iterator it1;
-			set<uint32>::iterator it2;
-			it1 = m_Owner->SummonSpells.find(GetEntry());
-			if(it1 != m_Owner->SummonSpells.end())
+			it2 = it1->second.begin();
+			for(; it2 != it1->second.end(); ++it2)
 			{
-				it2 = it1->second.begin();
-				for(; it2 != it1->second.end(); ++it2)
-				{
-					AddSpell( dbcSpell.LookupEntry( *it2 ), false, false );
-				}
+				AddSpell( dbcSpell.LookupEntry( *it2 ), false, false );
 			}
-			return;
 		}
-		else
+		return;
+	}
+	else
+	{
+		// Get Creature family from DB (table creature_names, field family), load the skill line from CreatureFamily.dbc for use with SkillLineAbiliby.dbc entry
+		CreatureFamilyEntry* f = dbcCreatureFamily.LookupEntryForced( GetCreatureInfo()->Family );
+		if( f )
 		{
-			// Get Creature family from DB (table creature_names, field family), load the skill line from CreatureFamily.dbc for use with SkillLineAbiliby.dbc entry
-			CreatureFamilyEntry* f = dbcCreatureFamily.LookupEntryForced( GetCreatureInfo()->Family );
-			if( f )
-			{
-				s = f->skilline;
-				s2 = f->tameable;
-			}
+			s = f->skilline;
+			s2 = f->tameable;
 		}
 	}
 
@@ -1339,6 +1366,7 @@ void Pet::ApplySummonLevelAbilities()
 		stat_index = 6;
 		break;*/
 	case WATER_ELEMENTAL:
+	case WATER_ELEMENTAL_NEW:
 		stat_index = 5;
 		m_aiInterface->disable_melee = true;
 		break;
@@ -1869,7 +1897,7 @@ void Pet::DealDamage(Unit *pVictim, uint32 damage, uint32 targetEvent, uint32 un
 ///////////////////////////////////////////////////////////// Loot  //////////////////////////////////////////////////////////////////////////////////////////////
 		
 		if( pVictim->isLootable() ){
-			Player *tagger = GetMapMgr()->GetPlayer( Arcemu::Util::GUID_LOPART( pVictim->GetTaggerGUID() ) );
+			Player *tagger = GetMapMgr()->GetPlayer( Wowice::Util::GUID_LOPART( pVictim->GetTaggerGUID() ) );
 
 			// Tagger might have left the map so we need to check
 			if( tagger != NULL ){
@@ -1904,7 +1932,7 @@ void Pet::DealDamage(Unit *pVictim, uint32 damage, uint32 targetEvent, uint32 un
 								SetFlag(UNIT_FIELD_AURASTATE,AURASTATE_FLAG_LASTKILLWITHHONOR);
 
 								if(!sEventMgr.HasEvent(this,EVENT_LASTKILLWITHHONOR_FLAG_EXPIRE))
-									sEventMgr.AddEvent((Unit*)this,&Unit::EventAurastateExpire,(uint32)AURASTATE_FLAG_LASTKILLWITHHONOR,EVENT_LASTKILLWITHHONOR_FLAG_EXPIRE,20000,1, EVENT_FLAG_DO_NOT_EXECUTE_IN_WORLD_CONTEXT);
+									sEventMgr.AddEvent(TO_UNIT(this),&Unit::EventAurastateExpire,(uint32)AURASTATE_FLAG_LASTKILLWITHHONOR,EVENT_LASTKILLWITHHONOR_FLAG_EXPIRE,20000,1, EVENT_FLAG_DO_NOT_EXECUTE_IN_WORLD_CONTEXT);
 								else
 									sEventMgr.ModifyEventTimeLeft(this,EVENT_LASTKILLWITHHONOR_FLAG_EXPIRE,20000);
 								

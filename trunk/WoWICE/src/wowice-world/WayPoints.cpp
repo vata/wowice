@@ -40,7 +40,7 @@ bool ChatHandler::HandleWPAddCommand(const char* args, WorldSession *m_session)
 			return true;
 		}
 
-		pCreature = (Creature*)ai->GetUnit();
+		pCreature =TO_CREATURE(ai->GetUnit());
 		if( !pCreature || pCreature->IsPet() )
 		{
 			SystemMessage(m_session, "Invalid Creature, please select another one.");
@@ -832,7 +832,7 @@ bool ChatHandler::HandleWaypointAddFlyCommand(const char * args, WorldSession * 
 			return true;
 		}
 
-		pCreature = (Creature*)ai->GetUnit();
+		pCreature = TO_CREATURE(ai->GetUnit());
 		if ( !pCreature || pCreature->IsPet() )
 		{
 			SystemMessage(m_session, "Invalid Creature, please select another one.");
@@ -904,7 +904,7 @@ bool ChatHandler::HandleNpcSelectCommand(const char * args, WorldSession * m_ses
 	{
 		if( (dist2 = plr->GetDistance2dSq(*itr)) < dist && (*itr)->GetTypeId() == TYPEID_UNIT )
 		{
-			un = ((Creature*)*itr);
+			un = TO_CREATURE(*itr);
 			dist = dist2;
 		}
 	}
@@ -916,6 +916,6 @@ bool ChatHandler::HandleNpcSelectCommand(const char * args, WorldSession * m_ses
 	}
 
 	plr->SetSelection(un->GetGUID());
-	SystemMessage(m_session, "Set selection to "I64FMT" (%s)", un->GetGUID(), un->GetCreatureInfo() ? un->GetCreatureInfo()->Name : "Unknown");
+	SystemMessage(m_session, "Set selection to "I64FMT" (%s)", un->GetGUID(), un->GetCreatureInfo()->Name);
 	return true;
 }

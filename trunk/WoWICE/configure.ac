@@ -112,6 +112,12 @@ else
 	fi
 fi
 
+# Check for __sync_val_compare_and_swap
+LIBGOMP_CHECK_SYNC_BUILTINS
+if test "$libgomp_cv_have_sync_builtins" = no; then
+	AC_MSG_ERROR(Your environment doesn't support __sync_*_compare_and_swap. WoWICE requires GCC 4.1 or above)
+fi
+
 # Check for pthread
 ACX_PTHREAD( [
 	LDFLAGS="$PTHREAD_LIBS $LDFLAGS"
@@ -281,13 +287,40 @@ AC_CONFIG_FILES([
    src/scripts/src/InstanceScripts/Makefile
    src/scripts/src/ServerStatusPlugin/Makefile
    src/scripts/src/SpellHandlers/Makefile
-   src/scripts/src/LUAEngine/Makefile
+   src/scripts/src/LuaEngine/Makefile
    src/scripts/src/QuestScripts/Makefile
    src/scripts/src/EventScripts/Makefile
    src/collision/Makefile
 ])
 
 AC_OUTPUT
+
+echo "#!/bin/bash" > make_precompiled_header.sh
+echo "echo precompiling StdAfx.h for wowice-world" >> make_precompiled_header.sh
+echo "cd src/wowice-world" >> make_precompiled_header.sh
+echo "g++ -DHAVE_CONFIG_H -I. -I../.. -I../wowice-shared ${CXXFLAGS} -MD -MP -c StdAfx.h -o StdAfx.h.gch" >> make_precompiled_header.sh
+echo "echo done" >> make_precompiled_header.sh
+
+
+echo "#!/bin/bash" > make_precompiled_header_scripts.sh
+echo "CXXFLAGS=\"-DHAVE_CONFIG_H -DSCRIPTLIB -I. -I../../../.. -I../../../../src/wowice-logonserver -I../../../../src/wowice-realmserver -I../../../../src/wowice-shared -I../../../../src/wowice-voicechat -I../../../../src/wowice-world -I. -I./../../../../dep/include -I./../../../../dep/src -I./../../../../src -I../Common -I./../../../wowice-shared/g3dlite -I./../../../wowice-shared/vmap ${CXXFLAGS} -MD -MP\"" >> make_precompiled_header_scripts.sh
+echo "" >> make_precompiled_header_scripts.sh
+echo "cd src/scripts/src/EventScripts" >> make_precompiled_header_scripts.sh
+echo "g++ \$CXXFLAGS -c Setup.h -o Setup.h.gch" >> make_precompiled_header_scripts.sh
+echo "cd ../ExtraScripts" >> make_precompiled_header_scripts.sh
+echo "g++ \$CXXFLAGS -c Setup.h -o Setup.h.gch" >> make_precompiled_header_scripts.sh
+echo "cd ../GossipScripts" >> make_precompiled_header_scripts.sh
+echo "g++ \$CXXFLAGS -c Setup.h -o Setup.h.gch" >> make_precompiled_header_scripts.sh
+echo "cd ../InstanceScripts" >> make_precompiled_header_scripts.sh
+echo "g++ \$CXXFLAGS -c Setup.h -o Setup.h.gch" >> make_precompiled_header_scripts.sh
+echo "cd ../MiscScripts" >> make_precompiled_header_scripts.sh
+echo "g++ \$CXXFLAGS -c Setup.h -o Setup.h.gch" >> make_precompiled_header_scripts.sh
+echo "cd ../QuestScripts" >> make_precompiled_header_scripts.sh
+echo "g++ \$CXXFLAGS -c Setup.h -o Setup.h.gch" >> make_precompiled_header_scripts.sh
+echo "cd ../SpellHandlers" >> make_precompiled_header_scripts.sh
+echo "g++ \$CXXFLAGS -c Setup.h -o Setup.h.gch" >> make_precompiled_header_scripts.sh
+echo "echo done" >> make_precompiled_header_scripts.sh
+
 
 echo
 echo "===================================="

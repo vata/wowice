@@ -388,6 +388,7 @@ typedef HM_NAMESPACE::hash_map<string, PlayerInfo*> PlayerNameStringIndexMap;
 
 #endif
 
+class PlayerCache;
 class SERVER_DECL ObjectMgr : public Singleton < ObjectMgr >, public EventableObject
 {
 public:
@@ -416,6 +417,7 @@ public:
 	typedef HM_NAMESPACE::hash_map<uint32, std::vector<TrainerSpell*> > TrainerSpellMap;
     typedef HM_NAMESPACE::hash_map<uint32, ReputationModifier*>         ReputationModMap;
     typedef HM_NAMESPACE::hash_map<uint32, Corpse*>                     CorpseMap;
+	typedef HM_NAMESPACE::hash_map<uint32, PlayerCache*>				PlayerCacheMap;
     
     // Map typedef's
     typedef std::map<uint32, LevelInfo*>                                LevelMap;
@@ -433,9 +435,16 @@ public:
 	TotemSpellMap        m_totemSpells;
 	OverrideIdMap        mOverrideIdMap;
 	InstanceBossInfoMap* m_InstanceBossInfoMap[NUM_MAPS];
+	PlayerCacheMap m_playerCache;
+	FastMutex m_playerCacheLock;
 
 	Player* GetPlayer(const char* name, bool caseSensitive = true);
 	Player* GetPlayer(uint32 guid);
+
+	void AddPlayerCache(uint32 guid, PlayerCache* cache);
+	void RemovePlayerCache(uint32 guid);
+	PlayerCache* GetPlayerCache(uint32 guid);
+	PlayerCache* GetPlayerCache(const char* name, bool caseSensitive = true);
 	
 	CorpseMap m_corpses;
 	Mutex _corpseslock;
@@ -443,7 +452,6 @@ public:
 	
 	Item * CreateItem(uint32 entry,Player * owner);
 	Item * LoadItem(uint64 guid);
-	Item * LoadExternalItem(uint64 guid);
   
 	// Groups
 	Group * GetGroupByLeader(Player *pPlayer);

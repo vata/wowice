@@ -15,6 +15,9 @@
 
 #ifndef _PLAYER_H
 #define _PLAYER_H
+
+#include "PlayerCache.h"
+
 struct BGScore;
 #ifdef ENABLE_ACHIEVEMENTS
 class AchievementMgr;
@@ -29,7 +32,6 @@ class Corpse;
 class Guild;
 struct GuildRank;
 class Pet;
-class Vehicle;
 class Charter;
 class LFGMatch;
 struct LevelInfo;
@@ -677,6 +679,7 @@ struct PlayerInfo
 	GuildRank * guildRank;
 	GuildMember * guildMember;
 };
+
 struct PlayerPet
 {
 	string name;
@@ -812,22 +815,6 @@ struct PlayerSkill
 	void Reset(uint32 Id);
 };
 
-enum SPELL_INDEX
-{
-	SPELL_TYPE_INDEX_MARK			= 1,
-	SPELL_TYPE_INDEX_POLYMORPH		= 2,
-	SPELL_TYPE_INDEX_FEAR			= 3,
-	SPELL_TYPE_INDEX_SAP			= 4,
-	SPELL_TYPE_INDEX_SCARE_BEAST	= 5,
-	SPELL_TYPE_INDEX_HIBERNATE		= 6,
-	SPELL_TYPE_INDEX_EARTH_SHIELD	= 7,
-	SPELL_TYPE_INDEX_CYCLONE		= 8,
-	SPELL_TYPE_INDEX_BANISH			= 9,
-	SPELL_TYPE_INDEX_JUDGEMENT		= 10,
-	SPELL_TYPE_INDEX_FOCUS_MAGIC	= 11,
-	NUM_SPELL_TYPE_INDEX			= 12,
-};
-
 enum SPELL_INDEX2
 {
 	SPELL_TYPE2_PALADIN_AURA			= 1,
@@ -909,9 +896,16 @@ class SERVER_DECL Player : public Unit
 	friend class SkillIterator;
 
 public:
-
 	Player ( uint32 guid );
 	~Player ( );
+
+	PlayerCache* m_cache;
+
+	void HandleUpdateFieldChanged(uint32 index)
+	{
+		if (index == PLAYER_FLAGS)
+			m_cache->SetUInt32Value(CACHE_PLAYER_FLAGS, GetUInt32Value(PLAYER_FLAGS));
+	}
 
 	void EventGroupFullUpdate();
 
@@ -996,14 +990,11 @@ public:
 
 	//! Okay to remove from world
 	bool ok_to_remove;
-	uint64 m_spellIndexTypeTargets[NUM_SPELL_TYPE_INDEX];
 	void OnLogin();//custom stuff on player login.
-	void RemoveSpellTargets(uint32 Type, Unit* target);
-	void RemoveSpellIndexReferences(uint32 Type);
-	void SetSpellTargetType(uint32 Type, Unit* target);
 	void SendMeetingStoneQueue(uint32 DungeonId, uint8 Status);
 	void SendDungeonDifficulty();
 	void SendRaidDifficulty();
+	void SendInstanceDifficulty( uint32 difficulty );
 	void SendExploreXP( uint32 areaid, uint32 xp );
 	void SendDestroyObject( uint64 GUID );
 	void SendEquipmentSetList();
@@ -1022,8 +1013,7 @@ public:
 
 	void Update( uint32 time );
     void BuildFlagUpdateForNonGroupSet(uint32 index, uint32 flag);
-	std::string m_afk_reason;
-	void SetAFKReason(std::string reason) { m_afk_reason = reason; };
+	void SetAFKReason(std::string reason) { m_cache->SetStringValue(CACHE_AFK_DND_REASON, reason); };
 	 const char* GetName() { return m_name.c_str(); }
 	 std::string* GetNameString() { return &m_name; }
 	void Die();
@@ -1340,7 +1330,7 @@ public:
 	{ 
 		for(std::list<Pet*>::iterator itr = m_Summons.begin(); itr != m_Summons.end(); ++itr)
 		{
-			if( *itr == pet )
+			if( (*itr)->GetGUID() == pet->GetGUID() )
 			{
 				m_Summons.erase(itr);
 				break;
@@ -1504,6 +1494,7 @@ public:
 	float GetParryChance();
 	void UpdateChances();
 	void UpdateStats();
+	uint32 GetBlockDamageReduction();
 
 	bool canCast(SpellEntry *m_spellInfo);
 	 float GetSpellCritFromSpell() { return m_spellcritfromspell; }
@@ -1769,7 +1760,6 @@ public:
 	}
 
     bool bHasBindDialogOpen;
-	bool bGMTagOn;
 	uint32 TrackingSpell;
 	void _EventCharmAttack();
 	void _Kick();
@@ -1884,7 +1874,6 @@ public:
 	void RemoveSummonSpell(uint32 Entry, uint32 SpellID);
 	set<uint32>* GetSummonSpells(uint32 Entry);
 	LockedQueue<WorldPacket*> delayedPackets;
-	set<Player *> gmTargets;
 	uint32 m_UnderwaterMaxTime;
 	uint32 m_UnderwaterLastDmg;
 	LocationVector getMyCorpseLocation() const { return myCorpseLocation; }
@@ -2187,7 +2176,7 @@ public:
 	void SendCastResult(uint32 SpellId, uint8 ErrorMessage, uint8 MultiCast, uint32 Extra);
 	void Gossip_SendPOI(float X, float Y, uint32 Icon, uint32 Flags, uint32 Data, const char* Name);
     void SendSpellCooldownEvent( uint32 SpellId );
-    void SendFlatSpellModifier( uint8 spellgroup, uint8 spelltype, int32 v );
+    void SendSpellModifier( uint8 spellgroup, uint8 spelltype, int32 v, bool is_pct );
     void SendItemPushResult( bool created, bool recieved, bool sendtoset, bool newitem,  uint8 destbagslot, uint32 destslot, uint32 count, uint32 entry, uint32 suffix, uint32 randomprop, uint32 stack );
     void SendSetProficiency( uint8 ItemClass, uint32 Proficiency );
     void SendLoginVerifyWorld( uint32 MapId, float X, float Y, float Z, float O );
@@ -2381,12 +2370,6 @@ public:
 	/* SOCIAL                                                               */
 	/************************************************************************/
 private:
-	/* we may have multiple threads on this(chat) - burlex */
-	Mutex m_socialLock;
-	map<uint32, char*> m_friends;
-	set<uint32> m_ignores;
-	set<uint32> m_hasFriendList;
-
 	void Social_SendFriendList(uint32 flag);
 
 	void Social_AddFriend(const char * name, const char * note);
@@ -2450,10 +2433,6 @@ public:
 	bool mAvengingWrath;
 	void AvengingWrath() { mAvengingWrath = true; }
 
-	int16 m_vampiricEmbrace;
-	int16 m_vampiricTouch;
-	void VampiricSpell(uint32 dmg, Unit* pTarget);
-
 	void ToggleXpGain();
 	bool CanGainXp();
 
@@ -2475,32 +2454,10 @@ public:
 
 	PlayerSpec m_specs[MAX_SPEC_COUNT];
 
-    /************************************************************************/
-    /* Player Vehicles							                            */
-    /************************************************************************/
-public:
-
-	 Vehicle * GetVehicle() { return (Vehicle *)m_vehicle; }
-	 int8 GetVehicleSeat() { return m_vehicleSeat; }
-	 void SetVehicle(Vehicle *v, int8 seat)
-	{
-		m_vehicle = (Unit *)v;
-		m_vehicleSeat = seat;
-	}
-	 void ResetVehicleSettings()
-	{
-		m_vehicle = NULL;
-		m_vehicleSeat = -1;
-	}
-
-private:
-	Unit *		m_vehicle;
-	int8		m_vehicleSeat;
-
-
 public:
     void SendTeleportAckMsg( const LocationVector &v );
 	void SendUpdateDataToSet( ByteBuffer *groupbuf, ByteBuffer *nongroupbuf, bool sendtoself );
+
 };
 
 class SkillIterator

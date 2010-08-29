@@ -15,7 +15,7 @@
 
 #include "StdAfx.h"
 
-#define MAX_MAP 700
+#define MAX_MAP 800
 
 CCollideInterface CollideInterface;
 IVMapManager * CollisionMgr;

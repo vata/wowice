@@ -1,6 +1,10 @@
 INCLUDES += -I$(srcdir)/../wowice-shared
 
-bin_PROGRAMS = wowice-world
+StdAfx.gch: StdAfx.h
+		@echo "Building precompiled header."
+		@$(CXX) $(CXXFLAGS) $(LDFLAGS) $(INCLUDES) -o StdAfx.gch StdAfx.h-include StdAfx.gch
+
+bin_PROGRAMS = arcemu-world
 
 wowice_world_SOURCES = \
     AchievementMgr.cpp \
@@ -122,8 +126,6 @@ wowice_world_SOURCES = \
     NPCHandler.h \
     Object.cpp \
     Object.h \
-    ObjectContainer.cpp \
-    ObjectContainer.h \
     ObjectMgr.cpp \
     ObjectMgr.h \
     Opcodes.cpp \

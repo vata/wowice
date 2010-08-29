@@ -30,8 +30,8 @@ void WorldSession::HandleRepopRequestOpcode( WorldPacket & recv_data )
 
 void WorldSession::HandleAutostoreLootItemOpcode( WorldPacket & recv_data )
 {
-	if(!_player->IsInWorld()) return;
-//	uint8 slot = 0;
+	CHECK_INWORLD_RETURN
+
 	uint32 itemid = 0;
 	uint32 amt = 1;
 	uint8 lootSlot = 0;
@@ -1496,6 +1496,7 @@ void WorldSession::HandleGameObjectUse(WorldPacket & recv_data)
 				break;
 			spell = new Spell(plyr, info, false, NULL);
 			//spell->SpellByOther = true;
+			targets.m_targetMask |= TARGET_FLAG_UNIT;
 			targets.m_unitTarget = plyr->GetGUID();
 			spell->prepare(&targets);
 			if ( obj->charges > 0 && !--obj->charges )

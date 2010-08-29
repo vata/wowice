@@ -73,13 +73,14 @@ public:
 	WoWICE_INLINE bool IsDeleted() { return m_deleted; }
 	WoWICE_INLINE bool IsConnected() { return m_connected; }
 	WoWICE_INLINE sockaddr_in & GetRemoteStruct() { return m_client; }
-	WoWICE_INLINE CircularBuffer& GetReadBuffer() { return readBuffer; }
-	WoWICE_INLINE CircularBuffer& GetWriteBuffer() { return writeBuffer; }
 
-/* Deletion */
 	void Delete();
 
 	WoWICE_INLINE in_addr GetRemoteAddress() { return m_client.sin_addr; }
+
+
+	CircularBuffer readBuffer;
+	CircularBuffer writeBuffer;
 
 protected:
 
@@ -87,9 +88,6 @@ protected:
 	void _OnConnect();
   
 	SOCKET m_fd;
-
-	CircularBuffer readBuffer;
-	CircularBuffer writeBuffer;
 
 	Mutex m_writeMutex;
 	Mutex m_readMutex;

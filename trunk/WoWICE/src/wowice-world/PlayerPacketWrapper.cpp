@@ -168,15 +168,15 @@ void Player::SendSpellCooldownEvent(uint32 SpellId){
 }
 
 
-void Player::SendFlatSpellModifier(uint8 spellgroup, uint8 spelltype, int32 v){
-    
-    WorldPacket data( SMSG_SET_FLAT_SPELL_MODIFIER, 48 );
+void Player::SendSpellModifier(uint8 spellgroup, uint8 spelltype, int32 v, bool is_pct) {
 
-    data << uint8( spellgroup );
-    data << uint8( spelltype );
-    data << uint32( v );
+	WorldPacket data( (uint16)( is_pct ? SMSG_SET_PCT_SPELL_MODIFIER : SMSG_SET_FLAT_SPELL_MODIFIER ), 48 ); 
 
-    m_session->SendPacket( &data );
+	data << uint8( spellgroup );
+	data << uint8( spelltype );
+	data << uint32( v );
+
+	m_session->SendPacket( &data );
 }
 
 void Player::SendItemPushResult( bool created, bool recieved, bool sendtoset, bool newitem, uint8 destbagslot, uint32 destslot, uint32 count, uint32 entry, uint32 suffix, uint32 randomprop, uint32 stack ){
@@ -271,11 +271,20 @@ void Player::SendRaidDifficulty()
 	m_session->SendPacket(&data);
 }
 
+void Player::SendInstanceDifficulty( uint32 difficulty ){
+	WorldPacket data( SMSG_INSTANCE_DIFFICULTY, 8 );
+	
+	data << uint32( difficulty );
+	data << uint32( 0 );
+
+	m_session->SendPacket( &data );
+}
+
 void Player::SendNewDrunkState(uint32 state, uint32 itemid){
 
     WorldPacket data( SMSG_CROSSED_INEBRIATION_THRESHOLD, (8+4+4) );
 
-	data << GetNewGUID();
+	data << GetGUID();
 	data << uint32( state );
 	data << uint32( itemid );
 

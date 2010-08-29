@@ -138,7 +138,7 @@ int WorldSession::Update(uint32 InstanceID)
 
 	while ((packet = _recvQueue.Pop()) != 0)
 	{
-		Arcemu::Util::ARCEMU_ASSERT(   packet != NULL );
+		Wowice::Util::WOWICE_ASSERT(   packet != NULL );
 
 		if(packet->GetOpcode() >= NUM_MSG_TYPES)
 			sLog.outError("[Session] Received out of range packet with opcode 0x%.4X", packet->GetOpcode());
@@ -1363,12 +1363,12 @@ void WorldSession::HandleEquipmentSetSave( WorldPacket &data ){
 	
 	data >> GUID;
 
-	setGUID = Arcemu::Util::GUID_LOPART( GUID.GetOldGuid() );
+	setGUID = Wowice::Util::GUID_LOPART( GUID.GetOldGuid() );
 	
 	if( setGUID == 0 )
 		setGUID = objmgr.GenerateEquipmentSetID();
 
-	Arcemu::EquipmentSet *set = new Arcemu::EquipmentSet();
+	Wowice::EquipmentSet *set = new Wowice::EquipmentSet();
 
 	set->SetGUID = setGUID;
 
@@ -1380,7 +1380,7 @@ void WorldSession::HandleEquipmentSetSave( WorldPacket &data ){
 	for( uint32 i = EQUIPMENT_SLOT_START; i < EQUIPMENT_SLOT_END; ++i ){
 		GUID.Clear();
 		data >> GUID;
-		set->ItemGUID[ i ] = Arcemu::Util::GUID_LOPART( GUID.GetOldGuid() );
+		set->ItemGUID[ i ] = Wowice::Util::GUID_LOPART( GUID.GetOldGuid() );
 	}
 
 
@@ -1405,7 +1405,7 @@ void WorldSession::HandleEquipmentSetDelete( WorldPacket &data ){
 
 	data >> setGUID;
 
-	uint32 GUID =  Arcemu::Util::GUID_LOPART( setGUID.GetOldGuid() );
+	uint32 GUID =  Wowice::Util::GUID_LOPART( setGUID.GetOldGuid() );
 
 	success = _player->GetItemInterface()->m_EquipmentSets.DeleteEquipmentSet( GUID );
 

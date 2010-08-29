@@ -165,7 +165,7 @@ bool ChatHandler::HandleDeleteCommand(const char* args, WorldSession *m_session)
 		SystemMessage(m_session, "You can't delete a pet." );
 		return true;
 	}
-	sGMLog.writefromsession(m_session, "used npc delete, sqlid %u, creature %s, pos %f %f %f", unit->GetSQL_id(), unit->GetCreatureInfo() ? unit->GetCreatureInfo()->Name : "wtfbbqhax", unit->GetPositionX(), unit->GetPositionY(), unit->GetPositionZ());
+	sGMLog.writefromsession(m_session, "used npc delete, sqlid %u, creature %s, pos %f %f %f", unit->GetSQL_id(), unit->GetCreatureInfo()->Name, unit->GetPositionX(), unit->GetPositionY(), unit->GetPositionZ());
 
 	unit->GetAIInterface()->hideWayPoints( m_session->GetPlayer() );
     
@@ -409,7 +409,7 @@ bool ChatHandler::HandleKillCommand(const char *args, WorldSession *m_session)
 		break;
 
 	case TYPEID_UNIT:
-		sGMLog.writefromsession( m_session, "used kill command on CREATURE %u [%s], sqlid %u%s", static_cast< Creature* >( target )->GetEntry(), static_cast< Creature* >( target )->GetCreatureInfo() ? static_cast< Creature* >( target )->GetCreatureInfo()->Name : "unknown", static_cast< Creature* >( target )->GetSQL_id(), m_session->GetPlayer()->InGroup() ? ", in group" : "" );
+		sGMLog.writefromsession( m_session, "used kill command on CREATURE %u [%s], sqlid %u%s", static_cast< Creature* >( target )->GetEntry(), static_cast< Creature* >( target )->GetCreatureInfo()->Name, static_cast< Creature* >( target )->GetSQL_id(), m_session->GetPlayer()->InGroup() ? ", in group" : "" );
 		break;
 	}
 
@@ -504,7 +504,7 @@ bool ChatHandler::HandleCastSpellCommand(const char* args, WorldSession *m_sessi
 				sGMLog.writefromsession( m_session, "cast spell %d on PLAYER %s", spellid, static_cast< Player* >( target )->GetName() );
 			break;
 		case TYPEID_UNIT:
-			sGMLog.writefromsession( m_session, "cast spell %d on CREATURE %u [%s], sqlid %u", spellid, static_cast< Creature* >( target )->GetEntry(), static_cast< Creature* >( target )->GetCreatureInfo() ? static_cast< Creature* >( target )->GetCreatureInfo()->Name : "unknown", static_cast< Creature* >( target )->GetSQL_id() );
+			sGMLog.writefromsession( m_session, "cast spell %d on CREATURE %u [%s], sqlid %u", spellid, static_cast< Creature* >( target )->GetEntry(), static_cast< Creature* >( target )->GetCreatureInfo()->Name, static_cast< Creature* >( target )->GetSQL_id() );
 			break;
 	}
 
@@ -565,7 +565,7 @@ bool ChatHandler::HandleCastSpellNECommand(const char* args, WorldSession *m_ses
 				sGMLog.writefromsession( m_session, "cast spell %d on PLAYER %s", spellId, static_cast< Player* >( target )->GetName() );
 			break;
 		case TYPEID_UNIT:
-			sGMLog.writefromsession( m_session, "cast spell %d on CREATURE %u [%s], sqlid %u", spellId, static_cast< Creature* >( target )->GetEntry(), static_cast< Creature* >( target )->GetCreatureInfo() ? static_cast< Creature* >( target )->GetCreatureInfo()->Name : "unknown", static_cast< Creature* >( target )->GetSQL_id() );
+			sGMLog.writefromsession( m_session, "cast spell %d on CREATURE %u [%s], sqlid %u", spellId, static_cast< Creature* >( target )->GetEntry(), static_cast< Creature* >( target )->GetCreatureInfo()->Name, static_cast< Creature* >( target )->GetSQL_id() );
 			break;
 	}
 
@@ -605,7 +605,7 @@ bool ChatHandler::HandleCastSelfCommand(const char* args, WorldSession *m_sessio
 				sGMLog.writefromsession( m_session, "used castself with spell %d on PLAYER %s", spellid, static_cast< Player* >( target )->GetName() );
 			break;
 		case TYPEID_UNIT:
-			sGMLog.writefromsession( m_session, "used castself with spell %d on CREATURE %u [%s], sqlid %u", spellid, static_cast< Creature* >( target )->GetEntry(), static_cast< Creature* >( target )->GetCreatureInfo() ? static_cast< Creature* >( target )->GetCreatureInfo()->Name : "unknown", static_cast< Creature* >( target )->GetSQL_id() );
+			sGMLog.writefromsession( m_session, "used castself with spell %d on CREATURE %u [%s], sqlid %u", spellid, static_cast< Creature* >( target )->GetEntry(), static_cast< Creature* >( target )->GetCreatureInfo()->Name, static_cast< Creature* >( target )->GetSQL_id() );
 			break;
 	}
 
@@ -717,7 +717,7 @@ bool ChatHandler::HandleGOSelect(const char *args, WorldSession *m_session)
 				{
 					cDist = nDist;
 					nDist = 0.0f;
-					GObj = (GameObject*)(*Itr);
+					GObj = TO_GAMEOBJECT(*Itr);
 				}
 			}
 		}
@@ -744,6 +744,12 @@ bool ChatHandler::HandleGODelete(const char *args, WorldSession *m_session)
 	if( GObj == NULL )
 	{
 		RedSystemMessage(m_session, "No selected GameObject...");
+		return true;
+	}
+
+	if( GObj->IsInBg() )
+	{
+		RedSystemMessage(m_session, "GameObjects can't be deleted in Battlegrounds");
 		return true;
 	}
 

@@ -21,6 +21,12 @@ class FrostBrandAttackSpellProc : public SpellProc
 
 	void Init(Object *obj)
 	{		
+		if(obj == NULL)
+		{
+			mDeleted = true;
+			return;
+		}
+
 		mProcChance = TO_ITEM(obj)->GetProto()->Delay * 9 / 600;
 	}
 };
@@ -30,7 +36,16 @@ class FlametongueWeaponSpellProc : public SpellProc
 	SPELL_PROC_FACTORY_FUNCTION(FlametongueWeaponSpellProc);
 
 	void Init(Object *obj)
-	{		
+	{
+		if(obj == NULL)
+		{
+			mDeleted = true;
+			//initializing anyway all fields.
+			mItemGUID = 0;
+			damage = 0;
+			return;
+		}
+
 		mItemGUID = obj->GetGUID();
 		damage = 0;
 		uint32 wp_speed;
@@ -73,7 +88,7 @@ class FlametongueWeaponSpellProc : public SpellProc
 
 		if ( item != NULL && item->GetGUID() == mItemGUID )
 		{
-			*dmg_overwrite = damage;
+			dmg_overwrite[0] = damage;
 			return false;
 		}
 
