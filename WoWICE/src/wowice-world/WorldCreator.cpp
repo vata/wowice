@@ -623,14 +623,14 @@ MapMgr * InstanceMgr::_CreateInstance(uint32 mapid, uint32 instanceid)
 {
 	MapInfo * inf = WorldMapInfoStorage.LookupEntry(mapid);
 	   
-	Wowice::Util::WoWICE_ASSERT(    inf != NULL && inf->type == INSTANCE_NULL );
-	Wowice::Util::WoWICE_ASSERT(    mapid < NUM_MAPS && m_maps[ mapid ] != NULL );
+	Wowice::Util::WOWICE_ASSERT(    inf != NULL && inf->type == INSTANCE_NULL );
+	Wowice::Util::WOWICE_ASSERT(    mapid < NUM_MAPS && m_maps[ mapid ] != NULL );
 
 	Log.Notice("InstanceMgr", "Creating continent %s.", m_maps[mapid]->GetName());
 
 	MapMgr *newMap = new MapMgr( m_maps[mapid], mapid, instanceid );
 
-	Wowice::Util::WoWICE_ASSERT(    newMap != NULL );
+	Wowice::Util::WOWICE_ASSERT(    newMap != NULL );
 
 	// Scheduling the new map for running
 	ThreadPool.ExecuteTask( newMap );
@@ -645,7 +645,7 @@ MapMgr * InstanceMgr::_CreateInstance(Instance * in)
 		return NULL;
 
 	Log.Notice("InstanceMgr", "Creating saved instance %u (%s)", in->m_instanceId, m_maps[in->m_mapId]->GetName());
-	Wowice::Util::WoWICE_ASSERT(    in->m_mapMgr == NULL );
+	Wowice::Util::WOWICE_ASSERT(    in->m_mapMgr == NULL );
 
 	// we don't have to check for world map info here, since the instance wouldn't have been saved if it didn't have any.
 	in->m_mapMgr = new MapMgr(m_maps[in->m_mapId], in->m_mapId, in->m_instanceId);

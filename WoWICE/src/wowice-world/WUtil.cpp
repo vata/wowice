@@ -28,7 +28,7 @@ uint32 Wowice::Util::GUID_LOPART( uint64 GUID ){
     return loguid;
 }
 
-void Wowice::Util::WoWICE_ASSERT(  bool condition){
+void Wowice::Util::WOWICE_ASSERT(  bool condition){
 	if( !condition ){
 		sLog.outError("Assertion failed. Please submit the callstack on forums(unless you are using a repack).");
 		sLog.Close();

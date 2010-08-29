@@ -192,7 +192,7 @@ void World::RemoveSession(uint32 id)
 
 void World::AddSession(WorldSession* s)
 {
-    Wowice::Util::WoWICE_ASSERT(    s != NULL );
+    Wowice::Util::WOWICE_ASSERT(    s != NULL );
 
 	m_sessionlock.AcquireWriteLock();
 
@@ -208,7 +208,7 @@ void World::AddSession(WorldSession* s)
 
 void World::AddGlobalSession(WorldSession *session)
 {
-    Wowice::Util::WoWICE_ASSERT(    session != NULL );
+    Wowice::Util::WOWICE_ASSERT(    session != NULL );
 
 	SessionsMutex.Acquire();
 	Sessions.insert(session);
@@ -218,7 +218,7 @@ void World::AddGlobalSession(WorldSession *session)
 void World::RemoveGlobalSession(WorldSession *session)
 {
 
-    Wowice::Util::WoWICE_ASSERT(    session != NULL );
+    Wowice::Util::WOWICE_ASSERT(    session != NULL );
 
 	SessionsMutex.Acquire();
 	Sessions.erase(session);
@@ -835,12 +835,15 @@ void World::DeleteSessions( std::list< WorldSession* > &slist ){
 
 	for( std::list< WorldSession* >::iterator itr = slist.begin(); itr != slist.end(); ++itr ){
 		WorldSession *s = *itr;
-
 		m_sessions.erase( s->GetAccountId() );
-		delete s;
 	}
 
 	m_sessionlock.ReleaseWriteLock();
+
+	for( std::list< WorldSession* >::iterator itr = slist.begin(); itr != slist.end(); ++itr ){
+		WorldSession *s = *itr;
+		delete s;
+	}
 }
 
 uint32 World::GetNonGmSessionCount()
@@ -1255,7 +1258,7 @@ void World::Rehash(bool load)
 	setRate(RATE_ARENAPOINTMULTIPLIER3X, Config.MainConfig.GetFloatDefault("Rates", "ArenaMultiplier3x", 1.0f));
 	setRate(RATE_ARENAPOINTMULTIPLIER5X, Config.MainConfig.GetFloatDefault("Rates", "ArenaMultiplier5x", 1.0f));
 	SetPlayerLimit(Config.MainConfig.GetIntDefault("Server", "PlayerLimit", 1000));
-	SetMotd(Config.MainConfig.GetStringDefault("Server", "Motd", "Arcemu Default MOTD").c_str());
+	SetMotd(Config.MainConfig.GetStringDefault("Server", "Motd", "WoWICE Default MOTD").c_str());
 	mQueueUpdateInterval = Config.MainConfig.GetIntDefault("Server", "QueueUpdateInterval", 5000);
 	SetKickAFKPlayerTime(Config.MainConfig.GetIntDefault("Server", "KickAFKPlayers", 0));
 	sLog.SetScreenLoggingLevel(Config.MainConfig.GetIntDefault("LogLevel", "Screen", 1));

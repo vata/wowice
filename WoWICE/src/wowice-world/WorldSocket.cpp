@@ -363,7 +363,7 @@ void WorldSocket::InformationRetreiveCallback(WorldPacket & recvData, uint32 req
 	// Allocate session
 	WorldSession * pSession = new WorldSession(AccountID, AccountName, this);
 	mSession = pSession;
-	Wowice::Util::WoWICE_ASSERT(   mSession != NULL );
+	Wowice::Util::WOWICE_ASSERT(   mSession != NULL );
 	// aquire delete mutex
 	pSession->deleteMutex.Acquire();
 	
@@ -439,7 +439,7 @@ void WorldSocket::InformationRetreiveCallback(WorldPacket & recvData, uint32 req
 
 void WorldSocket::Authenticate()
 {
-	Wowice::Util::WoWICE_ASSERT(   pAuthenticationPacket != NULL );
+	Wowice::Util::WOWICE_ASSERT(   pAuthenticationPacket != NULL );
 	mQueued = false;
 
 	if( mSession == NULL )

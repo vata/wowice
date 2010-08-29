@@ -1680,23 +1680,6 @@ uint32 Unit::HandleProc( uint32 flag, Unit* victim, SpellEntry* CastingSpell, bo
 							spell->prepare( &targets );
 						}
 					}break;
-				//priest - Misery
-				case 33200:
-				case 33199:
-				case 33198:
-				case 33197:
-				case 33196:
-					{
-						if( CastingSpell == NULL )
-							continue;
-						else
-						{
-							if( CastingSpell->NameHash != SPELL_HASH_MIND_FLAY && // Mind Flay
-								CastingSpell->NameHash != SPELL_HASH_SHADOW_WORD__PAIN && //SW:P
-								CastingSpell->NameHash != SPELL_HASH_VAMPIRIC_TOUCH ) //SoC
-								continue;
-						}
-					}break;
 				//priest - Inspiration
 				case 15363:
 				case 14893:
@@ -2102,12 +2085,6 @@ uint32 Unit::HandleProc( uint32 flag, Unit* victim, SpellEntry* CastingSpell, bo
 							continue;
 						if( !IsPlayer() )
 							continue;
-						Player* c = static_cast< Player* >( this );
-						if( !c->LastSeal )
-							continue;
-						SpellEntry *spellInfo = dbcSpell.LookupEntryForced( c->LastSeal );
-						if( !spellInfo )
-							continue;
 					}break;
 				case 54172: //Paladin - Divine Storm heal effect
 					{
@@ -2258,6 +2235,7 @@ uint32 Unit::HandleProc( uint32 flag, Unit* victim, SpellEntry* CastingSpell, bo
 						if( CastingSpell->NameHash != SPELL_HASH_LIFE_TAP )
 							continue;
 					}break;
+				//Tier 5 Paladin setbonus - Crystalforge Battlegear or Crystalforge Raiment
 				case 37196:
 				case 43838:
 					{
@@ -4201,10 +4179,10 @@ uint8 Unit::FindVisualSlot(uint32 SpellId,bool IsPos)
 
 void Unit::AddAura(Aura * aur)
 {
-	if ( !aur )
+	if ( aur == NULL )
 		return;
 
-    if( !isAlive() && !( aur->GetSpellProto()->AttributesExC & CAN_PERSIST_AND_CASTED_WHILE_DEAD ) )
+    if( ! (isAlive() || (aur->GetSpellProto()->AttributesExC & CAN_PERSIST_AND_CASTED_WHILE_DEAD)) )
 	{
 		delete aur;     
 		return;
@@ -4856,6 +4834,21 @@ void Unit::RemoveAllAuraFromSelfType2(uint32 auratype, uint32 butskip_hash)
 		}
 }
 
+void Unit::RemoveAllAurasByRequiredShapeShift(uint32 mask)
+{
+	Aura *aura;
+
+	for(uint32 i = MAX_REMOVABLE_AURAS_START; i < MAX_REMOVABLE_AURAS_END; ++i)
+	{
+		aura = m_auras[i];
+		if( aura == NULL || ! aura->IsPositive() )
+			continue;
+
+		if( aura->GetSpellProto()->RequiredShapeShift & mask )
+			aura->Remove();
+	}
+}
+
 bool Unit::SetAurDuration(uint32 spellId,Unit* caster,uint32 duration)
 {
 	sLog.outString("setAurDuration2");
@@ -4913,6 +4906,29 @@ Aura* Unit::FindAura(uint32 spellId)
 	return NULL;
 }
 
+Aura* Unit::FindAura(uint32* spellId)
+{
+	Aura *aura;
+	for(uint32 x=MAX_TOTAL_AURAS_START;x<MAX_TOTAL_AURAS_END;x++)
+	{
+		aura = m_auras[x];
+
+		if( aura == NULL )
+			continue;
+
+		for(uint8 j = 0; ; j ++)
+		{
+			if( ! spellId[j] )
+				break;
+
+			if( aura->GetSpellId() == spellId[j] )
+				return aura;
+		}
+	}
+
+	return NULL;
+}
+
 Aura* Unit::FindAura(uint32 spellId, uint64 guid)
 {
 	for(uint32 x=MAX_TOTAL_AURAS_START;x<MAX_TOTAL_AURAS_END;x++)
@@ -4922,21 +4938,20 @@ Aura* Unit::FindAura(uint32 spellId, uint64 guid)
 	return NULL;
 }
 
-std::list<Aura*> Unit::GetAllAurasWithAuraEffect(uint32 effect)
+Aura* Unit::FindAuraWithAuraEffect(uint32 effect, uint32* x)
 {
-	std::list<Aura*> result;
 	Aura *aura;
-	for(uint32 x=MAX_TOTAL_AURAS_START;x<MAX_TOTAL_AURAS_END;x++)
+	for( ; *x < MAX_TOTAL_AURAS_END ; (*x)++)
 	{
-		aura = m_auras[x];
+		aura = m_auras[*x];
 		if( aura != NULL && 
 			((aura->GetSpellProto()->Effect[0] == SPELL_EFFECT_APPLY_AURA && aura->GetSpellProto()->EffectApplyAuraName[0] == effect) ||
 			 (aura->GetSpellProto()->Effect[1] == SPELL_EFFECT_APPLY_AURA && aura->GetSpellProto()->EffectApplyAuraName[1] == effect) ||
 			 (aura->GetSpellProto()->Effect[2] == SPELL_EFFECT_APPLY_AURA && aura->GetSpellProto()->EffectApplyAuraName[2] == effect)) )
-			result.push_back(aura);
+			return aura;
 	}
 
-	return result;
+	return NULL;
 }
 
 void Unit::_UpdateSpells( uint32 time )
@@ -7927,6 +7942,25 @@ uint64 Unit::GetCurrentUnitForSingleTargetAura(SpellEntry* spell)
 		return 0;
 }
 
+uint64 Unit::GetCurrentUnitForSingleTargetAura(uint32* name_hashes, uint32* index)
+{
+	UniqueAuraTargetMap::iterator itr;
+
+	for(uint8 i = 0 ; ; i++ )
+	{
+		if( ! name_hashes[i] )
+			return 0;
+
+		itr = m_singleTargetAura.find(name_hashes[i]);
+
+		if ( itr != m_singleTargetAura.end() )
+		{
+			*index = i;
+			return itr->second;
+		}
+	}
+}
+
 void Unit::SetCurrentUnitForSingleTargetAura(SpellEntry* spell, uint64 guid)
 {
 	UniqueAuraTargetMap::iterator itr;
@@ -7944,6 +7978,16 @@ void Unit::RemoveCurrentUnitForSingleTargetAura(SpellEntry* spell)
 	UniqueAuraTargetMap::iterator itr;
 
 	itr = m_singleTargetAura.find(spell->NameHash);
+
+	if ( itr != m_singleTargetAura.end() )
+		m_singleTargetAura.erase(itr);
+}
+
+void Unit::RemoveCurrentUnitForSingleTargetAura(uint32 name_hash)
+{
+	UniqueAuraTargetMap::iterator itr;
+
+	itr = m_singleTargetAura.find(name_hash);
 
 	if ( itr != m_singleTargetAura.end() )
 		m_singleTargetAura.erase(itr);

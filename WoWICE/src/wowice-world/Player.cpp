@@ -57,8 +57,6 @@ removeReagentCost(false),
 ignoreShapeShiftChecks(false),
 ignoreAuraStateCheck(false),
 m_furorChance(0),
-Seal(0),
-judgespell(0),
 m_session(0),
 TrackingSpell(0),
 m_status(0),
@@ -467,7 +465,6 @@ myCorpseLocation()
 	m_passOnLoot = false;
 	m_changingMaps = true;
 	m_outStealthDamageBonusPct = m_outStealthDamageBonusPeriod = m_outStealthDamageBonusTimer = 0;
-	LastSeal = 0;
 	m_flyhackCheckTimer = 0;
 #ifdef TRACK_IMMUNITY_BUG
 	m_immunityTime = 0;
@@ -4425,6 +4422,13 @@ void Player::_ApplyItemMods(Item* item, int16 slot, bool apply, bool justdrokedo
 			}
 		}
 	} // end of the scalingstats else branch
+
+	if( this->getClass() == DRUID && slot == EQUIPMENT_SLOT_MAINHAND )
+	{
+		uint8 ss = GetShapeShift();
+		if ( ss == FORM_MOONKIN || ss == FORM_CAT || ss == FORM_BEAR || ss == FORM_DIREBEAR )
+			this->ApplyFeralAttackPower(apply, item);
+	}
 
 	// Misc
 	if( apply )
@@ -9407,7 +9411,7 @@ void Player::ModifyBonuses( uint32 type, int32 val, bool apply )
 			}break;
 		case FERAL_ATTACK_POWER:
 			{
-
+				ModAttackPowerMods(val );
 			}break;
 		case SPELL_HEALING_DONE:
 			{
@@ -9575,6 +9579,19 @@ void Player::SetShapeShift(uint8 ss)
 				spe->prepare( &t );
 			}
 		}
+	}
+
+	//feral attack power
+	if( this->getClass() == DRUID )
+	{
+		// Changed from normal to feral form
+		if ( !(old_ss == FORM_MOONKIN || old_ss == FORM_CAT || old_ss == FORM_BEAR || old_ss == FORM_DIREBEAR) && 
+			  (ss == FORM_MOONKIN || ss == FORM_CAT || ss == FORM_BEAR || ss == FORM_DIREBEAR) )
+			this->ApplyFeralAttackPower(true);
+		// Changed from feral to normal form
+		else if ( (old_ss == FORM_MOONKIN || old_ss == FORM_CAT || old_ss == FORM_BEAR || old_ss == FORM_DIREBEAR) && 
+				 !(ss == FORM_MOONKIN || ss== FORM_CAT || ss == FORM_BEAR || ss == FORM_DIREBEAR) )
+			this->ApplyFeralAttackPower(false);
 	}
 
 	// now dummy-handler stupid hacky fixed shapeshift spells (leader of the pack, etc)
@@ -11811,7 +11828,7 @@ void Player::Social_SendFriendList(uint32 flag)
 			data << uint8(0);
 
 		// online/offline flag
-		plr = objmgr.GetPlayer( itr->first );
+		plr = objmgr.GetPlayer((uint32)itr->first);
 		cache = objmgr.GetPlayerCache((uint32)itr->first);
 		if( plr != NULL )
 		{
@@ -13462,3 +13479,22 @@ uint32 Player::GetBlockDamageReduction()
 
 	return float2int32( (it->GetProto()->Block + this->m_modblockvaluefromspells + this->GetUInt32Value( PLAYER_RATING_MODIFIER_BLOCK ) + this->GetStat(STAT_STRENGTH) / 2.0f - 1.0f) * block_multiplier );
  }
+
+void Player::ApplyFeralAttackPower(bool apply, Item *item)
+{
+	float FeralAP = 0.0f;
+	
+	Item *it = item;
+	if( it == NULL )
+		it = GetItemInterface()->GetInventoryItem(EQUIPMENT_SLOT_MAINHAND);
+
+	if( it != NULL )
+	{
+		float delay = (float)it->GetProto()->Delay / 1000.0f;
+		delay = max(1.0f, delay);
+		float dps = ((it->GetProto()->Damage[0].Min + it->GetProto()->Damage[0].Max) / 2) / delay;
+		if( dps > 54.8f )
+			FeralAP = (dps - 54.8f) * 14;
+	}
+	ModifyBonuses(FERAL_ATTACK_POWER, (int) FeralAP, apply);
+}

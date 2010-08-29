@@ -37,7 +37,7 @@ class SERVER_DECL ArenaTeam
 			Slots=6;
 		else if(Type == ARENA_TEAM_TYPE_5V5)
 			Slots=10;
-		Wowice::Util::WoWICE_ASSERT(   Slots > 0 );
+		Wowice::Util::WOWICE_ASSERT(   Slots > 0 );
 		m_members = new ArenaTeamMember[Slots];
 		memset(m_members,0,sizeof(ArenaTeamMember)*Slots);
 		m_slots = Slots;

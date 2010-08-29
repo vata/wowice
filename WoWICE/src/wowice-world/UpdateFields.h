@@ -13,8 +13,8 @@
  * this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef ARCEMU_UPDATEFIELDS_H
-#define ARCEMU_UPDATEFIELDS_H
+#ifndef WOWICE_UPDATEFIELDS_H
+#define WOWICE_UPDATEFIELDS_H
 
 // Auto generated for version 3, 3, 5, 12340
 
