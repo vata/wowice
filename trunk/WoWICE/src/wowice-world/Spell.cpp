@@ -255,7 +255,6 @@ Spell::Spell(Object* Caster, SpellEntry *info, bool triggered, Aura* aur)
 	gameObjTarget = NULL;
 	playerTarget = NULL;
 	corpseTarget = NULL;
-	judgement = false;
 	add_damage = 0;
 	m_Delayed = false;
 	pSpellId = 0;
@@ -971,7 +970,7 @@ uint8 Spell::prepare( SpellCastTargets * targets )
 		}
 
 		// aura state removal
-        if( GetProto()->CasterAuraState && GetProto()->CasterAuraState != AURASTATE_FLAG_JUDGEMENT )
+		if( GetProto()->CasterAuraState && GetProto()->CasterAuraState != AURASTATE_FLAG_JUDGEMENT )
 			u_caster->RemoveFlag( UNIT_FIELD_AURASTATE, GetProto()->CasterAuraState );
 	}
 
@@ -4496,7 +4495,7 @@ exit:
 			if(i== 0)
 				value+=float2int32(ceilf(ap*0.01f));	// / 100
 			else if(i==1)
-				value=float2int32(ceilf((value * 3 + ceilf(ap*0.06f)) / 3.0f));
+				value += float2int32(ap * 0.06f);
 		}
 	}
 	else if( GetProto()->NameHash == SPELL_HASH_GARROTE )
@@ -4507,10 +4506,9 @@ exit:
 		{
 			if( i == 0 )
 			{
-				value += (uint32) ceilf( ( u_caster->GetAP() * 0.18f ) / 6 );
+				value += (uint32) ceilf( ( u_caster->GetAP() * 0.07f ) / 6 );
 			}
 		}
-
 	}
 	else if( GetProto()->NameHash == SPELL_HASH_RUPTURE )
 	{
@@ -4529,8 +4527,8 @@ exit:
 	}
 	else if( GetProto()->NameHash == SPELL_HASH_RIP ) //rip
 	{
-		if( u_caster != NULL )
-			value += (uint32)ceilf(u_caster->GetAP() * 0.036f);
+		if( p_caster != NULL )
+			value += float2int32(p_caster->GetAP() * 0.01f * p_caster->m_comboPoints);
 	}
 	else if( GetProto()->NameHash == SPELL_HASH_MONGOOSE_BITE ) //Mongoose Bite
 	{
@@ -4625,6 +4623,49 @@ exit:
 		SM_FIValue(p_caster->SM_FMiscEffect, &value, GetProto()->SpellGroupType);
 		SM_PIValue(p_caster->SM_PMiscEffect, &value, GetProto()->SpellGroupType);
 	}
+	else if( GetProto()->NameHash == SPELL_HASH_SEAL_OF_LIGHT )
+	{
+		value = (p_caster->GetAP() + p_caster->GetPosDamageDoneMod(SCHOOL_HOLY)) * 15 / 100;
+	}
+	else if( GetProto()->NameHash == SPELL_HASH_SEAL_OF_RIGHTEOUSNESS )
+	{
+		Item *mit = p_caster->GetItemInterface()->GetInventoryItem(EQUIPMENT_SLOT_MAINHAND);
+		if( mit != NULL )
+			value = (p_caster->GetAP() * 22 + p_caster->GetPosDamageDoneMod(SCHOOL_HOLY) * 44) * mit->GetProto()->Delay / 1000000;
+	}
+	else if( GetProto()->NameHash == SPELL_HASH_BLOOD_CORRUPTION || GetProto()->NameHash == SPELL_HASH_HOLY_VENGEANCE )
+	{
+		if( p_caster != NULL )
+			value = (p_caster->GetAP() * 25 + p_caster->GetPosDamageDoneMod(SCHOOL_HOLY) * 13) / 1000;
+	}
+	else if( GetProto()->NameHash == SPELL_HASH_JUDGEMENT_OF_LIGHT )
+	{
+		value = u_caster->GetMaxHealth() * 2 / 100;
+	}
+	else if( GetProto()->NameHash == SPELL_HASH_JUDGEMENT_OF_WISDOM )
+	{
+		value = u_caster->GetBaseMana() * 2 / 100;
+	}
+	else if( GetProto()->NameHash == SPELL_HASH_JUDGEMENT )
+	{
+		if( p_caster != NULL )
+			value += (p_caster->GetAP() * 16 + p_caster->GetPosDamageDoneMod(SCHOOL_HOLY) * 25) / 100;
+	}
+	else if( GetProto()->NameHash == SPELL_HASH_JUDGEMENT_OF_RIGHTEOUSNESS )
+	{
+		if( p_caster != NULL )
+			value += (p_caster->GetAP() * 2 + p_caster->GetPosDamageDoneMod(SCHOOL_HOLY) * 32) / 100;
+	}
+	else if( GetProto()->NameHash == SPELL_HASH_JUDGEMENT_OF_VENGEANCE || GetProto()->NameHash == SPELL_HASH_JUDGEMENT_OF_CORRUPTION )
+	{
+		if( p_caster != NULL )
+			value += (p_caster->GetAP() * 14 + p_caster->GetPosDamageDoneMod(SCHOOL_HOLY) * 22) / 100;
+	}
+	else if( GetProto()->NameHash == SPELL_HASH_JUDGEMENT_OF_COMMAND )
+	{
+		if( p_caster != NULL )
+			value += (p_caster->GetAP() * 8 + p_caster->GetPosDamageDoneMod(SCHOOL_HOLY) * 13) / 100;
+	}
 
 	if( p_caster != NULL )
 	{
@@ -4659,7 +4700,8 @@ exit:
 		SM_FIValue(u_caster->SM_FEffectBonus, &spell_flat_modifers, GetProto()->SpellGroupType);
 		SM_PIValue(u_caster->SM_PEffectBonus, &spell_pct_modifers, GetProto()->SpellGroupType);
 
-		SM_FIValue(u_caster->SM_FDamageBonus , &spell_flat_modifers , GetProto()->SpellGroupType);
+		SM_FIValue(u_caster->SM_FDamageBonus, &spell_flat_modifers, GetProto()->SpellGroupType);
+		SM_PIValue(u_caster->SM_PDamageBonus, &spell_pct_modifers , GetProto()->SpellGroupType);
 
 		switch(i)
 		{
@@ -4955,18 +4997,6 @@ void Spell::Heal( int32 amount, bool ForceCrit )
 
 		switch( m_spellInfo->Id )
 		{
-		case 20267: //Judgement of Light
-			{
-            // Patch 3.2.0 (2009-08-04): Now heals for 2% of the attacker's maximum health instead of a 
-            // variable amount based on the spell power and attack power of the judging paladin.
-		    if( p_caster != NULL )
-            amount = float2int32(p_caster->GetUInt32Value(UNIT_FIELD_MAXHEALTH) * 0.02f);
-            }
-			               break;
-		case 20167: //Seal of Light
-			if( p_caster != NULL )
-				amount = (int)(0.15f * p_caster->GetAttackPower() + 0.15f * (p_caster)->GetPosDamageDoneMod(1));
-			break;
 		case 54172: //Paladin - Divine Storm heal effect
 			{
 				int dmg = (int)CalculateDamage( u_caster, unitTarget, MELEE, 0, dbcSpell.LookupEntry( 53385 ) );//1 hit
@@ -5692,4 +5722,18 @@ void Spell::HandleCastEffects( uint64 guid, uint32 i )
 			AddRef();
 		}
 	}
+}
+
+//Logs if the spell doesn't exist, using Debug loglevel.
+SpellEntry* CheckAndReturnSpellEntry(uint32 spellid)
+{
+	//Logging that spellid 0 or -1 don't exist is not needed.
+	if(spellid == 0 || spellid == uint32(-1))
+		return NULL;
+
+	SpellEntry* sp = dbcSpell.LookupEntryForced( spellid );
+	if(sp == NULL)
+		sLog.outDebug("Something tried to access nonexistent spell %u", spellid);
+
+	return sp;
 }

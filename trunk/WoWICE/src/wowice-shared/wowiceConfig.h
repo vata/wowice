@@ -79,9 +79,9 @@
 //#define _SELF_ITEM_QUERY_TEST_ "\x2d\x50\x32\x57\x4f\x57\0"
 
 // LOGON_MINBUILD minimum allowed build number that the logonserver will allow clients to connect with
-#define LOGON_MINBUILD 11723
+#define LOGON_MINBUILD 12340
 // LOGON_MAXBUILD maximum allowed build number that the logonserver will allow clients to connect with
-#define LOGON_MAXBUILD 11723
+#define LOGON_MAXBUILD 12340
 
 #endif		// __wowiceCONFIG_H
 

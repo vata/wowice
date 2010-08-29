@@ -951,8 +951,8 @@ void Aura::Remove()
 	else if( m_spellProto->MechanicsType == MECHANIC_BLEEDING && !--m_target->asc_bleed )
 		flag |= AURASTATE_FLAG_BLEED;
 	if( m_spellProto->BGR_one_buff_on_target & SPELL_TYPE_SEAL && !--m_target->asc_seal )
-        flag |= AURASTATE_FLAG_JUDGEMENT;
-    if( flag != 0 )
+		flag |= AURASTATE_FLAG_JUDGEMENT;
+	if( flag != 0 )
 		m_target->RemoveFlag( UNIT_FIELD_AURASTATE, flag );
 
     // We will delete this on the next update, eluding some spell crashes :|
@@ -1648,33 +1648,6 @@ void Aura::SpellAuraDummy(bool apply)
 
 	uint32 TamingSpellid = 0;
 
-	// for seal -> set judgment crap
-	if( GetSpellProto()->BGR_one_buff_on_target & SPELL_TYPE_SEAL && mod->i == 2 )
-	{
-		Player* c = GetPlayerCaster();
-
-		if( c == NULL )
-			return;
-
-		if( apply )
-		{
-			if( !c->judgespell )
-				c->judgespell = mod->m_amount;
-			if( !c->Seal )
-			{
-				c->Seal = m_spellProto->Id;
-				c->LastSeal = c->Seal;
-			}
-		}
-		else
-		{
-			if( c->judgespell )
-				c->judgespell = 0;
-			if( c->Seal )
-				c->Seal = 0;
-		}
-	}
-
 	switch(GetSpellId())
 	{
 	// Deadly Throw Interrupt
@@ -2209,51 +2182,6 @@ void Aura::SpellAuraDummy(bool apply)
 			else if(m_target->isAlive())
 				p_target->SoulStone = p_target->SoulStoneReceiver = 0;
 		}break;
-	//case 20154://Soulstone Resurrection
-	//case 20287:
-	//case 20288:
-	//case 20289:
-	//case 20290:
-	//case 20291:
-	//case 20292:
-	//case 20293:
-	/*case 20165:
-	case 20347:
-	case 20348:
-	case 20349:
-	case 20166:
-	case 20356:
-	case 20357:
-	case 20164:
-	case 20375:
-	case 20915:
-	case 20918:
-	case 20919:
-	case 20920:
-	case 21082:
-	case 20162:
-	case 20305:
-	case 20306:
-	case 20307:
-	case 20308:
-		{
-			if(mod->i == 2 || mod->i == 0)
-			{
-				Player* c = static_cast< Player* >( GetUnitCaster() );
-				if(apply)
-				{
-					c->RemoveAura(c->Seal);
-					c->Seal = GetSpellId();
-					c->judgespell = mod->m_amount;
-					c->SetFlag(UNIT_FIELD_AURASTATE,AURASTATE_FLAG_JUDGEMENT);
-				}
-				else
-				{
-					c->Seal = 0;
-					c->RemoveFlag(UNIT_FIELD_AURASTATE,AURASTATE_FLAG_JUDGEMENT);
-				}
-			}
-		}break;*/
 	case 570:   // far sight
 	case 1345:
 	case 6197:
@@ -4564,17 +4492,9 @@ void Aura::SpellAuraModShapeshift(bool apply)
 	}
 	else
 	{
-		for(uint32 i = MAX_REMOVABLE_AURAS_START; i < MAX_REMOVABLE_AURAS_END; ++i)
-		{
-			if( m_target->m_auras[i] != NULL 
-				&& m_target->m_auras[i]->IsPositive()
-				&& ssf->id != FORM_STEALTH 
-				){
-					uint32 requiredShapeShift = m_target->m_auras[i]->GetSpellProto()->RequiredShapeShift;
-					if( requiredShapeShift & DecimalToMask( mod->m_miscValue ) )
-						m_target->m_auras[i]->Remove();
-			}
-		}
+		if( ssf->id != FORM_STEALTH )
+			m_target->RemoveAllAurasByRequiredShapeShift( DecimalToMask(mod->m_miscValue) );
+
 		if( m_target->IsCasting() && m_target->m_currentSpell && m_target->m_currentSpell->GetProto() 
 			&& ( m_target->m_currentSpell->GetProto()->RequiredShapeShift & DecimalToMask(mod->m_miscValue) ) )
 			m_target->InterruptSpell();
@@ -5993,8 +5913,6 @@ void Aura::SpellAuraModDamagePercDone(bool apply)
 
 	switch (GetSpellId()) //dirty or mb not fix bug with wand specializations
 	{
-	case 6057:
-	case 6085:
 	case 14524:
 	case 14525:
 	case 14526:
@@ -9446,11 +9364,18 @@ bool Aura::DotCanCrit()
 		return false;
 
 	SpellEntry *sp = this->GetSpellProto();
+	uint32 index = MAX_TOTAL_AURAS_START;
+	Aura *aura;
 	bool found = false;
-	std::list<Aura*> auras = caster->GetAllAurasWithAuraEffect(SPELL_AURA_ALLOW_DOT_TO_CRIT);
-	for (std::list<Aura*>::iterator itr = auras.begin(); itr != auras.end(); ++itr)
+	
+	for (;;)
 	{
-		SpellEntry *aura_sp = (*itr)->GetSpellProto();
+		aura = caster->FindAuraWithAuraEffect(SPELL_AURA_ALLOW_DOT_TO_CRIT, &index);
+
+		if( aura == NULL )
+			break;
+
+		SpellEntry *aura_sp = aura->GetSpellProto();
 
 		uint32 i = 0;
 		if( aura_sp->EffectApplyAuraName[1] == SPELL_AURA_ALLOW_DOT_TO_CRIT)
@@ -9466,17 +9391,15 @@ bool Aura::DotCanCrit()
 			found = true;
 			break;
 		}
-	}
 
-	auras.clear();
+		index++;
+	}
 
 	if( found )
 		return true;
 
 	if( caster->IsPlayer() )
 	{
-		Player *pCaster = this->GetPlayerCaster();
-
 		switch( caster->getClass() )
 		{
 			case ROGUE:

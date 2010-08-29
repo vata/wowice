@@ -758,7 +758,7 @@ void CBattlegroundManager::RemovePlayerFromQueues(Player * plr)
 {
 	m_queueLock.Acquire();
 
-	Wowice::Util::WoWICE_ASSERT( plr->m_bgQueueType < BATTLEGROUND_NUM_TYPES );
+	Wowice::Util::WOWICE_ASSERT( plr->m_bgQueueType < BATTLEGROUND_NUM_TYPES );
 
 	sEventMgr.RemoveEvents(plr, EVENT_BATTLEGROUND_QUEUE_UPDATE);
 
@@ -984,7 +984,7 @@ void CBattleground::UpdatePvPData()
 
 void CBattleground::BuildPvPUpdateDataPacket(WorldPacket * data)
 {
-	Wowice::Util::WoWICE_ASSERT(    data != NULL  );
+	Wowice::Util::WOWICE_ASSERT(    data != NULL  );
 
 	data->Initialize(MSG_PVP_LOG_DATA);
 	data->reserve(10*(m_players[0].size()+m_players[1].size())+50);
@@ -1061,7 +1061,7 @@ void CBattleground::BuildPvPUpdateDataPacket(WorldPacket * data)
 		{
 			for(set<Player*>::iterator itr = m_players[i].begin(); itr != m_players[i].end(); ++itr)
 			{
-				Wowice::Util::WoWICE_ASSERT(    *itr != NULL  );
+				Wowice::Util::WOWICE_ASSERT(    *itr != NULL  );
 				if( (*itr)->m_isGmInvisible )
 					continue;
 				*data << (*itr)->GetGUID(); // apparently there is a crash here
@@ -1454,7 +1454,7 @@ void CBattlegroundManager::SendBattlefieldStatus( Player * plr, BattleGroundStat
 	{
 		if( IS_ARENA( Type ) )
 		{
-			data << uint32(0);		// Queue Slot 0..2. Only the first slot is used in arcemu!
+			data << uint32(0);		// Queue Slot 0..2. Only the first slot is used in wowice!
 			switch(Type)
 			{
 			case BATTLEGROUND_ARENA_2V2:

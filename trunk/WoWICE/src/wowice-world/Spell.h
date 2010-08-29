@@ -2123,7 +2123,6 @@ public:
 
     int32 damageToHit;
     uint32 castedItemId;
-    bool judgement;
 	uint8 extra_cast_number;
     uint32 m_glyphslot;
 
@@ -2238,5 +2237,7 @@ void ApplyDiminishingReturnTimer(uint32 * Duration, Unit * Target, SpellEntry * 
 void UnapplyDiminishingReturnTimer(Unit * Target, SpellEntry * spell);
 uint32 GetDiminishingGroup(uint32 NameHash);
 uint32 GetSpellDuration(SpellEntry* sp, Unit* caster = NULL);
+//Logs if the spell doesn't exist, using Debug loglevel.
+SpellEntry* CheckAndReturnSpellEntry(uint32 spellid);
 
 #endif

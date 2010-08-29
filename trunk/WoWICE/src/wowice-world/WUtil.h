@@ -16,7 +16,7 @@
 #ifndef ARCWORLDUTILS__H
 #define ARCWORLDUTILS__H
 
-namespace WoWICE{
+namespace Wowice{
 	
 	// Common WoWICE world stuff
     class Util{

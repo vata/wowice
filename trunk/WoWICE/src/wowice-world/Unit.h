@@ -1020,6 +1020,7 @@ public:
 	uint32 RemoveAllAuraById(uint32 Id); // DuKJIoHuyC: Remove an aura by it's id
 	bool RemoveAllAurasByMechanic( uint32 MechanicType , uint32 MaxDispel , bool HostileOnly ); // Removes all (de)buffs on unit of a specific mechanic type.
 	void RemoveAllMovementImpairing();
+	void RemoveAllAurasByRequiredShapeShift(uint32 mask);
 
 	void RemoveNegativeAuras();
 	// Temporary remove all auras
@@ -1027,8 +1028,9 @@ public:
 	Aura *FindAuraByNameHash(uint32 namehash);
 	Aura *FindAuraByNameHash(uint32 namehash, uint64 guid);
 	Aura* FindAura(uint32 spellId);
+	Aura* FindAura(uint32* spellId);
 	Aura* FindAura(uint32 spellId, uint64 guid);
-	std::list<Aura*> GetAllAurasWithAuraEffect(uint32 effect);
+	Aura* FindAuraWithAuraEffect(uint32 effect, uint32* x);
 	bool SetAurDuration(uint32 spellId,Unit* caster,uint32 duration);
 	bool SetAurDuration(uint32 spellId,uint32 duration);
 	void DropAurasOnDeath();
@@ -1738,8 +1740,10 @@ public:
 	// Auras that can affect only one target at a time
 	//******************************************************
 	uint64 GetCurrentUnitForSingleTargetAura(SpellEntry* spell);
+	uint64 GetCurrentUnitForSingleTargetAura(uint32* name_hashes, uint32* index);
 	void SetCurrentUnitForSingleTargetAura(SpellEntry* spell, uint64 guid);
 	void RemoveCurrentUnitForSingleTargetAura(SpellEntry* spell);
+	void RemoveCurrentUnitForSingleTargetAura(uint32 name_hash);
 
 protected:
 	Unit ();
