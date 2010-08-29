@@ -924,8 +924,11 @@ static const char *g_stateNames[AV_NODE_STATE_COUNT] = {
 	"AV_NODE_STATE_HORDE_CONTROLLED",
 };
 
-AVNode::AVNode(AlteracValley &parent, AVNodeTemplate *tmpl, uint32 nodeid) : m_bg(parent), m_template(tmpl), m_nodeId(nodeid)
+AlteracValley::AVNode::AVNode( AlteracValley *parent, AVNodeTemplate *tmpl, uint32 nodeid )
 {
+	m_bg = parent;
+	m_template = tmpl;
+	m_nodeId = nodeid;
 	m_boss = NULL;
 	m_flag = NULL;
 	m_aura = NULL;
@@ -951,9 +954,9 @@ AVNode::AVNode(AlteracValley &parent, AVNodeTemplate *tmpl, uint32 nodeid) : m_b
 
 		while(spi->x != 0.0f)
 		{
-			sp = m_bg.GetMapMgr()->CreateCreature(ci->Id);
+			sp = m_bg->GetMapMgr()->CreateCreature(ci->Id);
 			sp->Load(cp, spi->x, spi->y, spi->z, spi->o);
-			sp->PushToWorld(m_bg.GetMapMgr());
+			sp->PushToWorld(m_bg->GetMapMgr());
 			++spi;
 		}
 	}
@@ -964,23 +967,23 @@ AVNode::AVNode(AlteracValley &parent, AVNodeTemplate *tmpl, uint32 nodeid) : m_b
 		// spawn alliance npcs if its a horde tower
 		if( m_template->m_defaultState == AV_NODE_STATE_ALLIANCE_CONTROLLED )
 		{
-			m_homeNPC = m_bg.SpawnCreature(g_HomeNpcInfo[m_nodeId].id_a, g_HomeNpcInfo[m_nodeId].a_x, g_HomeNpcInfo[m_nodeId].a_y,
+			m_homeNPC = m_bg->SpawnCreature(g_HomeNpcInfo[m_nodeId].id_a, g_HomeNpcInfo[m_nodeId].a_x, g_HomeNpcInfo[m_nodeId].a_y,
 				g_HomeNpcInfo[m_nodeId].a_z, g_HomeNpcInfo[m_nodeId].a_o);
 		}
 		else
 		{
-			m_homeNPC = m_bg.SpawnCreature(g_HomeNpcInfo[m_nodeId].id_h, g_HomeNpcInfo[m_nodeId].h_x, g_HomeNpcInfo[m_nodeId].h_y,
+			m_homeNPC = m_bg->SpawnCreature(g_HomeNpcInfo[m_nodeId].id_h, g_HomeNpcInfo[m_nodeId].h_x, g_HomeNpcInfo[m_nodeId].h_y,
 				g_HomeNpcInfo[m_nodeId].h_z, g_HomeNpcInfo[m_nodeId].h_o);
 		}
 	}
 }
 
-AVNode::~AVNode()
+AlteracValley::AVNode::~AVNode()
 {
 
 }
 
-void AVNode::Assault(Player *plr)
+void AlteracValley::AVNode::Assault(Player *plr)
 {
 	// player assaulted the control point.
 	// safety check
@@ -1014,11 +1017,11 @@ void AVNode::Assault(Player *plr)
 	}
 
 	// start timer blablabla
-	sEventMgr.RemoveEvents(&m_bg, EVENT_AV_CAPTURE_CP_0 + m_nodeId);
+	sEventMgr.RemoveEvents(m_bg, EVENT_AV_CAPTURE_CP_0 + m_nodeId);
 #ifdef _DEBUG
-	sEventMgr.AddEvent(&m_bg, &AlteracValley::EventAssaultControlPoint, m_nodeId, EVENT_AV_CAPTURE_CP_0 + m_nodeId, 20000, 1, EVENT_FLAG_DO_NOT_EXECUTE_IN_WORLD_CONTEXT);
+	sEventMgr.AddEvent(m_bg, &AlteracValley::EventAssaultControlPoint, m_nodeId, EVENT_AV_CAPTURE_CP_0 + m_nodeId, 20000, 1, EVENT_FLAG_DO_NOT_EXECUTE_IN_WORLD_CONTEXT);
 #else
-	sEventMgr.AddEvent(&m_bg, &AlteracValley::EventAssaultControlPoint, m_nodeId, EVENT_AV_CAPTURE_CP_0 + m_nodeId, TIME_MINUTE * 4 * 1000, 1, EVENT_FLAG_DO_NOT_EXECUTE_IN_WORLD_CONTEXT);
+	sEventMgr.AddEvent(m_bg, &AlteracValley::EventAssaultControlPoint, m_nodeId, EVENT_AV_CAPTURE_CP_0 + m_nodeId, TIME_MINUTE * 4 * 1000, 1, EVENT_FLAG_DO_NOT_EXECUTE_IN_WORLD_CONTEXT);
 #endif
 
 	// update state
@@ -1028,19 +1031,19 @@ void AVNode::Assault(Player *plr)
 	if( m_template->m_isGraveyard )
 	{
 		// send message
-		m_bg.SendChatMessage(CHAT_MSG_BG_EVENT_ALLIANCE + plr->GetTeam(), 0, "%s claims the %s! If left unchallenged, the %s will control it!", plr->GetName(), m_template->m_name,
+		m_bg->SendChatMessage(CHAT_MSG_BG_EVENT_ALLIANCE + plr->GetTeam(), 0, "%s claims the %s! If left unchallenged, the %s will control it!", plr->GetName(), m_template->m_name,
 			plr->IsTeamHorde() ? "Horde" : "Alliance");
 		
 		plr->m_bgScore.MiscData[BG_SCORE_AV_GRAVEYARDS_ASSAULTED]++;
 	}
 	else
 	{
-		m_bg.Herald("%s is under attack! If left unchecked the %s will destroy it!", m_template->m_name , plr->IsTeamHorde() ? "Horde" : "Alliance");
+		m_bg->Herald("%s is under attack! If left unchecked the %s will destroy it!", m_template->m_name , plr->IsTeamHorde() ? "Horde" : "Alliance");
 		plr->m_bgScore.MiscData[BG_SCORE_AV_TOWERS_ASSAULTED]++;
 	}
 }
 
-void AVNode::Spawn()
+void AlteracValley::AVNode::Spawn()
 {
 	// spawn control point (if we should have one)
 	Log.Debug("AlteracValley", "AVNode::Spawn for %s, state = %u %s, old_state = %u %s", m_template->m_name, m_state, g_stateNames[m_state], m_lastState, g_stateNames[m_lastState]);
@@ -1062,12 +1065,12 @@ void AVNode::Spawn()
 		if( m_flag == NULL )
 		{
 			// initial spawn
-			m_flag = m_bg.SpawnGameObject(g->id[m_state], m_bg.GetMapMgr()->GetMapId(), g->x, g->y, g->z, g->o, 0, 0, 1.0f);
+			m_flag = m_bg->SpawnGameObject(g->id[m_state], m_bg->GetMapMgr()->GetMapId(), g->x, g->y, g->z, g->o, 0, 0, 1.0f);
 			m_flag->bannerslot = static_cast<int8>( m_nodeId );
 			m_flag->SetFaction(g_gameObjectFactions[m_state]);
 			m_flag->SetByte(GAMEOBJECT_BYTES_1, 3, 100);
 			m_flag->SetUInt32Value(GAMEOBJECT_DYNAMIC, 1);
-			m_flag->PushToWorld(m_bg.GetMapMgr());
+			m_flag->PushToWorld(m_bg->GetMapMgr());
 		}
 		else
 		{
@@ -1077,14 +1080,14 @@ void AVNode::Spawn()
 				GameObjectInfo *goi = GameObjectNameStorage.LookupEntry(g->id[m_state]);
 				m_flag->RemoveFromWorld(false);
 				m_flag->SetEntry( g->id[m_state] );
-				m_flag->SetNewGuid(m_bg.GetMapMgr()->GenerateGameobjectGuid());
+				m_flag->SetNewGuid(m_bg->GetMapMgr()->GenerateGameobjectGuid());
 				m_flag->SetInfo(goi);
 				m_flag->SetDisplayId(goi->DisplayID);
 				m_flag->SetByte(GAMEOBJECT_BYTES_1, 1, static_cast<uint8>( goi->Type ));
 				m_flag->SetFaction(g_gameObjectFactions[m_state]);
 				m_flag->SetByte(GAMEOBJECT_BYTES_1, 3, 100);
 				m_flag->SetUInt32Value(GAMEOBJECT_DYNAMIC, 1);
-				m_flag->PushToWorld(m_bg.GetMapMgr());
+				m_flag->PushToWorld(m_bg->GetMapMgr());
 			}
 		}
 	}
@@ -1108,12 +1111,12 @@ void AVNode::Spawn()
 		if( m_aura == NULL )
 		{
 			// initial spawn
-			m_aura = m_bg.SpawnGameObject(g->id[m_state], m_bg.GetMapMgr()->GetMapId(), g->x, g->y, g->z, g->o, 0, 0, 3.0f);
+			m_aura = m_bg->SpawnGameObject(g->id[m_state], m_bg->GetMapMgr()->GetMapId(), g->x, g->y, g->z, g->o, 0, 0, 3.0f);
 			m_aura->SetFaction(g_gameObjectFactions[m_state]);
 			m_aura->SetByte(GAMEOBJECT_BYTES_1, 3, 100);
 			m_aura->SetUInt32Value(GAMEOBJECT_FLAGS, 1);
 			m_aura->SetByte(GAMEOBJECT_BYTES_1, 0, 1);
-			m_aura->PushToWorld(m_bg.GetMapMgr());
+			m_aura->PushToWorld(m_bg->GetMapMgr());
 		}
 		else
 		{
@@ -1123,7 +1126,7 @@ void AVNode::Spawn()
 				GameObjectInfo *goi = GameObjectNameStorage.LookupEntry(g->id[m_state]);
 				m_aura->RemoveFromWorld(false);
 				m_aura->SetEntry( g->id[m_state]);
-				m_aura->SetNewGuid(m_bg.GetMapMgr()->GenerateGameobjectGuid());
+				m_aura->SetNewGuid(m_bg->GetMapMgr()->GenerateGameobjectGuid());
 				m_aura->SetInfo(goi);
 				m_aura->SetDisplayId(goi->DisplayID);
 				m_aura->SetByte(GAMEOBJECT_BYTES_1, 1, static_cast<uint8>( goi->Type ));
@@ -1131,7 +1134,7 @@ void AVNode::Spawn()
 				m_aura->SetByte(GAMEOBJECT_BYTES_1, 3, 100);
 				m_aura->SetUInt32Value(GAMEOBJECT_FLAGS, 1);
 				m_aura->SetByte(GAMEOBJECT_BYTES_1, 0, 1);
-				m_aura->PushToWorld(m_bg.GetMapMgr());
+				m_aura->PushToWorld(m_bg->GetMapMgr());
 			}
 		}
 	}
@@ -1155,7 +1158,7 @@ void AVNode::Spawn()
 		if( m_glow == NULL )
 		{
 			// initial spawn
-			m_glow = m_bg.SpawnGameObject(g->id[m_state], m_bg.GetMapMgr()->GetMapId(), g->x, g->y, g->z, g->o, 0, 0, 1.0f);
+			m_glow = m_bg->SpawnGameObject(g->id[m_state], m_bg->GetMapMgr()->GetMapId(), g->x, g->y, g->z, g->o, 0, 0, 1.0f);
 			m_glow->SetFaction(g_gameObjectFactions[m_state]);
 			m_glow->SetByte(GAMEOBJECT_BYTES_1, 3, 100);
 			m_glow->SetUInt32Value(GAMEOBJECT_FLAGS, 1);
@@ -1164,7 +1167,7 @@ void AVNode::Spawn()
 				m_glow->SetScale(  10.0f);
 			else
 				m_glow->SetScale(  2.0f);
-			m_glow->PushToWorld(m_bg.GetMapMgr());
+			m_glow->PushToWorld(m_bg->GetMapMgr());
 		}
 		else
 		{
@@ -1174,7 +1177,7 @@ void AVNode::Spawn()
 				GameObjectInfo *goi = GameObjectNameStorage.LookupEntry(g->id[m_state]);
 				m_glow->RemoveFromWorld(false);
 				m_glow->SetEntry(  g->id[m_state]);
-				m_glow->SetNewGuid(m_bg.GetMapMgr()->GenerateGameobjectGuid());
+				m_glow->SetNewGuid(m_bg->GetMapMgr()->GenerateGameobjectGuid());
 				m_glow->SetInfo(goi);
 				m_glow->SetDisplayId(goi->DisplayID);
 				m_glow->SetByte(GAMEOBJECT_BYTES_1, 1, static_cast<uint8>( goi->Type ));
@@ -1186,7 +1189,7 @@ void AVNode::Spawn()
 					m_glow->SetScale(  10.0f);
 				else
 					m_glow->SetScale(  2.0f);
-				m_glow->PushToWorld(m_bg.GetMapMgr());
+				m_glow->PushToWorld(m_bg->GetMapMgr());
 			}
 		}
 	}
@@ -1194,10 +1197,10 @@ void AVNode::Spawn()
 
 	// update field states :O
 	if( m_template->m_worldStateFields[m_lastState] != 0 )
-		m_bg.SetWorldState(m_template->m_worldStateFields[m_lastState], 0);
+		m_bg->SetWorldState(m_template->m_worldStateFields[m_lastState], 0);
 
 	if( m_template->m_worldStateFields[m_state] != 0 )
-		m_bg.SetWorldState(m_template->m_worldStateFields[m_state], 1);
+		m_bg->SetWorldState(m_template->m_worldStateFields[m_state], 1);
 
 	// despawn/spawn guards
 	if( m_state == AV_NODE_STATE_ALLIANCE_CONTROLLED || m_state == AV_NODE_STATE_HORDE_CONTROLLED )
@@ -1225,9 +1228,9 @@ void AVNode::Spawn()
 #else
 				z = m_bg.GetMapMgr()->GetLandHeight(x, y);
 #endif*/
-				z = m_bg.GetMapMgr()->GetLandHeight(x, y);
+				z = m_bg->GetMapMgr()->GetLandHeight(x, y);
 				if( z != 0.0f )
-					m_guards.push_back(m_bg.SpawnCreature(m_template->m_guardId[t], x, y, z, 0.0f));
+					m_guards.push_back(m_bg->SpawnCreature(m_template->m_guardId[t], x, y, z, 0.0f));
 			}
 		}
 	}
@@ -1243,22 +1246,22 @@ void AVNode::Spawn()
 		{
 			Log.Debug("AlteracValley", "AVNode::Spawn(%s) : despawning spirit guide", m_template->m_name);
 			// move everyone in the revive queue to a different node
-			map<Creature*, set<uint32> >::iterator itr = m_bg.m_resurrectMap.find(m_spiritGuide);
-			if( itr != m_bg.m_resurrectMap.end() )
+			map<Creature*, set<uint32> >::iterator itr = m_bg->m_resurrectMap.find(m_spiritGuide);
+			if( itr != m_bg->m_resurrectMap.end() )
 			{
 				for(set<uint32>::iterator it2 = itr->second.begin(); it2 != itr->second.end(); ++it2)
 				{
 					// repop him at a new GY
-					Player *plr_tmp = m_bg.GetMapMgr()->GetPlayer(*it2);
+					Player *plr_tmp = m_bg->GetMapMgr()->GetPlayer(*it2);
 					if( plr_tmp != NULL )
 					{
-						m_bg.HookHandleRepop(plr_tmp);
-						m_bg.QueueAtNearestSpiritGuide(plr_tmp, m_spiritGuide);
+						m_bg->HookHandleRepop(plr_tmp);
+						m_bg->QueueAtNearestSpiritGuide(plr_tmp, m_spiritGuide);
 					}
 				}
 				itr->second.clear();
 			}
-			m_bg.RemoveSpiritGuide(m_spiritGuide);
+			m_bg->RemoveSpiritGuide(m_spiritGuide);
 			m_spiritGuide->Despawn(0, 0);
 			m_spiritGuide = NULL;
 		}
@@ -1268,33 +1271,33 @@ void AVNode::Spawn()
 			Log.Debug("AlteracValley", "AVNode::Spawn(%s) : spawning spirit guide", m_template->m_name);
 
 			// spawn new spirit guide
-			m_spiritGuide = m_bg.SpawnSpiritGuide(m_template->m_graveyardLocation.x, m_template->m_graveyardLocation.y, 
+			m_spiritGuide = m_bg->SpawnSpiritGuide(m_template->m_graveyardLocation.x, m_template->m_graveyardLocation.y, 
 				m_template->m_graveyardLocation.z, m_template->m_graveyardLocation.z, 0);
 
 			// add
-			m_bg.AddSpiritGuide(m_spiritGuide);
+			m_bg->AddSpiritGuide(m_spiritGuide);
 		}
 		else if( m_state == AV_NODE_STATE_HORDE_CONTROLLED )
 		{
 			Log.Debug("AlteracValley", "AVNode::Spawn(%s) : spawning spirit guide", m_template->m_name);
 
 			// spawn new spirit guide
-			m_spiritGuide = m_bg.SpawnSpiritGuide(m_template->m_graveyardLocation.x, m_template->m_graveyardLocation.y, 
+			m_spiritGuide = m_bg->SpawnSpiritGuide(m_template->m_graveyardLocation.x, m_template->m_graveyardLocation.y, 
 				m_template->m_graveyardLocation.z, m_template->m_graveyardLocation.z, 1);
 
 			// add
-			m_bg.AddSpiritGuide(m_spiritGuide);
+			m_bg->AddSpiritGuide(m_spiritGuide);
 		}
 	}
 	Log.Debug("AlteracValley", "AVNode::Spawn(%s) : completed for state %u %s", m_template->m_name, m_state, g_stateNames[m_state]);
 }
 
-void AVNode::SpawnGuards(uint32 x)
+void AlteracValley::AVNode::SpawnGuards(uint32 x)
 {
 	Log.Debug("AlteracValley", "AVNode::SpawnGuards(%s) : spawning %u guards", m_template->m_name, m_template->m_guardCount);
 }
 
-void AVNode::ChangeState(uint32 new_state)
+void AlteracValley::AVNode::ChangeState(uint32 new_state)
 {
 	Log.Debug("AlteracValley", "AVNode::ChangeState(%s) : changing to state %u %s, old state was %u %s", m_template->m_name, new_state, g_stateNames[new_state], m_state, g_stateNames[m_state]);
 	m_lastState = m_state;
@@ -1304,7 +1307,7 @@ void AVNode::ChangeState(uint32 new_state)
 	Spawn();
 }
 
-void AVNode::Capture()
+void AlteracValley::AVNode::Capture()
 {
 	if( m_destroyed )
 		return;
@@ -1312,7 +1315,7 @@ void AVNode::Capture()
 	Log.Debug("AlteracValley", "AVNode::Capture(%s) : entering", m_template->m_name);
 
 	// sooo easy
-	sEventMgr.RemoveEvents(&m_bg, EVENT_AV_CAPTURE_CP_0 + m_nodeId);
+	sEventMgr.RemoveEvents(m_bg, EVENT_AV_CAPTURE_CP_0 + m_nodeId);
 	if( m_state == AV_NODE_STATE_HORDE_ASSAULTING )
 		ChangeState(AV_NODE_STATE_HORDE_CONTROLLED);
 	else
@@ -1330,8 +1333,8 @@ void AVNode::Capture()
 			Log.Debug("AlteracValley", "spawning fires at bunker %s", m_template->m_name);
 			while(spi->x != 0.0f)
 			{
-				go = m_bg.SpawnGameObject(AV_GAMEOBJECT_FIRE, m_bg.GetMapMgr()->GetMapId(), spi->x, spi->y, spi->z, spi->o, 0, 35, 1.0f);
-				go->PushToWorld(m_bg.GetMapMgr());
+				go = m_bg->SpawnGameObject(AV_GAMEOBJECT_FIRE, m_bg->GetMapMgr()->GetMapId(), spi->x, spi->y, spi->z, spi->o, 0, 35, 1.0f);
+				go->PushToWorld(m_bg->GetMapMgr());
 				++spi;
 			}
 
@@ -1347,11 +1350,11 @@ void AVNode::Capture()
 			m_destroyed = true;
 
 			// send message
-			m_bg.Herald("The %s has destroyed the %s.", (m_template->m_defaultState == AV_NODE_STATE_ALLIANCE_CONTROLLED) ? "Horde" : "Alliance", m_template->m_name);
+			m_bg->Herald("The %s has destroyed the %s.", (m_template->m_defaultState == AV_NODE_STATE_ALLIANCE_CONTROLLED) ? "Horde" : "Alliance", m_template->m_name);
 
 			if( m_template->m_defaultState == AV_NODE_STATE_ALLIANCE_CONTROLLED )
 			{
-				for(set<Player*>::iterator itx = m_bg.m_players[1].begin(); itx != m_bg.m_players[1].end(); ++itx)
+				for(set<Player*>::iterator itx = m_bg->m_players[1].begin(); itx != m_bg->m_players[1].end(); ++itx)
 				{
 					Player * plr = (*itx);
 					if(!plr) continue;
@@ -1361,7 +1364,7 @@ void AVNode::Capture()
 			}
 			else if( m_template->m_defaultState == AV_NODE_STATE_HORDE_CONTROLLED )
 			{
-				for(set<Player*>::iterator itx = m_bg.m_players[0].begin(); itx != m_bg.m_players[0].end(); ++itx)
+				for(set<Player*>::iterator itx = m_bg->m_players[0].begin(); itx != m_bg->m_players[0].end(); ++itx)
 				{
 					Player * plr = (*itx);
 					if(!plr) continue;
@@ -1380,32 +1383,32 @@ void AVNode::Capture()
 				// spawn alliance npcs if its a horde tower
 				if( m_template->m_defaultState == AV_NODE_STATE_HORDE_CONTROLLED )
 				{
-					m_homeNPC = m_bg.SpawnCreature(g_HomeNpcInfo[m_nodeId].id_a, g_HomeNpcInfo[m_nodeId].a_x, g_HomeNpcInfo[m_nodeId].a_y,
+					m_homeNPC = m_bg->SpawnCreature(g_HomeNpcInfo[m_nodeId].id_a, g_HomeNpcInfo[m_nodeId].a_x, g_HomeNpcInfo[m_nodeId].a_y,
 						g_HomeNpcInfo[m_nodeId].a_z, g_HomeNpcInfo[m_nodeId].a_o);
 				}
 				else
 				{
-					m_homeNPC = m_bg.SpawnCreature(g_HomeNpcInfo[m_nodeId].id_h, g_HomeNpcInfo[m_nodeId].h_x, g_HomeNpcInfo[m_nodeId].h_y,
+					m_homeNPC = m_bg->SpawnCreature(g_HomeNpcInfo[m_nodeId].id_h, g_HomeNpcInfo[m_nodeId].h_x, g_HomeNpcInfo[m_nodeId].h_y,
 						g_HomeNpcInfo[m_nodeId].h_z, g_HomeNpcInfo[m_nodeId].h_o);
 				}
 			}
 
 			// lose 75 reinforcements
 			if( m_template->m_defaultState == AV_NODE_STATE_ALLIANCE_CONTROLLED )
-				m_bg.RemoveReinforcements(0, AV_POINTS_ON_DESTROY_BUNKER);
+				m_bg->RemoveReinforcements(0, AV_POINTS_ON_DESTROY_BUNKER);
 			else
-				m_bg.RemoveReinforcements(1, AV_POINTS_ON_DESTROY_BUNKER);
+				m_bg->RemoveReinforcements(1, AV_POINTS_ON_DESTROY_BUNKER);
 		}
 		else
 		{
 			// saved the tower
-			m_bg.Herald("The %s has taken the %s.", (m_state == AV_NODE_STATE_ALLIANCE_CONTROLLED) ? "Alliance" : "Horde", m_template->m_name);
+			m_bg->Herald("The %s has taken the %s.", (m_state == AV_NODE_STATE_ALLIANCE_CONTROLLED) ? "Alliance" : "Horde", m_template->m_name);
 		}
 	}
 	else
 	{
 		// captured message
-		m_bg.Herald("The %s has taken the %s.", (m_state == AV_NODE_STATE_ALLIANCE_CONTROLLED) ? "Alliance" : "Horde", m_template->m_name);
+		m_bg->Herald("The %s has taken the %s.", (m_state == AV_NODE_STATE_ALLIANCE_CONTROLLED) ? "Alliance" : "Horde", m_template->m_name);
 	}
 }
 
@@ -1539,7 +1542,7 @@ void AlteracValley::OnCreate()
 	}
 	
 	for(uint8 x = 0; x < AV_NUM_CONTROL_POINTS; ++x)
-		m_nodes[x] = new AVNode(*this, &g_nodeTemplates[x], x);
+		m_nodes[x] = new AVNode(this, &g_nodeTemplates[x], x);
 
 	// generals/leaders!
 	SpawnCreature(AV_NPC_GENERAL_VANNDAR_STORMPIKE, 726.969604f, -9.716300f, 50.621391f, 3.377580f);
@@ -1879,30 +1882,5 @@ void AlteracValley::HookOnShadowSight()
 {
 
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 

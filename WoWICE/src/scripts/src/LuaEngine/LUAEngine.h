@@ -171,6 +171,7 @@ enum ServerHooks
 	SERVER_HOOK_ADVANCE_SKILLLINE  = 29,
 	SERVER_HOOK_DUEL_FINISHED = 30,
 	SERVER_HOOK_AURA_REMOVE = 31,
+	SERVER_HOOK_RESURRECT = 32,
 
 	SERVER_HOOK_COUNT,
 };
@@ -222,6 +223,8 @@ struct EventInfoHolder
 	const char * funcName;
 	TimedEvent * te;
 };
+
+std::vector<uint32> OnLoadInfo;
 
 struct LuaObjectBinding
 {

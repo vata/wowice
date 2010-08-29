@@ -30,6 +30,7 @@
 #define TO_UNIT(ptr) static_cast<Unit*>(ptr)
 #define TO_PET(ptr) static_cast<Pet*>(ptr)
 #define TO_ITEM(ptr) static_cast<Item*>(ptr)
+#define TO_GAMEOBJECT(ptr) static_cast<GameObject*>(ptr)
 
 
 #include "Definitions.h"
@@ -154,7 +155,6 @@
 #include "ItemInterface.h"
 #include "Stats.h"
 #include "WorldCreator.h"
-#include "ObjectContainer.h"
 #include "Vehicle.h"
 #include "ObjectMgr.h"
 #include "CThreads.h"

@@ -186,9 +186,6 @@
     <ClCompile Include="..\..\src\wowice-world\ItemInterface.cpp">
       <Filter>EventableObject\Object\Item</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\wowice-world\ObjectContainer.cpp">
-      <Filter>EventableObject\Object\ObjectContainer</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\src\wowice-world\SpellAuras.cpp">
       <Filter>EventableObject\Aura</Filter>
     </ClCompile>
@@ -490,6 +487,7 @@
     <ClCompile Include="..\..\src\wowice-world\SpellProc.cpp">
       <Filter>Spells</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\wowice-world\EquipmentSetMgr.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\wowice-world\Channel.h">
@@ -575,9 +573,6 @@
     </ClInclude>
     <ClInclude Include="..\..\src\wowice-world\ItemPrototype.h">
       <Filter>EventableObject\Object\Item</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\wowice-world\ObjectContainer.h">
-      <Filter>EventableObject\Object\ObjectContainer</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\wowice-world\SpellAuras.h">
       <Filter>EventableObject\Aura</Filter>
@@ -752,6 +747,8 @@
     <ClInclude Include="..\..\src\wowice-world\SpellProc.h">
       <Filter>Spells</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\src\wowice-world\EquipmentSetMgr.h" />
+    <ClInclude Include="..\..\src\wowice-world\PlayerCache.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\..\src\wowice-world\resources.rc" />

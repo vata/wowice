@@ -314,7 +314,7 @@ enum MOD_TYPES
 	SPELL_AURA_283 = 283,
 	SPELL_AURA_284 = 284,
 	SPELL_AURA_MOD_ATTACK_POWER_OF_ARMOR = 285,
-	SPELL_AURA_286 = 286,
+	SPELL_AURA_ALLOW_DOT_TO_CRIT = 286,
 	SPELL_AURA_REFLECT_INFRONT = 287,
 	SPELL_AURA_288 = 288,
 	SPELL_AURA_289 = 289,
@@ -443,12 +443,14 @@ public:
     WoWICE_INLINE uint32 GetSpellId() const {return m_spellProto->Id; }
     WoWICE_INLINE bool IsPassive(){ if(!m_spellProto) return false; return (m_spellProto->Attributes & ATTRIBUTES_PASSIVE && !m_areaAura);}
 
+	void ResetDuration();
+
     WoWICE_INLINE int32 GetDuration() const { return m_duration; }
-	 void SetDuration(int32 duration)
-	 {
-		 m_duration = duration;
-		 timeleft = (uint32)UNIXTIME;
-	 }
+	void SetDuration(int32 duration)
+	{
+		m_duration = duration;
+		ResetDuration();
+	}
 
     WoWICE_INLINE uint16 GetAuraSlot() const { return m_auraSlot; }
 	void SetAuraSlot( uint16 slot ) { m_auraSlot = slot; }
@@ -468,6 +470,8 @@ public:
 	void UpdateModifiers();
 	void EventUpdateAA(float r);
 	void RemoveAA();
+
+	bool DotCanCrit();
 
 	//! GetTimeLeft() milliseconds
 	WoWICE_INLINE uint32 GetTimeLeft() 
@@ -715,7 +719,7 @@ public:
 	void EventPeriodicDamage(uint32);
 	void EventPeriodicDamagePercent(uint32);
 	void EventPeriodicHeal(uint32);
-	void EventPeriodicTriggerSpell(SpellEntry* spellInfo);
+	void EventPeriodicTriggerSpell(SpellEntry* spellInfo, bool overridevalues, int32 overridevalue);
 	void EventPeriodicTrigger(uint32 amount, uint32 type);
 	void EventPeriodicEnergize(uint32,uint32);
 	void EventPeriodicEnergizeVariable(uint32,uint32);
@@ -812,6 +816,8 @@ protected:
 
 	void SendInterrupted(uint8 result, Object * m_caster);
 	void SendChannelUpdate(uint32 time, Object * m_caster);
+	void SendTickImmune(Unit * target, Unit *caster);
+	
 public:
 	bool m_temporary;	// Skip saving
 	bool m_deleted;

@@ -38,7 +38,61 @@ class SealOfCommandSpellProc : public SpellProc
 	}
 };
 
+class EyeForAnEyeSpellProc : public SpellProc
+{
+	SPELL_PROC_FACTORY_FUNCTION(EyeForAnEyeSpellProc);
+
+	bool DoEffect(Unit *victim, SpellEntry *CastingSpell, uint32 flag, uint32 dmg, uint32 abs, int *dmg_overwrite, uint32 weapon_damage_type)
+	{
+		// If this player died by crit damage, don't do dmg back
+		if( ! mTarget->isAlive() )
+			return true;
+
+		// Prevent proc on healing criticals
+		if( CastingSpell != NULL && ! (CastingSpell->c_is_flags & SPELL_FLAG_IS_DAMAGING) )
+			return true;
+
+		dmg_overwrite[0] = dmg * (mOrigSpell->EffectBasePoints[0] +1) / 100;
+
+		int max_dmg = mTarget->GetMaxHealth() / 2;
+
+		if( dmg_overwrite[0] > max_dmg )
+			dmg_overwrite[0] = max_dmg;
+
+		return false;
+	}
+};
+
+class GraceOfTheNaaruSpellProc : public SpellProc
+{
+	SPELL_PROC_FACTORY_FUNCTION(GraceOfTheNaaruSpellProc);
+
+	void Init(Object *obj)
+	{
+		this->mProcClassMask[0] = 0x80000000;
+	}
+};
+
+class SpiritualAttunementSpellProc : public SpellProc
+{
+	SPELL_PROC_FACTORY_FUNCTION(SpiritualAttunementSpellProc);
+
+	bool CanProc(Unit *victim, SpellEntry *CastingSpell)
+	{
+		if( CastingSpell == NULL || ! IsHealingSpell(CastingSpell))
+			return false;
+
+		return true;
+	}
+};
+
 void SpellProcMgr::SetupPaladin()
 {
 	AddByNameHash( SPELL_HASH_SEAL_OF_COMMAND, &SealOfCommandSpellProc::Create );
+	
+	AddByNameHash( SPELL_HASH_EYE_FOR_AN_EYE, &EyeForAnEyeSpellProc::Create );
+
+	AddByNameHash( SPELL_HASH_GRACE_OF_THE_NAARU, &GraceOfTheNaaruSpellProc::Create );
+
+	AddByNameHash( SPELL_HASH_SPIRITUAL_ATTUNEMENT, &SpiritualAttunementSpellProc::Create );
 }

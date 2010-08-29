@@ -70,18 +70,18 @@ void AuthSocket::OnDisconnect()
 void AuthSocket::HandleChallenge()
 {
 	// No header
-	if(GetReadBuffer().GetContiguiousBytes() < 4)
+	if(readBuffer.GetContiguiousBytes() < 4)
 		return;
 
 	// Check the rest of the packet is complete.
-	uint8 * ReceiveBuffer = (uint8*)GetReadBuffer().GetBufferStart();
+	uint8 * ReceiveBuffer = (uint8*)readBuffer.GetBufferStart();
 
 	uint16 full_size = *(uint16*)&ReceiveBuffer[2];
 
 
 	sLog.outDetail("[AuthChallenge] got header, body is 0x%02X bytes", full_size);
 
-	if(GetReadBuffer().GetSize() < uint32(full_size+4))
+	if(readBuffer.GetSize() < uint32(full_size+4))
 		return;
 
 	// Copy the data into our cached challenge structure
@@ -95,7 +95,7 @@ void AuthSocket::HandleChallenge()
 
 	//memcpy(&m_challenge, ReceiveBuffer, full_size + 4);
 	//RemoveReadBufferBytes(full_size + 4, true);
-	GetReadBuffer().Read(&m_challenge, full_size + 4);
+	readBuffer.Read(&m_challenge, full_size + 4);
 
 	// Check client build.
 
@@ -250,14 +250,14 @@ void AuthSocket::HandleChallenge()
 
 void AuthSocket::HandleProof()
 {
-	if(GetReadBuffer().GetSize() < sizeof(sAuthLogonProof_C))
+	if(readBuffer.GetSize() < sizeof(sAuthLogonProof_C))
 		return ;
 
 	// patch
 	if(m_patch&&!m_account)
 	{
 		//RemoveReadBufferBytes(75,false);
-		GetReadBuffer().Remove(75);
+		readBuffer.Remove(75);
 		sLog.outDebug("[AuthLogonProof] Intitiating PatchJob");
 		uint8 bytes[2] = {0x01,0x0a};
 		Send(bytes,2);
@@ -272,7 +272,7 @@ void AuthSocket::HandleProof()
 
 	sAuthLogonProof_C lp;
 	//Read(sizeof(sAuthLogonProof_C), (uint8*)&lp);
-	GetReadBuffer().Read(&lp, sizeof(sAuthLogonProof_C));
+	readBuffer.Read(&lp, sizeof(sAuthLogonProof_C));
 
 	BigNumber A;
 	A.SetBinary(lp.A, 32);
@@ -473,10 +473,10 @@ static AuthHandler Handlers[MAX_AUTH_CMD] = {
 
 void AuthSocket::OnRead()
 {
-	if(GetReadBuffer().GetContiguiousBytes() < 1)
+	if(readBuffer.GetContiguiousBytes() < 1)
 		return;
 
-	uint8 Command = *(uint8*)GetReadBuffer().GetBufferStart();
+	uint8 Command = *(uint8*)readBuffer.GetBufferStart();
 	last_recv = UNIXTIME;
 	if(Command < MAX_AUTH_CMD && Handlers[Command] != NULL)
 		(this->*Handlers[Command])();
@@ -492,15 +492,15 @@ void AuthSocket::HandleRealmlist()
 void AuthSocket::HandleReconnectChallenge()
 {
 	// No header
-	if(GetReadBuffer().GetContiguiousBytes() < 4)
+	if(readBuffer.GetContiguiousBytes() < 4)
 		return;
 
 	// Check the rest of the packet is complete.
-	uint8 * ReceiveBuffer = /*GetReadBuffer(0)*/(uint8*)GetReadBuffer().GetBufferStart();
+	uint8 * ReceiveBuffer = /*GetReadBuffer(0)*/(uint8*)readBuffer.GetBufferStart();
 	uint16 full_size = *(uint16*)&ReceiveBuffer[2];
 	sLog.outDetail("[AuthChallenge] got header, body is 0x%02X bytes", full_size);
 
-	if(GetReadBuffer().GetSize() < (uint32)full_size+4)
+	if(readBuffer.GetSize() < (uint32)full_size+4)
 		return;
 
 	// Copy the data into our cached challenge structure
@@ -514,7 +514,7 @@ void AuthSocket::HandleReconnectChallenge()
 
 	memcpy(&m_challenge, ReceiveBuffer, full_size + 4);
 	//RemoveReadBufferBytes(full_size + 4, false);
-	GetReadBuffer().Read(&m_challenge, full_size + 4);
+	readBuffer.Read(&m_challenge, full_size + 4);
 
 	// Check client build.
 	if(m_challenge.build > LogonServer::getSingleton().max_build ||
@@ -621,7 +621,7 @@ void AuthSocket::HandleReconnectProof()
 	// Don't update when IP banned, but update anyway if it's an account ban
 	sLogonSQL->Execute("UPDATE accounts SET lastlogin=NOW(), lastip='%s' WHERE acct=%u;", GetRemoteIP().c_str(), m_account->AccountId);
 	//RemoveReadBufferBytes(GetReadBufferSize(), true);
-	GetReadBuffer().Remove( GetReadBuffer().GetSize() );
+	readBuffer.Remove( readBuffer.GetSize() );
 
 	if(!m_account->SessionKey)
 	{
@@ -646,7 +646,7 @@ void AuthSocket::HandleTransferAccept()
 		return;
 
 	//RemoveReadBufferBytes(1,false);
-	GetReadBuffer().Remove(1);
+	readBuffer.Remove(1);
 	PatchMgr::getSingleton().BeginPatchJob(m_patch,this,0);
 }
 
@@ -657,10 +657,10 @@ void AuthSocket::HandleTransferResume()
 		return;
 
 	//RemoveReadBufferBytes(1,false);
-	GetReadBuffer().Remove(1);
+	readBuffer.Remove(1);
 	uint64 size;
 	//Read(8,(uint8*)&size);
-	GetReadBuffer().Read(&size, 8);
+	readBuffer.Read(&size, 8);
 	if(size>=m_patch->FileSize)
 		return;
 
@@ -670,6 +670,6 @@ void AuthSocket::HandleTransferResume()
 void AuthSocket::HandleTransferCancel()
 {
 	//RemoveReadBufferBytes(1,false);
-	GetReadBuffer().Remove(1);
+	readBuffer.Remove(1);
 	Disconnect();
 }

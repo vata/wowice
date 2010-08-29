@@ -165,6 +165,23 @@ bool CutToTheChase(uint32 i, Aura *pAura, bool apply)
 	return true;
 }
 
+bool DeadlyBrew(uint32 i, Aura *pAura, bool apply)
+{
+	Unit *target = pAura->GetTarget();
+	if( target == NULL )
+		return true;
+
+	if (apply)
+	{
+		static uint32 classMask[3] = { 0x1000A000, 0, 0 };
+		target->AddProcTriggerSpell(pAura->GetSpellProto(), pAura->GetSpellProto(), pAura->m_casterGuid, pAura->GetSpellProto()->procChance, PROC_ON_CAST_SPELL , 0, NULL, classMask);
+	}
+	else
+		target->RemoveProcTriggerSpell(pAura->GetSpellId(), pAura->m_casterGuid);
+
+	return true;
+}
+
 void SetupRogueSpells(ScriptMgr * mgr)
 {
 	mgr->register_dummy_spell(5938, &Shiv);
@@ -187,4 +204,7 @@ void SetupRogueSpells(ScriptMgr * mgr)
 
 	uint32 CutToTheChaseIds[] = { 51664, 51665, 51667, 51668, 51669, 0 };
 	mgr->register_dummy_aura(CutToTheChaseIds, &CutToTheChase);
+
+	mgr->register_dummy_aura(51625, &DeadlyBrew);
+	mgr->register_dummy_aura(51626, &DeadlyBrew);
 }

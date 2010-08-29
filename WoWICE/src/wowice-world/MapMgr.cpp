@@ -384,18 +384,18 @@ void MapMgr::PushObject(Object *obj)
 			{
 				Wowice::Util::WOWICE_ASSERT(    obj->GetUIdFromGUID() <= m_CreatureHighGuid );
 				CreatureStorage[ obj->GetUIdFromGUID() ] = static_cast< Creature* >( obj );
-				if(((Creature*)obj)->m_spawn != NULL)
+				if(TO_CREATURE(obj)->m_spawn != NULL)
 				{
-					_sqlids_creatures.insert(make_pair( ((Creature*)obj)->m_spawn->id, ((Creature*)obj) ) );
+					_sqlids_creatures.insert(make_pair( TO_CREATURE(obj)->m_spawn->id, TO_CREATURE(obj) ) );
 				}
 			}break;
 
 		case HIGHGUID_TYPE_GAMEOBJECT:
 			{
 				GOStorage[ obj->GetUIdFromGUID() ] = static_cast< GameObject* >( obj );
-				if(((GameObject*)obj)->m_spawn != NULL)
+				if(TO_GAMEOBJECT(obj)->m_spawn != NULL)
 				{
-					_sqlids_gameobjects.insert(make_pair( ((GameObject*)obj)->m_spawn->id, ((GameObject*)obj) ) );
+					_sqlids_gameobjects.insert(make_pair( TO_GAMEOBJECT(obj)->m_spawn->id, TO_GAMEOBJECT(obj) ) );
 				}
 			}break;
 
@@ -500,9 +500,9 @@ void MapMgr::RemoveObject(Object *obj, bool free_guid)
 		case HIGHGUID_TYPE_UNIT:
 			Wowice::Util::WOWICE_ASSERT(   obj->GetUIdFromGUID() <= m_CreatureHighGuid);
 			CreatureStorage[ obj->GetUIdFromGUID() ] = NULL;
-			if(((Creature*)obj)->m_spawn != NULL)
+			if(TO_CREATURE(obj)->m_spawn != NULL)
 			{
-				_sqlids_creatures.erase(((Creature*)obj)->m_spawn->id);
+				_sqlids_creatures.erase(TO_CREATURE(obj)->m_spawn->id);
 			}
 
 			if(free_guid)
@@ -523,9 +523,9 @@ void MapMgr::RemoveObject(Object *obj, bool free_guid)
 		case HIGHGUID_TYPE_GAMEOBJECT:
 			Wowice::Util::WOWICE_ASSERT(    obj->GetUIdFromGUID() <= m_GOHighGuid );
 			GOStorage[ obj->GetUIdFromGUID() ] = NULL;
-			if(((GameObject*)obj)->m_spawn != NULL)
+			if(TO_GAMEOBJECT(obj)->m_spawn != NULL)
 			{
-				_sqlids_gameobjects.erase(((GameObject*)obj)->m_spawn->id);
+				_sqlids_gameobjects.erase(TO_GAMEOBJECT(obj)->m_spawn->id);
 			}
 
 			if(free_guid)
@@ -1441,7 +1441,7 @@ Unit* MapMgr::GetUnit(const uint64 & guid)
 		break;
 
 	case HIGHGUID_TYPE_PLAYER:
-		return GetPlayer( (uint32)guid );
+		return GetPlayer( Wowice::Util::GUID_LOPART(guid) );
 		break;
 
 	case HIGHGUID_TYPE_PET:
@@ -1517,10 +1517,9 @@ void MapMgr::_PerformObjectDuties()
 		Player* ptr;
 		for(; itr != m_PlayerStorage.end(); )
 		{
-			ptr = static_cast< Player* >( itr->second );
+			ptr = itr->second;
 			++itr;
-			if( ptr != NULL )
-				ptr->Update( difftime );
+			ptr->Update( difftime );
 		}
 
 		lastUnitUpdate = mstime;
@@ -1720,7 +1719,7 @@ GameObject * MapMgr::GetSqlIdGameObject(uint32 sqlid)
 	return (itr == _sqlids_gameobjects.end()) ? NULL : itr->second;
 }
 
-Creature * MapMgr::CreateCreature(uint32 entry, bool isVehicle)
+Creature * MapMgr::CreateCreature(uint32 entry)
 {
 	uint64 newguid = (uint64)HIGHGUID_TYPE_UNIT << 32;
 	char * pHighGuid = (char*)&newguid;
@@ -1730,19 +1729,13 @@ Creature * MapMgr::CreateCreature(uint32 entry, bool isVehicle)
 	pHighGuid[5] |= pEntry[2];
 	pHighGuid[6] |= pEntry[3];
 
-	if (isVehicle)
-		sLog.outDebug("CreateCreature: IsVehicle = true");
-
 	if(_reusable_guids_creature.size())
 	{
 		uint32 guid = _reusable_guids_creature.front();
 		_reusable_guids_creature.pop_front();
 
 		newguid |= guid;
-		if (isVehicle)
-			return new Vehicle(newguid);
-		else
-			return new Creature(newguid);
+		return new Creature(newguid);
 	}
 
     if( ++m_CreatureHighGuid  >= CreatureStorage.size() )
@@ -1753,10 +1746,7 @@ Creature * MapMgr::CreateCreature(uint32 entry, bool isVehicle)
 	}
 
 	newguid |= m_CreatureHighGuid;
-	if (isVehicle)
-		return new Vehicle(newguid);
-	else
-		return new Creature(newguid);
+	return new Creature(newguid);
 }
 
 // Spawns the object too, without which you can not interact with the object

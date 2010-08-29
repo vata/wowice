@@ -264,8 +264,11 @@ public:
 	void SetUnitToFollowAngle(float angle) { m_fallowAngle = angle; }
 	bool setInFront(Unit* target);
 	Unit* getUnitToFollow();
+	uint64 getUnitToFollowGUID(){ return m_UnitToFollow; }
 	Unit* getUnitToFollowBackup();
+	uint64 getUnitToFollowBackupGUID(){ return m_UnitToFollow_backup; }
 	Unit* getUnitToFear();
+	uint64 getUnitToFearGUID(){ return m_UnitToFear; }
 	Creature* getFormationLinkTarget();
 	void setCreatureState(CreatureState state){ m_creatureState = state; }
 	WoWICE_INLINE uint8 getAIState() { return static_cast<uint8>( m_AIState ); }
@@ -539,7 +542,5 @@ public:
 	bool skip_reset_hp;
 
 	void WipeCurrentTarget();
-	bool CheckCurrentTarget();
-	bool TargetUpdateCheck(Unit * ptr);
 };
 #endif

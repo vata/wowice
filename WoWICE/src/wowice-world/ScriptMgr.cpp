@@ -593,9 +593,16 @@ void ScriptMgr::register_item_gossip_script(uint32 entry, GossipScript * gs)
 }
 
 /* CreatureAI Stuff */
-CreatureAIScript::CreatureAIScript(Creature* creature) : _unit(creature)
+CreatureAIScript::CreatureAIScript(Creature* creature) : _unit(creature), linkedCreatureAI(NULL)
 {
 
+}
+
+CreatureAIScript::~CreatureAIScript()
+{
+	//notify our linked creature that we are being deleted.
+	if( linkedCreatureAI != NULL )
+		linkedCreatureAI->LinkedCreatureDeleted();
 }
 
 void CreatureAIScript::RegisterAIUpdateEvent(uint32 frequency)
@@ -612,6 +619,26 @@ void CreatureAIScript::ModifyAIUpdateEvent(uint32 newfrequency)
 void CreatureAIScript::RemoveAIUpdateEvent()
 {
 	sEventMgr.RemoveEvents(_unit, EVENT_SCRIPT_UPDATE_EVENT);
+}
+
+void CreatureAIScript::LinkedCreatureDeleted()
+{
+	linkedCreatureAI = NULL;
+}
+
+void CreatureAIScript::SetLinkedCreature(CreatureAIScript* creatureAI)
+{ 
+	//notify our linked creature that we are not more linked
+	if( linkedCreatureAI != NULL )
+		linkedCreatureAI->LinkedCreatureDeleted();
+
+	//link to the new creature
+	linkedCreatureAI = creatureAI;
+}
+
+bool CreatureAIScript::IsAlive()
+{
+	return _unit->isAlive();
 }
 
 /* GameObjectAI Stuff */
@@ -1227,3 +1254,16 @@ void HookInterface::OnAuraRemove(Aura * aura)
        for(ServerHookList::iterator itr = hookList.begin(); itr != hookList.end(); ++itr)
                ((tOnAuraRemove)*itr)(aura);
  }
+
+bool HookInterface::OnResurrect(Player * pPlayer)
+{
+	ServerHookList hookList = sScriptMgr._hooks[SERVER_HOOK_EVENT_ON_RESURRECT];
+	bool ret_val = true;
+	for(ServerHookList::iterator itr = hookList.begin(); itr != hookList.end(); ++itr)
+	{
+		bool rv = ((tOnResurrect)*itr)(pPlayer);
+		if (rv == false) // never set ret_val back to true, once it's false
+			ret_val = false;
+	}
+	return ret_val;
+}

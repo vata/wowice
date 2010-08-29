@@ -119,6 +119,7 @@ class GameObject;
 class Unit;
 class Group;
 class Pet;
+class Spell;
 
 //====================================================================
 //  Object
@@ -142,6 +143,8 @@ public:
 	virtual void OnPushToWorld() { }
 	virtual void OnPrePushToWorld() { }
 	virtual void RemoveFromWorld(bool free_guid);
+	//called AFTER removing the Object from world.
+	virtual void OnRemoveFromWorld() { }
 
 	//! Guid always comes first
 	const uint64& GetGUID() const{ return GetUInt64Value( OBJECT_FIELD_GUID ); }
@@ -166,8 +169,10 @@ public:
 	const uint8& GetTypeId() const { return m_objectTypeId; }
 	bool IsUnit()	{ return ( m_objectTypeId == TYPEID_UNIT || m_objectTypeId == TYPEID_PLAYER ); }
 	bool IsPlayer() { return m_objectTypeId == TYPEID_PLAYER; }
-	virtual bool IsCreature() { return m_objectTypeId == TYPEID_UNIT; }
-	virtual bool IsPet();
+	bool IsCreature() { return m_objectTypeId == TYPEID_UNIT; }
+	bool IsItem() { return m_objectTypeId == TYPEID_ITEM; }
+	bool IsGO() { return m_objectTypeId == TYPEID_GAMEOBJECT; }
+	virtual bool IsPet() { return false; }
 	bool IsGameObject() { return m_objectTypeId == TYPEID_GAMEOBJECT; }
 
 	//! This includes any nested objects we have, inventory for example.
@@ -302,10 +307,10 @@ public:
 
 	void  RemoveFlag( const uint32 index, uint32 oldFlag );
 
-	bool HasFlag( const uint32 index, uint32 flag ) const
+	uint32 HasFlag( const uint32 index, uint32 flag ) const
 	{
 		Wowice::Util::WOWICE_ASSERT(    index < m_valuesCount );
-		return (m_uint32Values[ index ] & flag) != 0;
+		return m_uint32Values[ index ] & flag;
 	}
 
 	////////////////////////////////////////
@@ -510,6 +515,10 @@ public:
 
 	void EventSpellDamage(uint64 Victim, uint32 SpellID, uint32 Damage);
 	void SpellNonMeleeDamageLog(Unit *pVictim, uint32 spellID, uint32 damage, bool allowProc, bool static_damage = false, bool no_remove_auras = false);
+	virtual bool IsCriticalDamageForSpell(Object *victim, SpellEntry *spell) { return false; }
+	virtual float GetCriticalDamageBonusForSpell(Object *victim, SpellEntry *spell, float amount) { return 0; }
+	virtual bool IsCriticalHealForSpell(Object *victim, SpellEntry *spell) { return false; }
+	virtual float GetCriticalHealBonusForSpell(Object *victim, SpellEntry *spell, float amount) { return 0; }
 
 	//*****************************************************************************************
 	//* SpellLog packets just to keep the code cleaner and better to read
@@ -649,6 +658,10 @@ public:
 	}
 
 	bool m_loadedFromDB;
+
+	//
+	Player* GetPlayerOwner();
+	std::set<Spell*> m_pendingSpells;
 };
 
 

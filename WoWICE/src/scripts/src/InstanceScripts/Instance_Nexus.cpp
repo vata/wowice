@@ -145,6 +145,12 @@ public:
 		delete this;
     };
 
+	void ChaoticRiftDeleted(uint64 chaoticRiftGuid)
+	{
+		if( pChaoticRift != NULL && pChaoticRift->GetUnit()->GetGUID() == chaoticRiftGuid )
+			pChaoticRift = NULL;
+	}
+
 private:
     int32					mSummonTimer;
 	uint8					mSummon;
@@ -182,6 +188,13 @@ public:
 		Despawn( 2000, 0 );
 		ParentClass::OnCombatStop(pTarget);
 	};
+
+	void OnDespawn()
+	{
+		AnomalusAI* anomalus = static_cast< AnomalusAI* >( GetNearestCreature(CN_ANOMALUS) );
+		if( anomalus != NULL )
+			anomalus->ChaoticRiftDeleted( GetUnit()->GetGUID() );
+	}
 
 	void Destroy()
     {

@@ -1349,6 +1349,27 @@ void LuaHookOnAuraRemove(Aura * aura)
 	RELEASE_LOCK
 }
 
+bool LuaHookOnResurrect(Player * pPlayer)
+{
+	GET_LOCK
+	bool result = true;
+	for(vector<uint16>::iterator itr = EventAsToFuncName[SERVER_HOOK_RESURRECT].begin(); itr != EventAsToFuncName[SERVER_HOOK_RESURRECT].end(); ++itr) 
+	{
+		sLuaMgr.BeginCall((*itr));
+		sLuaMgr.PUSH_INT(SERVER_HOOK_RESURRECT);
+		sLuaMgr.PUSH_UNIT(pPlayer);
+		if (sLuaMgr.ExecuteCall(2,1)) 
+		{
+			lua_State * L = sLuaMgr.getluState();
+			if(!lua_isnoneornil(L,1) && !lua_toboolean(L,1) )
+				result = false;
+			sLuaMgr.EndCall(1);
+		}
+	}
+	RELEASE_LOCK
+	return result;
+}
+
 bool LuaOnDummySpell(uint32 effectIndex, Spell * pSpell)
 {
 	GET_LOCK
@@ -1586,6 +1607,12 @@ public:
 		sLuaMgr.ExecuteCall(2);
 
 		RELEASE_LOCK
+		uint32 iid = _unit->GetInstanceID();
+		if (_unit->GetMapMgr() == NULL || _unit->GetMapMgr()->GetMapInfo()->type == INSTANCE_NULL)
+			iid = 0;
+		OnLoadInfo.push_back(_unit->GetMapId());
+		OnLoadInfo.push_back(iid);
+		OnLoadInfo.push_back(GET_LOWGUID_PART(_unit->GetGUID()));
 	}
 	void OnReachWP(uint32 iWaypointId, bool bForwards)
 	{
@@ -2402,7 +2429,6 @@ void LuaEngine::Startup()
 	Log.Notice("LuaEngineMgr", "LuaHypArc Lua Engine %s: Loaded", ARCH);
 	Log.Color(TNORMAL);
 	Log.Line();
-	Sleep(1200);
 	//Create a new global state that will server as the lua universe.
 	lu = lua_open();
 
@@ -2500,6 +2526,7 @@ void LuaEngine::Startup()
 	RegisterHook(SERVER_HOOK_ADVANCE_SKILLLINE,(void*)LuaHookOnAdvanceSkillLine)
 	RegisterHook(SERVER_HOOK_DUEL_FINISHED,(void*)LuaHookOnDuelFinished)
 	RegisterHook(SERVER_HOOK_AURA_REMOVE,(void*)LuaHookOnAuraRemove)
+	RegisterHook(SERVER_HOOK_RESURRECT,(void*)LuaHookOnResurrect)
 
 	for (std::map<uint32,uint16>::iterator itr = m_luaDummySpells.begin(); itr != m_luaDummySpells.end(); ++itr)
 	{
@@ -2917,6 +2944,7 @@ void LuaEngine::Restart()
 	RegisterHook(SERVER_HOOK_ADVANCE_SKILLLINE,(void*)LuaHookOnAdvanceSkillLine)
 	RegisterHook(SERVER_HOOK_DUEL_FINISHED,(void*)LuaHookOnDuelFinished)
 	RegisterHook(SERVER_HOOK_AURA_REMOVE,(void*)LuaHookOnAuraRemove)
+	RegisterHook(SERVER_HOOK_RESURRECT,(void*)LuaHookOnResurrect)
 
 	for (std::map<uint32,uint16>::iterator itr = m_luaDummySpells.begin(); itr != m_luaDummySpells.end(); ++itr)
 	{
@@ -2928,6 +2956,30 @@ void LuaEngine::Restart()
 	}
 	RELEASE_LOCK
 	getcoLock().Release();
+
+	//hyper: do OnSpawns for spawned creatures.
+	vector<uint32> temp = OnLoadInfo;
+	OnLoadInfo.clear();
+	for ( vector<uint32>::iterator itr = temp.begin(); itr != temp.end(); itr += 3)
+	{
+		//*itr = mapid; *(itr+1) = iid; *(itr+2) = lowguid
+		MapMgr * mgr = NULL;
+		if (*(itr+1) == 0) //no instance
+			mgr = sInstanceMgr.GetMapMgr(*itr);
+		else
+		{
+			Instance *inst = sInstanceMgr.GetInstanceByIds(*itr, *(itr+1));
+			if (inst != NULL)
+				mgr = inst->m_mapMgr;
+		}
+		if (mgr != NULL)
+		{
+			Creature * unit = mgr->GetCreature(*(itr+2));
+			if (unit != NULL && unit->IsInWorld() && unit->GetScript() != NULL)
+				unit->GetScript()->OnLoad();
+		}
+	}
+	temp.clear();
 
 	Log.Notice("LuaEngineMgr","Done restarting engine.");
 }

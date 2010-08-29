@@ -74,6 +74,20 @@ bool Penance(uint32 i, Spell * pSpell)
 	return true;
 }
 
+bool DivineAegis(uint32 i, Aura *pAura, bool apply)
+{
+	Unit *target = pAura->GetTarget();
+	if( target == NULL )
+		return true;
+
+	if (apply)
+		target->AddProcTriggerSpell(47753, pAura->GetSpellId(), pAura->m_casterGuid, pAura->GetSpellProto()->procChance, PROC_ON_SPELL_CRIT_HIT, 0, NULL, NULL);
+	else
+		target->RemoveProcTriggerSpell(47753, pAura->m_casterGuid);
+
+	return true;
+}
+
 void SetupPriestSpells(ScriptMgr * mgr)
 {
 	uint32 PenanceIds[] =
@@ -85,4 +99,7 @@ void SetupPriestSpells(ScriptMgr * mgr)
 		0,
 	};
     mgr->register_dummy_spell(PenanceIds, &Penance);
+
+	uint32 DivineAegisIds[] = { 47509, 47511, 47515, 0 };
+	mgr->register_dummy_aura(DivineAegisIds, &DivineAegis);
 }

@@ -125,7 +125,6 @@ struct CreatureProto
 	uint32 boss;
 	uint32 money;
 	uint32 invisibility_type;
-	uint32 death_state;
 	float	walk_speed;//base movement
 	float	run_speed;//most of the time mobs use this
 	float fly_speed;
@@ -254,6 +253,14 @@ enum TIME_REMOVE_CORPSE
 	TIME_CREATURE_REMOVE_BOSSCORPSE = 180000*5,
 };
 
+// THIS IS NOT SAME AS DEATH STATE IN Unit.h
+enum CREATURE_DEATH_STATE
+{
+	CREATURE_STATE_ALIVE = 0,			// no special death state
+	CREATURE_STATE_APPEAR_DEAD = 1,		// these creatures are actually alive but appears as dead for client
+	CREATURE_STATE_DEAD = 2				// these creatures are dead
+};
+
 struct PetSpellCooldown
 {
 	uint32 spellId;
@@ -281,12 +288,8 @@ public:
 	Creature(uint64 guid);
 	virtual ~Creature();
 
-	// Override superclass method that returns false
-	bool IsCreature() { return true; }
-
 	// For derived subclasses of Creature
 	virtual bool IsVehicle() { return false; }
-    bool IsPet(){ return false; }
 
 	bool Load(CreatureSpawn *spawn, uint32 mode, MapInfo *info);
 	void Load(CreatureProto * proto_, float x, float y, float z, float o= 0);
@@ -593,13 +596,13 @@ public:
 	bool isCritter();
 	bool isTrainingDummy(){
 
-		if( GetProto() != NULL && GetProto()->isTrainingDummy )
+		if( GetProto()->isTrainingDummy )
 			return true;
 		else
 			return false;
 	}
 
-	void TotemExpire();
+	void TotemExpire(uint32 delayedDespawn = 0);
 	void FormationLinkUp(uint32 SqlId);
 	void ChannelLinkUpGO(uint32 SqlId);
 	void ChannelLinkUpCreature(uint32 SqlId);
@@ -630,6 +633,7 @@ public:
 	Player * m_escorter;
 	void DestroyCustomWaypointMap();
 	bool IsInLimboState() { return m_limbostate; }
+	void SetLimboState(bool set) { m_limbostate = set; };
 	uint32 GetLineByFamily(CreatureFamilyEntry * family){return family->skilline ? family->skilline : 0;};
 	void RemoveLimboState(Unit * healer);
 	void SetGuardWaypoints();

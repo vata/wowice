@@ -16,6 +16,7 @@
 #ifndef __SPELL_H
 #define __SPELL_H
 
+#include "SpellTarget.h"
 #include "SpellFailure.h"
 #include "StdAfx.h"
 
@@ -552,7 +553,7 @@ enum Flags4
 	FLAGS4_PLAYER_RANGED_WAND           = 0x400000,
 	FLAGS4_UNK25						= 0x800000,
 	FLAGS4_TYPE_OFFHAND					= 0x1000000,
-	FLAGS4_UNK27						= 0x2000000,
+	FLAGS4_NO_HEALING_BONUS				= 0x2000000,
 	FLAGS4_CAN_PROC_ON_TRIGGERED		= 0x4000000,
 	FLAGS4_UNK29						= 0x8000000,
 	FLAGS4_UNK30						= 0x10000000,
@@ -606,7 +607,7 @@ enum Flags6
 	FLAGS6_UNK4							= 0x4,
 	FLAGS6_UNK5							= 0x8,
 	FLAGS6_UNK6							= 0x10,
-	FLAGS6_UNK7							= 0x20,
+	FLAGS6_SINGLE_TARGET_AURA			= 0x20,
 	FLAGS6_UNK8							= 0x40,
 	FLAGS6_UNK9							= 0x80,
 	FLAGS6_UNK10						= 0x100,
@@ -1260,7 +1261,7 @@ WoWICE_INLINE bool TargetTypeCheck(Object *obj,uint32 ReqCreatureTypeMask)
 	if( obj->GetTypeId() == TYPEID_UNIT )
 	{
 		CreatureInfo* inf = static_cast< Creature* >( obj )->GetCreatureInfo();
-		if( inf == NULL || !( 1 << ( inf->Type - 1 ) & ReqCreatureTypeMask ) )
+		if( !( 1 << ( inf->Type - 1 ) & ReqCreatureTypeMask ) )
 			return false;
 	}
 	else if(obj->GetTypeId() == TYPEID_PLAYER && !(UNIT_TYPE_HUMANOID_BIT & ReqCreatureTypeMask))
@@ -1444,7 +1445,7 @@ typedef enum {
    EFF_TARGET_NETHETDRAKE_SUMMON_LOCATION				= 73,
    EFF_TARGET_SCRIPTED_LOCATION							= 74,
    EFF_TARGET_LOCATION_INFRONT_CASTER_AT_RANGE			= 75,
-   EFF_TARGET_ENEMYS_IN_ARE_CHANNELED_WITH_EXCEPTIONS	= 76,
+   EFF_TARGET_ENEMIES_IN_AREA_CHANNELED_WITH_EXCEPTIONS	= 76,
    EFF_TARGET_SELECTED_ENEMY_CHANNELED					= 77,
    EFF_TARGET_SELECTED_ENEMY_DEADLY_POISON				= 86,
    EFF_TARGET_NON_COMBAT_PET							= 90,
@@ -1589,10 +1590,15 @@ enum SpellDidHitResult
 	SPELL_DID_HIT_MISS						= 1,
 	SPELL_DID_HIT_RESIST					= 2,
 	SPELL_DID_HIT_DODGE						= 3,
-	SPELL_DID_HIT_DEFLECT					= 4,
+	SPELL_DID_HIT_PARRY						= 4,
 	SPELL_DID_HIT_BLOCK						= 5,
 	SPELL_DID_HIT_EVADE						= 6,
 	SPELL_DID_HIT_IMMUNE					= 7,
+	SPELL_DID_HIT_IMMUNE2					= 8, 
+	SPELL_DID_HIT_DEFLECT					= 9,  // See - http://www.wowwiki.com/Deflect
+	SPELL_DID_HIT_ABSORB					= 10, // See - http://www.wowwiki.com/Absorb
+	SPELL_DID_HIT_REFLECT					= 11, // See - http://www.wowwiki.com/Reflect
+	NUM_SPELL_DID_HIT_RESULTS,
 };
 
 // Target constraints for spells ( mostly scripted stuff )
@@ -1643,12 +1649,17 @@ private:
 };
 
 // Spell instance
-class SERVER_DECL Spell
+class SERVER_DECL Spell : public EventableObject
 {
 public:
     friend class DummySpellHandler;
     Spell(Object* Caster, SpellEntry *info, bool triggered, Aura* aur);
     ~Spell();
+
+	int32 event_GetInstanceID() { return m_caster->GetInstanceID(); }
+
+	bool m_overrideBasePoints;
+	uint32 m_overridenBasePoints[3];
 
     // Fills specified targets at the area of effect
     void FillSpecifiedTargetsInArea(float srcx,float srcy,float srcz,uint32 ind, uint32 specification);
@@ -1667,7 +1678,7 @@ public:
     //get single Enemy as target
     uint64 GetSinglePossibleFriend(uint32 i, float prange= 0);
 	//generate possible target list for a spell. Use as last resort since it is not accurate
-    void GenerateTargets(SpellCastTargets *store_buff);
+    bool GenerateTargets(SpellCastTargets *store_buff);
     // Fills the target map of the spell packet
     void FillTargetMap(uint32);
     // See if we hit the target or can it resist (evade/immune/resist on spellgo) (0=success)
@@ -1684,6 +1695,7 @@ public:
     void finish(bool successful = true);
     // Handle the Effects of the Spell
     void HandleEffects(uint64 guid,uint32 i);
+	void HandleCastEffects(uint64 guid, uint32 i);
     // Take Power from the caster based on spell power usage
     bool TakePower();
     // Has power?
@@ -1756,9 +1768,9 @@ public:
     void SendChannelUpdate(uint32 time);
     void SendChannelStart(uint32 duration);
     void SendResurrectRequest(Player* target);
-    void SendHealSpellOnPlayer(Object* caster, Object* target, uint32 dmg,bool critical, uint32 overheal, uint32 spellid);
-	void SendHealManaSpellOnPlayer(Object * caster, Object * target, uint32 dmg, uint32 powertype);
 	void SendTameFailure( uint8 failure );
+	static void SendHealSpellOnPlayer(Object* caster, Object* target, uint32 healed, bool critical, uint32 overhealed, uint32 spellid, uint32 absorbed = 0);
+	static void SendHealManaSpellOnPlayer(Object * caster, Object * target, uint32 dmg, uint32 powertype, uint32 spellid);
 
 
     void HandleAddAura(uint64 guid);
@@ -1950,6 +1962,7 @@ public:
 	// It should NOT be used for weapon_damage_type which needs: 0 = MELEE, 1 = OFFHAND, 2 = RANGED
 	WoWICE_INLINE uint32 GetType() { return ( GetProto()->Spell_Dmg_Type == SPELL_DMG_TYPE_NONE ? SPELL_DMG_TYPE_MAGIC : GetProto()->Spell_Dmg_Type ); }
 
+	std::map<uint64, Aura*> m_pendingAuras;
 	TargetsList UniqueTargets;
     SpellTargetsList    ModeratedTargets;
 
@@ -2207,6 +2220,14 @@ public: //Modified by LUAppArc private->public
     void DetermineSkillUp(uint32 skillid,uint32 targetlevel,uint32 multiplicator = 1);
     void DetermineSkillUp(uint32 skillid);
 
+	uint32 GetTargetType(uint32 value, uint32 i);
+	bool AddTarget(uint32 i, uint32 TargetType, Object* obj);
+	void AddAOETargets(uint32 i, uint32 TargetType, float r, uint32 maxtargets);
+	void AddPartyTargets(uint32 i, uint32 TargetType, float r, uint32 maxtargets);
+	void AddRaidTargets(uint32 i, uint32 TargetType, float r, uint32 maxtargets, bool partylimit = false);
+	void AddChainTargets(uint32 i, uint32 TargetType, float r, uint32 maxtargets);
+	void AddConeTargets(uint32 i, uint32 TargetType, float r, uint32 maxtargets);
+
 public:
 	SpellEntry* m_spellInfo;
 	SpellEntry* m_spellInfo_override;//used by spells that should have dynamic variables in spellentry.
@@ -2216,5 +2237,6 @@ public:
 void ApplyDiminishingReturnTimer(uint32 * Duration, Unit * Target, SpellEntry * spell);
 void UnapplyDiminishingReturnTimer(Unit * Target, SpellEntry * spell);
 uint32 GetDiminishingGroup(uint32 NameHash);
+uint32 GetSpellDuration(SpellEntry* sp, Unit* caster = NULL);
 
 #endif
