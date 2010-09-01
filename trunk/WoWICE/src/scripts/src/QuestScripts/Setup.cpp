@@ -13,7 +13,6 @@
  * this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "StdAfx.h"
 #include "Setup.h"
 #define SKIP_ALLOCATOR_SHARING 1
 #include <ScriptSetup.h>
@@ -25,25 +24,65 @@ extern "C" SCRIPT_DECL uint32 _exp_get_script_type()
 
 extern "C" SCRIPT_DECL void _exp_script_register(ScriptMgr* mgr)
 {
+//	###		Classes Quests	###
 	SetupDruid(mgr);
-	SetupPaladin(mgr);
-	SetupShadowArcScript(mgr);
-	SetupHellfirePeninsula(mgr);
-	SetupBladeEdgeMountains(mgr);
-	SetupTerrokarForest(mgr);
-	SetupNagrand(mgr);
-	SetupSilverpineForest(mgr);
-	SetupZangarmarsh(mgr);
-	SetupUndercity(mgr);
-	SetupAzuremystIsle(mgr);
-	SetupUnGoro(mgr);
 	SetupMage(mgr);
-	SetupBarrens(mgr);
-	SetupIsleOfQuelDanas(mgr);
-	SetupGhostlands(mgr);
+	SetupPaladin(mgr);
+	SetupWarrior(mgr);
+
+//	###		Proffessions Quests	###
+	SetupFirstAid(mgr);
+
+//	###		Zones Quests	###
+	SetupArathiHighlands(mgr);
+	SetupAzshara(mgr);
+	SetupAzuremystIsle(mgr);
+	SetupBladeEdgeMountains(mgr);
+	SetupBlastedLands(mgr);
+	SetupBloodmystIsle(mgr);
+	SetupBurningSteppes(mgr);
+	//SetupDarkshore(mgr);
+	SetupDeathKnight(mgr);
+	SetupDesolace(mgr);
+	SetupDragonblight(mgr);
+	SetupDuskwood(mgr);
+	SetupDustwallowMarsh(mgr);
+	SetupEasternPlaguelands(mgr);
 	SetupEversongWoods(mgr);
+	SetupGhostlands(mgr);
+	SetupHellfirePeninsula(mgr);
+	SetupHillsbradFoothills(mgr);
+	SetupHowlingFjord(mgr);
+	SetupIsleOfQuelDanas(mgr);
+	SetupLochModan(mgr);
+	SetupMulgore(mgr);
+	SetupNagrand(mgr);
+	SetupNetherstorm(mgr);
+	SetupRedrigeMountains(mgr);
+	SetupShadowmoon(mgr);
+	SetupSilithus(mgr);
+	SetupSilvermoonCity(mgr);
+	SetupSilverpineForest(mgr);
+	SetupStormwind(mgr);
+	SetupStranglethornVale(mgr);
+	SetupTanaris(mgr);
+	SetupTeldrassil(mgr);
+	SetupTerrokarForest(mgr);
+	SetupTheStormPeaks(mgr);
 	SetupThousandNeedles(mgr);
-	SetupOrgrimmar(mgr);
+	SetupTirisfalGlades(mgr);
+	SetupUndercity(mgr);
+	SetupUnGoro(mgr);
+	SetupWestfall(mgr);
+	SetupWinterspring(mgr);
+	SetupZangarmarsh(mgr);
+	SetupBarrens(mgr);
+	SetupBoreanTundra(mgr);
+	SetupSholazarBasin(mgr);
+//	###		Misc		###
+	SetupQuestGossip(mgr);
+	SetupQuestHooks(mgr);
+	SetupUnsorted(mgr);
 }
 
 #ifdef WIN32

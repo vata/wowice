@@ -45,8 +45,35 @@ bool Readiness(uint32 i, Spell * pSpell)
     return true;
 }
 
+bool MastersCall(uint32 i, Spell *pSpell)
+{
+	Player *caster = pSpell->p_caster;
+
+	if( caster == NULL )
+		return true;
+
+	Pet *Summon = caster->GetSummon();
+	if( Summon == NULL || Summon->IsDead() )
+		return true;
+
+	switch(i) {
+		case 0:
+			Summon->CastSpell(caster, pSpell->damage, true);
+
+			return true;
+
+		case 1:
+			Summon->CastSpell(Summon, 62305, true);
+
+			return true;
+	}
+
+	return true;
+}
+
 void SetupHunterSpells(ScriptMgr * mgr)
 {
-    mgr->register_dummy_spell(24531, &Refocus);
-    mgr->register_dummy_spell(23989, &Readiness);
+	mgr->register_dummy_spell(24531, &Refocus);
+	mgr->register_dummy_spell(23989, &Readiness);
+	mgr->register_dummy_spell(53271, &MastersCall);
 }

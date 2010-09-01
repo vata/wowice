@@ -30,10 +30,6 @@ class DarkRuneStormcallerAI : public MoonScriptCreatureAI
 		AddSpell(STORMCALLER_SHADOWWORD, Target_RandomPlayer, 16, 0, 12);
 	};
 	
-	void Destroy()
-	{
-		delete this;
-	};
 };
 
 //Iron Golem Custodian  
@@ -51,10 +47,6 @@ class IronGolemCustodianAI : public MoonScriptCreatureAI
 		AddSpell(CUSTODIAN_GROUND_SMASH, Target_ClosestPlayer, 20, 0, 14);
 	};
 	
-	void Destroy()
-	{
-		delete this;
-	};
 };
 
 //Dark Rune Protector 
@@ -72,10 +64,6 @@ class DarkRuneProtectorAI : public MoonScriptCreatureAI
 		AddSpell(PROTECTOR_CLAVE, Target_Current, 35, 0, 8);
 	};
 	
-	void Destroy()
-	{
-		delete this;
-	};
 };
 
 //Lesser Air Elemental 
@@ -91,10 +79,6 @@ class LesserAirElementalAI : public MoonScriptCreatureAI
 		AddSpell(ELEMENTAL_LIGHTNING_BOLT, Target_RandomPlayerNotCurrent, 20, 3, 14);
 	};
 	
-	void Destroy()
-	{
-		delete this;
-	};
 };
 
 //Dark Rune Worker
@@ -111,11 +95,7 @@ class DarkRuneWorkerAI : public MoonScriptCreatureAI
 		AddSpell(WORKER_ENRAGE, Target_Self, 5, 0, 60, 10);
 		AddSpell(WORKER_PIERCE_ARMOR, Target_Current, 35, 0, 45);
 	};
-	
-	void Destroy()
-	{
-		delete this;
-	};
+
 };
 
 //Dark Rune Warrior
@@ -133,10 +113,6 @@ class DarkRuneWarriorAI : public MoonScriptCreatureAI
 		AddSpell(WARRIOR_HEROIC_STRIKE, Target_Current, 35, 0, 12);
 	};
 	
-	void Destroy()
-	{
-		delete this;
-	};
 };
 
 //Dark Rune Theurgist 
@@ -156,10 +132,6 @@ class DarkRuneTheurgistAI : public MoonScriptCreatureAI
 		AddSpell(THEURGIST_IRON_MIGHT, Target_Self, 5, 0, 60);
 	};
 	
-	void Destroy()
-	{
-		delete this;
-	};
 };
 
 //Dark Rune Shaper 
@@ -175,10 +147,6 @@ class DarkRuneShaperAI : public MoonScriptCreatureAI
 		AddSpell(SHAPER_RAY, Target_RandomPlayer, 35, 1.5, 12);
 	};
 	
-	void Destroy()
-	{
-		delete this;
-	};
 };
 
 //Dark Rune Scholar
@@ -194,10 +162,6 @@ class DarkRuneScholarAI : public MoonScriptCreatureAI
 		AddSpell(SCHOLAR_SILANCE, Target_RandomPlayerNotCurrent, 35, 2.5, 12);
 	};
 	
-	void Destroy()
-	{
-		delete this;
-	};
 };
 
 //Dark Rune Giant
@@ -215,10 +179,6 @@ class DarkRuneGiantAI : public MoonScriptCreatureAI
 		AddSpell(GIANT_STOMP, Target_RandomPlayer, 35, 0, 14, 0, 10);
 	};
 	
-	void Destroy()
-	{
-		delete this;
-	};
 };
 
 
@@ -237,10 +197,6 @@ class DarkRuneConstructAI : public MoonScriptCreatureAI
 		AddSpell(RAGING_CLAVE, Target_Current, 30, 0, 9, 0, 10);
 	};
 	
-	void Destroy()
-	{
-		delete this;
-	};
 };
 
 //Lightning Construct
@@ -258,10 +214,6 @@ class DarkLightningConstructAI : public MoonScriptCreatureAI
 		AddSpell(LIGHTNING_CHAIN_LIGHTNING, Target_Current, 30, 3, 8, 0, 30);
 	};
 	
-	void Destroy()
-	{
-		delete this;
-	};
 };
 
 //Forged Iron Trogg
@@ -277,10 +229,6 @@ class ForgedIronTroggAI : public MoonScriptCreatureAI
 		AddSpell(LIGHTNING_CHAIN_LIGHTNING, Target_RandomPlayer, 30, 2, 8, 0, 10);
 	};
 	
-	void Destroy()
-	{
-		delete this;
-	};
 };
 
 //Maiden of Grief 
@@ -313,11 +261,6 @@ class MaidenOfGriefAI : public MoonScriptCreatureAI
 	{
 		mShock->TriggerCooldown();	
 		ParentClass::OnCombatStart(pTarget);
-	};
-	
-	void Destroy()
-	{
-		delete this;
 	};
 	
 protected:
@@ -377,11 +320,6 @@ class KrystallusAI : public MoonScriptCreatureAI
 			RemoveTimer( mShatterTimer );
 		}
 	}
-	
-	void Destroy()
-	{
-		delete this;
-	};
 	
 protected:
 	SpellDesc* mStomp;

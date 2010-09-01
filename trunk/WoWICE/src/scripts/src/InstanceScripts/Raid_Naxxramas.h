@@ -38,8 +38,6 @@ class CarrionSpinnerAI : public MoonScriptCreatureAI
 {
 	MOONSCRIPT_FACTORY_FUNCTION( CarrionSpinnerAI, MoonScriptCreatureAI );
 	CarrionSpinnerAI( Creature* pCreature );
-
-	void Destroy();
 };
 
 /////////////////////////////////////////////////////////////////////////////////
@@ -52,8 +50,6 @@ class DreadCreeperAI : public MoonScriptCreatureAI
 {
 	MOONSCRIPT_FACTORY_FUNCTION( DreadCreeperAI, MoonScriptCreatureAI );
 	DreadCreeperAI( Creature* pCreature );
-
-	void Destroy();
 };
 
 /////////////////////////////////////////////////////////////////////////////////
@@ -66,8 +62,6 @@ class NaxxramasCultistAI : public MoonScriptCreatureAI
 {
 	MOONSCRIPT_FACTORY_FUNCTION( NaxxramasCultistAI, MoonScriptCreatureAI );
 	NaxxramasCultistAI( Creature* pCreature );
-
-	void Destroy();
 };
 //Necro Stalker AI - was it removed ?
 /////////////////////////////////////////////////////////////////////////////////
@@ -80,8 +74,6 @@ class VenomStalkerAI : public MoonScriptCreatureAI
 {
 	MOONSCRIPT_FACTORY_FUNCTION( VenomStalkerAI, MoonScriptCreatureAI );
 	VenomStalkerAI( Creature* pCreature );
-
-	void Destroy();
 };
 
 /////////////////////////////////////////////////////////////////////////////////
@@ -97,8 +89,6 @@ class TombHorrorAI : public MoonScriptCreatureAI
 {
 	MOONSCRIPT_FACTORY_FUNCTION( TombHorrorAI, MoonScriptCreatureAI );
 	TombHorrorAI( Creature* pCreature );
-
-	void Destroy();
 };
 
 /////////////////////////////////////////////////////////////////////////////////
@@ -113,8 +103,6 @@ class NaxxramasAcolyteAI : public MoonScriptCreatureAI
 {
 	MOONSCRIPT_FACTORY_FUNCTION( NaxxramasAcolyteAI, MoonScriptCreatureAI );
 	NaxxramasAcolyteAI( Creature* pCreature );
-
-	void Destroy();
 };
 
 /////////////////////////////////////////////////////////////////////////////////
@@ -131,7 +119,6 @@ class VigilantShadeAI : public MoonScriptCreatureAI
 
 	void OnCombatStart( Unit* pTarget );
 	void OnCombatStop( Unit* pTarget );
-	void Destroy();
 };
 
 /////////////////////////////////////////////////////////////////////////////////
@@ -144,8 +131,6 @@ class CryptReaverAI : public MoonScriptCreatureAI
 {
 	MOONSCRIPT_FACTORY_FUNCTION( CryptReaverAI, MoonScriptCreatureAI );
 	CryptReaverAI( Creature* pCreature );
-
-	void Destroy();
 };
 
 /////////////////////////////////////////////////////////////////////////////////
@@ -176,8 +161,6 @@ class MaexxnaSpiderlingAI : public MoonScriptCreatureAI
 {
 	MOONSCRIPT_FACTORY_FUNCTION( MaexxnaSpiderlingAI, MoonScriptCreatureAI );
 	MaexxnaSpiderlingAI( Creature* pCreature );
-
-	void Destroy();
 };
 
 /////////////////////////////////////////////////////////////////////////////////
@@ -215,7 +198,6 @@ class MaexxnaAI : public MoonScriptBossAI
 	void OnCombatStart( Unit* pTarget );
 	void OnCombatStop( Unit* pTarget );
 	void AIUpdate();
-	void Destroy();
 
 	SpellDesc*			mWebWrapProc;
 	bool				mHasEnraged;
@@ -405,7 +387,6 @@ class InfectiousGhoulAI : public MoonScriptCreatureAI
 
 	void OnCombatStart( Unit* pTarget );
 	void AIUpdate();
-	void Destroy();
 
 	bool	mEnraged;
 };
@@ -425,7 +406,6 @@ class StoneskinGargoyleAI : public MoonScriptCreatureAI
 
 	bool HasStoneskin();
 	void AIUpdate();
-	void Destroy();
 
 	SpellDesc*	mStoneskin;
 };
@@ -439,8 +419,6 @@ class FrenziedBatAI : public MoonScriptCreatureAI
 {
 	MOONSCRIPT_FACTORY_FUNCTION( FrenziedBatAI, MoonScriptCreatureAI );
 	FrenziedBatAI( Creature* pCreature );
-
-	void Destroy();
 };
 
 /////////////////////////////////////////////////////////////////////////////////
@@ -458,7 +436,6 @@ class PlagueBeastAI : public MoonScriptCreatureAI
 
 	void OnCombatStart( Unit* pTarget );
 	void OnCombatStop( Unit* pTarget );
-	void Destroy();
 };
 
 /////////////////////////////////////////////////////////////////////////////////
@@ -474,7 +451,6 @@ class EyeStalkerAI : public MoonScriptCreatureAI
 
 	void OnCombatStart( Unit* pTarget );
 	void AIUpdate();
-	void Destroy();
 };
 
 /////////////////////////////////////////////////////////////////////////////////
@@ -716,7 +692,6 @@ class DeathKnightAI : public MoonScriptCreatureAI
 	DeathKnightAI( Creature* pCreature );
 
 	void OnCombatStart( Unit* pTarget );
-	void Destroy();
 };
 
 /////////////////////////////////////////////////////////////////////////////////
@@ -734,7 +709,6 @@ class DeathKnightCaptainAI : public MoonScriptCreatureAI
 	DeathKnightCaptainAI( Creature* pCreature );
 
 	void OnCombatStart( Unit* pTarget );
-	void Destroy();
 };
 
 /////////////////////////////////////////////////////////////////////////////////
@@ -748,8 +722,6 @@ class GhostOfNaxxramasAI : public MoonScriptCreatureAI
 {
 	MOONSCRIPT_FACTORY_FUNCTION( GhostOfNaxxramasAI, MoonScriptCreatureAI );
 	GhostOfNaxxramasAI( Creature* pCreature );
-
-	void Destroy();
 };
 
 /////////////////////////////////////////////////////////////////////////////////
@@ -805,8 +777,6 @@ class NecroKnightAI : public MoonScriptCreatureAI
 {
 	MOONSCRIPT_FACTORY_FUNCTION( NecroKnightAI, MoonScriptCreatureAI );
 	NecroKnightAI( Creature* pCreature );
-
-	void Destroy();
 };
 
 /////////////////////////////////////////////////////////////////////////////////
@@ -821,8 +791,6 @@ class SkeletalSmithAI : public MoonScriptCreatureAI
 {
 	MOONSCRIPT_FACTORY_FUNCTION( SkeletalSmithAI, MoonScriptCreatureAI );
 	SkeletalSmithAI( Creature* pCreature );
-
-	void Destroy();
 };
 
 /////////////////////////////////////////////////////////////////////////////////
@@ -886,7 +854,6 @@ class DarkTouchedWarriorAI : public MoonScriptCreatureAI
 
 	void OnCombatStart( Unit* pTarget );
 	void AIUpdate();
-	void Destroy();
 
 	int32	mResetHateTimer;
 };
@@ -900,8 +867,6 @@ class RisenSquireAI : public MoonScriptCreatureAI
 {
 	MOONSCRIPT_FACTORY_FUNCTION( RisenSquireAI, MoonScriptCreatureAI );
 	RisenSquireAI( Creature* pCreature );
-
-	void Destroy();
 };
 
 /////////////////////////////////////////////////////////////////////////////////
@@ -916,8 +881,6 @@ class UnholyAxeAI : public MoonScriptCreatureAI
 {
 	MOONSCRIPT_FACTORY_FUNCTION( UnholyAxeAI, MoonScriptCreatureAI );
 	UnholyAxeAI( Creature* pCreature );
-
-	void Destroy();
 };
 
 /////////////////////////////////////////////////////////////////////////////////
@@ -930,8 +893,6 @@ class UnholySwordAI : public MoonScriptCreatureAI
 {
 	MOONSCRIPT_FACTORY_FUNCTION( UnholySwordAI, MoonScriptCreatureAI );
 	UnholySwordAI( Creature* pCreature );
-
-	void Destroy();
 };
 
 /////////////////////////////////////////////////////////////////////////////////
@@ -946,8 +907,6 @@ class UnholyStaffAI : public MoonScriptCreatureAI
 {
 	MOONSCRIPT_FACTORY_FUNCTION( UnholyStaffAI, MoonScriptCreatureAI );
 	UnholyStaffAI( Creature* pCreature );
-
-	void Destroy();
 };
 
 /////////////////////////////////////////////////////////////////////////////////
@@ -969,7 +928,6 @@ class InstructorRazuviousAI : public MoonScriptBossAI
 	void OnCombatStop( Unit* pTarget );
 	void OnDied( Unit* pKiller );
 	void AIUpdate();
-	void Destroy();
 
 	set< DeathKnightUnderstudyAI* >	mStudents;
 };
@@ -996,11 +954,6 @@ void InstructorRazuviousAI::OnDied( Unit* pKiller )
 void InstructorRazuviousAI::AIUpdate()
 {
 	ParentClass::AIUpdate();
-};
-
-void InstructorRazuviousAI::Destroy()
-{
-	delete this;
 };
 
 /////////////////////////////////////////////////////////////////////////////////
@@ -1122,7 +1075,6 @@ class PatchworkGolemAI : public MoonScriptCreatureAI
 
 	void OnCombatStart( Unit* pTarget );
 	void OnCombatStop( Unit* pTarget );
-	void Destroy();
 };
 
 /////////////////////////////////////////////////////////////////////////////////
@@ -1136,8 +1088,6 @@ class BileRetcherAI : public MoonScriptCreatureAI
 {
 	MOONSCRIPT_FACTORY_FUNCTION( BileRetcherAI, MoonScriptCreatureAI );
 	BileRetcherAI( Creature* pCreature );
-
-	void Destroy();
 };
 
 /////////////////////////////////////////////////////////////////////////////////
@@ -1152,7 +1102,6 @@ class SewageSlimeAI : public MoonScriptCreatureAI
 
 	void OnCombatStart( Unit* pTarget );
 	void OnCombatStop( Unit* pTarget );
-	void Destroy();
 };
 
 /////////////////////////////////////////////////////////////////////////////////
@@ -1167,7 +1116,6 @@ class EmbalmingSlimeAI : public MoonScriptCreatureAI
 
 	void OnCombatStart( Unit* pTarget );
 	void OnCombatStop( Unit* pTarget );
-	void Destroy();
 };
 
 /////////////////////////////////////////////////////////////////////////////////
@@ -1182,8 +1130,6 @@ class MadScientistAI : public MoonScriptCreatureAI
 {
 	MOONSCRIPT_FACTORY_FUNCTION( MadScientistAI, MoonScriptCreatureAI );
 	MadScientistAI( Creature* pCreature );
-
-	void Destroy();
 };
 
 /////////////////////////////////////////////////////////////////////////////////
@@ -1198,8 +1144,6 @@ class LivingMonstrosityAI : public MoonScriptCreatureAI
 {
 	MOONSCRIPT_FACTORY_FUNCTION( LivingMonstrosityAI, MoonScriptCreatureAI );
 	LivingMonstrosityAI( Creature* pCreature );
-
-	void Destroy();
 };
 
 /////////////////////////////////////////////////////////////////////////////////
@@ -1215,7 +1159,6 @@ class LightningTotemAI : public MoonScriptCreatureAI
 
 	void OnCombatStart( Unit* pTarget );
 	void AIUpdate();
-	void Destroy();
 };
 
 /////////////////////////////////////////////////////////////////////////////////
@@ -1232,7 +1175,6 @@ class StitchedColossusAI : public MoonScriptCreatureAI
 
 	void OnCombatStart( Unit* pTarget );
 	void AIUpdate();
-	void Destroy();
 
 	bool	mEnraged;
 };
@@ -1246,8 +1188,6 @@ class MaraudingGeistAI : public MoonScriptCreatureAI
 {
 	MOONSCRIPT_FACTORY_FUNCTION( MaraudingGeistAI, MoonScriptCreatureAI );
 	MaraudingGeistAI( Creature* pCreature );
-
-	void Destroy();
 };
 
 /////////////////////////////////////////////////////////////////////////////////
@@ -1267,7 +1207,6 @@ class PatchwerkAI : public MoonScriptBossAI
 	PatchwerkAI( Creature* pCreature );
 
 	void AIUpdate();
-	void Destroy();
 
 	bool	mEnraged;
 };

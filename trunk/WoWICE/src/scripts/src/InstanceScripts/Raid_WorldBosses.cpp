@@ -208,11 +208,6 @@ public:
         }
     }
 
-	void Destroy()
-	{
-		delete this;
-	};
-
 protected:
 
     int nrspells;
@@ -433,11 +428,6 @@ public:
         }
     }
 
-	void Destroy()
-	{
-		delete this;
-	};
-
 protected:
 
     Creature* Summoned;
@@ -565,11 +555,6 @@ public:
             }
         }
     }
-
-	void Destroy()
-	{
-		delete this;
-	};
 
 protected:
 
@@ -756,11 +741,6 @@ public:
         }
     }
 
-	void Destroy()
-	{
-		delete this;
-	};
-
 protected:
 
     int nrspells;
@@ -877,11 +857,6 @@ public:
             }
         }
     }
-
-	void Destroy()
-	{
-		delete this;
-	};
 
 protected:
 
@@ -1082,12 +1057,6 @@ public:
         }
     }
 	
-
-	void Destroy()
-	{
-		delete this;
-	};
-
 protected:
 
     bool Shade1; //75%
@@ -1166,10 +1135,6 @@ public:
         CheckDist();
     }
 
-	void Destroy()
-	{
-		delete this;
-	};
 };
 
 
@@ -1408,11 +1373,6 @@ public:
             }
         }
     }
-
-	void Destroy()
-	{
-		delete this;
-	};
 
 protected:
 
@@ -1672,11 +1632,6 @@ public:
         }
     }
 
-	void Destroy()
-	{
-		delete this;
-	};
-
 protected:
 
     int enrage;
@@ -1848,11 +1803,6 @@ public:
             }
         }
     }
-
-	void Destroy()
-	{
-		delete this;
-	};
 
 protected:
 
@@ -2081,11 +2031,6 @@ public:
         }
     }
 
-	void Destroy()
-	{
-		delete this;
-	};
-
 protected:
     
     bool enraged; //Just to make sure
@@ -2218,11 +2163,6 @@ public:
             }
         }
     }
-
-	void Destroy()
-	{
-		delete this;
-	};
 
 protected:
 

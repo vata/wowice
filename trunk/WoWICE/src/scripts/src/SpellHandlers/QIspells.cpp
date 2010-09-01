@@ -1300,7 +1300,7 @@ bool GoreBladder(uint32 i, Spell * pSpell)
 	if( !target || target->GetEntry() != 29392 || !target->IsDead())
 		return true;
 
-	((Creature*)target)->Despawn(500, 360000);
+	TO_CREATURE(target)->Despawn(500, 360000);
 
 	Player * pPlayer = pSpell->p_caster;
 	QuestLogEntry * en = pPlayer->GetQuestLogForEntry( 12810 );
@@ -1384,7 +1384,7 @@ bool DISMEMBER(uint32 i, Spell * pSpell)
  if( !target || ( target->GetEntry() != 23657 && target->GetEntry() != 23661 && target->GetEntry() != 23662 && target->GetEntry() != 23663 && target->GetEntry() != 23664 && target->GetEntry() != 23665 && target->GetEntry() != 23666 && target->GetEntry() != 23667 && target->GetEntry() != 23668  && target->GetEntry() != 23669 && target->GetEntry() != 23670)  || !target->IsDead())
   return true;
  
-((Creature*)target)->Despawn(500,300000);
+TO_CREATURE(target)->Despawn(500,300000);
   
  Player * pPlayer = pSpell->p_caster;
  int entry;
@@ -1459,7 +1459,7 @@ bool RagefistTorch(uint32 i, Spell * pSpell)
  if( !target || ( target->GetEntry() != 25342 && target->GetEntry() != 25343))
   return true;
 
- ((Creature*)target)->Despawn(500, 360000);
+ TO_CREATURE(target)->Despawn(500, 360000);
 
  Player * pPlayer = pSpell->p_caster;
  QuestLogEntry * en = pPlayer->GetQuestLogForEntry( 11593 );
@@ -1508,7 +1508,7 @@ bool HodirsHorn(uint32 i, Spell * pSpell)
   if( !target || ( target->GetEntry() != 29974 && target->GetEntry() != 30144 && target->GetEntry() != 30135)  || !target->IsDead())
   return true;
 
- ((Creature*)target)->Despawn(500, 360000);
+ TO_CREATURE(target)->Despawn(500, 360000);
 
  Player * pPlayer = pSpell->p_caster;
  QuestLogEntry * en = pPlayer->GetQuestLogForEntry( 12977 );
@@ -1530,7 +1530,7 @@ bool TelluricPoultice(uint32 i, Spell * pSpell)
  if( !target || target->GetEntry() != 30035)
   return true;
 
- ((Creature*)target)->Despawn(500, 360000);
+ TO_CREATURE(target)->Despawn(500, 360000);
 
  Player * pPlayer = pSpell->p_caster;
  QuestLogEntry * en = pPlayer->GetQuestLogForEntry( 12937 );
@@ -1552,7 +1552,7 @@ bool Screwdriver(uint32 i, Spell * pSpell)
  if( !target || target->GetEntry() != 25753 || !target->IsDead())
   return true;
 
- ((Creature*)target)->Despawn(500, 360000);
+ TO_CREATURE(target)->Despawn(500, 360000);
 
  Player * pPlayer = pSpell->p_caster;
  QuestLogEntry * en = pPlayer->GetQuestLogForEntry( 11730 );
@@ -1575,7 +1575,7 @@ bool IncineratingOil(uint32 i, Spell * pSpell)
  if( !target || target->GetEntry() != 28156 )
   return true;
 
- ((Creature*)target)->Despawn(500, 360000);
+ TO_CREATURE(target)->Despawn(500, 360000);
 
  Player * pPlayer = pSpell->p_caster;
  QuestLogEntry * en = pPlayer->GetQuestLogForEntry( 12568 );

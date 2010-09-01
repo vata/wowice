@@ -122,9 +122,6 @@ public:
 
 	void OnCreatureDeath( Creature* pVictim, Unit* pKiller )
 	{
-		if ( pVictim == NULL || pVictim->GetCreatureInfo() == NULL )
-			return;
-
 		EncounterMap::iterator Iter = mEncounters.find( pVictim->GetEntry() );
 		if ( Iter == mEncounters.end() )
 			return;
@@ -169,10 +166,6 @@ public:
 		};
 	};
 
-	void Destroy()
-	{
-		delete this;
-	};
 };
 
 /////////////////////////////////////////////////////////////////////////////////
@@ -304,11 +297,6 @@ class GeneralBjarngrimAI : public MoonScriptBossAI
 			SetPhase(3);
 			break;
 		}
-	};
-
-	void Destroy()
-	{
-		delete this;
 	};
 
 private:
@@ -456,11 +444,6 @@ class Volkhan : public MoonScriptCreatureAI
 		m_bStomp = false;
 	};
 
-	void Destroy()
-	{
-		delete this;
-	};
-
 	SpellDesc*	        mTemper;
 	SpellDesc*	        mStomp;
 	Location	        m_cVolkhanWP;
@@ -484,10 +467,6 @@ class MoltenGolem : public MoonScriptCreatureAI
 		SpawnCreature( CN_BRITTLE_GOLEM );
 		Despawn(1);
 	}
-	void Destroy()
-	{
-		delete this;
-	};
 };
 
 class BrittleGolem : public MoonScriptCreatureAI
@@ -497,11 +476,6 @@ class BrittleGolem : public MoonScriptCreatureAI
 	{
 		SetCanEnterCombat( false );
         SetCanMove( false );
-	};
-
-	void Destroy()
-	{
-		delete this;
 	};
 };
 
@@ -515,10 +489,6 @@ class VolkhansAnvil : public MoonScriptCreatureAI
         SetCanMove( false );
 	};
 
-	void Destroy()
-	{
-		delete this;
-	};
 };
 
 bool Temper(uint32 i, Spell *pSpell)
@@ -687,11 +657,6 @@ class LokenAI : public MoonScriptCreatureAI
 		};
 		
 		ParentClass::AIUpdate();
-	};
-
-	void Destroy()
-	{
-		delete this;
 	};
 
 	SpellDesc*	mNova;

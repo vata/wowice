@@ -19,7 +19,6 @@
 /************************************************************************/
 
 RegType<Item> ItemMethods[] = {
-    // Item Gossip functions
     { "GossipCreateMenu", &luaItem::GossipCreateMenu },
 	{ "GossipMenuAddItem", &luaItem::GossipMenuAddItem },
 	{ "GossipSendMenu", &luaItem::GossipSendMenu },
@@ -28,14 +27,12 @@ RegType<Item> ItemMethods[] = {
 	{ "GetOwner", &luaItem::GetOwner },
 	{ "AddEnchantment", &luaItem::AddEnchantment },
 	{ "RemoveEnchantment", &luaItem::RemoveEnchantment },
-	//hypersniper added commands
 	{ "GetEntryId", &luaItem::GetEntryId },
 	{ "GetName", &luaItem::GetName },
 	{ "GetSpellId", &luaItem::GetSpellId },
 	{ "GetSpellTrigger", &luaItem::GetSpellTrigger },
 	{ "GetGUID", &luaItem::GetGUID },
 	{ "AddLoot", &luaItem::AddLoot},
-	//3004 ends here
 	{ "SetByteValue", &luaItem::SetByteValue },
 	{ "GetByteValue", &luaItem::GetByteValue },
 	{ "GetItemLink", &luaItem::GetItemLink },
@@ -58,6 +55,16 @@ RegType<Item> ItemMethods[] = {
 	{ "GetObjectType", &luaItem::GetObjectType },
 	{ "Remove", &luaItem::Remove },
 	{ "Create", &luaItem::Create },
+	{ "ModUInt32Value", &luaItem::ModUInt32Value },
+	{ "ModFloatValue", &luaItem::ModFloatValue },
+	{ "SetUInt32Value", &luaItem::SetUInt32Value },
+	{ "SetUInt64Value", &luaItem::SetUInt64Value },
+	{ "SetFloatValue", &luaItem::SetFloatValue },
+	{ "GetUInt32Value", &luaItem::GetUInt32Value },
+	{ "GetUInt64Value", &luaItem::GetUInt64Value },
+	{ "GetFloatValue", &luaItem::GetFloatValue },
+	{ "RemoveFlag", &luaItem::RemoveFlag },
+	{ "SetFlag", &luaItem::SetFlag },
 	{ NULL, NULL },
 };
 
@@ -249,7 +256,6 @@ RegType<Unit> UnitMethods[] = {
 	{ "EventCastSpell", &luaUnit::EventCastSpell },
 	{ "IsPlayerMoving", &luaUnit::IsPlayerMoving },
 	{ "IsPlayerAttacking", &luaUnit::IsPlayerAttacking },
-	//{ "IsPlayerAtWar", &luaUnit::IsPlayerAtWar },
 	{ "RemoveThreat", &luaUnit::RemoveThreatByPtr },
 	{ "SetPlayerAtWar", &luaUnit::SetPlayerAtWar },
 	{ "GetFactionStanding", &luaUnit::GetFactionStanding },
@@ -321,20 +327,13 @@ RegType<Unit> UnitMethods[] = {
 	//Halestorm Added Commands
 	{ "ChannelSpell", &luaUnit::ChannelSpell },
 	{ "StopChannel", &luaUnit::StopChannel },
-	//{ "SetWorldState", &luaUnit::SetWorldState },
 	{ "EnableFlight", &luaUnit::EnableFlight },
 	{ "GetCoinage", &luaUnit::GetCoinage },
 	{ "FlagPvP", &luaUnit::FlagPvP },
-	//////////////////////////////////////////////////////////////////////////
-	// WORLD PVP NOT SUPPORTED
-	//////////////////////////////////////////////////////////////////////////
-	//{ "FlagWorldPvP", &luaUnit::FlagWorldPvP },
-	//{ "DisableWorldPvP", &luaUnit::DisableWorldPvP },
     { "GetDisplay", &luaUnit::GetDisplay },
     { "GetNativeDisplay", &luaUnit::GetNativeDisplay },
 	{ "IsMounted", &luaUnit::IsMounted },
-	//hypersniper added commands
-	{ "GetGameTime", &luaUnit::GetGameTime },
+
 	{ "PlaySoundToPlayer", &luaUnit::PlaySoundToPlayer },
 	{ "GetDuelState", &luaUnit::GetDuelState }, 
 	{ "SetPosition", &luaUnit::SetPosition},
@@ -373,16 +372,7 @@ RegType<Unit> UnitMethods[] = {
 	{ "SendLootWindow", &luaUnit::SendLootWindow},
 	{ "AddLoot", &luaUnit::AddLoot},
 	{ "SetPacified", &luaUnit::SetPacified},
-	{ "SpawnVehicle", &luaUnit::SpawnVehicle},
-	{ "SetVehicle", &luaUnit::SetVehicle},
-	{ "GetVehicle", &luaUnit::GetVehicle},
-	{ "RemoveFromVehicle", &luaUnit::RemoveFromVehicle},
-	{ "GetVehicleSeat", &luaUnit::GetVehicleSeat},
-	{ "IsVehicle", &luaUnit::IsVehicle},
-	{ "GetPassengerCount", &luaUnit::GetPassengerCount},
-	{ "MoveVehicle", &luaUnit::MoveVehicle},
 	{ "SetPlayerLock", &luaUnit::SetPlayerLock},
-	//3004 ends here
 	{ "GetGroupPlayers", &luaUnit::GetGroupPlayers},
 	{ "IsGm", &luaUnit::IsGm},
 	{ "GetDungeonDifficulty", &luaUnit::GetDungeonDifficulty},
@@ -482,7 +472,6 @@ RegType<Unit> UnitMethods[] = {
 	{ "HasAuraWithMechanic", &luaUnit::HasAuraWithMechanic },
 	{ "HasNegativeAura", &luaUnit::HasNegativeAura },
 	{ "HasPositiveAura", &luaUnit::HasPositiveAura },
-	{ "SetActionBar", &luaUnit::SetActionBar },
 	{ "GetClosestEnemy", &luaUnit::GetClosestEnemy },
 	{ "GetClosestFriend", &luaUnit::GetClosestFriend },
 	{ "IsOnTaxi", &luaUnit::IsOnTaxi },
@@ -533,15 +522,20 @@ RegType<Unit> UnitMethods[] = {
 	{ "GetNativeFaction", &luaUnit::GetNativeFaction },
 	{ "StopPlayerAttack", &luaUnit::StopPlayerAttack },
 	{ "GetQuestObjectiveCompletion", &luaUnit::GetQuestObjectiveCompletion },
+	{ "FullCastSpellAoF", &luaUnit::FullCastSpellAoF },
+	{ "GetClosestUnit", &luaUnit::GetClosestUnit },
+	{ "FullCastSpellAoE", &luaUnit::FullCastSpellAoF },
+	{ "CastSpellAoE", &luaUnit::CastSpellAoF },
+	{ "SetFlag", &luaUnit::SetFlag },
+	{ "SetSelectedGO", &luaUnit::SetSelectedGO },
 	{ NULL, NULL },
 };
 
 RegType<GameObject> GOMethods[] = {
 	{ "GetGUID", &luaGameObject::GetGUID },
 	{ "GetName", &luaGameObject::GetName },
-	{ "Teleport" , &luaGameObject::Teleport },
 	{ "GetCreatureNearestCoords", &luaGameObject::GetCreatureNearestCoords },
-	//{ "GetAreaID", &luaGameObject::GetAreaID },
+	{ "GetAreaId", &luaGameObject::GetAreaId },
 	{ "GetGameObjectNearestCoords", &luaGameObject::GetGameObjectNearestCoords },
 	{ "GetZoneId", &luaGameObject::GetZoneId },
 	{ "GetClosestPlayer", &luaGameObject::GetClosestPlayer },
@@ -581,17 +575,17 @@ RegType<GameObject> GOMethods[] = {
 	{ "GossipObjectSendMenu", &luaGameObject::GossipSendMenu },
 	{ "GossipObjectComplete", &luaGameObject::GossipComplete },
 	{ "GossipObjectSendPOI", &luaGameObject::GossipSendPOI },
+	{ "GossipCreateMenu", &luaGameObject::GossipCreateMenu },
+	{ "GossipMenuAddItem", &luaGameObject::GossipMenuAddItem }, 
+	{ "GossipSendMenu", &luaGameObject::GossipSendMenu },
+	{ "GossipComplete", &luaGameObject::GossipComplete },
+	{ "GossipSendPOI", &luaGameObject::GossipSendPOI },
 	{ "RegisterAIUpdateEvent", &luaGameObject::RegisterAIUpdate },
 	{ "ModifyAIUpdateEvent", &luaGameObject::ModAIUpdate },
 	{ "RemoveAIUpdateEvent", &luaGameObject::RemoveAIUpdate },
 	{ "Activate", &luaGameObject::Activate },
 	{ "IsActive", &luaGameObject::IsActive },
-	//All three of these do the same thing.
-	{ "ObjectDespawn", &luaGameObject::DespawnObject }, //'cause it was announced on SVN like that
 	{ "Despawn", &luaGameObject::DespawnObject },
-	{ "DespawnObject", &luaGameObject::DespawnObject },
-	//hypersniper's
-	{ "GetGameTime", &luaGameObject::GetGameTime },
 	{ "GetLandHeight", &luaGameObject::GetLandHeight},
 	{ "SetZoneWeather", &luaGameObject::SetZoneWeather},
 	{ "PhaseSet", &luaGameObject::PhaseSet},
@@ -600,7 +594,6 @@ RegType<GameObject> GOMethods[] = {
 	{ "GetPhase", &luaGameObject::GetPhase},
 	{ "SendPacket", luaGameObject::SendPacket },
 	{ "AddLoot", &luaGameObject::AddLoot},
-	//3004 ends here
 	{ "Update", &luaGameObject::Update}, //sadikum
 	{ "GetInstanceOwner", &luaGameObject::GetInstanceOwner },
 	{ "GetDungeonDifficulty", &luaGameObject::GetDungeonDifficulty },
@@ -633,6 +626,10 @@ RegType<GameObject> GOMethods[] = {
 	{ "RemoveEvents", &luaGameObject::RemoveEvents },
 	{ "SetScale", &luaGameObject::SetScale },
 	{ "GetScale", &luaGameObject::GetScale },
+	{ "GetInRangeUnits", &luaGameObject::GetInRangeUnits },
+	{ "GetClosestUnit", &luaGameObject::GetClosestUnit },
+	{ "SetFlag", &luaGameObject::SetFlag },
+	{ "RemoveFlag", &luaGameObject::RemoveFlag },
 	{ NULL, NULL },
 };
 

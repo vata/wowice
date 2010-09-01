@@ -64,7 +64,6 @@ public:
         AddEmote( Event_OnCombatStart, "Chaos beckons.", Text_Yell, 13186);
 
         mSummon = 0;
-		pChaoticRift = NULL;
     };
     
     void OnCombatStart(Unit* mTarget)
@@ -93,7 +92,7 @@ public:
             ResetTimer( mSummonTimer, IsHeroic() ? 14000 : 18000 );
         };
 
-		if( mRift == true && ( pChaoticRift == NULL || !pChaoticRift->IsAlive() ))
+		if( mRift == true && ( GetLinkedCreature() == NULL || ! GetLinkedCreature()->IsAlive() ))
 		{
 			RemoveAura(47748);
 			mRift = false;
@@ -108,7 +107,13 @@ public:
             Emote("Reality... unwoven.", Text_Yell, 13188);
 
         Announce( "Anomalus opens a Chaotic Rift!" );
-        pChaoticRift = SpawnCreature( CN_CHAOTIC_RIFT, _unit->GetPositionX() + 13.5f, _unit->GetPositionY(), _unit->GetPositionZ(), _unit->GetOrientation(), false );
+		//we are linked with CN_CHAOTIC_RIFT.
+		CreatureAIScript* chaoticRift = SpawnCreature( CN_CHAOTIC_RIFT, _unit->GetPositionX() + 13.5f, _unit->GetPositionY(), _unit->GetPositionZ(), _unit->GetOrientation(), false );
+		if( chaoticRift != NULL )
+		{
+			SetLinkedCreature( chaoticRift );
+			chaoticRift->SetLinkedCreature( this );
+		}
     };
 
 	void ChargeRift()
@@ -140,22 +145,10 @@ public:
         ParentClass::OnCombatStop(pTarget);
     };
 
-	void Destroy()
-    {
-		delete this;
-    };
-
-	void ChaoticRiftDeleted(uint64 chaoticRiftGuid)
-	{
-		if( pChaoticRift != NULL && pChaoticRift->GetUnit()->GetGUID() == chaoticRiftGuid )
-			pChaoticRift = NULL;
-	}
-
 private:
     int32					mSummonTimer;
 	uint8					mSummon;
 	bool					mRift;
-	MoonScriptCreatureAI*	pChaoticRift;
     MoonInstanceScript*		mInstance;
 };
 
@@ -189,17 +182,6 @@ public:
 		ParentClass::OnCombatStop(pTarget);
 	};
 
-	void OnDespawn()
-	{
-		AnomalusAI* anomalus = static_cast< AnomalusAI* >( GetNearestCreature(CN_ANOMALUS) );
-		if( anomalus != NULL )
-			anomalus->ChaoticRiftDeleted( GetUnit()->GetGUID() );
-	}
-
-	void Destroy()
-    {
-		delete this;
-    };
 };
 
 class CraziedManaWrathAI : public MoonScriptBossAI
@@ -220,10 +202,6 @@ public:
 		ParentClass::OnDied(mKiller);
 	};
 
-	void Destroy()
-    {
-		delete this;
-    };
 };
 
 
@@ -397,11 +375,6 @@ public:
 		ParentClass::OnDied(pKiller);
 	};
 
-	void Destroy()
-    {
-		delete this;
-    };
-
 private:
     Creature*   mAddArray[3];
     bool        mHeroic;
@@ -434,10 +407,6 @@ public:
 		ParentClass::OnLoad();
 	};
 
-	void Destroy()
-    {
-		delete this;
-    };
 };
 
 class TelestraFrostAI : public MoonScriptBossAI
@@ -464,10 +433,6 @@ public:
 		ParentClass::OnLoad();
 	};
 
-	void Destroy()
-    {
-		delete this;
-    };
 };
 
 class TelestraArcaneAI : public MoonScriptBossAI
@@ -486,10 +451,6 @@ public:
 		ParentClass::OnLoad();
 	};
 
-	void Destroy()
-    {
-		delete this;
-    };
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////
@@ -594,11 +555,6 @@ class OrmorokAI : public MoonScriptBossAI
 		ParentClass::OnDied(pKiller);
 	};
 
-	void Destroy()
-	{
-		delete this;
-	};
-
 private:
 	SpellDesc*	mCrystalSpikes;
 	bool		mEnraged;
@@ -642,11 +598,6 @@ class CrystalSpikeAI : public MoonScriptBossAI
 				_unit->CastSpell( _unit, dbcSpell.LookupEntry(SPELL_CRYSTAL_SPIKE), true );
 			};
 		};
-	};
-
-	void Destroy()
-	{
-		delete this;
 	};
 
 private:

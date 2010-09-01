@@ -46,25 +46,22 @@ bool Shiv(uint32 i, Spell *pSpell){
 
 	pSpell->p_caster->CastSpell(pTarget->GetGUID(), 5940, true);
 
-	if( pSpell->p_caster->GetItemInterface() )
-	{
-		Item *it = pSpell->p_caster->GetItemInterface()->GetInventoryItem( EQUIPMENT_SLOT_OFFHAND );
-		if(!it) return true;
+	Item *it = pSpell->p_caster->GetItemInterface()->GetInventoryItem( EQUIPMENT_SLOT_OFFHAND );
+	if(!it) return true;
 
-		EnchantmentInstance * ench = it->GetEnchantment( TEMP_ENCHANTMENT_SLOT );
-		if(ench) {
-			EnchantEntry* Entry = ench->Enchantment;
-			for( uint32 c = 0; c < 3; c++ )
+	EnchantmentInstance * ench = it->GetEnchantment( TEMP_ENCHANTMENT_SLOT );
+	if(ench) {
+		EnchantEntry* Entry = ench->Enchantment;
+		for( uint32 c = 0; c < 3; c++ )
+		{
+			if( Entry->type[c] && Entry->spell[c] )
 			{
-				if( Entry->type[c] && Entry->spell[c] )
-				{
-					SpellEntry *sp = dbcSpell.LookupEntry( Entry->spell[c] );
-					if(!sp) return true;
+				SpellEntry *sp = dbcSpell.LookupEntry( Entry->spell[c] );
+				if(!sp) return true;
 
-					if( sp->c_is_flags & SPELL_FLAG_IS_POISON )
-					{
-						pSpell->p_caster->CastSpell(pTarget->GetGUID(),Entry->spell[c], true);
-					}
+				if( sp->c_is_flags & SPELL_FLAG_IS_POISON )
+				{
+					pSpell->p_caster->CastSpell(pTarget->GetGUID(),Entry->spell[c], true);
 				}
 			}
 		}
@@ -151,8 +148,6 @@ bool ImprovedSprint(uint32 i, Spell* pSpell)
 bool CutToTheChase(uint32 i, Aura *pAura, bool apply)
 {
 	Unit *target = pAura->GetTarget();
-	if( target == NULL )
-		return true;
 
 	if (apply)
 	{
@@ -168,8 +163,6 @@ bool CutToTheChase(uint32 i, Aura *pAura, bool apply)
 bool DeadlyBrew(uint32 i, Aura *pAura, bool apply)
 {
 	Unit *target = pAura->GetTarget();
-	if( target == NULL )
-		return true;
 
 	if (apply)
 	{

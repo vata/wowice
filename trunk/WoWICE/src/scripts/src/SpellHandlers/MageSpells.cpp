@@ -43,9 +43,48 @@ bool Living_Bomb(uint32 i, Aura *pAura, bool apply)
 		return true;
 }
 
+bool HotStreak(uint32 i, Aura *pAura, bool apply)
+{
+	if( i == 0 )
+	{
+		Unit *caster = pAura->GetUnitCaster();
+
+		if( apply )
+		{
+			static uint32 classMask[3] = { 0x13, 0x21000, 0 };
+			caster->AddProcTriggerSpell(48108, pAura->GetSpellProto()->Id, caster->GetGUID(), pAura->GetSpellProto()->EffectBasePoints[i] +1, PROC_ON_SPELL_CRIT_HIT | PROC_ON_SPELL_HIT, 0, pAura->GetSpellProto()->EffectSpellClassMask[i], classMask);
+		}
+		else
+			caster->RemoveProcTriggerSpell(48108);
+	}
+
+	return true;
+}
+
+bool SummonWaterElemental(uint32 i, Spell *pSpell)
+{
+	Unit *caster = pSpell->u_caster;
+	if( caster == NULL )
+		return true;
+
+	if( caster->HasAura(70937) )  // Glyph of Eternal Water
+		caster->CastSpell(caster, 70908, true);
+	else
+		caster->CastSpell(caster, 70907, true);
+
+	return true;
+}
+
 void SetupMageSpells(ScriptMgr * mgr)
 {
     mgr->register_dummy_spell(11958, &Cold_Snap);
 	mgr->register_dummy_spell(44572, &Deep_Freeze);
+	mgr->register_dummy_aura(44457, &Living_Bomb);
+	mgr->register_dummy_aura(55359, &Living_Bomb);
 	mgr->register_dummy_aura(55360, &Living_Bomb);
+
+	uint32 HotStreakIds[] = { 44445, 44446, 44448, 0 };
+	mgr->register_dummy_aura(HotStreakIds, &HotStreak);
+
+	mgr->register_dummy_spell(31687, &SummonWaterElemental);
 }

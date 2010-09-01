@@ -427,11 +427,6 @@ public:
 		TargetTable.clear();
 	}
 
-	void Destroy()
-	{
-		delete this;
-	};
-
 private:
 	int nrspells;
 	int minspell;
@@ -574,11 +569,6 @@ public:
 		}
 	}
 
-	void Destroy()
-	{
-		delete this;
-	};
-
 protected:
 	int nrspells;
 };
@@ -646,7 +636,7 @@ public:
 			{
 				creature = TO_CREATURE((*itr));
 
-				if(creature->GetCreatureInfo() && creature->GetCreatureInfo()->Id == CN_GREYHEART_SPELLBINDER && creature->isAlive())
+				if(creature->GetCreatureInfo()->Id == CN_GREYHEART_SPELLBINDER && creature->isAlive())
 					LeotherasEventGreyheartToKill[_unit->GetInstanceID()]++;
 			}
 		}
@@ -956,11 +946,6 @@ public:
 		}
 	}
 
-	void Destroy()
-	{
-		delete this;
-	};
-
 protected:
 	int nrspells;
 	uint32 SwitchTimer;
@@ -1138,11 +1123,6 @@ public:
 		TargetTable.clear();
 	}
 
-	void Destroy()
-	{
-		delete this;
-	};
-
 private:
 	int nrspells;
 };
@@ -1197,11 +1177,6 @@ public:
 			}
 		}
 	}
-
-	void Destroy()
-	{
-		delete this;
-	};
 
 protected:
 	SpellEntry* info_chaos_blast;
@@ -1362,11 +1337,6 @@ public:
 			}
 		}
 	}
-
-	void Destroy()
-	{
-		delete this;
-	};
 
 	uint32 AdvisorsLeft;
 
@@ -1712,10 +1682,6 @@ public:
 		}
 	}
 
-	void Destroy()
-	{
-		delete this;
-	};
 };
 
 //CN_TIDEWALKER_LURKER
@@ -1779,10 +1745,6 @@ public:
 		return target;
 	}
 
-	void Destroy()
-	{
-		delete this;
-	};
 };
 
 //------------------------------------
@@ -1919,10 +1881,6 @@ public:
 		}
 	}
 
-	void Destroy()
-	{
-		delete this;
-	};
 };
 
 class VashjAI : public CreatureAIScript
@@ -2042,8 +2000,7 @@ public:
 			{
 				creature = TO_CREATURE((*itr));
 	
-				if(creature && creature->GetCreatureInfo() && 
-					(creature->GetCreatureInfo()->Id == CN_ENCHANTED_ELEMENTAL || 
+				if((creature->GetCreatureInfo()->Id == CN_ENCHANTED_ELEMENTAL || 
 					creature->GetCreatureInfo()->Id == CN_TAINTED_ELEMENTAL ||
 					creature->GetCreatureInfo()->Id == CN_COILFANG_STRIDER ||
 					creature->GetCreatureInfo()->Id == CN_COILFANG_ELITE ||
@@ -2273,7 +2230,7 @@ public:
 				{
 					creature = TO_CREATURE((*itr));
 
-					if(creature->GetCreatureInfo() && creature->GetCreatureInfo()->Id == CN_ENCHANTED_ELEMENTAL && creature->isAlive())
+					if(creature->GetCreatureInfo()->Id == CN_ENCHANTED_ELEMENTAL && creature->isAlive())
 						creature->Despawn(0, 0);
 				}
 			}
@@ -2423,11 +2380,6 @@ public:
 		TargetTable.clear();
 	}
 
-	void Destroy()
-	{
-		delete this;
-	};
-
 	uint32 TaintedElementalTimer;
 	uint32 Phase;
 		
@@ -2530,11 +2482,6 @@ public:
 			if(channel != NULL && channel->IsInWorld() )
 				channel->Despawn(0, 0);
 		}
-	}
-
-	void Destroy()
-	{
-		delete this;
 	}
 
 	static GameObjectAIScript *Create(GameObject* pGameObject) { return new TaintedCoreGO(pGameObject); }
@@ -2942,11 +2889,7 @@ public:
 		return wp;
 	}
 
-	void Destroy()
-	{
-		delete this;
-	};
-		
+	
 protected:
 	bool FlameQuills;
 	uint32 QuillsCount;
@@ -3196,10 +3139,6 @@ public:
 		pGameObject->SetState(0);
     }
 
-	void Destroy()
-	{
-		delete this;
-	}
  };
 
 void SetupSerpentshrineCavern(ScriptMgr * mgr)

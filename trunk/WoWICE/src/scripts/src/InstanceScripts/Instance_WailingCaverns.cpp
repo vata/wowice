@@ -340,10 +340,6 @@ public:
 
 	}
 
-	void Destroy()
-	{
-		delete this;
-	};
 };
 
 // Disciple of Naralex AI by Soulshifter
@@ -475,7 +471,7 @@ void SetupWailingCaverns(ScriptMgr * mgr)
 	mgr->register_creature_script(CN_VERDAN_EVERLIVING, &VerdanEverlivingAI::Create);
 	mgr->register_creature_script(CN_SKUM, &SkumAI::Create);
 	mgr->register_creature_script(CN_MUTANUS, &MutanusAI::Create);
-	GossipScript * DNaralex = (GossipScript*) new DofNaralexGossip();
+	GossipScript * DNaralex = new DofNaralexGossip();
 	mgr->register_gossip_script(CN_DIS_NARALEX, DNaralex);
 	mgr->register_creature_script(CN_DIS_NARALEX, &DofNaralexAI::Create);
 	mgr->register_creature_script(CN_NARALEX, &Naralex::Create);

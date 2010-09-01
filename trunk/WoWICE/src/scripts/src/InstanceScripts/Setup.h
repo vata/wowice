@@ -21,12 +21,6 @@
 #ifndef INSTANCE_SCRIPTS_SETUP_H
 #define INSTANCE_SCRIPTS_SETUP_H
 
-#define TO_CREATURE(ptr) static_cast<Creature*>(ptr) 
-#define TO_PLAYER(ptr) static_cast<Player*>(ptr)
-#define TO_OBJECT(ptr) static_cast<Object*>(ptr)
-#define TO_UNIT(ptr) static_cast<Unit*>(ptr)
-#define TO_PET(ptr) static_cast<Pet*>(ptr)
-
 //Instances
 void SetupArcatraz(ScriptMgr * mgr);
 void SetupAuchenaiCrypts(ScriptMgr * mgr);

@@ -24,10 +24,6 @@ public:
 	{
 		GossipScript::GossipEnd(pObject, Plr);
 	};
-	void Destroy()
-	{
-		delete this;
-	};
 };
 
 void SetupUlduar(ScriptMgr* mgr);

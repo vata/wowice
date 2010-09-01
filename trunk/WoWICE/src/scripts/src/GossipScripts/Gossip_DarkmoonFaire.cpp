@@ -50,10 +50,6 @@ public:
 		}
     }
 
-    void Destroy()
-    {
-        delete this;
-    }
 };
 
 class SetupCarnies_Bark : public CreatureAIScript
@@ -145,10 +141,6 @@ public:
 		}
     }
 
-    void Destroy()
-    {
-        delete this;
-    }
 };
 
 class ActiveCarnies_Bark : public CreatureAIScript
@@ -252,10 +244,6 @@ public:
 		}
     }
 
-    void Destroy()
-    {
-        delete this;
-    }
 };
 
 // Flik
@@ -340,10 +328,6 @@ public:
 		}
     }
 
-    void Destroy()
-    {
-        delete this;
-    }
 };
 
 // Gevas Grimegate
@@ -471,10 +455,6 @@ public:
 		}
     }
 
-    void Destroy()
-    {
-        delete this;
-    }
 };
 
 // Morja
@@ -609,10 +589,6 @@ public:
 		}
     }
 
-    void Destroy()
-    {
-        delete this;
-    }
 };
 
 class ProfessorThaddeusPaleo_Bark : public CreatureAIScript
@@ -871,10 +847,6 @@ public:
 		}
     }
 
-    void Destroy()
-    {
-        delete this;
-    }
 };
 
 class Sayge_Bark : public CreatureAIScript
@@ -984,10 +956,6 @@ public:
 		}
     }
 
-    void Destroy()
-    {
-        delete this;
-    }
 };
 
 // Silas Darkmoon
@@ -1028,10 +996,6 @@ public:
 		}
     }
 
-    void Destroy()
-    {
-        delete this;
-    }
 };
 
 class SilasDarkmoon_Bark : public CreatureAIScript
@@ -1178,15 +1142,15 @@ public:
 
 void SetupDarkmoonFaireGossip(ScriptMgr * mgr)
 {
-	GossipScript * ActiveCarniesGossip = (GossipScript*) new ActiveCarnies_Gossip;
-	//GossipScript * SetupCarniesGossip = (GossipScript*) new SetupCarnies_Gossip;
-	GossipScript * BurthGossip = (GossipScript*) new Burth_Gossip;
-	GossipScript * FliksFrogGossip = (GossipScript*) new FliksFrog_Gossip;
-	GossipScript * MaximaBlastenheimerGossip = (GossipScript*) new MaximaBlastenheimer_Gossip;
-	GossipScript * ProfessorThaddeusPaleoGossip = (GossipScript*) new ProfessorThaddeusPaleo_Gossip;
-	GossipScript * SaygeGossip = (GossipScript*) new Sayge_Gossip;
-	GossipScript * SelinaDourmanGossip = (GossipScript*) new SelinaDourman_Gossip;
-	GossipScript * SilasDarkmoonGossip = (GossipScript*) new SilasDarkmoon_Gossip;
+	GossipScript * ActiveCarniesGossip = new ActiveCarnies_Gossip;
+	//GossipScript * SetupCarniesGossip = new SetupCarnies_Gossip;
+	GossipScript * BurthGossip = new Burth_Gossip;
+	GossipScript * FliksFrogGossip = new FliksFrog_Gossip;
+	GossipScript * MaximaBlastenheimerGossip = new MaximaBlastenheimer_Gossip;
+	GossipScript * ProfessorThaddeusPaleoGossip = new ProfessorThaddeusPaleo_Gossip;
+	GossipScript * SaygeGossip = new Sayge_Gossip;
+	GossipScript * SelinaDourmanGossip = new SelinaDourman_Gossip;
+	GossipScript * SilasDarkmoonGossip = new SilasDarkmoon_Gossip;
 	
 	mgr->register_gossip_script(14849, ActiveCarniesGossip); 						// Active Carine Gossip
 	//mgr->register_gossip_script(14849, SetupCarniesGossip); 						// Setup Carine Gossip

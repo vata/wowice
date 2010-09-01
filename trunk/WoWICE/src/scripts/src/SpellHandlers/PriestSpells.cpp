@@ -77,13 +77,144 @@ bool Penance(uint32 i, Spell * pSpell)
 bool DivineAegis(uint32 i, Aura *pAura, bool apply)
 {
 	Unit *target = pAura->GetTarget();
-	if( target == NULL )
-		return true;
 
 	if (apply)
 		target->AddProcTriggerSpell(47753, pAura->GetSpellId(), pAura->m_casterGuid, pAura->GetSpellProto()->procChance, PROC_ON_SPELL_CRIT_HIT, 0, NULL, NULL);
 	else
 		target->RemoveProcTriggerSpell(47753, pAura->m_casterGuid);
+
+	return true;
+}
+
+bool ImprovedDevouringPlague(uint32 i, Aura *pAura, bool apply)
+{
+	Unit *target = pAura->GetTarget();
+
+	if (apply)
+	{
+		static uint32 classMask[3] = { 0x2000000, 0, 0 };
+		target->AddProcTriggerSpell(63675, pAura->GetSpellProto()->Id, pAura->m_casterGuid, pAura->GetSpellProto()->procChance, PROC_ON_CAST_SPELL, 0, NULL, classMask);
+	}
+	else
+		target->RemoveProcTriggerSpell(63675, pAura->m_casterGuid);
+
+	return true;
+}
+
+bool VampiricEmbrace(uint32 i, Aura *pAura, bool apply)
+{
+	Unit *target = pAura->GetTarget();
+
+	if (apply)
+		target->AddProcTriggerSpell(15290, pAura->GetSpellId(), pAura->m_casterGuid, pAura->GetSpellProto()->procChance, PROC_ON_ANY_HOSTILE_ACTION | PROC_TARGET_SELF, 0, NULL, NULL);
+	else
+		target->RemoveProcTriggerSpell(15290, pAura->m_casterGuid);
+
+	return true;
+}
+
+bool VampiricTouch(uint32 i, Aura *pAura, bool apply)
+{
+	Unit *target = pAura->GetTarget();
+
+	switch( i )
+	{
+		case 0:
+			if (apply)
+				target->AddProcTriggerSpell(64085, pAura->GetSpellId(), pAura->m_casterGuid, pAura->GetSpellProto()->procChance, PROC_ON_PRE_DISPELL_AURA_VICTIM | PROC_TARGET_SELF, 0, NULL, NULL);
+			else
+				target->RemoveProcTriggerSpell(64085, pAura->m_casterGuid);
+			break;
+
+		case 2:
+			if (apply)
+				target->AddProcTriggerSpell(34919, pAura->GetSpellId(), pAura->m_casterGuid, pAura->GetSpellProto()->procChance, PROC_ON_SPELL_HIT_VICTIM, 0, NULL, NULL);
+			else
+				target->RemoveProcTriggerSpell(34919, pAura->m_casterGuid);
+			break;
+	}
+
+	return true;
+}
+
+bool EmpoweredRenew(uint32 i, Aura *pAura, bool apply)
+{
+	Unit *target = pAura->GetTarget();
+
+	if (apply)
+	{
+		static uint32 classMask[3] = { 0x40, 0, 0 };
+		target->AddProcTriggerSpell(63544, pAura->GetSpellId(), pAura->m_casterGuid, pAura->GetSpellProto()->procChance, PROC_ON_CAST_SPELL, 0, NULL, classMask);
+	}
+	else
+		target->RemoveProcTriggerSpell(63544, pAura->m_casterGuid);
+
+	return true;
+}
+
+bool ImprovedMindBlast(uint32 i, Aura *pAura, bool apply)
+{
+	Unit *target = pAura->GetTarget();
+
+	if (apply)
+	{
+		static uint32 classMask[3] = { 0x2000, 0, 0 };
+		target->AddProcTriggerSpell(48301, pAura->GetSpellId(), pAura->m_casterGuid, pAura->GetSpellProto()->procChance, PROC_ON_SPELL_HIT, 0, NULL, classMask);
+	}
+	else
+		target->RemoveProcTriggerSpell(48301, pAura->m_casterGuid);
+
+	return true;
+}
+
+bool PainAndSufferingAura(uint32 i, Aura *pAura, bool apply)
+{
+	Unit *target = pAura->GetTarget();
+
+	if( apply )
+	{
+		static uint32 classMask[3] = { 0, 0, 0x40 };
+		target->AddProcTriggerSpell(47948, pAura->GetSpellId(), pAura->m_casterGuid, pAura->GetSpellProto()->procChance, PROC_ON_CAST_SPELL, 0, NULL, classMask);
+	}
+	else
+		target->RemoveProcTriggerSpell(47948, pAura->m_casterGuid);
+
+	return true;
+}
+
+bool PainAndSufferingProc(uint32 i, Spell* pSpell)
+{
+	Player *caster = pSpell->p_caster;
+	if( caster == NULL )
+		return true;
+
+	Unit *target = pSpell->GetUnitTarget();
+	if( target == NULL)
+		return true;
+
+	Aura *aura = target->FindAuraByNameHash(SPELL_HASH_SHADOW_WORD__PAIN, caster->GetGUID());
+	if( aura == NULL )
+		return true;
+
+	// Set new aura's duration, reset event timer and set client visual aura
+	aura->SetDuration(aura->GetDuration());
+	sEventMgr.ModifyEventTimeLeft(aura, EVENT_AURA_REMOVE, aura->GetDuration());
+	target->ModVisualAuraStackCount(aura, 0);
+
+	return true;
+}
+
+bool BodyAndSoul(uint32 i, Aura *pAura, bool apply)
+{
+	Unit *target = pAura->GetTarget();
+
+	if (apply)
+	{
+		static uint32 classMask[3] = { 0, 1, 0 };
+		target->AddProcTriggerSpell(64134, pAura->GetSpellId(), pAura->m_casterGuid, pAura->GetModAmount(i), PROC_ON_CAST_SPELL | PROC_TARGET_SELF, 0, NULL, classMask);
+	}
+	else
+		target->RemoveProcTriggerSpell(64134, pAura->m_casterGuid);
 
 	return true;
 }
@@ -102,4 +233,26 @@ void SetupPriestSpells(ScriptMgr * mgr)
 
 	uint32 DivineAegisIds[] = { 47509, 47511, 47515, 0 };
 	mgr->register_dummy_aura(DivineAegisIds, &DivineAegis);
+
+	uint32 ImprovedDevouringPlagueIds[] = { 63625, 63626, 63627, 0 };
+	mgr->register_dummy_aura(ImprovedDevouringPlagueIds, &ImprovedDevouringPlague);
+
+	mgr->register_dummy_aura(15286, &VampiricEmbrace);
+
+	uint32 VampiricTouchIds[] = { 34914, 34916, 34917, 48159, 48160, 0 };
+	mgr->register_dummy_aura(VampiricTouchIds, &VampiricTouch);
+
+	uint32 EmpoweredRenewIds[] = { 63534, 63542, 63543, 0 };
+	mgr->register_dummy_aura(EmpoweredRenewIds, &EmpoweredRenew);
+
+	uint32 ImprovedMindBlastIds[] = { 15273, 15312, 15313, 15314, 15316, 0 };
+	mgr->register_dummy_aura(ImprovedMindBlastIds, &ImprovedMindBlast);
+
+	uint32 PainAndSufferingAuraIds[] = { 47580, 47581, 47582, 0 };
+	mgr->register_dummy_aura(PainAndSufferingAuraIds, &PainAndSufferingAura);
+
+	mgr->register_dummy_spell(47948, &PainAndSufferingProc);
+
+	mgr->register_dummy_aura(64127, &BodyAndSoul);
+	mgr->register_dummy_aura(64129, &BodyAndSoul);
 }

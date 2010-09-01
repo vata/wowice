@@ -55,10 +55,6 @@ public:
 		}
 	}
 
-	void Destroy()
-	{
-		delete this;
-	}
 };
 
 /////////////////////////////////////////////////////////////////////
@@ -74,8 +70,6 @@ class AttumenTheHuntsmanAI : public MoonScriptBossAI
 	MOONSCRIPT_FACTORY_FUNCTION(AttumenTheHuntsmanAI, MoonScriptBossAI);
 	AttumenTheHuntsmanAI(Creature* pCreature) : MoonScriptBossAI(pCreature)
 	{
-		mMidnight = NULL;
-
 		//All phase spells
 		AddSpell(ATTUMEN_SHADOW_CLEAVE, Target_Current, 15, 0, 6, 0, 5, true);
 		AddSpell(ATTUMEN_INTANGIBLE_PRESENCE, Target_Current, 15, 0, 12, 0, 5, true);
@@ -92,14 +86,11 @@ class AttumenTheHuntsmanAI : public MoonScriptBossAI
 		AddEmote(Event_OnDied, "Always knew... someday I would become... the hunted.", Text_Yell, 9165);
 		AddEmote(Event_OnTaunt, "Such easy sport.", Text_Yell, 9170);
 		AddEmote(Event_OnTaunt, "Amatures! Do not think you can best me! I kill for a living.", Text_Yell, 9304);
-
-		AggroNearestUnit(); //Aggro on spawn
 	}
 
-	void OnCombatStart(Unit* pTarget)
+	void OnLoad()
 	{
-		mMidnight = (MoonScriptBossAI*)GetNearestCreature(CN_MIDNIGHT);
-		ParentClass::OnCombatStart(pTarget);
+		AggroNearestUnit(); //Aggro on spawn
 	}
 
 	void OnCombatStop(Unit* pTarget)
@@ -112,21 +103,20 @@ class AttumenTheHuntsmanAI : public MoonScriptBossAI
 	{
 		if( GetPhase() == 1 )
 		{
-			if( mMidnight && mMidnight->IsAlive() && GetHealthPercent() <= 25 && !IsCasting() )
+			if( GetLinkedCreature() && GetLinkedCreature()->IsAlive() && GetHealthPercent() <= 25 && !IsCasting() )
 			{
 				SetPhase(2);
 				SetAllowMelee(false);
 				SetAllowSpell(false);
 				Emote("Come Midnight, let's disperse this petty rabble!", Text_Yell, 9168);
-				mMidnight->SetPhase(2);
-				mMidnight->MoveTo(this);
-				mMidnight->SetAllowMelee(false);
+				MoonScriptBossAI* midnight = static_cast< MoonScriptBossAI* >( GetLinkedCreature() );
+				midnight->SetPhase(2);
+				midnight->MoveTo(this);
+				midnight->SetAllowMelee(false);
 			}
 		}
 		ParentClass::AIUpdate();
 	}
-
-	MoonScriptBossAI* mMidnight;
 };
 
 class MidnightAI : public MoonScriptBossAI
@@ -134,18 +124,10 @@ class MidnightAI : public MoonScriptBossAI
 	MOONSCRIPT_FACTORY_FUNCTION(MidnightAI, MoonScriptBossAI);
 	MidnightAI(Creature* pCreature) : MoonScriptBossAI(pCreature)
 	{
-		mAttumen = NULL;
-	}
-
-	void OnCombatStart(Unit* pTarget)
-	{
-		mAttumen = NULL;
-		ParentClass::OnCombatStart(pTarget);
 	}
 
 	void OnCombatStop(Unit* pTarget)
 	{
-		mAttumen = NULL;
 		SetAllowMelee(true);
 		SetAllowSpell(true);
 		ParentClass::OnCombatStop(pTarget);
@@ -153,9 +135,9 @@ class MidnightAI : public MoonScriptBossAI
 
 	void OnTargetDied(Unit* pTarget)
 	{
-		if( mAttumen && mAttumen->IsAlive() )
+		if(GetLinkedCreature() && GetLinkedCreature()->IsAlive() )
 		{
-			mAttumen->Emote("Well done Midnight!", Text_Yell, 9173);
+			static_cast< MoonScriptCreatureAI* >( GetLinkedCreature() )->Emote("Well done Midnight!", Text_Yell, 9173);
 		}
 		ParentClass::OnTargetDied(pTarget);
 	}
@@ -164,44 +146,48 @@ class MidnightAI : public MoonScriptBossAI
 	{
 		if( GetPhase() == 1 )
 		{
-			if( !mAttumen && GetHealthPercent() <= 95 && !IsCasting() )
+			if( GetLinkedCreature() == NULL && GetHealthPercent() <= 95 && !IsCasting() )
 			{
 				Emote("Midnight calls for her master!", Text_Emote);
-				mAttumen = (MoonScriptBossAI*)SpawnCreature(CN_ATTUMEN);
+				CreatureAIScript* attumen = SpawnCreature(CN_ATTUMEN);
+				if( attumen != NULL )
+				{
+					SetLinkedCreature( attumen );
+					attumen->SetLinkedCreature( this );
+				}
 			}
-			else if( mAttumen && mAttumen->IsAlive() && GetHealthPercent() <= 25 && !IsCasting() )
+			else if( GetLinkedCreature() && GetLinkedCreature()->IsAlive() && GetHealthPercent() <= 25 && !IsCasting() )
 			{
 				SetPhase(2);
-				MoveTo(mAttumen);
+				MoonScriptBossAI* attumen = static_cast< MoonScriptBossAI* >( GetLinkedCreature() );
+				MoveTo( attumen );
 				SetAllowMelee(false);
-				mAttumen->SetPhase(2);
-				mAttumen->SetAllowMelee(false);
-				mAttumen->SetAllowSpell(false);
-				mAttumen->Emote("Come Midnight, let's disperse this petty rabble!", Text_Yell, 9168);
+				attumen->SetPhase(2);
+				attumen->SetAllowMelee(false);
+				attumen->SetAllowSpell(false);
+				attumen->Emote("Come Midnight, let's disperse this petty rabble!", Text_Yell, 9168);
 			}
 		}
 		else if( GetPhase() == 2 )
 		{
-			if( mAttumen && mAttumen->IsAlive() )
+			if( GetLinkedCreature() && GetLinkedCreature()->IsAlive() )
 			{
-				if( GetRange(mAttumen) <= 15 )
+				MoonScriptBossAI* attumen = static_cast< MoonScriptBossAI* >( GetLinkedCreature() );
+				if( GetRange(attumen) <= 15 )
 				{
-					mAttumen->Regenerate();
-					mAttumen->SetDisplayId(16040);
-					mAttumen->ClearHateList();
-					mAttumen->SetAllowMelee(true);
-					mAttumen->SetAllowSpell(true);
-					mAttumen = NULL;
+					attumen->Regenerate();
+					attumen->SetDisplayId(16040);
+					attumen->ClearHateList();
+					attumen->SetAllowMelee(true);
+					attumen->SetAllowSpell(true);
 					Despawn();
 					return;
 				}
-				else MoveTo(mAttumen);
+				else MoveTo(attumen);
 			}
 		}
 		ParentClass::AIUpdate();
 	}
-
-	MoonScriptBossAI* mAttumen;
 };
 
 /////////////////////////////////////////////////////////////////////
@@ -516,11 +502,6 @@ public:
 		}
 	}
 
-	void Destroy()
-	{
-		delete this;
-	};
-
 protected:
 
 	int nrspells;
@@ -688,11 +669,6 @@ public:
 	}
 	}
 
-	void Destroy()
-	{
-		delete this;
-	};
-
 protected:
 	int nrspells;
 };
@@ -757,10 +733,6 @@ public:
 		}
 	}
 
-	void Destroy()
-	{
-		delete this;
-	}
 };
 
 class GrandMother : public GossipScript
@@ -796,10 +768,6 @@ public:
 		}
 	}
 
-	void Destroy()
-	{
-		delete this;
-	}
 };
 
 /*	Alot of the code for this script was taken from M4ksiu and his Black Temple script, 
@@ -1157,11 +1125,6 @@ public:
 		return wp;
 	}
 
-	void Destroy()
-	{
-		delete this;
-	}
-
 protected:
 	int eventRand;
 };
@@ -1180,10 +1143,6 @@ public:
 		_unit->CastSpell(_unit, 34126, true);
 	}
 
-	void Destroy()
-	{
-		delete this;
-	};
 };
 
 // The Curator + Astral Flare
@@ -1401,11 +1360,6 @@ public:
 		}
 		Target_List.clear();
 	}
-
-	void Destroy()
-	{
-		delete this;
-	};
 
 protected:
 	bool evocation;
@@ -1996,11 +1950,6 @@ public:
 		}
 	}
 
-	void Destroy()
-	{
-		delete this;
-	};
-
 protected:
 	bool drinking;
 	bool enraged;
@@ -2072,11 +2021,6 @@ public:
 		}
 	}
 
-	void Destroy()
-	{
-		delete this;
-	}
-
 protected:
 	int WaterBolt;
 };
@@ -2119,11 +2063,6 @@ public:
 			if(target != NULL)
 				_unit->CastSpell(target, SHADOWPYRO, true);
 		}
-	}
-
-	void Destroy()
-	{
-		delete this;
 	}
 
 protected:
@@ -2391,11 +2330,6 @@ public:
 		}
 	}
 
-	void Destroy()
-	{
-		delete this;
-	};
-
 protected:
 
 	int nrspells;
@@ -2547,11 +2481,6 @@ public:
 			TargetTable.clear();
 		}
 	}
-
-	void Destroy()
-	{
-		delete this;
-	};
 
 protected:
 	int nrspells;
@@ -2717,11 +2646,6 @@ public:
 		return target;
 	}
 
-	void Destroy()
-	{
-		delete this;
-	};
-
 protected:	
 
 	int nrspells;
@@ -2780,10 +2704,6 @@ public:
 		
 	}
 
-	void Destroy()
-	{
-		delete this;
-	};
 };
 
 // Prince Malchezaar
@@ -2815,14 +2735,14 @@ SPECIAL? - 9223 - 9320
 AXETOSS2? - 9317
 */
 
-class MalchezaarAI : public CreatureAIScript
+class MalchezaarAI : public MoonScriptCreatureAI
 {
 public:
 	ADD_CREATURE_FACTORY_FUNCTION(MalchezaarAI);
 	bool m_spellcheck[9];
 	SP_AI_Spell spells[9];
 
-	MalchezaarAI(Creature* pCreature) : CreatureAIScript(pCreature)
+	MalchezaarAI(Creature* pCreature) : MoonScriptCreatureAI(pCreature)
 	{
 		m_phase = 1;
 		nrspells = 5;
@@ -2896,7 +2816,12 @@ public:
 		float dumX = -10938.56f;
 		float dumY = -2041.26f;
 		float dumZ = 305.132f;
-		InfernalDummy = _unit->GetMapMgr()->GetInterface()->SpawnCreature(CN_DUMMY, dumX, dumY, dumZ, 0, true, false, 0, 0);
+		CreatureAIScript* infernalDummy = SpawnCreature(CN_DUMMY, dumX, dumY, dumZ);
+		if(infernalDummy != NULL)
+		{
+			SetLinkedCreature( infernalDummy );
+			infernalDummy->SetLinkedCreature( this );
+		}
 
 		// Door initialization
 		MDoor = _unit->GetMapMgr()->GetInterface()->GetGameObjectNearestCoords(-11018.5f, -1967.92f, 276.652f, 185134);
@@ -2948,8 +2873,8 @@ public:
 		for(int i = 0; i < 5; ++i)
 			Enfeeble_Targets[i] = 0;
 
-		InfernalDummy->Despawn(10000, 0);
-		InfernalDummy = NULL;
+		if(GetLinkedCreature() != NULL)
+			GetLinkedCreature()->GetUnit()->Despawn(10000, 0);
 
 		// Open door
 		if(MDoor != NULL)
@@ -2967,11 +2892,8 @@ public:
 		_unit->SendChatMessage(CHAT_MSG_MONSTER_YELL, LANG_UNIVERSAL, "I refuse to concede defeat. I am a prince of the Eredar! I am...");
 		RemoveAIUpdateEvent();
 
-		if(InfernalDummy)
-		{
-			InfernalDummy->Despawn(10000, 0);
-			InfernalDummy = NULL;
-		}
+		if(GetLinkedCreature() != NULL)
+			GetLinkedCreature()->GetUnit()->Despawn(10000, 0);
 
 		Creature* MAxes = NULL;
 		MAxes = _unit->GetMapMgr()->GetInterface()->GetCreatureNearestCoords(_unit->GetPositionX(), _unit->GetPositionY(), 
@@ -3162,11 +3084,14 @@ public:
 
 		ranX = RandomFloat(113.47f)-11019.37f;
 		ranY = RandomFloat(36.951f)-2011.549f;
-		InfernalDummy->CastSpellAoF(ranX, ranY, 275.0f, spells[2].info, spells[2].instant); // Shoots the missile
-		float dist = InfernalDummy->CalcDistance(ranX, ranY, 275.0f);
-		uint32 dtime = (uint32)(dist/spells[2].info->speed);
-		m_spawn_infernal = (uint32)time(NULL) + dtime+1;
-		m_infernal = true;
+		if(GetLinkedCreature() != NULL)
+		{
+			GetLinkedCreature()->GetUnit()->CastSpellAoF(ranX, ranY, 275.0f, spells[2].info, spells[2].instant); // Shoots the missile
+			float dist = GetLinkedCreature()->GetUnit()->CalcDistance(ranX, ranY, 275.0f);
+			uint32 dtime = (uint32)(dist/spells[2].info->speed);
+			m_spawn_infernal = (uint32)time(NULL) + dtime+1;
+			m_infernal = true;
+		}
 	}
 
 	void Enfeebler()
@@ -3297,11 +3222,6 @@ public:
 		}
 	}
 
-	void Destroy()
-	{
-		delete this;
-	};
-
 protected:
 	float ranX;
 	float ranY;
@@ -3312,7 +3232,6 @@ protected:
 	uint32 m_spawn_infernal;
 	uint64 Enfeeble_Targets[5];
 	uint64 Enfeeble_Health[5];
-	Creature* InfernalDummy;
 	GameObject* MDoor;
 };
 
@@ -3340,10 +3259,6 @@ public:
 		ParentClass::AIUpdate();
 	};
 
-	void Destroy()
-	{
-		delete this;
-	};
 };
 
 class InfernalDummyAI : public CreatureAIScript
@@ -3374,10 +3289,6 @@ public:
 		return wp;
 	}
 
-	void Destroy()
-	{
-		delete this;
-	}
 };
 
 class MAxesAI : public CreatureAIScript
@@ -3450,10 +3361,6 @@ public:
 		}
 	}
 
-	void Destroy()
-	{
-		delete this;
-	};
 };
 
 // Netherspite
@@ -3616,11 +3523,6 @@ public:
 		}
 	}
 
-	void Destroy()
-	{
-		delete this;
-	};
-
 protected:
 	int nrspells;
 	uint32 VoidTimer;
@@ -3663,10 +3565,6 @@ public:
 		}
 	}
 
-	void Destroy()
-	{
-		delete this;
-	};
 };
 
 //------------------------------------
@@ -4080,11 +3978,6 @@ public:
 		}
 	}
 
-	void Destroy()
-	{
-		delete this;
-	};
-
 protected:
 	int nrspells;
 	uint32 m_phase;
@@ -4324,11 +4217,6 @@ public:
 		}
 	}
 
-	void Destroy()
-	{
-		delete this;
-	};
-
 protected:
 	int nrspells;
 	Unit* tito;
@@ -4445,11 +4333,6 @@ public:
 			}
 		}
 	}
-
-	void Destroy()
-	{
-		delete this;
-	};
 
 protected:
 	int nrspells;
@@ -4602,11 +4485,6 @@ public:
 		}
 	}
 
-	void Destroy()
-	{
-		delete this;
-	};
-
 protected:
 	int nrspells;
 };
@@ -4757,11 +4635,6 @@ public:
 		}
 	}
 
-	void Destroy()
-	{
-		delete this;
-	};
-
 protected:
 	int nrspells;
 };
@@ -4812,10 +4685,6 @@ public:
 		_unit->SendChatMessage(CHAT_MSG_MONSTER_YELL, LANG_UNIVERSAL, TEXT_DEATH_ROAR);
 	}
 
-	void Destroy()
-	{
-		delete this;
-	};
 };
 
 #define CN_CRONE 18168
@@ -4979,11 +4848,6 @@ public:
 		}
 	}
 
-	void Destroy()
-	{
-		delete this;
-	};
-
 protected:
 	int nrspells;
 };
@@ -5024,11 +4888,6 @@ public:
 	{
 		_unit->CastSpell(_unit, dbcSpell.LookupEntry(CYCLONE_KNOCK), true);
 	}
-
-	void Destroy()
-	{
-		delete this;
-	};
 
 protected:
 	int nrspells;
@@ -5229,11 +5088,6 @@ public:
 		}
 	}
 
-	void Destroy()
-	{
-		delete this;
-	};
-
 protected:
 	int nrspells;
 };
@@ -5417,18 +5271,13 @@ public:
 		}
 	}
 
-	void Destroy()
-	{
-		delete this;
-	};
-
 protected:
 	int nrspells;
 };
 
 void SetupKarazhan(ScriptMgr* pScriptMgr)
 {
-	GossipScript * KBerthold = (GossipScript*) new Berthold();
+	GossipScript * KBerthold = new Berthold();
 	pScriptMgr->register_gossip_script(16153, KBerthold);
 
 	pScriptMgr->register_creature_script(CN_ATTUMEN, &AttumenTheHuntsmanAI::Create);
@@ -5441,8 +5290,8 @@ void SetupKarazhan(ScriptMgr* pScriptMgr)
 	pScriptMgr->register_creature_script(CN_ROMULO, &RomuloAI::Create);
 	pScriptMgr->register_creature_script(CN_JULIANNE, &JulianneAI::Create);
 	pScriptMgr->register_creature_script(19525, &StageLight::Create);
-	GossipScript * KGrandMother = (GossipScript*) new GrandMother;
-	GossipScript * KBarnes = (GossipScript*) new BarnesGS;
+	GossipScript * KGrandMother = new GrandMother;
+	GossipScript * KBarnes = new BarnesGS;
 	pScriptMgr->register_gossip_script(16812, KBarnes);
 	pScriptMgr->register_gossip_script(17603, KGrandMother);
 	pScriptMgr->register_creature_script(16812, &BarnesAI::Create);

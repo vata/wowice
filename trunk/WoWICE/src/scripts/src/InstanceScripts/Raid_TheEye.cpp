@@ -187,11 +187,6 @@ public:
 		}
 	}
 
-	void Destroy()
-	{
-		delete this;
-	};
-	
 protected:
 	int nrspells;
 };
@@ -352,11 +347,6 @@ public:
 		}
 	}
 
-	void Destroy()
-	{
-		delete this;
-	};
-	
 protected:
 
 	int nrspells;
@@ -582,11 +572,6 @@ public:
 			TargetTable.clear();
 		}
 	}
-
-	void Destroy()
-	{
-		delete this;
-	};
 	
 protected:
 	int nrspells;
@@ -755,11 +740,6 @@ public:
 			TargetTable.clear();
 		}
 	}
-
-	void Destroy()
-	{
-		delete this;
-	};
 	
 protected:
 	int nrspells;
@@ -929,11 +909,6 @@ public:
 		}
 	}
 
-	void Destroy()
-	{
-		delete this;
-	};
-	
 protected:
 	int nrspells;
 };
@@ -1102,11 +1077,6 @@ public:
 		}
 	}
 
-	void Destroy()
-	{
-		delete this;
-	};
-	
 protected:
 	int nrspells;
 };
@@ -1276,11 +1246,6 @@ public:
 			TargetTable.clear();
 		}
 	}
-
-	void Destroy()
-	{
-		delete this;
-	};
 	
 protected:
 	int nrspells;
@@ -1450,11 +1415,6 @@ public:
 		}
 	}
 
-	void Destroy()
-	{
-		delete this;
-	};
-	
 protected:
 	int nrspells;
 };
@@ -1616,11 +1576,6 @@ public:
 		}
 	}
 
-	void Destroy()
-	{
-		delete this;
-	};
-	
 protected:
 	int nrspells;
 };
@@ -1859,7 +1814,11 @@ class SolariumAgentAI : public MoonScriptCreatureAI
     SolariumAgentAI(Creature* pCreature) : MoonScriptCreatureAI(pCreature)
     {
 		SetDespawnWhenInactive(true);	//despawn creature if it gets out of combat or dead
-		AggroNearestUnit();				//Aggro on spawn
+	}
+
+	void OnLoad()
+	{
+		AggroNearestUnit(); //Aggro on spawn
 	}
 };
 
@@ -1871,7 +1830,11 @@ class SolariumPriestAI : public MoonScriptCreatureAI
 		AddSpell(SOLARIUMPRIEST_GREATER_HEAL, Target_WoundedFriendly, 20, 2, 0, 0, 40);
 		AddSpell(SOLARIUMPRIEST_HOLY_SMITE, Target_Current, 80, 2.5f, 0, 0, 40);
 		SetDespawnWhenInactive(true);	//despawn creature if it gets out of combat or dead
-		AggroNearestUnit();				//Aggro on spawn
+	}
+
+	void OnLoad()
+	{
+		AggroNearestUnit(); //Aggro on spawn
 	}
 };
 
@@ -2353,11 +2316,6 @@ public:
         return wp;
     }
 
-	void Destroy()
-	{
-		delete this;
-	};
-
 protected:
 
 	bool FlameQuills;
@@ -2459,15 +2417,6 @@ public:
 		}
     }
 
-    void AIUpdate()
-	{
-    }
-
-	void Destroy()
-	{
-		delete this;
-	};
-	
 protected:
 	int nrspells;
 };
@@ -2535,15 +2484,6 @@ public:
 		CastTime();
     }
 
-    void AIUpdate()
-	{
-    }
-
-	void Destroy()
-	{
-		delete this;
-	};
-	
 protected:
 	int nrspells;
 };

@@ -193,8 +193,8 @@ bool ForemansBlackjack(uint32 i, Spell *pSpell)
 		return true;
 	
 	// check to see that we have the correct creature
-	Creature* c_target = (Creature*)target;
-	if(!c_target || c_target->GetEntry() != 10556 || !c_target->HasAura(17743)) 
+	Creature* c_target = TO_CREATURE(target);
+	if(c_target->GetEntry() != 10556 || !c_target->HasAura(17743)) 
 		return true;
 
 	// Start moving again
@@ -348,9 +348,9 @@ bool WinterWondervolt(uint32 i, Spell * pSpell)
 
 bool WinterWondervoltAura(uint32 i, Aura * pAura, bool apply)
 {
-	Unit * u_caster = pAura->GetUnitCaster();
+	Player * u_caster = pAura->GetPlayerCaster();
 
-	if(!u_caster || !u_caster->IsPlayer()) return true;
+	if(u_caster == NULL ) return true;
 
 	if(apply)
 	{
@@ -454,7 +454,7 @@ bool WarpRiftGenerator(uint32 i, Spell * pSpell)
 bool OrbOfTheSindorei(uint32 i, Aura * pAura, bool apply)
 {
 	Unit* target = pAura->GetTarget();
-	if( !target || !target->IsPlayer() )
+	if( !target->IsPlayer() )
 		return true;
 	if( apply )
 	{

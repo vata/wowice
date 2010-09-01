@@ -37,11 +37,13 @@ namespace luaGameObject
 	int GossipMenuAddItem(lua_State * L, GameObject * ptr)
 	{
 		int icon = luaL_checkint(L, 1);
-		const char * menu_text = luaL_checkstring(L, 2);
+   		const char * menu_text = luaL_checkstring(L, 2);
 		int IntId = luaL_checkint(L, 3);
-		int extra = luaL_checkint(L, 4);
-
-		Menu->AddItem(icon, menu_text, IntId, extra);
+		bool extra = (luaL_checkint(L, 4)) ? true : false;
+		const char * boxmessage = luaL_optstring(L,5,"");
+		uint32 boxmoney = luaL_optint(L,6,0);
+	    
+		Menu->AddMenuItem(icon, menu_text, 0, IntId, boxmessage, boxmoney, extra);
 		return 0;
 	}
 
@@ -135,22 +137,6 @@ namespace luaGameObject
 			return 0;
 		lua_pushstring(L,ptr->GetInfo()->Name);
 		return 1;
-	}
-
-	int Teleport(lua_State * L, GameObject * ptr)
-	{
-		TEST_GO()
-		Player* target = CHECK_PLAYER(L,1);
-		uint32 mapId = CHECK_ULONG(L,2);
-		float posX = CHECK_FLOAT(L, 3);
-		float posY = CHECK_FLOAT(L, 4);
-		float posZ = CHECK_FLOAT(L, 5);
-		float Orientation = (float)luaL_optnumber(L, 6, 0.0f);
-		if (!target)
-			return 0;
-		LocationVector vec(posX, posY, posZ, Orientation);
-		target->SafeTeleport(mapId, 0, vec);
-		return 0;
 	}
 
 	int GetCreatureNearestCoords(lua_State * L, GameObject * ptr)
@@ -288,6 +274,7 @@ namespace luaGameObject
 		sp->bytes1 = 0;
 		sp->bytes2 = 0;
 		sp->stand_state = 0;
+		sp->death_state = 0;
 		sp->channel_target_creature = sp->channel_target_go = sp->channel_spell = 0;
 		sp->MountedDisplayID = 0;
 		sp->Item1SlotDisplay = equip1;
@@ -506,6 +493,24 @@ namespace luaGameObject
 		return 1;
 	}
 
+	int GetInRangeUnits(lua_State * L, GameObject * ptr)
+	{
+		TEST_GO();
+		uint32 count = 0;
+		lua_newtable(L);
+		for( set<Object*>::iterator itr = ptr->GetInRangeSetBegin(); itr != ptr->GetInRangeSetEnd(); itr++)
+		{
+			if( (*itr) ->IsUnit() )
+			{
+				count++,
+				lua_pushinteger(L,count);
+				PUSH_UNIT(L,*itr);
+				lua_rawset(L,-3);
+			}
+		}
+		return 1;
+	}
+
 	int IsInFront(lua_State * L, GameObject * ptr)
 	{
 		TEST_GO_RET();
@@ -585,6 +590,25 @@ namespace luaGameObject
 		return 0;
 	}
 
+	int RemoveFlag(lua_State * L, GameObject * ptr)
+	{
+		int field = luaL_checkint(L,1);
+		int value = luaL_checkint(L,2);
+		if (ptr)
+			ptr->RemoveFlag(field,value);
+		return 0;
+	}
+
+	int SetFlag(lua_State * L, GameObject * ptr)
+	{
+		int field = luaL_checkint(L,1);
+		int value = luaL_checkint(L,2);
+		if (ptr)
+			ptr->SetFlag(field,value);
+		return 0;
+	}
+
+
 	int Update(lua_State * L, GameObject* ptr)
     {	//just despawns/respawns to update GO visuals
 		//credits: Sadikum
@@ -633,7 +657,7 @@ namespace luaGameObject
 	{
 		TEST_GO()
 		uint32 sp = CHECK_ULONG(L,1);
-		Unit * target = CHECK_UNIT(L,2);
+		Object * target = CHECK_OBJECT(L,2);
 		if(sp && target != NULL)
 		{
 			Spell * tSpell = new Spell(ptr,dbcSpell.LookupEntry(sp),true,NULL);
@@ -641,13 +665,6 @@ namespace luaGameObject
 			tSpell->prepare(&sp);
 		}
 		return 0;
-	}
-
-	int GetGameTime(lua_State * L, GameObject * ptr)
-	{
-		lua_pushnumber(L, ((uint32)sWorld.GetGameTime()));
-		Log.Notice("LuaEngine","Please use the global function GetGameTime instead. This GO-based one is deprecated.");
-		return 1;
 	}
 
 	int GetLandHeight(lua_State * L, GameObject * ptr)
@@ -731,7 +748,7 @@ namespace luaGameObject
 
 	int GetDistanceYards(lua_State * L, GameObject * ptr)
 	{
-		Unit * target = CHECK_UNIT(L, 1);
+		Object * target = CHECK_OBJECT(L, 1);
 		if(!ptr || !target)
 			lua_pushnil(L);
 		else 
@@ -951,7 +968,7 @@ namespace luaGameObject
 
 	int GetAreaId(lua_State * L, GameObject * ptr)
 	{
-		TEST_GO()
+		TEST_GO_RET()
 		lua_pushnumber(L, ( ptr->GetMapMgr()->GetAreaID(ptr->GetPositionX(), ptr->GetPositionY()) ) );
 		return 1;
 	}
@@ -966,7 +983,10 @@ namespace luaGameObject
 		float y = CHECK_FLOAT(L,2);
 		float z = CHECK_FLOAT(L,3);
 		float o = CHECK_FLOAT(L,4);
+		bool save = luaL_optint(L,5,0) ? true : false;
 		ptr->SetPosition(x, y, z, o);
+		if (save)
+			ptr->SaveToDB();
 		ptr->AddToWorld();
 		RET_BOOL(true)
 	}
@@ -1013,7 +1033,7 @@ namespace luaGameObject
 	{
 		TEST_GO()
 		uint32 sp = CHECK_ULONG(L,1);
-		Unit * target = CHECK_UNIT(L,2);
+		Object * target = CHECK_OBJECT(L,2);
 		if(sp && target != NULL)
 		{
 			Spell * tSpell = new Spell(ptr,dbcSpell.LookupEntry(sp),false,NULL);
@@ -1140,6 +1160,28 @@ namespace luaGameObject
 	{
 		TEST_GO();
 		lua_pushnumber(L, ptr->GetScale());
+		return 1;
+	}
+	int GetClosestUnit(lua_State * L, GameObject * ptr)
+	{
+		TEST_GO()
+		float closest_dist = 99999.99f;
+		float current_dist = 0;
+		Object * closest_unit = NULL;
+		Unit * ret = NULL;
+		for (set<Object*>::iterator itr = ptr->GetInRangeSetBegin(); itr != ptr->GetInRangeSetEnd(); ++itr)
+		{
+			closest_unit = (*itr);
+			if(!closest_unit->IsUnit())
+				continue;
+			current_dist = ptr->GetDistance2dSq(closest_unit);
+			if(current_dist < closest_dist)
+			{
+				closest_dist = current_dist;
+				ret = TO_UNIT(closest_unit);
+			}
+		}
+		PUSH_UNIT(L,ret);
 		return 1;
 	}
 }

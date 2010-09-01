@@ -49,6 +49,6 @@ void UlduarTeleporter::GossipSelectOption(Object* pObject, Player* Plr, uint32 I
 
 void SetupUlduar(ScriptMgr* mgr)
 {
-	GossipScript * UlduarTele = (GossipScript*) new UlduarTeleporter();
+	GossipScript * UlduarTele = new UlduarTeleporter();
 	mgr->register_go_gossip_script(194569, UlduarTele);
 };

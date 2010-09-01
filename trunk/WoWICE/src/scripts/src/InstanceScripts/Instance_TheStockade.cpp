@@ -105,10 +105,6 @@ public:
 		}
 	}
 
-	void Destroy()
-	{
-		delete this;
-	};
 };
 
 #define CN_HAMHOCK 1717
@@ -223,11 +219,6 @@ public:
 		}
     }
 
-	void Destroy()
-	{
-		delete this;
-	};
-
 protected:
 
     int nrspells;
@@ -335,10 +326,6 @@ public:
 		}
 	}
 
-	void Destroy()
-	{
-		delete this;
-	};
 };
 
 #define CN_DEXTRENWARD 1663
@@ -427,10 +414,6 @@ public:
 		}
 	}
 
-	void Destroy()
-	{
-		delete this;
-	};
 };
 
 #define CN_DEFINMATE 1708
@@ -519,10 +502,6 @@ public:
 		}
 	}
 
-	void Destroy()
-	{
-		delete this;
-	};
 };
 
 #define CN_DEFINSURGENT 1715
@@ -611,10 +590,6 @@ public:
 		}
 	}
 
-	void Destroy()
-	{
-		delete this;
-	};
 };
 
 #define CN_DEFPRISONER 1706
@@ -729,11 +704,6 @@ public:
 		}
 	}
 
-	void Destroy()
-	{
-		delete this;
-	};
-
 protected:
     
 	int nrspells;
@@ -825,10 +795,6 @@ public:
 		}
 	}
 
-	void Destroy()
-	{
-		delete this;
-	};
 };
 
 void SetupTheStockade(ScriptMgr * mgr)

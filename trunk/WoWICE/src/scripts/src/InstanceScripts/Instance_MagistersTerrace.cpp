@@ -186,11 +186,6 @@ class SelinFireheartAI : public MoonScriptCreatureAI
 		_unit->SetUInt32Value(UNIT_FIELD_POWER1, _unit->GetPower(POWER_TYPE_MANA) - 3231);
 	}
 
-	void Destroy()
-	{
-		delete this;
-	};
-	
 	SpellEntry* ManaRage;
 	SpellDesc* ManaRageTrigger;
 	SpellDesc* FelExplosion;
@@ -248,11 +243,6 @@ class VexallusAI : public MoonScriptBossAI
 		
 		ParentClass::AIUpdate();
 	} 
-	
-	void Destroy()
-	{
-		delete this;
-	};
 	
 	SpellDesc*	mPureEnergy;
 	uint8		mSummon;
@@ -334,11 +324,6 @@ class Priestess_DelrissaAI : public MoonScriptBossAI
 		ParentClass::AIUpdate();
 	};
 
-	void Destroy()
-	{
-		delete this;
-	};
-	
 protected:
 	uint8		mKilledPlayers;
 	int32		mClearHateList;
@@ -382,11 +367,6 @@ class Ellrys_DuskhallowAI : public MoonScriptBossAI
 		AddSpell(EllrysDuskhallow_Fear, Target_RandomPlayer, 75, 1.5, 9, 0, 20);
 	}
 	
-	void Destroy()
-	{
-		delete this;
-	};
-	
 };
 
 //Eramas Brightblaze 
@@ -404,10 +384,6 @@ class Eramas_BrightblazeAI : public MoonScriptBossAI
 		AddSpell(ERAMAS_BRIGHTBLAZE_SNAP_KICK, Target_SecondMostHated, 40, 0, 2, 0, 5);
 	}
 	
-	void Destroy()
-	{
-		delete this;
-	};
 };
 
 //Yazzai
@@ -431,10 +407,6 @@ class YazzaiAI : public MoonScriptBossAI
 		AddSpell(YAZZAI_FROSTBOLT, Target_RandomPlayer, 80, 3, 14, 0, 40);
 	}
 	
-	void Destroy()
-	{
-		delete this;
-	};
 };
 
 //Warlord Salaris
@@ -462,10 +434,6 @@ class Warlord_SalarisAI : public MoonScriptBossAI
 		AddSpell(WARLORD_SALARIS_MORTAL_STRIKE, Target_Current, 100, 0, 6, 0, 5);
 	}
 	
-	void Destroy()
-	{
-		delete this;
-	};
 };
 
 //Geraxxas
@@ -490,10 +458,6 @@ class GaraxxasAI : public MoonScriptBossAI
 		AddSpell(GARAXXAS_WING_CLIP, Target_Current, 30, 0, 9, 0, 5);
 	}
 	
-	void Destroy()
-	{
-		delete this;
-	};
 };
 
 //Apoko
@@ -513,10 +477,6 @@ class ApokoAI : public MoonScriptCreatureAI
 		AddSpell(APOKO_PURGE, Target_RandomUnit, 20, 0, 40, 0, 30);
 	}
 	
-	void Destroy()
-	{
-		delete this;
-	};
 };
 
 //Zelfan
@@ -536,10 +496,6 @@ class ZelfanAI : public MoonScriptCreatureAI
 	  AddSpell(ZELFAN_ROCKET_LAUNCH, Target_RandomPlayer, 99, 3.5, 60, 0, 45);
 	}
 	
-	void Destroy()
-	{
-		delete this;
-	};
 };
 
 //Trash mobs
@@ -563,10 +519,6 @@ class CoilskarWitchAI : public MoonScriptBossAI
 		AddSpell(COILSKAR_WITCH_SHOOT, Target_RandomPlayer, 75, 1.5, 4, 5, 30);
 	}
 	
-	void Destroy()
-	{
-		delete this;
-	};
 };
 
 //Sister of Torment
@@ -584,10 +536,6 @@ class SisterOfTormentAI : public MoonScriptBossAI
 		AddSpell(SISTER_OF_TORMENT_DEADLY_EMBRACE, Target_RandomPlayer, 20, 1.5, 16, 0, 20);
 	}
 	
-	void Destroy()
-	{
-		delete this;
-	};
 };
 
 //Sunblade Blood Knight
@@ -607,10 +555,6 @@ class SunbladeBloodKnightAI : public MoonScriptBossAI
 		AddSpell(BLOOD_KNIGHT_HOLY_LIGHT, Target_Self, 10, 2, 30, 0, 40);		
 	}
 	
-	void Destroy()
-	{
-		delete this;
-	};
 };
 
 //Sunblade Imp
@@ -625,11 +569,7 @@ class SunbladeImpAI : public MoonScriptBossAI
 	{
 		AddSpell(IMP_FIREBOLT, Target_Current, 100, 2, (int32)2.5, 0, 30);
 	}
-	
-	void Destroy()
-	{
-		delete this;
-	};
+
 };
 
 //Sunblade Mage Guard 
@@ -646,11 +586,7 @@ class SunbladeMageGuardAI : public MoonScriptBossAI
 		AddSpell(MAGE_GUARD_GLAVE_THROW, Target_Current, 60, 0, 25, 0, 5);
 		AddSpell(MAGE_GUARD_MAGIC_DAMPENING_FIELD, Target_RandomPlayer, 20, 1, 35, 0, 20);
 	}
-	
-	void Destroy()
-	{
-		delete this;
-	};
+
 };
 
 //Sunblade Magister
@@ -667,11 +603,7 @@ class SunbladeMagisterAI : public MoonScriptBossAI
 		AddSpell(MAGISTER_FROSTBOLT, Target_Current, 65, 2, 4, 0, 30);
 		AddSpell(MAGISTER_ARCANE_NOVA, Target_Self, 12, 1.5, 40, 0, 0);
 	}
-	
-	void Destroy()
-	{
-		delete this;
-	};
+
 };
 
 void SetupMagistersTerrace(ScriptMgr* pScriptMgr) 

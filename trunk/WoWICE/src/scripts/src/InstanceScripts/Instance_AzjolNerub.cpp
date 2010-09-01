@@ -76,11 +76,6 @@ class KrikthirAI : public MoonScriptCreatureAI
 		ParentClass::OnDied(pKiller);
 	};
 
-	void Destroy()
-	{
-		delete this;
-	};
-	
 	bool mEnraged;
 };
 
@@ -117,10 +112,6 @@ class HadronoxAI : public MoonScriptCreatureAI
 		AddSpell(HADRONOX_PIERCEARMOR, Target_ClosestPlayer, 20, 0, 5, 0, 0);
 	};
 	
-	void Destroy()
-	{
-		delete this;
-	};
 };	
 
 //Watcher Gashra.
@@ -139,10 +130,6 @@ class GashraAI : public MoonScriptCreatureAI
 		AddSpell(GASHRA_INFECTEDBITE, Target_ClosestPlayer, 35, 0, 12, 0, 0);
 	};
 	
-	void Destroy()
-	{
-		delete this;
-	};
 };	
 
 //Watcher Narjil
@@ -162,10 +149,6 @@ class NarjilAI : public MoonScriptCreatureAI
 		AddSpell(NARJIL_BLINDINGWEBS, Target_ClosestPlayer, 16, 0, 9, 0, 0);
 	};
 	
-	void Destroy()
-	{
-		delete this;
-	};
 };	
 
 //Watcher Silthik
@@ -185,10 +168,6 @@ class SilthikAI : public MoonScriptCreatureAI
 		AddSpell(SILTHIK_POISONSPRAY, Target_RandomPlayer, 30, 0, 15, 0, 0);
 	};
 	
-	void Destroy()
-	{
-		delete this;
-	};
 };	
 
 //Anub'ar Shadowcaster (anub shadowcaster)
@@ -206,10 +185,6 @@ class AnubShadowcasterAI : public MoonScriptCreatureAI
 		AddSpell(SHADOWCASTER_SHADOW_NOVA, Target_Self, 22, 0, 15);
 	};
 	
-	void Destroy()
-	{
-		delete this;
-	};
 };	
 
 void SetupAzjolNerub(ScriptMgr * mgr) 

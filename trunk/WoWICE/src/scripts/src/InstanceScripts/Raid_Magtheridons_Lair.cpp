@@ -423,11 +423,6 @@ public:
 		}
     }
 
-	void Destroy()
-	{
-		delete this;
-	};
-
 protected:
 
 	bool EventStarted;
@@ -856,11 +851,6 @@ public:
 		}
 	}
 
-	void Destroy()
-	{
-		delete this;
-	};
-
 protected:
 
 	int nrspells;
@@ -1083,11 +1073,6 @@ public:
 			TargetTable.clear();
 		}
 	}
-
-	void Destroy()
-	{
-		delete this;
-	};
 		
 protected:
 		
@@ -1247,11 +1232,6 @@ public:
 			TargetTable.clear();
 		}
 	}
-
-	void Destroy()
-	{
-		delete this;
-	};
 
 protected:
 
@@ -1664,11 +1644,6 @@ public:
 		}
 	}
 
-	void Destroy()
-	{
-		delete this;
-	};
-	
 protected:
 
 	int nrspells;

@@ -120,11 +120,6 @@ public:
         }
     }
 
-	void Destroy()
-	{
-		delete this;
-	};
-
 protected:
 
 	int nrspells;
@@ -235,11 +230,6 @@ public:
 			}
         }
     }
-
-	void Destroy()
-	{
-		delete this;
-	};
 
 protected:
 
@@ -359,11 +349,6 @@ public:
         }
     }
 
-	void Destroy()
-	{
-		delete this;
-	};
-
 protected:
 
 	int nrspells;
@@ -476,11 +461,6 @@ public:
         }
     }
 
-	void Destroy()
-	{
-		delete this;
-	};
-
 protected: 
 
 	int nrspells;
@@ -588,11 +568,6 @@ public:
 			}
         }
     }
-
-	void Destroy()
-	{
-		delete this;
-	};
 
 protected:
 
@@ -733,11 +708,6 @@ public:
         }
     }
 
-	void Destroy()
-	{
-		delete this;
-	};
-
 protected: 
 
 	int nrspells;
@@ -844,11 +814,6 @@ public:
         }
     }
 
-	void Destroy()
-	{
-		delete this;
-	};
-
 protected:
 
 	int nrspells;
@@ -954,11 +919,6 @@ public:
         }
     }
 
-	void Destroy()
-	{
-		delete this;
-	};
-
 protected:
 
 	int nrspells;
@@ -1063,11 +1023,6 @@ public:
 			}
         }
     }
-
-	void Destroy()
-	{
-		delete this;
-	};
 
 protected:
 
@@ -1225,11 +1180,6 @@ public:
         }
     }
 
-	void Destroy()
-	{
-		delete this;
-	};
-
 protected:
 
 	int nrspells;
@@ -1253,10 +1203,6 @@ public:
 
     }
 
-	void Destroy()
-	{
-		delete this;
-	};
 };
 
 
@@ -1319,6 +1265,6 @@ void SetupBlackwingLair(ScriptMgr * mgr)
 	mgr->register_creature_script(CN_EBONROC, &EbonrocAI::Create);
 	mgr->register_creature_script(CN_FLAMEGOR, &FlamegorAI::Create);
 	mgr->register_creature_script(CN_VAELASTRASZ, &VaelastraszAI::Create);
-	GossipScript* vg = (GossipScript*) new VaelastraszGossip;
+	GossipScript* vg = new VaelastraszGossip;
 	mgr->register_gossip_script(CN_VAELASTRASZ, vg);        // Vael Gossip TODO: change the flag to agressive
 }

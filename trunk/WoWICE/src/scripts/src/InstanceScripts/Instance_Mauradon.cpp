@@ -143,11 +143,6 @@ public:
 		}
 	}
 
-	void Destroy()
-	{
-		delete this;
-	};
-
 protected:
 
 	int nrspells;
@@ -269,11 +264,6 @@ public:
 		}
 	}
 
-	void Destroy()
-	{
-		delete this;
-	};
-
 protected:
 
 	int nrspells;
@@ -394,11 +384,6 @@ public:
 			}
 		}
 	}
-
-	void Destroy()
-	{
-		delete this;
-	};
 
 protected:
 
@@ -539,11 +524,6 @@ public:
 		}
 	}
 
-	void Destroy()
-	{
-		delete this;
-	};
-
 protected:
 
 	int nrspells;
@@ -674,11 +654,6 @@ public:
 		}
 	}
 
-	void Destroy()
-	{
-		delete this;
-	};
-
 protected:
 
 	int nrspells;
@@ -800,11 +775,6 @@ public:
 		}
 	}
 
-	void Destroy()
-	{
-		delete this;
-	};
-
 protected:
 
 	int nrspells;
@@ -925,11 +895,6 @@ public:
 			}
 		}
 	}
-
-	void Destroy()
-	{
-		delete this;
-	};
 
 protected:
 

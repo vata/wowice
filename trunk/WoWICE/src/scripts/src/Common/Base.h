@@ -22,13 +22,6 @@
 #define DEFAULT_UPDATE_FREQUENCY	1000	//milliseconds
 #define DEFAULT_DESPAWN_TIMER		2000	//milliseconds
 
-#define TO_CREATURE(ptr) static_cast<Creature*>(ptr) 
-#define TO_GAMEOBJECT(ptr) static_cast<GameObject*>(ptr) 
-#define TO_PLAYER(ptr) static_cast<Player*>(ptr)
-#define TO_OBJECT(ptr) static_cast<Object*>(ptr)
-#define TO_UNIT(ptr) static_cast<Unit*>(ptr)
-#define TO_PET(ptr) static_cast<Pet*>(ptr)
-
 #define MOONSCRIPT_FACTORY_FUNCTION(ClassName, ParentClassName)\
 public:\
 	ADD_CREATURE_FACTORY_FUNCTION(ClassName);\
@@ -350,7 +343,6 @@ public:
 	int32					GetHealthPercent();
 	int32					GetManaPercent();
 	void					Regenerate();
-	bool					IsAlive();
 	void					SetScale(float pScale);
 	float					GetScale();
 	void					SetDisplayId(uint32 pDisplayId);

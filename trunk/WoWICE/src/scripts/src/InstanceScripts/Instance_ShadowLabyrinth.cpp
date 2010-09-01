@@ -115,11 +115,6 @@ public:
         }
     }
 
-	void Destroy()
-	{
-		delete this;
-	};
-
 protected:
 
 	int nrspells;
@@ -228,11 +223,6 @@ public:
         }
     }
 
-	void Destroy()
-	{
-		delete this;
-	};
-
 protected:
 
 	int nrspells;
@@ -326,11 +316,6 @@ public:
 			}
         }
     }
-
-	void Destroy()
-	{
-		delete this;
-	};
 
 protected:
 
@@ -433,11 +418,6 @@ public:
         }
     }
 
-	void Destroy()
-	{
-		delete this;
-	};
-
 protected:
 
 	int nrspells;
@@ -538,11 +518,6 @@ public:
 			}
         }
     }
-
-	void Destroy()
-	{
-		delete this;
-	};
 
 protected:
 
@@ -646,11 +621,6 @@ public:
         }
     }
 
-	void Destroy()
-	{
-		delete this;
-	};
-
 protected:
 
 	int nrspells;
@@ -752,11 +722,6 @@ public:
 			}
         }
     }
-
-	void Destroy()
-	{
-		delete this;
-	};
 
 protected:
 
@@ -904,11 +869,6 @@ public:
         }
     }
 
-	void Destroy()
-	{
-		delete this;
-	};
-
 protected:
 
 	int nrspells;
@@ -1044,11 +1004,6 @@ public:
         }
     }
 
-	void Destroy()
-	{
-		delete this;
-	};
-
 protected:
 
 	int HealCooldown;
@@ -1150,11 +1105,6 @@ public:
 			}
         }
     }
-
-	void Destroy()
-	{
-		delete this;
-	};
 
 protected:
 
@@ -1320,11 +1270,6 @@ public:
 			}
         }
     }
-
-	void Destroy()
-	{
-		delete this;
-	};
 
 protected:
 
@@ -1551,11 +1496,6 @@ public:
 		}
 	}
 
-	void Destroy()
-	{
-		delete this;
-	};
-
 protected:
 
 	int nrspells;
@@ -1741,11 +1681,6 @@ public:
 			}
         }
     }
-
-	void Destroy()
-	{
-		delete this;
-	};
 
 protected:
 
@@ -2045,11 +1980,6 @@ public:
 
 		return target;
 	}
-
-	void Destroy()
-	{
-		delete this;
-	};
 
 protected:
 

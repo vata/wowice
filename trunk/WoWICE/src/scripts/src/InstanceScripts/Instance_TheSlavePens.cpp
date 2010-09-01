@@ -133,11 +133,6 @@ public:
 		}
 	}
 
-	void Destroy()
-	{
-		delete this;
-	};
-
 protected:
 
 	int nrspells;
@@ -254,11 +249,6 @@ public:
 			}
 		}
 	}
-
-	void Destroy()
-	{
-		delete this;
-	};
 
 protected:
 
@@ -380,11 +370,6 @@ public:
 			}
 		}
 	}
-
-	void Destroy()
-	{
-		delete this;
-	};
 
 protected:
 
@@ -523,11 +508,6 @@ public:
 		}
 	}
 
-	void Destroy()
-	{
-		delete this;
-	};
-
 protected:
 
 	int nrspells;
@@ -646,11 +626,6 @@ public:
 			}
 		}
 	}
-
-	void Destroy()
-	{
-		delete this;
-	};
 
 protected:
 
@@ -779,11 +754,6 @@ public:
 		}
 	}
 
-	void Destroy()
-	{
-		delete this;
-	};
-
 protected:
 
 	int nrspells;
@@ -901,11 +871,6 @@ public:
 		}
 	}
 
-	void Destroy()
-	{
-		delete this;
-	};
-
 protected:
 
 	int nrspells;
@@ -987,11 +952,6 @@ public:
 
 		_unit->CastSpell(_unit, SpellID, true);
     }
-
-	void Destroy()
-	{
-		delete this;
-	};
 
 protected:
 
@@ -1243,11 +1203,6 @@ public:
 		}
 	}
 
-	void Destroy()
-	{
-		delete this;
-	};
-
 protected:
 
 	uint32 TotemCounter;
@@ -1449,11 +1404,6 @@ public:
 		}
 	}
 
-	void Destroy()
-	{
-		delete this;
-	};
-
 protected:
 
 	bool Enraged;
@@ -1639,11 +1589,6 @@ public:
 			TargetTable.clear();
 		}
 	}
-
-	void Destroy()
-	{
-		delete this;
-	};
 
 protected:
 

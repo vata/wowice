@@ -79,6 +79,22 @@ bool RockbiterWeapon(uint32 i, Spell* pSpell)
     return true;
 }
 
+bool FlametongueWeaponPassive(uint32 i, Aura *pAura, bool apply)
+{
+	Unit *target = pAura->GetTarget();
+
+	if (apply)
+	{	
+		// target is always a player
+		Item *item = TO_PLAYER(target)->GetItemInterface()->GetItemByGUID(pAura->itemCasterGUID);
+		target->AddProcTriggerSpell(10444, pAura->GetSpellProto()->Id, pAura->m_casterGuid, pAura->GetSpellProto()->procChance, PROC_ON_MELEE_ATTACK, 0, NULL, NULL, item);
+	}
+	else
+		target->RemoveProcTriggerSpell(10444, pAura->m_casterGuid, pAura->itemCasterGUID);
+
+	return true;
+}
+
 void SetupShamanSpells(ScriptMgr * mgr)
 {
 	uint32 RockbiterWeaponIds[] = 
@@ -95,4 +111,7 @@ void SetupShamanSpells(ScriptMgr * mgr)
 		0,
 	};
     mgr->register_dummy_spell(RockbiterWeaponIds, &RockbiterWeapon); // rank 1
+
+	uint32 FlametongueWeaponPassiveIds[] = { 10400, 15567, 15568, 15569, 16311, 16312, 16313, 58784, 58791, 58792, 0 };
+	mgr->register_dummy_aura(FlametongueWeaponPassiveIds, &FlametongueWeaponPassive);
 }

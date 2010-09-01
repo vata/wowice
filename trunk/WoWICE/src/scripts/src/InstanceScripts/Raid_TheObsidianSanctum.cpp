@@ -339,11 +339,6 @@ class SartharionAI : public MoonScriptBossAI
 		ParentClass::OnDied(pKiller);
 	};
 
-	void Destroy()
-	{
-		delete this;
-	};
-
 private:
 	bool m_bDrakes[OS_DATA_END - 1];
 	int32 mDrakeTimer;
@@ -381,10 +376,6 @@ class TsunamiAI : public MoonScriptBossAI
 		ParentClass::OnLoad();
 	};
 
-	void Destroy()
-	{
-		delete this;
-	};
 };	
 
 class CyclonAI : public MoonScriptBossAI
@@ -405,10 +396,6 @@ public:
 		ParentClass::OnLoad();
 	};
 
-	void Destroy()
-	{
-		delete this;
-	};
 };
 
 class LavaBlazeAI : public MoonScriptBossAI
@@ -434,10 +421,6 @@ public:
 		Despawn( 1000, 0 );
 	};
 
-	void Destroy()
-	{
-		delete this;
-	};
 };
 
 void SetupTheObsidianSanctum(ScriptMgr * mgr)

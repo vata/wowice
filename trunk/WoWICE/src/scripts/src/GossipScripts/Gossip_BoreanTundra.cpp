@@ -17,15 +17,11 @@ public:
 		plr->Gossip_Complete();
 		Tiare->CastSpell(plr, dbcSpell.LookupEntry(50135), true);
 	}			
-	void Destroy()
-    {
-        delete this;
-	}
 
 };
 
 void SetupBoreanTundraGossip(ScriptMgr * mgr)
 {
-	GossipScript * TiareGossip = (GossipScript*) new TiareGossipScript;
+	GossipScript * TiareGossip = new TiareGossipScript;
 	mgr->register_gossip_script(30051, TiareGossip);		// Tiare
 }

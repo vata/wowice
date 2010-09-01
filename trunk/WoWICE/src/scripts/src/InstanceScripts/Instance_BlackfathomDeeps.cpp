@@ -166,11 +166,6 @@ public:
 		}
 	}
 
-    void Destroy()
-    {
-        delete this;
-    }
-
 };
 
 void SetupBlackfathomDeeps(ScriptMgr * mgr)
@@ -186,6 +181,6 @@ void SetupBlackfathomDeeps(ScriptMgr * mgr)
 	mgr->register_creature_script(CN_TwilightLordKelris, &KelrisAI::Create);
 	mgr->register_creature_script(CN_Akumai, &AkumaiAI::Create);
 
-	GossipScript * Morridune = (GossipScript*) new MorriduneGossip();
+	GossipScript * Morridune = new MorriduneGossip();
 	mgr->register_gossip_script(GS_Morridune, Morridune);
 }

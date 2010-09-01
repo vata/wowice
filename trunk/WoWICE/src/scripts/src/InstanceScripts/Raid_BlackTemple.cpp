@@ -54,7 +54,7 @@ public:
 
 	void OnCreatureDeath( Creature* pVictim, Unit* pKiller )
 	{
-		if ( pVictim == NULL || pVictim->GetCreatureInfo() == NULL || pVictim->GetCreatureInfo()->Rank != ELITE_WORLDBOSS )
+		if ( pVictim->GetCreatureInfo()->Rank != ELITE_WORLDBOSS )
 			return;
 
 		EncounterMap::iterator Iter = mEncounters.find( pVictim->GetEntry() );
@@ -75,10 +75,6 @@ public:
 		};
 	};
 
-	void Destroy()
-	{
-		delete this;
-	};
 };
 
 //////////////////////////////////////////////////////////////////////////
@@ -1982,11 +1978,6 @@ public:
 		}
 	}
 
-	void Destroy()
-	{
-		delete this;
-	};
-
 protected:
 
 	int nrspells;
@@ -2172,11 +2163,6 @@ public:
 			
 		}
 	}
-
-	void Destroy()
-	{
-		delete this;
-	};
 
 protected:
 	uint32 timer;
@@ -2648,11 +2634,6 @@ public:
 		}
 	}
 
-	void Destroy()
-	{
-		delete this;
-	};
-
 protected:
 
 	uint32 LastThreat;
@@ -2976,7 +2957,7 @@ class ReliquaryOfSoulsAI : public MoonScriptCreatureAI
 							if((*itr)->GetTypeId() == TYPEID_UNIT)
 							{
 								creature = TO_CREATURE((*itr));
-								if (creature && creature->GetCreatureInfo() && creature->GetCreatureInfo()->Id == CN_ENSLAVED_SOUL && !creature->isAlive())
+								if (creature->GetCreatureInfo()->Id == CN_ENSLAVED_SOUL && !creature->isAlive())
 									DeadSoulCount++;
 							}
 						}
@@ -3318,11 +3299,6 @@ public:
 		}
 	}
 
-	void Destroy()
-	{
-		delete this;
-	};
-
 protected:
 
 	uint32 SoundTimer;
@@ -3439,11 +3415,6 @@ public:
 		pGethois->DealDamageToFriends( fAmount, _unit->GetEntry() );
 	};
 
-	void Destroy()
-	{
-		delete this;
-	};
-
 	GathiosAI* pGethois;
 };
 
@@ -3483,11 +3454,6 @@ public:
 		pGethois->DealDamageToFriends( fAmount, _unit->GetEntry() );
 	};
 
-	void Destroy()
-	{
-		delete this;
-	};
-
 	GathiosAI* pGethois;
 };
 
@@ -3523,12 +3489,8 @@ public:
 
 	void OnDamageTaken(Unit* mAttacker, uint32 fAmount) 
 	{
-		pGethois->DealDamageToFriends( fAmount, _unit->GetEntry() );
-	};
-
-	void Destroy()
-	{
-		delete this;
+		if( pGethois != NULL )
+			pGethois->DealDamageToFriends( fAmount, _unit->GetEntry() );
 	};
 
 	GathiosAI* pGethois;
@@ -3758,11 +3720,6 @@ public:
 			TargetTable.clear();
 		}
 	}
-
-	void Destroy()
-	{
-		delete this;
-	};
 
 protected:
 
@@ -3995,11 +3952,6 @@ public:
 			}
         }
     }
-
-	void Destroy()
-	{
-		delete this;
-	};
 
 protected:
 
@@ -4360,11 +4312,6 @@ class GenericTriggerAI : public MoonScriptCreatureAI
 		}
 	}
 
-	void Destroy()
-	{
-		delete this;
-	}
-
 	uint32	mDespawnTimer;
 	uint32	mSpellId;
 };
@@ -4412,11 +4359,6 @@ class EyeBeamTriggerAI : public MoonScriptCreatureAI
 
 		ApplyAura(EYE_BLAST);
     }
-
-	void Destroy()
-	{
-		delete this;
-	}
 
 	int32	mPosition;
 };
@@ -4497,11 +4439,6 @@ class ShadowDemonAI : public MoonScriptCreatureAI
 		ParentClass::AIUpdate();
 	}
 
-	void Destroy()
-	{
-		delete this;
-	}
-
 	SpellDesc*	mParalyze;
 	SpellDesc*	mConsumeSoul;
 };
@@ -4572,11 +4509,6 @@ class ParasiticShadowfiendAI : public MoonScriptCreatureAI
 				Despawn(0);
 			}
 		}
-	}
-
-	void Destroy()
-	{
-		delete this;
 	}
 
 	SpellDesc*	mParasiticDmg;
@@ -4652,10 +4584,6 @@ public:
 		}
 	}
 
-	void Destroy()
-	{
-		delete this;
-	}
 };
 
 /* Akama AI - Creature AI Class */
@@ -5223,11 +5151,6 @@ class AkamaAI : public MoonScriptBossAI
 		return pTarget;
 	}
 
-	void Destroy()
-	{
-		delete this;
-	}
-
 	// SPells
 	SpellDesc*	mHealingPotion;
 	SpellDesc*	mDespawn;
@@ -5562,11 +5485,6 @@ class MaievAI : public MoonScriptBossAI
 			Emote("Farewell, champions.", Text_Yell, 11498);
 			Despawn(0);
 		}
-	}
-
-	void Destroy()
-	{
-		delete this;
 	}
 
 	// AI class pointers
@@ -6991,11 +6909,6 @@ class CageTrapTriggerAI : public MoonScriptCreatureAI
 		}
     }
 
-	void Destroy()
-	{
-		delete this;
-	}
-
 	std::vector<MoonScriptCreatureAI*>	mTriggerAIList;
 	bool								mIsActivated;
 	bool								mHasTrapped;
@@ -7020,11 +6933,6 @@ public:
 			CageTrapTriggerAI *pTriggerAI = static_cast<CageTrapTriggerAI*>(pTrigger->GetScript());
 			pTriggerAI->mIsActivated = true;
 		}
-	}
-
-	void Destroy()
-	{
-		delete this;
 	}
 
 	static GameObjectAIScript *Create(GameObject* pGameObject) { return new CageTrapGO(pGameObject); }
@@ -7270,7 +7178,7 @@ void SetupBlackTemple(ScriptMgr * mgr)
 	//mgr->register_creature_script(CN_SHADE_OF_AKAMA, &ShadeofakamaAI::Create); //test
 
 	//Illidan Stormrage related
-	GossipScript * AG = (GossipScript*) new AkamaGossip();
+	GossipScript * AG = new AkamaGossip();
 	mgr->register_gossip_script(CN_AKAMA, AG);
 
 	mgr->register_creature_script(CN_DOOR_EVENT_TRIGGER, &UnselectableTriggerAI::Create);

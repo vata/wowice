@@ -113,11 +113,6 @@ public:
         }
     }
 
-	void Destroy()
-	{
-		delete this;
-	};
-
 protected:
 
 	int nrspells;
@@ -227,11 +222,6 @@ public:
         }
     }
 
-	void Destroy()
-	{
-		delete this;
-	};
-
 protected:
 
 	int nrspells;
@@ -336,11 +326,6 @@ public:
 			}
         }
     }
-
-	void Destroy()
-	{
-		delete this;
-	};
 
 protected:
 
@@ -462,11 +447,6 @@ public:
 			}
         }
     }
-
-	void Destroy()
-	{
-		delete this;
-	};
 
 protected:
 
@@ -655,11 +635,6 @@ public:
 			}
 		}
 	}
-
-	void Destroy()
-	{
-		delete this;
-	};
 
 protected:
 
@@ -909,11 +884,6 @@ public:
 		}
 	}
 
-	void Destroy()
-	{
-		delete this;
-	};
-
 protected:
 
 	uint32 PlantTimer;
@@ -1122,11 +1092,6 @@ public:
 		}
 	}
 
-	void Destroy()
-	{
-		delete this;
-	};
-
 protected:
 
 	bool Enraged;
@@ -1280,11 +1245,6 @@ public:
 			}
 		}
 	}
-
-	void Destroy()
-	{
-		delete this;
-	};
 
 protected:
 
@@ -1475,11 +1435,6 @@ public:
 			}
 		}
 	}
-
-	void Destroy()
-	{
-		delete this;
-	};
 
 protected:
 

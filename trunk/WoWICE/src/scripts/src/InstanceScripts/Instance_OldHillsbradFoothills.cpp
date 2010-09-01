@@ -240,10 +240,6 @@ public:
 		}
 	}
 
-	void Destroy()
-	{
-		delete this;
-	};
 };
 
 class BrazenGossip : public GossipScript
@@ -281,10 +277,6 @@ public:
 		}
 	}
 
-	void Destroy()
-	{
-		delete this;
-	};
 }; 
 
 class LieutenantDrakeAI : public MoonScriptCreatureAI
@@ -377,10 +369,6 @@ public:
 		}
 	}
 
-	void Destroy()
-	{
-		delete this;
-	};
 };
 
 void SetupOldHillsbradFoothills(ScriptMgr * mgr)
@@ -389,10 +377,10 @@ void SetupOldHillsbradFoothills(ScriptMgr * mgr)
     mgr->register_creature_script( CN_LIEUTENANT_DRAKE, &LieutenantDrakeAI::Create );
     mgr->register_creature_script( CN_THRALL, &ThrallAI::Create );
 
-    GossipScript * eGossip = (GossipScript*) new ErozionGossip;
+    GossipScript * eGossip = new ErozionGossip;
     mgr->register_gossip_script( CN_EROZION, eGossip );
-    GossipScript * bGossip = (GossipScript*) new BrazenGossip; 
+    GossipScript * bGossip = new BrazenGossip; 
     mgr->register_gossip_script( CN_BRAZEN, bGossip );
-    GossipScript * tGossip = (GossipScript*) new ThrallGossip;
+    GossipScript * tGossip = new ThrallGossip;
     mgr->register_gossip_script( CN_THRALL, tGossip );
 }

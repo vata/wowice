@@ -226,11 +226,6 @@ public:
         ParentClass::AIUpdate();
     };
 
-	void Destroy()
-	{
-		delete this;
-	};
-
     bool    m_bEnraged;
 }; 
 
@@ -402,11 +397,6 @@ comulativeperc += spells[i].perctrigger;
 }
 }
 }
-
-	void Destroy()
-	{
-		delete this;
-	};
 
 protected:
 	uint32 mPhase;
@@ -603,11 +593,6 @@ void AIUpdate()
 		}
 	}
 
-	void Destroy()
-	{
-		delete this;
-	};
-
 protected:
     uint32 mPhase;  // NPC has 2 phases
     int nrspells;
@@ -754,11 +739,6 @@ comulativeperc += spells[i].perctrigger;
 }
 }
 }
-
-	void Destroy()
-	{
-		delete this;
-	};
 
 protected:
     uint32 mPhase;  // NPC has 2 phases
