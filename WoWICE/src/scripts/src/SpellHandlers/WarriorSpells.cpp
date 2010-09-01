@@ -61,6 +61,18 @@ bool Vigilance(uint32 i, Spell* pSpell)
 	return true;
 }
 
+bool DamageShield(uint32 i, Aura *pAura, bool apply)
+{
+	Unit *target = pAura->GetTarget();
+
+	if (apply)
+		target->AddProcTriggerSpell(59653, pAura->GetSpellId(), pAura->m_casterGuid, pAura->GetSpellProto()->procChance, PROC_ON_MELEE_ATTACK_VICTIM | PROC_ON_BLOCK_VICTIM, 0, NULL, NULL);
+	else
+		target->RemoveProcTriggerSpell(59653, pAura->m_casterGuid);
+
+	return true;
+}
+
 void SetupWarriorSpells(ScriptMgr * mgr)
 {
 	uint32 ExecuteIds[] = 
@@ -78,4 +90,7 @@ void SetupWarriorSpells(ScriptMgr * mgr)
 	};
     mgr->register_dummy_spell(ExecuteIds, &Execute);
 	mgr->register_dummy_spell(50725, &Vigilance);
+
+	mgr->register_dummy_aura(58872, &DamageShield);
+	mgr->register_dummy_aura(58874, &DamageShield);
 }

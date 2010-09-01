@@ -119,10 +119,6 @@ public:
 		}
 	}
 
-    void Destroy()
-    {
-        delete this;
-    }
 };
 
 class MasterSwordsmith : public GossipScript
@@ -226,10 +222,6 @@ public:
 		}
 	}
 
-    void Destroy()
-    {
-        delete this;
-    }
 };
 
 class MasterAxesmith : public GossipScript
@@ -333,17 +325,13 @@ public:
 		}
 	}
 
-    void Destroy()
-    {
-        delete this;
-    }
 };
 
 void SetupTrainerScript(ScriptMgr * mgr)
 {
-	GossipScript * MHammersmith = (GossipScript*) new MasterHammersmith();
-	GossipScript * MSwordsmith = (GossipScript*) new MasterSwordsmith();
-	GossipScript * MAxesmith = (GossipScript*) new MasterAxesmith();
+	GossipScript * MHammersmith = new MasterHammersmith();
+	GossipScript * MSwordsmith = new MasterSwordsmith();
+	GossipScript * MAxesmith = new MasterAxesmith();
 
     mgr->register_gossip_script(11191, MHammersmith);		// Lilith the Lithe
 	mgr->register_gossip_script(11193, MSwordsmith);		// Seril Scourgebane

@@ -24,7 +24,9 @@
 #define TOTALBYTES 100 * 1024
 #define BYTEINCREMENT 10 * 1024
 
+#ifdef WIN32
 #pragma warning(disable:4244)
+#endif
 
 template <class T>
 class CPerfCounters

@@ -106,15 +106,11 @@ public:
 		}
     }
 
-    void Destroy()
-    {
-        delete this;
-    }
 };
 
 void SetupWyrmrestTempleGossip(ScriptMgr * mgr)
 {
-	GossipScript * WyrmrestTempleFlightGossip = (GossipScript*) new WyrmrestTemple_FlightGossip;
+	GossipScript * WyrmrestTempleFlightGossip = new WyrmrestTemple_FlightGossip;
 
 	mgr->register_gossip_script(CN_TOP, WyrmrestTempleFlightGossip);	// Torastrasza <Majordomo to the Ruling Council>
 	mgr->register_gossip_script(CN_MIDDLE, WyrmrestTempleFlightGossip);	// Lord Afrasastrasz <Commander of Wyrmrest Temple Defenses>

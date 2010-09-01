@@ -1066,7 +1066,7 @@ protected:
 
 bool DecayFlash(uint32 i, Aura* pAura, bool apply)
 {
-	if( apply && pAura->GetTarget() && pAura->GetTarget()->IsPlayer() )
+	if( apply && pAura->GetTarget()->IsPlayer() )
 	{
 		Player* p_target = TO_PLAYER( pAura->GetTarget() );
 		p_target->SetShapeShift( 10 );//Tharon'ja Skeleton
@@ -1077,7 +1077,7 @@ bool DecayFlash(uint32 i, Aura* pAura, bool apply)
 
 bool ReturnFlash(uint32 i, Aura* pAura, bool apply)
 {
-    if( apply && pAura->GetTarget() && pAura->GetTarget()->IsPlayer() )
+    if( apply && pAura->GetTarget()->IsPlayer() )
 	{
 		Player* p_target = TO_PLAYER( pAura->GetTarget() );
 		p_target->SetDisplayId(p_target->GetNativeDisplayId() );

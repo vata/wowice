@@ -125,11 +125,6 @@ public:
 		}
 	}
 
-	void Destroy()
-	{
-		delete this;
-	};
-
 protected:
 
 	int nrspells;
@@ -249,11 +244,6 @@ public:
 			}
 		}
 	}
-
-	void Destroy()
-	{
-		delete this;
-	};
 
 protected:
 
@@ -382,11 +372,6 @@ public:
 		}
 	}
 
-	void Destroy()
-	{
-		delete this;
-	};
-
 protected:
 
 	int nrspells;
@@ -514,11 +499,6 @@ public:
 			}
 		}
 	}
-
-	void Destroy()
-	{
-		delete this;
-	};
 
 protected:
 
@@ -670,11 +650,6 @@ public:
 		}
 	}
 
-	void Destroy()
-	{
-		delete this;
-	};
-
 protected:
 
 	int nrspells;
@@ -808,11 +783,6 @@ public:
 		}
 	}
 
-	void Destroy()
-	{
-		delete this;
-	};
-
 protected:
 
 	int nrspells;
@@ -925,11 +895,6 @@ public:
 		}
 	}
 
-	void Destroy()
-	{
-		delete this;
-	};
-
 protected:
 
 	int nrspells;
@@ -1041,11 +1006,6 @@ public:
 			}
 		}
 	}
-
-	void Destroy()
-	{
-		delete this;
-	};
 
 protected:
 
@@ -1177,11 +1137,6 @@ public:
 		}
 	}
 
-	void Destroy()
-	{
-		delete this;
-	};
-
 protected:
 
 	int nrspells;
@@ -1312,11 +1267,6 @@ public:
 		}
 	}
 
-	void Destroy()
-	{
-		delete this;
-	};
-
 protected:
 
 	int nrspells;
@@ -1423,11 +1373,6 @@ public:
 			}
 		}
     }
-
-	void Destroy()
-	{
-		delete this;
-	};
 
 protected:
 
@@ -1556,11 +1501,6 @@ public:
 		}
 	}
 
-	void Destroy()
-	{
-		delete this;
-	};
-
 protected:
 
 	int nrspells;
@@ -1682,10 +1622,6 @@ public:
 		}
     }
 
-	void Destroy()
-	{
-		delete this;
-	};
 };
 
 // Grand Warlock NethekurseAI
@@ -1982,11 +1918,6 @@ public:
 		return target;
 	}
 
-	void Destroy()
-	{
-		delete this;
-	};
-
 protected:
 
 	bool Started;
@@ -2095,11 +2026,6 @@ public:
 			}
         }
     }
-
-	void Destroy()
-	{
-		delete this;
-	};
 
 protected:
 
@@ -2482,11 +2408,6 @@ public:
 			spells[0].casttime = t + spells[0].cooldown;
 		}
     }
-
-	void Destroy()
-	{
-		delete this;
-	};
 
 protected:
 

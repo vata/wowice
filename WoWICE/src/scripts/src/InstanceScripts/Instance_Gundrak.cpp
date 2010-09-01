@@ -288,9 +288,6 @@ public:
 
 	void OnCreatureDeath( Creature* pVictim, Unit* pKiller )
 	{
-		if ( pVictim == NULL || pVictim->GetCreatureInfo() == NULL )
-			return;
-
 		EncounterMap::iterator Iter = mEncounters.find( pVictim->GetEntry() );
 		if ( Iter == mEncounters.end() )
 			return;
@@ -348,10 +345,6 @@ public:
 		};
 	};
 
-	void Destroy()
-	{
-		delete this;
-	};
 };
 
 /////////////////////////////////////////////////////////////////////////////////

@@ -71,11 +71,6 @@ public:
 		return InstanceData[pType][pIndex];
 	}
 
-	void Destroy()
-	{
-		delete this;
-	};
-
 private:
 	uint32 InstanceData[HYJAL_TYPE_END][10]; // Expand this to fit your needs. 
 	// Type 0 = Basic Data;
@@ -100,6 +95,8 @@ class JainaProudmooreGS : public GossipScript
 public:
 	void GossipHello(Object* pObject, Player* Plr, bool AutoSend)
 	{
+		if(pObject->GetMapMgr()->GetMapId() != MAP_HYJALPAST)//in case someone spawned this NPC in another map
+			return;
 		GossipMenu *Menu;
 		objmgr.CreateGossipMenuForPlayer(&Menu, pObject->GetGUID(), 1, Plr);
 
@@ -124,6 +121,8 @@ public:
 
 	void GossipSelectOption(Object* pObject, Player* Plr, uint32 Id, uint32 IntId, const char * Code)
 	{
+		if(pObject->GetMapMgr()->GetMapId() != MAP_HYJALPAST)//in case someone spawned this NPC in another map
+			return;
 		Creature* creature = TO_CREATURE(pObject);
 
 		switch(pObject->GetMapMgr()->GetScript()->GetInstanceData(HYJAL_TYPE_BASIC, 0))
@@ -138,7 +137,6 @@ public:
 	}
 
 	void GossipEnd(Object* pObject, Player* Plr) { GossipScript::GossipEnd(pObject, Plr); }
-	void Destroy() { delete this; }
 };
 
 //Thrall AI & GS
@@ -160,6 +158,8 @@ class ThrallGS : public GossipScript
 public:
 	void GossipHello(Object* pObject, Player* Plr, bool AutoSend)
 	{
+		if(pObject->GetMapMgr()->GetMapId() != MAP_HYJALPAST)//in case someone spawned this NPC in another map
+			return;
 		GossipMenu *Menu;
 		objmgr.CreateGossipMenuForPlayer(&Menu, pObject->GetGUID(), 1, Plr);
 
@@ -180,6 +180,8 @@ public:
 
 	void GossipSelectOption(Object* pObject, Player* Plr, uint32 Id, uint32 IntId, const char * Code)
 	{
+		if(pObject->GetMapMgr()->GetMapId() != MAP_HYJALPAST)//in case someone spawned this NPC in another map
+			return;
 		Creature* creature = TO_CREATURE(pObject);
 
 		switch(pObject->GetMapMgr()->GetScript()->GetInstanceData(HYJAL_TYPE_BASIC, 0))
@@ -193,7 +195,6 @@ public:
 	}
 
 	void GossipEnd(Object* pObject, Player* Plr) { GossipScript::GossipEnd(pObject, Plr); }
-	void Destroy() { delete this; }
 };
 
 
@@ -413,11 +414,6 @@ public:
 			TargetTable.clear();
 		}
 	}
-
-	void Destroy()
-	{
-		delete this;
-	};
 
 protected:
 
@@ -661,11 +657,6 @@ public:
 		}
 	}
 
-	void Destroy()
-	{
-		delete this;
-	};
-
 protected:
 
 	int nrspells;
@@ -904,11 +895,6 @@ public:
 		}
 	}
 
-	void Destroy()
-	{
-		delete this;
-	};
-
 protected:
 
 	uint32 MarkDeto;
@@ -1142,11 +1128,6 @@ public:
 		}
 	}
 
-	void Destroy()
-	{
-		delete this;
-	};
-
 protected:
 
 	int nrspells;
@@ -1303,11 +1284,6 @@ public:
 
 		return target;
 	}
-
-	void Destroy()
-	{
-		delete this;
-	};
 
 protected:
 
@@ -1652,11 +1628,6 @@ public:
 		return true;
 	}
 
-	void Destroy()
-	{
-		delete this;
-	};
-
 protected:
 	Creature* Trigger;
 	int nrspells;
@@ -1666,11 +1637,11 @@ void SetupBattleOfMountHyjal(ScriptMgr * mgr)
 {
 	mgr->register_instance_script( MAP_HYJALPAST, &MountHyjalScript::Create );
 
-	GossipScript * jainaGS = (GossipScript*) new JainaProudmooreGS;
+	GossipScript * jainaGS = new JainaProudmooreGS;
 	mgr->register_gossip_script(CN_JAINA_PROUDMOORE, jainaGS);
 	mgr->register_creature_script(CN_JAINA_PROUDMOORE, &JainaProudmooreAI::Create);
 
-	GossipScript * thrallGS = (GossipScript*) new ThrallGS;
+	GossipScript * thrallGS = new ThrallGS;
 	mgr->register_gossip_script(CN_THRALL, thrallGS);
 	mgr->register_creature_script(CN_THRALL, &ThrallAI::Create);
 

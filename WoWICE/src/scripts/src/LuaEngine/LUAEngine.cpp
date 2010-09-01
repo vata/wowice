@@ -1387,7 +1387,7 @@ public:
 	LuaCreature(Creature* creature) : CreatureAIScript(creature), m_binding(NULL) {}
 	~LuaCreature()
 	{}
-	ARCEMU_INLINE void SetUnit(Creature * ncrc) { _unit = ncrc; }
+	WoWICE_INLINE void SetUnit(Creature * ncrc) { _unit = ncrc; }
 	void OnCombatStart(Unit* mTarget)
 	{
 		CHECK_BINDING_ACQUIRELOCK
@@ -1724,7 +1724,7 @@ class LuaGameObject : public GameObjectAIScript
 public:
 	LuaGameObject(GameObject * go) : GameObjectAIScript(go), m_binding(NULL) {}
 	~LuaGameObject() {}
-	ARCEMU_INLINE GameObject * getGO() { return _gameobject; }
+	WoWICE_INLINE GameObject * getGO() { return _gameobject; }
 	void OnCreate()
 	{
 		CHECK_BINDING_ACQUIRELOCK
@@ -2076,20 +2076,7 @@ class LuaInstance : public InstanceScript
 {
 public:
 	LuaInstance( MapMgr* pMapMgr ) : InstanceScript( pMapMgr ), m_instanceId( pMapMgr->GetInstanceID() ) {}
-	~LuaInstance() 
-	{
-		typedef HM_NAMESPACE::hash_map<uint32,LuaInstance*> IMAP;
-		IMAP iMap = sLuaMgr.getLuInstanceMap();
-		for(IMAP::iterator itr = iMap.begin(); itr != iMap.end(); ++itr)
-		{
-			if(itr->second == this)
-			{
-				iMap.erase(itr);
-				break;
-			}
-		}
-		delete this;
-	}
+	~LuaInstance() {}
 
 	// Player
 	void OnPlayerDeath( Player* pVictim, Unit* pKiller ) 
@@ -2195,6 +2182,18 @@ public:
 		sLuaMgr.PUSH_UINT(m_instanceId);
 		sLuaMgr.ExecuteCall(1);
 		RELEASE_LOCK
+
+		typedef HM_NAMESPACE::hash_map<uint32,LuaInstance*> IMAP;
+		IMAP & iMap = sLuaMgr.getLuInstanceMap();
+		for(IMAP::iterator itr = iMap.begin(); itr != iMap.end(); ++itr)
+		{
+			if(itr->second == this)
+			{
+				iMap.erase(itr);
+				break;
+			}
+		}
+		delete this;
 	};
 
 	uint32 m_instanceId;

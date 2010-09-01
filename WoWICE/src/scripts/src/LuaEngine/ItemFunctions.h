@@ -36,12 +36,14 @@ namespace luaItem
 	int GossipMenuAddItem(lua_State * L, Item * ptr)
 	{
 		int icon = luaL_checkint(L, 1);
-		const char * menu_text = luaL_checkstring(L, 2);
+   		const char * menu_text = luaL_checkstring(L, 2);
 		int IntId = luaL_checkint(L, 3);
-		int extra = luaL_checkint(L, 4);
-
-		Menu->AddItem(icon, menu_text, IntId, extra);
-		return 1;
+		bool extra = (luaL_checkint(L, 4)) ? true : false;
+		const char * boxmessage = luaL_optstring(L,5,"");
+		uint32 boxmoney = luaL_optint(L,6,0);
+	    
+		Menu->AddMenuItem(icon, menu_text, 0, IntId, boxmessage, boxmoney, extra);
+		return 0;
 	}
 
 	int GossipSendMenu(lua_State * L, Item * ptr)
@@ -362,6 +364,93 @@ namespace luaItem
 		pItem->SetStackCount(stackcount);
 		pItem->SaveToDB(0, 0, true, NULL);
 		PUSH_ITEM(L, pItem);
+		return 1;
+	}
+
+	int ModUInt32Value(lua_State * L, Item * ptr)
+	{
+		int field = luaL_checkint(L, 1);
+		int value = luaL_checkint(L, 2);
+		if (ptr) 
+			ptr->ModSignedInt32Value(field, value);
+		return 0;
+	}
+
+	int ModFloatValue(lua_State * L, Item * ptr)
+	{
+		int field = luaL_checkint(L, 1);
+		float value = CHECK_FLOAT(L, 2);
+		if (ptr) 
+			ptr->ModFloatValue(field, value);
+		return 0;
+	}
+
+	int SetUInt32Value(lua_State * L, Item * ptr)
+	{
+		int field = luaL_checkint(L, 1);
+		int value = luaL_checkint(L, 2);
+		if (ptr) 
+			ptr->SetUInt32Value(field, value);
+		return 0;
+	}
+
+	int SetUInt64Value(lua_State * L, Item * ptr)
+	{
+		uint32 field = CHECK_ULONG(L,1);
+		uint64 guid = CHECK_GUID(L,2);
+		if (ptr) 
+			ptr->SetUInt64Value(field, guid);
+		return 0;
+	}
+
+	int RemoveFlag(lua_State * L, Item * ptr)
+	{
+		int field = luaL_checkint(L,1);
+		int value = luaL_checkint(L,2);
+		if (ptr)
+			ptr->RemoveFlag(field,value);
+		return 0;
+	}
+
+	int SetFlag(lua_State * L, Item * ptr)
+	{
+		int field = luaL_checkint(L,1);
+		int value = luaL_checkint(L,2);
+		if (ptr)
+			ptr->SetFlag(field,value);
+		return 0;
+	}
+
+	int SetFloatValue(lua_State * L, Item * ptr)
+	{
+		int field = luaL_checkint(L, 1);
+		float value = CHECK_FLOAT(L, 2);
+		if (ptr) 
+			ptr->SetFloatValue(field, value);
+		return 0;
+	}
+
+	int GetUInt32Value(lua_State * L, Item * ptr)
+	{
+		int field = luaL_checkint(L, 1);
+		if (ptr) 
+			lua_pushnumber(L, ptr->GetUInt32Value(field));
+		return 1;
+	}
+
+	int GetUInt64Value(lua_State * L, Item * ptr)
+	{
+		int field = luaL_checkint(L, 1);
+		if (ptr)
+			PUSH_GUID(L, ptr->GetUInt64Value(field));
+		return 1;
+	}
+
+	int GetFloatValue(lua_State * L, Item * ptr)
+	{
+		int field = luaL_checkint(L, 1);
+		if (ptr) 
+			lua_pushnumber(L, ptr->GetFloatValue(field));
 		return 1;
 	}
 }

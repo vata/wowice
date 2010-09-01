@@ -24,8 +24,6 @@
 #pragma warning(disable:4267) // warning C4267: '=' : conversion from 'size_t' to 'uint32', possible loss of data
 #endif
 
-#define CREATE_QUESTSCRIPT(cl) (QuestScript*)new cl
-#define CREATE_GOSSIPSCRIPT(cl) (GossipScript*)new cl
 #define CREATE_GAMEOBJECT_SCRIPT(cl) &cl::Create
 #define CREATE_CREATURESCRIPT(cl) &cl::Create
 
@@ -50,12 +48,6 @@
 #define NULLMAPMGR					NULL
 #define NULLAURA					NULL
 #define NULLITEM					NULL
-
-#define TO_CREATURE(ptr) static_cast<Creature*>(ptr) 
-#define TO_PLAYER(ptr) static_cast<Player*>(ptr)
-#define TO_OBJECT(ptr) static_cast<Object*>(ptr)
-#define TO_UNIT(ptr) static_cast<Unit*>(ptr)
-#define TO_PET(ptr) static_cast<Pet*>(ptr)
 
 class SCRIPT_DECL EasyFunctions
 {

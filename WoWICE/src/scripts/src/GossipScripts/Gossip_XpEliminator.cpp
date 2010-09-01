@@ -61,11 +61,6 @@ public:
 		plr->Gossip_Complete();
     }
 	
-	void Destroy(){
-		delete this;
-	}
-
-
 private:
 	const char *GOSSIP_DISABLE_XP_GAIN;
 	const char *GOSSIP_ENABLE_XP_GAIN;

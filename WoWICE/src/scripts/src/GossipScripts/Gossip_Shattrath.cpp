@@ -73,10 +73,6 @@ public:
 		}
     }
 
-    void Destroy()
-    {
-        delete this;
-    }
 };
 
 class ZephyrGossipScript : public GossipScript
@@ -115,18 +111,13 @@ public:
 		}
 	}
  
-    void Destroy()
-    {
-        delete this;
-	}
-
 };
 
 void SetupShattrathGossip(ScriptMgr * mgr)
 {
-	GossipScript * ZephyrGossip = (GossipScript*) new ZephyrGossipScript;
+	GossipScript * ZephyrGossip = new ZephyrGossipScript;
 	mgr->register_gossip_script(25967, ZephyrGossip);		// Zephyr
-	GossipScript * ExarchNasuunGossip = (GossipScript*) new ExarchNasuun_Gossip;
+	GossipScript * ExarchNasuunGossip = new ExarchNasuun_Gossip;
 	mgr->register_gossip_script(24932, ExarchNasuunGossip); // Exarch Nasuun
 
 }

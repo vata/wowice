@@ -73,6 +73,7 @@ public:
 };
 
 
+//Pay Attention: This feature is disable by default.
 void InitializeGameObjectTeleportTable(ScriptMgr * mgr)
 {
 	QueryResult *result = NULL;

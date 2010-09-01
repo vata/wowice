@@ -46,10 +46,6 @@ public:
 		}
     }
 
-    void Destroy()
-    {
-        delete this;
-    }
 };
 
 class CaptainGarranVimes_Gossip : public GossipScript
@@ -82,16 +78,12 @@ public:
 		}
     }
 
-    void Destroy()
-    {
-        delete this;
-    }
 };
 
 void SetupTheramoreGossip(ScriptMgr * mgr)
 {
-	GossipScript * CassaCrimsonwingGossip = (GossipScript*) new CassaCrimsonwing_Gossip;
-	GossipScript * CaptainGarranVimesGossip = (GossipScript*) new CaptainGarranVimes_Gossip;
+	GossipScript * CassaCrimsonwingGossip = new CassaCrimsonwing_Gossip;
+	GossipScript * CaptainGarranVimesGossip = new CaptainGarranVimes_Gossip;
 	
 	mgr->register_gossip_script(23704, CassaCrimsonwingGossip); // Cassa Crimsonwing
 	mgr->register_gossip_script(4944, CaptainGarranVimesGossip); // Captain Garran Vimes

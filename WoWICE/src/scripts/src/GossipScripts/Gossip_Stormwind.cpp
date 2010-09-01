@@ -46,10 +46,6 @@ public:
 		}
     }
 
-    void Destroy()
-    {
-        delete this;
-    }
 };
 
 /*********************************************
@@ -63,10 +59,6 @@ public:
     void GossipHello(Object * pObject, Player* Plr, bool AutoSend);
     void GossipSelectOption(Object * pObject, Player* Plr, uint32 Id, uint32 IntId, const char * Code);
     void GossipEnd(Object * pObject, Player* Plr);
-	void Destroy()
-	{
-		delete this;
-	}
 };
 
 void SWHarborFlyAround::GossipHello(Object * pObject, Player* Plr, bool AutoSend)
@@ -81,7 +73,7 @@ void SWHarborFlyAround::GossipHello(Object * pObject, Player* Plr, bool AutoSend
 
 void SWHarborFlyAround::GossipSelectOption(Object * pObject, Player* Plr, uint32 Id, uint32 IntId, const char * Code)
 {
-	Creature * pCreature = (pObject->GetTypeId()==TYPEID_UNIT)?((Creature*)pObject):NULL;
+	Creature * pCreature = (pObject->GetTypeId()==TYPEID_UNIT)?TO_CREATURE(pObject):NULL;
 	if(pCreature==NULL)
 		return;
 
@@ -105,8 +97,8 @@ void SWHarborFlyAround::GossipEnd(Object * pObject, Player* Plr)
 
 void SetupStormwindGossip(ScriptMgr * mgr)
 {
-	GossipScript * ArchmageMalinGossip = (GossipScript*) new ArchmageMalin_Gossip;
+	GossipScript * ArchmageMalinGossip = new ArchmageMalin_Gossip;
 	mgr->register_gossip_script(2708, ArchmageMalinGossip); // Archmage Malin
-	GossipScript * SWHARFLY = (GossipScript*) new SWHarborFlyAround();
+	GossipScript * SWHARFLY = new SWHarborFlyAround();
 	mgr->register_gossip_script(29154, SWHARFLY);
 }

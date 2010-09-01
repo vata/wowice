@@ -69,7 +69,7 @@ public:
 			{
 				creature = TO_CREATURE(obj);
 
-				if(creature && creature->GetCreatureInfo() && creature->GetCreatureInfo()->Id == 21101 && creature->isAlive())
+				if(creature->GetCreatureInfo()->Id == 21101 && creature->isAlive())
 				{
 					creature->Despawn(0, 0);
 				}
@@ -147,11 +147,6 @@ public:
 		ParentClass::AIUpdate();
     }
 
-	void Destroy()
-	{
-		delete this;
-	}
-
 protected:
 
 	int32 SpeechTimer;
@@ -228,10 +223,6 @@ public:
 		ParentClass::OnDied(mKiller);
 	}
 
-	void Destroy()
-	{
-		delete this;
-	};
 };
 
 // Wrath-Scryer SoccothratesAI
@@ -275,11 +266,6 @@ public:
 		ParentClass::OnDied(mKiller);
 	}
 		
-	void Destroy()
-	{
-		delete this;
-	};
-
 };
 
 // Harbinger SkyrissAI
@@ -347,11 +333,6 @@ public:
 		ParentClass::AIUpdate();
     }
 
-
-	void Destroy()
-	{
-		delete this;
-	};
 
 protected:
 
@@ -716,11 +697,6 @@ public:
 		
 	}
 
-	void Destroy()
-	{
-		delete this;
-	};
-	
 protected:
 
 	uint32 Phasepart;

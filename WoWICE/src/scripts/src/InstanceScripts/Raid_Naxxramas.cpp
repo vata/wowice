@@ -30,9 +30,6 @@ public:
 
 	void OnCreatureDeath( Creature* pVictim, Unit* pKiller )
 	{
-		if ( pVictim == NULL || pVictim->GetCreatureInfo() == NULL )
-			return;
-
 		Creature* KelThuzad = NULL;
 		switch ( pVictim->GetEntry() )
 		{
@@ -62,10 +59,6 @@ public:
 		};
 	};
 
-	void Destroy()
-	{
-		delete this;
-	};
 };
 
 /////////////////////////////////////////////////////////////////////////////////
@@ -84,11 +77,6 @@ CarrionSpinnerAI::CarrionSpinnerAI( Creature* pCreature ) : MoonScriptCreatureAI
 	AddSpell( CARRION_SPINNER_WEB_WRAP, Target_RandomPlayer, 8, 0, 10, 0, 40 );
 };
 
-void CarrionSpinnerAI::Destroy()
-{
-	delete this;
-};
-
 /////////////////////////////////////////////////////////////////////////////////
 ////// Dread Creeper
 DreadCreeperAI::DreadCreeperAI( Creature* pCreature ) : MoonScriptCreatureAI( pCreature )
@@ -97,11 +85,6 @@ DreadCreeperAI::DreadCreeperAI( Creature* pCreature ) : MoonScriptCreatureAI( pC
 		AddSpell( DREAD_CREEPER_VEIL_OF_SHADOW_HEROIC, Target_Self, 15, 0, 10 );
 	else
 		AddSpell( DREAD_CREEPER_VEIL_OF_SHADOW_NORMAL, Target_Self, 15, 0, 10 );
-};
-
-void DreadCreeperAI::Destroy()
-{
-	delete this;
 };
 
 /////////////////////////////////////////////////////////////////////////////////
@@ -114,10 +97,6 @@ NaxxramasCultistAI::NaxxramasCultistAI( Creature* pCreature ) : MoonScriptCreatu
 		AddSpell( NAXXRAMAS_CULTIST_KNOCKBACK_NORMAL, Target_Destination, 10, 0, 10, 0, 8 );
 };
 
-void NaxxramasCultistAI::Destroy()
-{
-	delete this;
-};
 //Necro Stalker AI
 /////////////////////////////////////////////////////////////////////////////////
 ////// Venom Stalker
@@ -128,11 +107,6 @@ VenomStalkerAI::VenomStalkerAI( Creature* pCreature ) : MoonScriptCreatureAI( pC
 		AddSpell( VENOM_STALKER_POISON_CHARGE_HEROIC, Target_RandomPlayer, 10, 0, 10, 0, 40 );
 	else
 		AddSpell( VENOM_STALKER_POISON_CHARGE_NORMAL, Target_RandomPlayer, 10, 0, 10, 0, 40 );
-};
-
-void VenomStalkerAI::Destroy()
-{
-	delete this;
 };
 
 /////////////////////////////////////////////////////////////////////////////////
@@ -153,11 +127,6 @@ TombHorrorAI::TombHorrorAI( Creature* pCreature ) : MoonScriptCreatureAI( pCreat
 	AddSpell( TOMB_HORROR_SPIKE_VOLLEY, Target_Self, 10, 0.5f, 15 );
 };
 
-void TombHorrorAI::Destroy()
-{
-	delete this;
-};
-
 /////////////////////////////////////////////////////////////////////////////////
 ////// Naxxramas Acolyte
 NaxxramasAcolyteAI::NaxxramasAcolyteAI( Creature* pCreature ) : MoonScriptCreatureAI( pCreature )
@@ -172,11 +141,6 @@ NaxxramasAcolyteAI::NaxxramasAcolyteAI( Creature* pCreature ) : MoonScriptCreatu
 		AddSpell( NAXXRAMAS_ACOLYTE_SHADOW_BOLT_VOLLEY_NORMAL, Target_RandomPlayerDestination, 10, 3, 5, 0, 30 );
 		AddSpell( NAXXRAMAS_ACOLYTE_ARCANE_EXPLOSION_NORMAL, Target_Self, 10, 2, 15 );
 	};
-};
-
-void NaxxramasAcolyteAI::Destroy()
-{
-	delete this;
 };
 
 /////////////////////////////////////////////////////////////////////////////////
@@ -204,22 +168,12 @@ void VigilantShadeAI::OnCombatStop( Unit* pTarget )
 	ApplyAura( VIGILANT_SHADE_INVISIBILITY );
 };
 
-void VigilantShadeAI::Destroy()
-{
-	delete this;
-};
-
 /////////////////////////////////////////////////////////////////////////////////
 ////// Crypt Reaver
 CryptReaverAI::CryptReaverAI( Creature* pCreature ) : MoonScriptCreatureAI( pCreature )
 {
 	AddSpell( CRYPT_REAVER_CLEAVE, Target_Current, 10, 0, 5, 0, 8 );
 	AddSpell( CRYPT_REAVER_FRENZY, Target_Self, 7, 0, 40 );
-};
-
-void CryptReaverAI::Destroy()
-{
-	delete this;
 };
 
 /////////////////////////////////////////////////////////////////////////////////
@@ -298,11 +252,6 @@ MaexxnaSpiderlingAI::MaexxnaSpiderlingAI( Creature* pCreature ) : MoonScriptCrea
 		AddSpell( MAEXXNA_SPIDERLING_NECROTIC_POISON_HEROIC, Target_Current, 10, 0, 20, 0, 8 );
 	else
 		AddSpell( MAEXXNA_SPIDERLING_NECROTIC_POISON_NORMAL, Target_Current, 10, 0, 20, 0, 8 );
-};
-
-void MaexxnaSpiderlingAI::Destroy()
-{
-	delete this;
 };
 
 /////////////////////////////////////////////////////////////////////////////////
@@ -393,11 +342,6 @@ void MaexxnaAI::AIUpdate()
 	};
 
 	ParentClass::AIUpdate();
-};
-
-void MaexxnaAI::Destroy()
-{
-	delete this;
 };
 
 void SpellFunc_MaexxnaWebWrap( SpellDesc* pThis, MoonScriptCreatureAI* pCreatureAI, Unit* pTarget, TargetType pType )
@@ -1170,11 +1114,6 @@ void InfectiousGhoulAI::AIUpdate()
 	ParentClass::AIUpdate();
 };
 
-void InfectiousGhoulAI::Destroy()
-{
-	delete this;
-};
-
 /////////////////////////////////////////////////////////////////////////////////
 ////// Stoneskin Gargoyle
 StoneskinGargoyleAI::StoneskinGargoyleAI( Creature* pCreature ) : MoonScriptCreatureAI( pCreature )
@@ -1217,21 +1156,11 @@ void StoneskinGargoyleAI::AIUpdate()
 	ParentClass::AIUpdate();
 };
 
-void StoneskinGargoyleAI::Destroy()
-{
-	delete this;
-};
-
 /////////////////////////////////////////////////////////////////////////////////
 ////// Frenzied Bat
 FrenziedBatAI::FrenziedBatAI( Creature* pCreature ) : MoonScriptCreatureAI( pCreature )
 {
 	AddSpell( FRENZIED_BAT_FRENZIED_DIVE, Target_Self, 10, 0, 15 );
-};
-
-void FrenziedBatAI::Destroy()
-{
-	delete this;
 };
 
 /////////////////////////////////////////////////////////////////////////////////
@@ -1257,11 +1186,6 @@ void PlagueBeastAI::OnCombatStop( Unit* pTarget )
 {
 	ParentClass::OnCombatStop( pTarget );
 	ApplyAura( PLAGUE_BEAST_MUTATED_SPORES );
-};
-
-void PlagueBeastAI::Destroy()
-{
-	delete this;
 };
 
 /////////////////////////////////////////////////////////////////////////////////
@@ -1310,11 +1234,6 @@ void EyeStalkerAI::AIUpdate()
 	SetBehavior( Behavior_Spell );
 	SetCanMove( false );
 	StopMovement();
-};
-
-void EyeStalkerAI::Destroy()
-{
-	delete this;
 };
 
 /////////////////////////////////////////////////////////////////////////////////
@@ -2209,11 +2128,6 @@ void DeathKnightAI::OnCombatStart( Unit* pTarget )
 	ApplyAura( DEATH_KNIGHT_BLOOD_PRESENCE );
 };
 
-void DeathKnightAI::Destroy()
-{
-	delete this;
-};
-
 /////////////////////////////////////////////////////////////////////////////////
 ////// Death Knight Captain
 DeathKnightCaptainAI::DeathKnightCaptainAI( Creature* pCreature ) : MoonScriptCreatureAI( pCreature )
@@ -2233,11 +2147,6 @@ void DeathKnightCaptainAI::OnCombatStart( Unit* pTarget )
 	ApplyAura( DEATH_KNIGHT_CAPTAIN_UNHOLY_PRESENCE );
 };
 
-void DeathKnightCaptainAI::Destroy()
-{
-	delete this;
-};
-
 /////////////////////////////////////////////////////////////////////////////////
 ////// Skeletal Construct - wiki says he's in Naxx, but WoWHead claims him to be in Icecrown only
 
@@ -2245,11 +2154,6 @@ void DeathKnightCaptainAI::Destroy()
 ////// Ghost of Naxxramas
 GhostOfNaxxramasAI::GhostOfNaxxramasAI( Creature* pCreature ) : MoonScriptCreatureAI( pCreature )
 {
-};
-
-void GhostOfNaxxramasAI::Destroy()
-{
-	delete this;
 };
 
 /////////////////////////////////////////////////////////////////////////////////
@@ -2391,11 +2295,6 @@ NecroKnightAI::NecroKnightAI( Creature* pCreature ) : MoonScriptCreatureAI( pCre
 	AddSpellFunc( &SpellFunc_NecroKnightBlink, Target_RandomPlayerNotCurrent, 5, 0, 20, 0, 30 );
 };
 
-void NecroKnightAI::Destroy()
-{
-	delete this;
-};
-
 void SpellFunc_NecroKnightBlink( SpellDesc* pThis, MoonScriptCreatureAI* pCreatureAI, Unit* pTarget, TargetType pType )
 {
 	NecroKnightAI *NecroKnight = ( pCreatureAI != NULL ) ? static_cast< NecroKnightAI* >( pCreatureAI ) : NULL;
@@ -2416,11 +2315,6 @@ SkeletalSmithAI::SkeletalSmithAI( Creature* pCreature ) : MoonScriptCreatureAI( 
 	AddSpell( SKELETAL_SMITH_DISARM, Target_Current, 10, 0, 15, 0, 8 );
 	AddSpell( SKELETAL_SMITH_THUNDERCLAP, Target_Self, 8, 0, 15 );
 	//AddSpell( SKELETAL_SMITH_SUDDER_ARMOR, Target_Current, 8, 0, 10, 0, 8 );
-};
-
-void SkeletalSmithAI::Destroy()
-{
-	delete this;
 };
 
 /////////////////////////////////////////////////////////////////////////////////
@@ -2578,21 +2472,11 @@ void DarkTouchedWarriorAI::AIUpdate()
 	ParentClass::AIUpdate();
 };
 
-void DarkTouchedWarriorAI::Destroy()
-{
-	delete this;
-};
-
 /////////////////////////////////////////////////////////////////////////////////
 ////// Risen Squire
 RisenSquireAI::RisenSquireAI( Creature* pCreature ) : MoonScriptCreatureAI( pCreature )
 {
 	AddSpell( RISEN_SQUIRE_PIERCE_ARMOR, Target_Current, 10, 0, 15, 0, 8 );
-};
-
-void RisenSquireAI::Destroy()
-{
-	delete this;
 };
 
 /////////////////////////////////////////////////////////////////////////////////
@@ -2611,11 +2495,6 @@ UnholyAxeAI::UnholyAxeAI( Creature* pCreature ) : MoonScriptCreatureAI( pCreatur
 	};
 };
 
-void UnholyAxeAI::Destroy()
-{
-	delete this;
-};
-
 /////////////////////////////////////////////////////////////////////////////////
 ////// Unholy Sword
 UnholySwordAI::UnholySwordAI( Creature* pCreature ) : MoonScriptCreatureAI( pCreature )
@@ -2624,11 +2503,6 @@ UnholySwordAI::UnholySwordAI( Creature* pCreature ) : MoonScriptCreatureAI( pCre
 		AddSpell( UNHOLY_SWORD_CLEAVE_HEROIC, Target_Current, 10, 0, 15, 0, 8 );
 	else
 		AddSpell( UNHOLY_SWORD_CLEAVE_NORMAL, Target_Current, 10, 0, 15, 0, 8 );
-};
-
-void UnholySwordAI::Destroy()
-{
-	delete this;
 };
 
 /////////////////////////////////////////////////////////////////////////////////
@@ -2642,11 +2516,6 @@ UnholyStaffAI::UnholyStaffAI( Creature* pCreature ) : MoonScriptCreatureAI( pCre
 
 	AddSpell( UNHOLY_STAFF_FROST_NOVA, Target_Self, 10, 0, 15 );
 	AddSpell( UNHOLY_STAFF_POLYMORPH, Target_RandomPlayer, 8, 0, 20, 0, 45 );	// NotCurrent ?
-};
-
-void UnholyStaffAI::Destroy()
-{
-	delete this;
 };
 
 /////////////////////////////////////////////////////////////////////////////////
@@ -2692,11 +2561,6 @@ void PatchworkGolemAI::OnCombatStop( Unit* pTarget )
 	};
 };
 
-void PatchworkGolemAI::Destroy()
-{
-	delete this;
-};
-
 /////////////////////////////////////////////////////////////////////////////////
 ////// Bile Retcher
 BileRetcherAI::BileRetcherAI( Creature* pCreature ) : MoonScriptCreatureAI( pCreature )
@@ -2707,11 +2571,6 @@ BileRetcherAI::BileRetcherAI( Creature* pCreature ) : MoonScriptCreatureAI( pCre
 		AddSpell( BILE_RETCHER_BILE_VOMIT_HEROIC, Target_Destination, 10, 0, 10, 0, 20 );
 
 	AddSpell( BILE_RETCHER_BILE_RETCHER_SLAM, Target_Destination, 8, 0, 10, 0, 10 );
-};
-
-void BileRetcherAI::Destroy()
-{
-	delete this;
 };
 
 /////////////////////////////////////////////////////////////////////////////////
@@ -2733,11 +2592,6 @@ void SewageSlimeAI::OnCombatStop( Unit* pTarget )
 	ApplyAura( SEWAGE_SLIME_DISEASE_CLOUD );
 };
 
-void SewageSlimeAI::Destroy()
-{
-	delete this;
-};
-
 /////////////////////////////////////////////////////////////////////////////////
 ////// Embalming Slime
 EmbalmingSlimeAI::EmbalmingSlimeAI( Creature* pCreature ) : MoonScriptCreatureAI( pCreature )
@@ -2757,11 +2611,6 @@ void EmbalmingSlimeAI::OnCombatStop( Unit* pTarget )
 	ApplyAura( EMBALMING_SLIME_EMBALMING_CLOUD );
 };
 
-void EmbalmingSlimeAI::Destroy()
-{
-	delete this;
-};
-
 /////////////////////////////////////////////////////////////////////////////////
 ////// Mad Scientist
 MadScientistAI::MadScientistAI( Creature* pCreature ) : MoonScriptCreatureAI( pCreature )
@@ -2778,11 +2627,6 @@ MadScientistAI::MadScientistAI( Creature* pCreature ) : MoonScriptCreatureAI( pC
 	};
 };
 
-void MadScientistAI::Destroy()
-{
-	delete this;
-};
-
 /////////////////////////////////////////////////////////////////////////////////
 ////// Living Monstrosity
 LivingMonstrosityAI::LivingMonstrosityAI( Creature* pCreature ) : MoonScriptCreatureAI( pCreature )
@@ -2793,11 +2637,6 @@ LivingMonstrosityAI::LivingMonstrosityAI( Creature* pCreature ) : MoonScriptCrea
 		AddSpell( LIVING_MONSTROSITY_CHAIN_LIGHTNING_HEROIC, Target_RandomPlayer, 10, 1.5, 10, 0, 45 );
 	else
 		AddSpell( LIVING_MONSTROSITY_CHAIN_LIGHTNING_NORMAL, Target_RandomPlayer, 10, 1.5, 10, 0, 45 );
-};
-
-void LivingMonstrosityAI::Destroy()
-{
-	delete this;
 };
 
 /////////////////////////////////////////////////////////////////////////////////
@@ -2831,11 +2670,6 @@ void LightningTotemAI::AIUpdate()
 	StopMovement();
 };
 
-void LightningTotemAI::Destroy()
-{
-	delete this;
-};
-
 /////////////////////////////////////////////////////////////////////////////////
 ////// Stitched Colossus
 StitchedColossusAI::StitchedColossusAI( Creature* pCreature ) : MoonScriptCreatureAI( pCreature )
@@ -2863,21 +2697,11 @@ void StitchedColossusAI::AIUpdate()
 	ParentClass::AIUpdate();
 };
 
-void StitchedColossusAI::Destroy()
-{
-	delete this;
-};
-
 /////////////////////////////////////////////////////////////////////////////////
 ////// Marauding Geist
 MaraudingGeistAI::MaraudingGeistAI( Creature* pCreature ) : MoonScriptCreatureAI( pCreature )
 {
 	AddSpell( MARAUDING_GEIST_FRENZIED_LEAP, Target_RandomPlayer, 8, 0, 10 );
-};
-
-void MaraudingGeistAI::Destroy()
-{
-	delete this;
 };
 
 /////////////////////////////////////////////////////////////////////////////////
@@ -2933,11 +2757,6 @@ void PatchwerkAI::AIUpdate()
 	};
 
 	ParentClass::AIUpdate();
-};
-
-void PatchwerkAI::Destroy()
-{
-	delete this;
 };
 
 void SetupNaxxramas( ScriptMgr* pScriptMgr )

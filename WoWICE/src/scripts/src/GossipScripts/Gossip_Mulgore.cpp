@@ -44,15 +44,11 @@ public:
 		}
     }
 
-    void Destroy()
-    {
-        delete this;
-    }
 };
 
 void SetupMulgoreGossip(ScriptMgr * mgr)
 {
-	GossipScript * SkornWhitecloudGossip = (GossipScript*) new SkornWhitecloud_Gossip;
+	GossipScript * SkornWhitecloudGossip = new SkornWhitecloud_Gossip;
 	mgr->register_gossip_script(3052, SkornWhitecloudGossip); // Skorn Whitecloud
 
 }

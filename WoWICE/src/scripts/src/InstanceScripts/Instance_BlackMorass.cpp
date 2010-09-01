@@ -164,11 +164,6 @@ public:
       }
    }
 
-	void Destroy()
-	{
-		delete this;
-	};
-
 protected:
 
    int nrspells;
@@ -319,11 +314,6 @@ public:
       }
    }
 
-	void Destroy()
-	{
-		delete this;
-	};
-
 protected:
 
    int nrspells;
@@ -473,11 +463,6 @@ public:
          }
       }
    }
-
-	void Destroy()
-	{
-		delete this;
-	};
 
 protected:
 

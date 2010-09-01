@@ -51,10 +51,6 @@
 class StormwindGuard : public GossipScript
 {
 public:
-	void Destroy()
-	{
-		delete this;
-	}
     void GossipHello(Object* pObject, Player* Plr, bool AutoSend)
     {
         GossipMenu *Menu;
@@ -335,10 +331,6 @@ public:
 class DarnassusGuard : public GossipScript
 {
 public:
-	void Destroy()
-	{
-		delete this;
-	}
     void GossipHello(Object* pObject, Player* Plr, bool AutoSend)
     {
         GossipMenu *Menu;
@@ -552,10 +544,6 @@ public:
 class GoldshireGuard : public GossipScript
 {
 public:
-	void Destroy()
-	{
-		delete this;
-	}
     void GossipHello(Object* pObject, Player* Plr, bool AutoSend)
     {
         GossipMenu *Menu;
@@ -776,10 +764,6 @@ public:
 class UndercityGuard : public GossipScript
 {
 public:
-	void Destroy()
-	{
-		delete this;
-	}
     void GossipHello(Object* pObject, Player* Plr, bool AutoSend)
     {
         GossipMenu *Menu;
@@ -1013,10 +997,6 @@ public:
 class TeldrassilGuard : public GossipScript
 {
 public:
-	void Destroy()
-	{
-		delete this;
-	}
     void GossipHello(Object* pObject, Player* Plr, bool AutoSend)
     {
         GossipMenu *Menu;
@@ -1194,10 +1174,6 @@ public:
 class SilvermoonGuard : public GossipScript
 {
 public:
-	void Destroy()
-	{
-		delete this;
-	}
     void GossipHello(Object* pObject, Player* Plr, bool AutoSend)
     {
         GossipMenu *Menu;
@@ -1494,10 +1470,6 @@ public:
 class ExodarGuard : public GossipScript
 {
 public:
-	void Destroy()
-	{
-		delete this;
-	}
     void GossipHello(Object* pObject, Player* Plr, bool AutoSend)
     {
         GossipMenu *Menu;
@@ -1759,10 +1731,6 @@ public:
 class OrgrimmarGuard : public GossipScript
 {
 public:
-	void Destroy()
-	{
-		delete this;
-	}
     void GossipHello(Object* pObject, Player* Plr, bool AutoSend)
     {
         GossipMenu *Menu;
@@ -2014,10 +1982,6 @@ public:
 class ThunderbluffGuard : public GossipScript
 {
 public:
-	void Destroy()
-	{
-		delete this;
-	}
     void GossipHello(Object* pObject, Player* Plr, bool AutoSend)
     {
         GossipMenu *Menu;
@@ -2236,10 +2200,6 @@ public:
 class BloodhoofGuard : public GossipScript
 {
 public:
-	void Destroy()
-	{
-		delete this;
-	}
     void GossipHello(Object* pObject, Player* Plr, bool AutoSend)
     {
         GossipMenu *Menu;
@@ -2407,10 +2367,6 @@ public:
 class RazorHillGuard : public GossipScript
 {
 public:
-	void Destroy()
-	{
-		delete this;
-	}
     void GossipHello(Object* pObject, Player* Plr, bool AutoSend)
     {
         GossipMenu *Menu;
@@ -2608,10 +2564,6 @@ public:
 class BrillGuard : public GossipScript
 {
 public:
-	void Destroy()
-	{
-		delete this;
-	}
     void GossipHello(Object* pObject, Player* Plr, bool AutoSend)
     {
         GossipMenu *Menu;
@@ -2801,10 +2753,6 @@ public:
 class IronforgeGuard : public GossipScript
 {
 public:
-	void Destroy()
-	{
-		delete this;
-	}
     void GossipHello(Object* pObject, Player* Plr, bool AutoSend)
     {
         GossipMenu *Menu;
@@ -3070,10 +3018,6 @@ public:
 class KharanosGuard : public GossipScript
 {
 public:
-	void Destroy()
-	{
-		delete this;
-	}
     void GossipHello(Object* pObject, Player* Plr, bool AutoSend)
     {
         GossipMenu *Menu;
@@ -3280,10 +3224,6 @@ public:
 class FalconwingGuard : public GossipScript
 {
 public:
-	void Destroy()
-	{
-		delete this;
-	}
     void GossipHello(Object* pObject, Player* Plr, bool AutoSend)
     {
         GossipMenu *Menu;
@@ -3489,11 +3429,6 @@ public:
 class AzureWatchGuard : public GossipScript
 {
 public:
-	void Destroy()
-	{
-		delete this;
-	}
-
     void GossipHello(Object* pObject, Player* Plr, bool AutoSend)
     {
         GossipMenu *Menu;
@@ -3715,10 +3650,6 @@ public:
 class ShattrathGuard : public GossipScript
 {
 public:
-	void Destroy()
-	{
-		delete this;
-	}
     void GossipHello(Object* pObject, Player* Plr, bool AutoSend)
     {
         GossipMenu *Menu;
@@ -4021,23 +3952,23 @@ public:
 };
 void SetupGuardGossip(ScriptMgr * mgr)
 {
-	GossipScript * gold = (GossipScript*) new GoldshireGuard();
-	GossipScript * sw = (GossipScript*) new StormwindGuard();
-	GossipScript * darn = (GossipScript*) new DarnassusGuard();
-	GossipScript * teldra = (GossipScript*) new TeldrassilGuard();
-	GossipScript * blood = (GossipScript*) new BloodhoofGuard();
-	GossipScript * razor = (GossipScript*) new RazorHillGuard();
-	GossipScript * brill = (GossipScript*) new BrillGuard();
-	GossipScript * irf = (GossipScript*) new IronforgeGuard();
-	GossipScript * khar = (GossipScript*) new KharanosGuard();
-	GossipScript * falcon = (GossipScript*) new FalconwingGuard();
-	GossipScript * azure = (AzureWatchGuard*) new AzureWatchGuard();
-	GossipScript * under = (GossipScript*) new UndercityGuard();
-	GossipScript * silver = (SilvermoonGuard*) new SilvermoonGuard();
-	GossipScript * exodar = (ExodarGuard*) new ExodarGuard();
-	GossipScript * ogri = (OrgrimmarGuard*) new OrgrimmarGuard();
-	GossipScript * thun = (ThunderbluffGuard*) new ThunderbluffGuard();
-	GossipScript * shattr = (ShattrathGuard*) new ShattrathGuard();
+	GossipScript * gold = new GoldshireGuard();
+	GossipScript * sw = new StormwindGuard();
+	GossipScript * darn = new DarnassusGuard();
+	GossipScript * teldra = new TeldrassilGuard();
+	GossipScript * blood = new BloodhoofGuard();
+	GossipScript * razor = new RazorHillGuard();
+	GossipScript * brill = new BrillGuard();
+	GossipScript * irf = new IronforgeGuard();
+	GossipScript * khar = new KharanosGuard();
+	GossipScript * falcon = new FalconwingGuard();
+	GossipScript * azure = new AzureWatchGuard();
+	GossipScript * under = new UndercityGuard();
+	GossipScript * silver = new SilvermoonGuard();
+	GossipScript * exodar = new ExodarGuard();
+	GossipScript * ogri = new OrgrimmarGuard();
+	GossipScript * thun = new ThunderbluffGuard();
+	GossipScript * shattr = new ShattrathGuard();
 	
 	/* Guard List */
 	mgr->register_gossip_script(1423,  gold);			// Stormwind Guard 

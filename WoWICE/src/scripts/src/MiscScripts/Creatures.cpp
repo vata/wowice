@@ -15,6 +15,18 @@
 
 #include "Setup.h"
 
+//Crimson Hammersmith
+class CrimsonHammersmith : public CreatureAIScript
+{
+public:
+  ADD_CREATURE_FACTORY_FUNCTION(CrimsonHammersmith);
+  CrimsonHammersmith(Creature* pCreature) : CreatureAIScript(pCreature) {}
+
+  void OnCombatStart(Unit* mTarget)
+  {
+    _unit->SendChatMessage(CHAT_MSG_MONSTER_YELL, LANG_UNIVERSAL, "Who Dares Disturb Me");
+  }
+};
 
 //Corrupt Minor Manifestation Water Dead
 class Corrupt_Minor_Manifestation_Water_Dead : public CreatureAIScript
@@ -53,11 +65,6 @@ public:
   {
     if(_unit->GetStandState() == STANDSTATE_SLEEP)
       _unit->SetStandState(0);
-  }
-
-  void Destroy()
-  {
-    delete this;
   }
 
   static CreatureAIScript *Create(Creature* c) { return new SavannahProwler(c); }

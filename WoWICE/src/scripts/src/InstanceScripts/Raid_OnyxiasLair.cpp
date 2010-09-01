@@ -504,11 +504,6 @@ public:
         }
     }
 
-	void Destroy()
-	{
-		delete this;
-	};
-
     inline bool HasEntry() { return (m_entry != 0) ? true : false; }
 
 protected:

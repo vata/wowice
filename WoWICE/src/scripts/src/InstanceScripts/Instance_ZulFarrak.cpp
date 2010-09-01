@@ -86,11 +86,6 @@ public:
 		}
 	}
 
-    void Destroy()
-    {
-        delete (thekaAI*)this;
-    }
-
 protected:
 	int plaguecount, randomplague;
 	bool morphcheck;
@@ -150,10 +145,6 @@ public:
 		}
 	}
 
-	void Destroy()
-	{
-		delete this;
-	};
 };
 /*--------------------------------------------------------------------------------------*/
 /*antusul  healing ward and earthgrab ward commented out since they need time and work wich i dont have right now */
@@ -348,11 +339,6 @@ public:
 			add6->Despawn(1000, 0);
 		}
 	}
-
-    void Destroy()
-    {
-        delete (antusulAI*)this;
-    }
 
 protected:
 	bool spawns, spawns2, attack, firstspawn, secondspawn;

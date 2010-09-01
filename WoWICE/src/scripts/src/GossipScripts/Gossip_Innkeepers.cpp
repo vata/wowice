@@ -28,10 +28,6 @@ public:
     void GossipHello(Object* pObject, Player* Plr, bool AutoSend);
     void GossipSelectOption(Object* pObject, Player* Plr, uint32 Id, uint32 IntId, const char * Code);
     void GossipEnd(Object* pObject, Player* Plr);
-	void Destroy()
-	{
-		delete this;
-	}
 };
 
 void InnkeeperGossip::GossipHello(Object* pObject, Player* Plr, bool AutoSend)
@@ -151,7 +147,7 @@ void InnkeeperGossip::GossipEnd(Object* pObject, Player* Plr)
 
 void SetupInnkeepers(ScriptMgr * mgr)
 {
-	GossipScript * gs = (GossipScript*) new InnkeeperGossip();
+	GossipScript * gs = new InnkeeperGossip();
     /* Innkeeper List */
     mgr->register_gossip_script(15174, gs);     //Calandrath
     mgr->register_gossip_script(18251, gs);     //Caregiver Abidaar

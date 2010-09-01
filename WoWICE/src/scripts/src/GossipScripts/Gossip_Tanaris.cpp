@@ -50,10 +50,6 @@ public:
 		}
     }
 
-    void Destroy()
-    {
-        delete this;
-    }
 }; 
 
 class TrentonLighthammer_Gossip : public GossipScript
@@ -85,16 +81,12 @@ public:
 		}
     }
 
-    void Destroy()
-    {
-        delete this;
-    }
 };
 
 void SetupTanarisGossip(ScriptMgr * mgr)
 {
-	GossipScript * CurgleCranklehopGossip = (GossipScript*) new CurgleCranklehop_Gossip;
-	GossipScript * TrentonLighthammerGossip = (GossipScript*) new TrentonLighthammer_Gossip;
+	GossipScript * CurgleCranklehopGossip = new CurgleCranklehop_Gossip;
+	GossipScript * TrentonLighthammerGossip = new TrentonLighthammer_Gossip;
 
 	mgr->register_gossip_script(7763, CurgleCranklehopGossip);		// Curgle Cranklehop
 	mgr->register_gossip_script(7804, TrentonLighthammerGossip);	// Trenton Lighthammer

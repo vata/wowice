@@ -130,7 +130,6 @@ LuaSpellEntry luaSpellVars[] = {
 	{"RuneCostID", 0, offsetof(SpellEntry, RuneCostID)},
 	{"DiminishStatus", 0, offsetof(SpellEntry, DiminishStatus)},
 	{"proc_interval", 0, offsetof(SpellEntry, proc_interval)},
-	{"BGR_one_buff_from_caster_on_1target", 0, offsetof(SpellEntry, BGR_one_buff_from_caster_on_1target)},
 	{"BGR_one_buff_on_target", 0, offsetof(SpellEntry, BGR_one_buff_on_target)},
 	{"BGR_one_buff_from_caster_on_self", 0, offsetof(SpellEntry, BGR_one_buff_from_caster_on_self)},
 	{"c_is_flags", 0, offsetof(SpellEntry, c_is_flags)},
@@ -351,18 +350,17 @@ namespace LuaSpell
 	{
 		const char* var = luaL_checkstring(L,1);
 		int subindex = 0;
+		int valindex = 2;
 		if (lua_gettop(L) == 3)
 		{
 			subindex = luaL_optint(L,2,0);
+			valindex++;
 		}
 		if (!sp || !var || subindex < 0) 
 		{ 
 			lua_pushboolean(L, 0); 
 			return 1; 
 		}
-		int valindex = 2;
-		if (subindex)
-			valindex++;
 		sp->InitProtoOverride();
 		SpellEntry * proto = sp->GetProto();
 		LuaSpellEntry l = GetLuaSpellEntryByName(var);

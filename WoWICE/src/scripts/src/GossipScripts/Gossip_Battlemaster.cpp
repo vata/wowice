@@ -53,10 +53,6 @@ public:
         plr->GetSession()->SendBattlegroundList((TO_CREATURE(pObject)), 2);  // WSG = 2
     }
 
-    void Destroy()
-    {
-        delete this;
-    }
 };
 
 class ArathiBasinBattlemaster : public GossipScript
@@ -97,10 +93,6 @@ public:
 		plr->GetSession()->SendBattlegroundList((TO_CREATURE(pObject)), 3);  // AB = 3
     }
 
-    void Destroy()
-    {
-        delete this;
-    }
 };
 
 class AlteracValleyBattlemaster : public GossipScript
@@ -141,10 +133,6 @@ public:
 		plr->GetSession()->SendBattlegroundList((TO_CREATURE(pObject)), 1);  // AV = 1
     }
 
-    void Destroy()
-    {
-        delete this;
-    }
 };
 
 class EyeOfTheStormBattlemaster : public GossipScript
@@ -185,18 +173,14 @@ public:
         plr->GetSession()->SendBattlegroundList((TO_CREATURE(pObject)), 7);  // EOTS = 7
     }
 
-    void Destroy()
-    {
-        delete this;
-    }
 };
 
 void SetupBattlemaster(ScriptMgr * mgr)
 {
-	GossipScript * wsg = (GossipScript*) new WarsongGulchBattlemaster;
-	GossipScript * ab = (GossipScript*) new ArathiBasinBattlemaster;
-	GossipScript * av = (GossipScript*) new AlteracValleyBattlemaster;
-	GossipScript * eots = (GossipScript*) new EyeOfTheStormBattlemaster;
+	GossipScript * wsg = new WarsongGulchBattlemaster;
+	GossipScript * ab = new ArathiBasinBattlemaster;
+	GossipScript * av = new AlteracValleyBattlemaster;
+	GossipScript * eots = new EyeOfTheStormBattlemaster;
 
     /* Battlemaster List */
     mgr->register_gossip_script(19910, wsg); // Gargok

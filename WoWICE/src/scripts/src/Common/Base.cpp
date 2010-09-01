@@ -258,13 +258,10 @@ bool MoonScriptCreatureAI::GetAllowTargeting()
 
 void MoonScriptCreatureAI::AggroNearestUnit(int pInitialThreat)
 {
+	//Pay attention: if this is called before pushing the Creature to world, OnCombatStart will NOT be called.
 	Unit* NearestRandomTarget = GetBestUnitTarget(TargetFilter_Closest);
 	if( NearestRandomTarget )
-	{
 		_unit->GetAIInterface()->AttackReaction(NearestRandomTarget, pInitialThreat);
-		if( !IsInCombat() )
-			OnCombatStart(NearestRandomTarget);	//Patch, for some reason, OnCombatStart isn't called in this case
-	}
 }
 
 void MoonScriptCreatureAI::AggroRandomUnit(int pInitialThreat)
@@ -324,11 +321,6 @@ void MoonScriptCreatureAI::Regenerate()
 {
 	_unit->RegenerateHealth();
 	_unit->RegeneratePower(false);
-}
-
-bool MoonScriptCreatureAI::IsAlive()
-{
-	return _unit->isAlive();
 }
 
 void MoonScriptCreatureAI::SetScale(float pScale)

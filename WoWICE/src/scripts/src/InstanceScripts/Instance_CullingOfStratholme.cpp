@@ -1127,10 +1127,6 @@ public:
         return wp;
     }
 
-	void Destroy()
-	{
-		delete this;
-	};
 	private:
 		bool check;
 };
@@ -1309,10 +1305,6 @@ public:
         return wp;
     }
 
-	void Destroy()
-	{
-		delete this;
-	};
 protected:
 	uint32 phase;
 };
@@ -1347,10 +1339,6 @@ public:
 		}
 	}
 
-	void Destroy()
-	{
-		delete this;
-	}
 };
 
 void SetupCullingOfStratholme(ScriptMgr * mgr)
@@ -1371,14 +1359,11 @@ void SetupCullingOfStratholme(ScriptMgr * mgr)
 	// QUESTS & STUFF
 	//////////////////////////////////////////
 	//UPDATE `quests` SET `ReqKillMobOrGOCount1`='5' WHERE (`entry`='13149');
-	QuestScript *Dispelling_Illusions = (QuestScript*) new Quest_Dispelling_Illusions();
+	QuestScript *Dispelling_Illusions = new Quest_Dispelling_Illusions();
 	mgr->register_quest_script(13149, Dispelling_Illusions);
-	SpellEntry* sp = dbcSpell.LookupEntryForced( 49590 );
-	if( sp )//hack
-		sp->Effect[0] = SPELL_EFFECT_DUMMY;
 	mgr->register_dummy_spell(49590, &ArcaneDisruption);
 	//mgr->register_creature_script(26528, &UTHER_AI::Create);
 	//mgr->register_creature_script(26499, &ARTHAS_AI::Create);
-	//GossipScript * AG = (GossipScript*) new ArthasGossip();
+	//GossipScript * AG = new ArthasGossip();
 	//mgr->register_gossip_script(26499, AG);
 }

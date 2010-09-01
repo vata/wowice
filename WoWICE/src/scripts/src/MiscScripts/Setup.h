@@ -19,13 +19,6 @@
 #ifndef MISC_SCRIPTS_SETUP_H
 #define MISC_SCRIPTS_SETUP_H
 
-#define TO_CREATURE(ptr) static_cast<Creature*>(ptr) 
-#define TO_PLAYER(ptr) static_cast<Player*>(ptr)
-#define TO_OBJECT(ptr) static_cast<Object*>(ptr)
-#define TO_UNIT(ptr) static_cast<Unit*>(ptr)
-#define TO_PET(ptr) static_cast<Pet*>(ptr)
-#define TO_ITEM(ptr) static_cast<Item*>(ptr)
-
 void SetupGoHandlers(ScriptMgr * mgr);
 void SetupQDGoHandlers(ScriptMgr * mgr);
 void SetupRandomScripts(ScriptMgr * mgr);

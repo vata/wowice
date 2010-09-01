@@ -108,11 +108,6 @@ public:
         }
     }
 
-	void Destroy()
-	{
-		delete this;
-	};
-
 protected:
 
 	Unit* target;
@@ -207,11 +202,6 @@ public:
 			}
         }
     }
-
-	void Destroy()
-	{
-		delete this;
-	};
 
 protected:
 
@@ -320,11 +310,6 @@ public:
 			}
         }
     }
-
-	void Destroy()
-	{
-		delete this;
-	};
 
 protected:
 
@@ -435,11 +420,6 @@ public:
         }
     }
 
-	void Destroy()
-	{
-		delete this;
-	};
-
 protected:
 
 	int nrspells;
@@ -540,11 +520,6 @@ public:
 			}
         }
     }
-
-	void Destroy()
-	{
-		delete this;
-	};
 
 protected:
 
@@ -647,11 +622,6 @@ public:
         }
     }
 
-	void Destroy()
-	{
-		delete this;
-	};
-
 protected:
 
 	int nrspells;
@@ -746,11 +716,6 @@ public:
 			}
         }
     }
-
-	void Destroy()
-	{
-		delete this;
-	};
 
 protected:
 
@@ -853,11 +818,6 @@ public:
         }
     }
 
-	void Destroy()
-	{
-		delete this;
-	};
-
 protected:
 
 	int nrspells;
@@ -951,11 +911,6 @@ public:
 			}
         }
     }
-
-	void Destroy()
-	{
-		delete this;
-	};
 
 protected:
 
@@ -1058,11 +1013,6 @@ public:
         }
     }
 
-	void Destroy()
-	{
-		delete this;
-	};
-
 protected:
 
 	int nrspells;
@@ -1163,11 +1113,6 @@ public:
 			}
         }
     }
-
-	void Destroy()
-	{
-		delete this;
-	};
 
 protected:
 
@@ -1270,11 +1215,6 @@ public:
         }
     }
 
-	void Destroy()
-	{
-		delete this;
-	};
-
 protected:
 
 	int nrspells;
@@ -1368,11 +1308,6 @@ public:
 			}
         }
     }
-
-	void Destroy()
-	{
-		delete this;
-	};
 
 protected:
 
@@ -1474,11 +1409,6 @@ public:
 			}
         }
     }
-
-	void Destroy()
-	{
-		delete this;
-	};
 
 protected:
 
@@ -1819,11 +1749,6 @@ public:
         }
     }
 
-	void Destroy()
-	{
-		delete this;
-	};
-
 protected:
 
 	uint32 Summons;
@@ -2130,11 +2055,6 @@ public:
 		Blink = true;
 	}
 
-	void Destroy()
-	{
-		delete this;
-	};
-
 protected:
 
 	bool Blink;
@@ -2378,11 +2298,6 @@ public:
 
 		return target;
 	}
-
-	void Destroy()
-	{
-		delete this;
-	};
 
 protected:
 

@@ -79,11 +79,6 @@ public:
         }
     }
 
-	void Destroy()
-	{
-		delete this;
-	};
-
 protected:
 
     bool m_mangle;
@@ -180,11 +175,6 @@ public:
             }
         }
     }
-
-	void Destroy()
-	{
-		delete this;
-	};
 
 protected:
 
@@ -330,11 +320,6 @@ public:
             
         }
     }
-
-	void Destroy()
-	{
-		delete this;
-	};
 
 protected:
 

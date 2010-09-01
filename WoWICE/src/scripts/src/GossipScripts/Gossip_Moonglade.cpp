@@ -46,10 +46,6 @@ public:
 		}
     }
 
-    void Destroy()
-    {
-        delete this;
-    }
 };
 
 class BunthenPlainswind_Gossip : public GossipScript
@@ -86,16 +82,12 @@ public:
 		}
     }
 
-    void Destroy()
-    {
-        delete this;
-    }
 };
 
 void SetupMoongladeGossip(ScriptMgr * mgr)
 {
-	GossipScript * SilvaFilnavethGossip = (GossipScript*) new SilvaFilnaveth_Gossip;
-	GossipScript * BunthenPlainswindGossip = (GossipScript*) new BunthenPlainswind_Gossip;
+	GossipScript * SilvaFilnavethGossip = new SilvaFilnaveth_Gossip;
+	GossipScript * BunthenPlainswindGossip = new BunthenPlainswind_Gossip;
 
 	mgr->register_gossip_script(11800, SilvaFilnavethGossip); // Silva Fil'naveth
 	mgr->register_gossip_script(11798, BunthenPlainswindGossip); // Bunthen Plainswind

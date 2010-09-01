@@ -45,15 +45,11 @@ public:
 		}
     }
 
-    void Destroy()
-    {
-        delete this;
-    }
 };
 
 void SetupTeldrassilGossip(ScriptMgr * mgr)
 {
-	GossipScript * ErelasAmberskyGossip = (GossipScript*) new ErelasAmbersky_Gossip;
+	GossipScript * ErelasAmberskyGossip = new ErelasAmbersky_Gossip;
 	
 	mgr->register_gossip_script(7916, ErelasAmberskyGossip); // Erelas Ambersky
 }

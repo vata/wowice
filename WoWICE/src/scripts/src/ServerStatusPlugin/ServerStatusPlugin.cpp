@@ -330,7 +330,7 @@ void StatDumper::DumpStats()
 
     time_t timediff = 0;
 
-    if( Filename[0] == NULL )
+    if( Filename[0] == '\0' )
         return;
     FILE* f = fopen( Filename, "w" );
     if( !f )
@@ -502,7 +502,7 @@ void StatDumper::DumpStats()
         {
             plr = gms.front();
             gms.pop_front();
-			if(!plr->bGMTagOn)
+			if(!plr->HasFlag(PLAYER_FLAGS, PLAYER_FLAG_GM))
 				continue;
             FillOnlineTime(t - plr->OnlineTime, otime);
             fprintf(f, "    <gmplr>\n");
@@ -511,7 +511,7 @@ void StatDumper::DumpStats()
             fprintf(f, "      <class>%u</class>\n", (unsigned int)plr->getClass());
             fprintf(f, "      <gender>%u</gender>\n", (unsigned int)plr->getGender());
             fprintf(f, "      <pvprank>%u</pvprank>\n", (unsigned int)plr->GetPVPRank());
-            fprintf(f, "      <level>%u</level>\n", (unsigned int)plr->GetUInt32Value(UNIT_FIELD_LEVEL));
+            fprintf(f, "      <level>%u</level>\n", (unsigned int)plr->getLevel());
             fprintf(f, "      <map>%u</map>\n", (unsigned int)plr->GetMapId());
             fprintf(f, "      <areaid>%u</areaid>\n", (unsigned int)plr->GetAreaID());
             fprintf(f, "      <ontime>%s</ontime>\n", otime);
@@ -542,7 +542,7 @@ void StatDumper::DumpStats()
                 fprintf(f, "      <class>%u</class>\n", (unsigned int)plr->getClass());
 				fprintf(f, "      <gender>%u</gender>\n", (unsigned int)plr->getGender());
 				fprintf(f, "      <pvprank>%u</pvprank>\n", (unsigned int)plr->GetPVPRank());
-                fprintf(f, "      <level>%u</level>\n", (unsigned int)plr->GetUInt32Value(UNIT_FIELD_LEVEL));
+                fprintf(f, "      <level>%u</level>\n", (unsigned int)plr->getLevel());
                 fprintf(f, "      <map>%u</map>\n", (unsigned int)plr->GetMapId());
                 fprintf(f, "      <areaid>%u</areaid>\n", (unsigned int)plr->GetAreaID());
 				//requested by Zdarkside for he's online map. I hope it does not scre up any parser. If so, then make a better one :P

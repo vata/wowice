@@ -76,6 +76,7 @@ namespace luaGlobalFunctions
 				sp->bytes2 = 0;
 				//sp->respawnNpcLink = 0;
 				sp->stand_state = 0;
+				sp->death_state = 0;
 				sp->channel_target_creature = sp->channel_target_go = sp->channel_spell = 0;
 				sp->MountedDisplayID = 0;
 				sp->Item1SlotDisplay = equip1;
@@ -344,7 +345,7 @@ namespace luaGlobalFunctions
 			count++,
 			ret = (*itr).second;
 			lua_pushinteger(L,count);
-			PUSH_UNIT(L,((Unit*)ret));
+			PUSH_UNIT(L,(TO_UNIT(ret)));
 			lua_rawset(L,-3);
 		}
 		objmgr._playerslock.ReleaseReadLock();	
@@ -357,7 +358,7 @@ namespace luaGlobalFunctions
 		return 0;
 	}
 
-	static int GetArcemuRevision(lua_State * L)
+	static int GetWowiceRevision(lua_State * L)
 	{
 		lua_pushnumber(L,BUILD_REVISION);
 		return 1;
@@ -412,7 +413,7 @@ namespace luaGlobalFunctions
 			count++,
 			ret = (*itr).second;
 			lua_pushinteger(L,count);
-			PUSH_UNIT(L,((Unit*)ret));
+			PUSH_UNIT(L,(TO_UNIT(ret)));
 			lua_rawset(L,-3);
 		}
 		return 1;
@@ -433,7 +434,7 @@ namespace luaGlobalFunctions
 				count++,
 				ret = (*itr).second;
 				lua_pushinteger(L,count);
-				PUSH_UNIT(L,((Unit*)ret));
+				PUSH_UNIT(L,(TO_UNIT(ret)));
 				lua_rawset(L,-3);
 			}
 		}
@@ -472,13 +473,12 @@ namespace luaGlobalFunctions
 		uint32 entry = luaL_checkinteger(L,1);
 		const char* var = luaL_checkstring(L,2);
 		int subindex = 0;
+		int valindex = 3;
 		if (lua_gettop(L) == 4)
 		{
 			subindex = luaL_optint(L,3,0);
-		}
-		int valindex = 3;
-		if (subindex)
 			valindex++;
+		}
 		SpellEntry * proto = dbcSpell.LookupEntryForced(entry);
 		if (!entry || !var || subindex < 0 || !proto) 
 		{ 
@@ -756,11 +756,27 @@ namespace luaGlobalFunctions
 			count++,
 			ret = (*itr).second;
 			lua_pushinteger(L,count);
-			PUSH_UNIT(L,((Unit*)ret));
+			PUSH_UNIT(L,(TO_UNIT(ret)));
 			lua_rawset(L,-3);
 		}
 		return 1;
 
+	}
+
+	int GetGuildByName(lua_State * L)
+	{
+		const char* name = luaL_checkstring(L,1);
+		Guild * guild = objmgr.GetGuildByGuildName(name);
+		lua_pushnumber(L, guild ? guild->GetGuildId() : -1);
+		return 1;
+	}
+
+	int GetGuildByLeaderGuid(lua_State * L)
+	{
+		uint64 guid = CHECK_GUID(L,1);
+		Guild * guild = objmgr.GetGuildByLeaderGuid(guid);
+		lua_pushnumber(L, guild ? guild->GetGuildId() : -1);
+		return 1;
 	}
 }
 void RegisterGlobalFunctions(lua_State *L)
@@ -781,7 +797,7 @@ void RegisterGlobalFunctions(lua_State *L)
 	lua_register(L,"Rehash",&luaGlobalFunctions::Rehash);
 	lua_register(L,"logcol",&luaGlobalFunctions::logcol);
 	lua_register(L,"GetPlayersInWorld",&luaGlobalFunctions::GetPlayersInWorld);
-	lua_register(L,"GetArcemuRevision",&luaGlobalFunctions::GetArcemuRevision);
+	lua_register(L,"GetWowiceRevision",&luaGlobalFunctions::GetWowiceRevision);
 	lua_register(L,"GetPlayersInMap",&luaGlobalFunctions::GetPlayersInMap);
 	lua_register(L,"GetPlayersInZone",&luaGlobalFunctions::GetPlayersInZone);
 	lua_register(L,"SendMail",&luaGlobalFunctions::SendMail);
@@ -812,5 +828,7 @@ void RegisterGlobalFunctions(lua_State *L)
 	lua_register(L, "GetInstanceCreature", &luaGlobalFunctions::GetInstanceCreature);
 	lua_register(L, "GetInstancePlayerCount", &luaGlobalFunctions::GetInstancePlayerCount);
 	lua_register(L, "GetPlayersInInstance", &luaGlobalFunctions::GetPlayersInInstance);
+	lua_register(L, "GetGuildByName", &luaGlobalFunctions::GetGuildByName);
+	lua_register(L, "GetGuildByLeaderGuid", &luaGlobalFunctions::GetGuildByLeaderGuid);
 }
 #endif

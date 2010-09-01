@@ -526,11 +526,6 @@ class SkarvaldTheConstructorAI : public MoonScriptCreatureAI
 		}
 	};
 
-	void Destroy()
-	{
-		delete this;
-	};
-
  private:
 	 int32					mReplyTimer;
 	 MoonScriptCreatureAI*	pDalronn;
@@ -619,11 +614,6 @@ class DalronnTheControllerAI : public MoonScriptCreatureAI
 		}
 	};
 
-	void Destroy()
-	{
-		delete this;
-	};
-
  private:
 	int32					mSummonTimer;
 	MoonScriptCreatureAI*	pSkarvald;
@@ -650,10 +640,6 @@ class SkarvaldTheConstructorGhostAI : public MoonScriptCreatureAI
 		ParentClass::OnLoad();
 	};
 
-	void Destroy()
-	{
-		delete this;
-	}
 };
 
 class DalronnTheControllerGhostAI : public MoonScriptCreatureAI
@@ -682,11 +668,6 @@ class DalronnTheControllerGhostAI : public MoonScriptCreatureAI
 			_unit->GetAIInterface()->AttackReaction(pTarget, 50, 0);
 
 		ParentClass::OnLoad();
-	};
-
-	void Destroy()
-	{
-		delete this;
 	};
 
 };
@@ -749,11 +730,6 @@ class PrinceKelesethAI : public MoonScriptCreatureAI
 		ParentClass::OnCombatStart(pTarget);
 	};
 	
-	void Destroy()
-	{
-		delete this;
-	};
-
 	SpellDesc*			mAddSummon;
 	SpellDesc*			mShadowBolt;
 	SpellDesc*			mFrostTomb;
@@ -791,11 +767,6 @@ class FrostTombAI : public MoonScriptCreatureAI
 		Despawn(1);
 	};
 
-	void Destroy()
-	{
-		delete this;
-	};
-
  private:
 	 Player* plr;
 };
@@ -830,10 +801,6 @@ class SkeletonAddAI : public MoonScriptCreatureAI
 		Despawn(1);
 	};
 
-	void Destroy()
-	{
-		delete this;
-	};
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////
