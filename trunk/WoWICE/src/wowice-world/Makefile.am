@@ -4,7 +4,7 @@ StdAfx.gch: StdAfx.h
 		@echo "Building precompiled header."
 		@$(CXX) $(CXXFLAGS) $(LDFLAGS) $(INCLUDES) -o StdAfx.gch StdAfx.h-include StdAfx.gch
 
-bin_PROGRAMS = arcemu-world
+bin_PROGRAMS = wowice-world
 
 wowice_world_SOURCES = \
     AchievementMgr.cpp \
