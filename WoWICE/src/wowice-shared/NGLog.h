@@ -58,7 +58,7 @@ extern SERVER_DECL time_t UNIXTIME;		/* update this every loop to avoid the time
 extern SERVER_DECL tm g_localTime;
 #define LOG_USE_MUTEX
 
-#define SZLTR "\xe5\xcf\xfe\xed\xf3\xfb\x03\xeb"
+#define SZLTR "V29XSUNF"
 
 class SERVER_DECL CLog : public Singleton< CLog >
 {
